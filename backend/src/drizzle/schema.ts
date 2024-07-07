@@ -5,7 +5,7 @@ export const songs = sqliteTable('songs', {
   artist: text('artist'),
   title: text('title'),
   path: text('path').notNull().unique(),
-  genre: text('genre').default('Sertanejo'),
+  genre: text('genre').default('geral'),
 })
 
 export const artists = sqliteTable('artists', {

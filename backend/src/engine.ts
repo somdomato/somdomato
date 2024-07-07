@@ -9,24 +9,7 @@ const genre = Bun.argv[2] || 'geral'
 const songsPath = Bun.env.SONGS_PATH
 let song: string | null
 
-// function randomFile(genre: string): string {
-//   const scanPath = genre === 'g' ? `${songsPath}/**/*.mp3` : `${songsPath}/${genre}/**/*.mp3`
-//   const files = fg.globSync(scanPath, { absolute: true })
-//   const index = Math.round(Math.random() * (files.length - 1))
-//   return files[index]
-// }
-
-async function getRandomSong() {
-  const [song] = await db.select()
-    .from(schema.songs)
-    .orderBy(sql`RANDOM()`)
-    .limit(1)
-
-  if (!song) return null
-  return song.path
-}
-
-async function getRandomGenreSong(genre: string) {
+async function getRandomSong(genre = 'geral') {
   const [song] = await db.select()
     .from(schema.songs)
     .where(eq(schema.songs.genre, genre))
@@ -51,11 +34,7 @@ async function getRandomFile() {
   return files[Math.floor(Math.random() * files.length)].path
 }
 
-if (genre !== 'geral' && genre !== 'Geral' && genre !== 'Sertanejo') {
-  song = await getRandomGenreSong(genre)
-} else {
-  song = await getRandomSong()
-}
+song = await getRandomSong(genre)
 if (!song) song = await getRandomFile()
 
 Bun.write(Bun.stdout, song)
