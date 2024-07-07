@@ -1,0 +1,111 @@
+---
+- name: Update systemd unit and reload daemon
+  hosts: all
+  become: true
+  remote_user: root
+
+  tasks:
+    - name: Ensure the sudoers.d directory exists
+      ansible.builtin.file:
+        path: /etc/sudoers.d
+        state: directory
+        mode: '0750'
+
+    - name: Allow the nginx user to run somdomato-hono units
+      community.general.sudoers:
+        name: somdomato-hono
+        user: nginx
+        commands:
+          - /usr/bin/systemctl stop somdomato-hono.service
+          - /usr/bin/systemctl start somdomato-hono.service
+          - /usr/bin/systemctl restart somdomato-hono.service
+          - /usr/bin/systemctl status somdomato-hono.service
+        nopassword: true
+
+    - name: Alterar as unidades do systemd
+      ansible.builtin.copy:
+        src: files/etc/systemd/system/{{ item }}
+        dest: /etc/systemd/system/{{ item }}
+        owner: root
+        group: root
+        mode: '0644'
+      with_items:
+        - "icecast2.service"
+        - "liquidsoap.service"
+        - "somdomato-hono.service"
+        - "matuto.service"
+      notify: Reload systemd
+
+    - name: Criar o diretorio de configuracoes do LiquidSoap
+      ansible.builtin.file:
+        path: /etc/liquidsoap
+        state: directory
+        mode: '0755'
+
+    - name: Alterar as configurações do LiquidSoap
+      ansible.builtin.copy:
+        src: files/etc/liquidsoap/radio.liq
+        dest: /etc/liquidsoap/radio.liq
+        owner: liquidsoap
+        group: liquidsoap
+        mode: '0644'
+
+    - name: Reiniciar as unidades do systemd
+      ansible.builtin.systemd:
+        name: "{{ item }}"
+        state: restarted
+        enabled: true
+      with_items:
+        - "icecast2.service"
+        - "liquidsoap.service"
+        - "somdomato-hono.service"
+        - "matuto.service"
+
+    - name: Copy errors files
+      ansible.builtin.copy:
+        src: "files/etc/nginx/conf.d/{{ item }}"
+        dest: "/etc/nginx/conf.d/{{ item }}"
+        owner: root
+        group: root
+        mode: '0644'
+      with_items:
+        - "errors.map"
+        - "sdm-errors.conf"
+        - "hono.conf"
+        - "cache.conf"
+
+    - name: Copy Nginx configuration files
+      ansible.builtin.copy:
+        src: "files/etc/nginx/sites-available/{{ item }}"
+        dest: "/etc/nginx/sites-available/{{ item }}"
+        owner: root
+        group: root
+        mode: '0644'
+      with_items:
+        - "somdomato.com"
+        - "api.somdomato.com"
+        - "radio.somdomato.com"
+
+    - name: Create symbolic link for sites
+      ansible.builtin.file:
+        src: "/etc/nginx/sites-available/{{ item }}"
+        dest: "/etc/nginx/sites-enabled/{{ item }}"
+        state: link
+      with_items:
+        - "somdomato.com"
+        - "api.somdomato.com"
+        - "radio.somdomato.com"
+      notify: Reload nginx
+      register: copy_result
+
+  handlers:
+    - name: Reload systemd
+      ansible.builtin.systemd:
+        daemon_reload: true
+
+    - name: Reload nginx
+      ansible.builtin.systemd:
+        state: restarted
+        enabled: true
+        daemon_reload: true
+        name: nginx

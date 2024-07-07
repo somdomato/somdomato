@@ -1,0 +1,82 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Backend: bun:studio",
+      "detail": "cd backend && bun run studio",
+      "type": "npm",
+      "script": "studio",
+      "path": "backend",
+      "group": "build",
+      "problemMatcher": [],
+      "isBackground": true,
+      "runOptions": {
+        "runOn": "folderOpen"
+      },
+      "presentation": {
+        "echo": true,
+        "reveal": "never",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": false,
+        "clear": false
+      }
+    },
+    {
+      "label": "Frontend: bun:dev",
+      "detail": "cd frontend && bun run dev",
+      "type": "npm",
+      "script": "dev",
+      "path": "frontend",
+      "group": "build",
+      "problemMatcher": [],
+      "runOptions": {
+        "runOn": "folderOpen"
+      },
+      "presentation": {
+        "echo": false,
+        "reveal": "never",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": false,
+        "clear": true
+      }
+    },
+    {
+      "label": "Backend: bun:dev",
+      "detail": "cd backend && bun run dev",
+      "type": "npm",
+      "script": "dev",
+      "path": "backend",
+      "group": "build",
+      "problemMatcher": [],
+      "runOptions": {
+        "runOn": "folderOpen"
+      },
+      "presentation": {
+        "echo": true,
+        "reveal": "never",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": false,
+        "clear": false
+      }
+    },
+    {
+      "label": "Backend: bun:generate",
+      "detail": "cd backend && bun run generate",
+      "type": "npm",
+      "script": "generate",
+      "path": "backend",
+      "problemMatcher": []
+    },
+    {
+      "label": "Backend: bun:migrate",
+      "detail": "cd backend && bun run migrate",
+      "type": "npm",
+      "script": "migrate",
+      "path": "backend",
+      "problemMatcher": []
+    }
+  ]
+}

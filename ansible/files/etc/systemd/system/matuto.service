@@ -1,0 +1,13 @@
+[Unit]
+Description=Matuto Discord BOT
+After=network.target
+
+[Service]
+User=nginx
+WorkingDirectory=/var/www/somdomato/discord
+ExecStart=/home/nginx/.bun/bin/bun /var/www/somdomato/discord/src/bot.ts
+Restart=always
+RestartSec=5s
+
+[Install]
+WantedBy=multi-user.target

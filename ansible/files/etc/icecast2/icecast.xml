@@ -1,0 +1,99 @@
+<icecast>
+    <location>Brazil</location>
+    <admin>sistematico@gmail.com</admin>
+
+    <limits>
+        <clients>3000</clients>
+        <sources>10</sources>
+        <queue-size>102400</queue-size>
+        <client-timeout>30</client-timeout>
+        <header-timeout>15</header-timeout>
+        <source-timeout>10</source-timeout>
+        <burst-on-connect>1</burst-on-connect>
+        <burst-size>65536</burst-size>
+    </limits>
+
+    <authentication>
+        <source-password>hackme</source-password>
+        <relay-password>hackme</relay-password>
+        <admin-user>admin</admin-user>
+        <admin-password>hackmeagain</admin-password>
+    </authentication>
+
+    <directory>
+        <yp-url-timeout>15</yp-url-timeout>
+        <yp-url>http://dir.xiph.org/cgi-bin/yp-cgi</yp-url>
+    </directory>
+
+    <hostname>somdomato.com</hostname>
+
+    <listen-socket>
+        <port>8000</port>
+        <mount-name>/geral</mount-name>
+        <charset>UTF-8</charset>
+        <stream-name>Radio Som do Mato</stream-name>
+        <stream-description>A mais sertaneja</stream-description>
+        <stream-url>https://somdomato.com</stream-url>
+        <genre>Sertanejo</genre>
+        <bitrate>128</bitrate>
+    </listen-socket>
+
+    <listen-socket>
+        <port>8002</port>
+        <mount-name>/modao</mount-name>
+        <charset>UTF-8</charset>
+    </listen-socket>
+
+    <listen-socket>
+        <port>8004</port>
+        <mount-name>/universitario</mount-name>
+        <charset>UTF-8</charset>
+    </listen-socket>
+
+    <listen-socket>
+        <port>8006</port>
+        <mount-name>/romantico</mount-name>
+        <charset>UTF-8</charset>
+    </listen-socket>
+
+    <listen-socket>
+        <port>8008</port>
+        <mount-name>/gaucha</mount-name>
+        <charset>UTF-8</charset>
+    </listen-socket>
+
+    <listen-socket>
+        <port>8443</port>
+        <ssl>1</ssl>
+    </listen-socket>
+
+    <http-headers>
+        <header name="Access-Control-Allow-Origin" value="*" />
+    </http-headers>
+
+    <fileserve>1</fileserve>
+
+    <paths>
+        <basedir>/usr/share/icecast2</basedir>
+        <logdir>/var/log/icecast2</logdir>
+        <webroot>/usr/share/icecast2/web</webroot>
+        <adminroot>/usr/share/icecast2/admin</adminroot>
+	    <pidfile>/run/icecast2.pid</pidfile>
+        <alias source="/" destination="/status.xsl"/>
+        <alias source="/json" destination="/status-json.xsl"/>
+        <alias source="/stream" destination="/geral"/>
+        <alias source="/aovivo" destination="/geral"/>
+        <ssl-certificate>/usr/share/icecast2/icecast.pem</ssl-certificate>
+    </paths>
+
+    <logging>
+        <accesslog>access.log</accesslog>
+        <errorlog>error.log</errorlog>
+        <loglevel>1</loglevel> <!-- 4 Debug, 3 Info, 2 Warn, 1 Error -->
+        <logsize>10000</logsize> <!-- Max size of a logfile -->
+    </logging>
+
+    <security>
+        <chroot>0</chroot>
+    </security>
+</icecast>
