@@ -24,9 +24,9 @@ server {
     ssl_certificate_key     /etc/letsencrypt/live/somdomato.com/privkey.pem;
 
     server_name somdomato.com *.somdomato.com;
-
     root /var/www/somdomato/frontend/dist;
-
+    include conf.d/sdm-errors.conf;
+    
     location / {
         try_files $uri $uri/ /index.html =500;
     }
