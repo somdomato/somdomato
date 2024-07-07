@@ -1,0 +1,16 @@
+{
+  "name": "somdomato",
+  "version": "1.0.0",
+  "author": "Lucas Saliés Brum <paxa@paxa.dev> (https://paxa.dev)",
+  "type": "module",
+  "workspaces": [
+    "backend",
+    "frontend"
+  ],
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  }
+}
