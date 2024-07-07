@@ -8,8 +8,9 @@ settings.log.file.path.set("/var/log/liquidsoap.log")
 
 def next(g)
   def request_function() =
-    uri = list.hd(process.read.lines("SONGS_PATH=/media/songs /usr/share/liquidsoap/.bun/bin/bun /var/www/somdomato/backend/src/engine.ts #{g}"))
-    request.create(uri)
+    result = list.hd(default="", process.read.lines("SONGS_PATH=/media/songs /usr/share/liquidsoap/.bun/bin/bun /var/www/somdomato/backend/src/engine.ts #{g}"))
+    [request.create(result)]
+    # request.create(uri)
   end
   request.dynamic(request_function)
 end
