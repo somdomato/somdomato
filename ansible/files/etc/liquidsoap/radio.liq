@@ -2,7 +2,7 @@
 
 # %include "log.liq"
 #Log to stdout
-# settings.log.stdout.set(false)
+settings.log.stdout.set(false)
 settings.log.level.set(4)
 settings.log.file.path.set("/var/log/liquidsoap.log")
 
@@ -20,11 +20,17 @@ uni = next('uni')
 love = next('love')
 gaucha = next('gaucha')
 
-mpgeral = fallback([geral, emerg])
-mpmodao = fallback([modao, emerg])
-mpuni = fallback([uni, emerg])
-mplove = fallback([love, emerg])
-mpgaucha = fallback([gaucha, emerg])
+# mpgeral = fallback([geral, emerg])
+# mpmodao = fallback([modao, emerg])
+# mpuni = fallback([uni, emerg])
+# mplove = fallback([love, emerg])
+# mpgaucha = fallback([gaucha, emerg])
+
+mpgeral = mksafe(geral)
+mpmodao = mksafe(modao)
+mpuni = mksafe(uni)
+mplove = mksafe(love)
+mpgaucha = mksafe(gaucha)
 
 output.icecast(%mp3, 
   name='Radio Som do Mato',
