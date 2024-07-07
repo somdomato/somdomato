@@ -3,7 +3,7 @@
 # %include "log.liq"
 #Log to stdout
 settings.log.stdout.set(false)
-settings.log.level.set(4)
+settings.log.level.set(2)
 settings.log.file.path.set("/var/log/liquidsoap.log")
 
 def next(g)
@@ -37,10 +37,10 @@ output.icecast(%mp3,
   genre='Geral',
   description='O melhor do sertanejo!',
   url='https://somdomato.com',
-  host="localhost", 
+  host='localhost', 
   port=8000, 
-  password="hackme", 
-  mount="geral", 
+  password='hackme', 
+  mount='geral', 
   mpgeral)
 
 output.icecast(%mp3, 
@@ -48,32 +48,32 @@ output.icecast(%mp3,
   genre='Modao',
   description='O melhor do modao!',
   url='https://somdomato.com',
-  host="localhost", 
+  host='localhost', 
   port=8002, 
-  password="hackme", 
-  mount="modao", 
+  password='hackme', 
+  mount='modao', 
   mpmodao)
 
 output.icecast(%mp3, 
-  name='Radio Som do Mato - Universitario',
+  name='Radio Som do Mato - Sertanejo Universitario',
   genre='Universitario',
   description='O melhor do sertanejo universitário!',
   url='https://somdomato.com',
-  host="localhost", 
+  host='localhost', 
   port=8004, 
-  password="hackme", 
-  mount="universitario", 
+  password='hackme', 
+  mount='universitario', 
   mpuni)
 
 output.icecast(%mp3, 
-  name='Radio Som do Mato - Romanticas',
+  name='Radio Som do Mato - Sertanejo Romantico',
   genre='Romantico',
   description='O melhor do sertanejo romantico!',
   url='https://somdomato.com',
-  host="localhost", 
+  host='localhost', 
   port=8006, 
-  password="hackme", 
-  mount="romantico", 
+  password='hackme', 
+  mount='romantico', 
   mplove)
 
 output.icecast(%mp3, 
@@ -81,8 +81,8 @@ output.icecast(%mp3,
   genre='Gaucha',
   description='O melhor da musica gaucha!',
   url='https://somdomato.com',
-  host="localhost", 
+  host='localhost', 
   port=8008, 
-  password="hackme", 
-  mount="gaucha", 
+  password='hackme', 
+  mount='gaucha', 
   mpgaucha)

@@ -42,8 +42,6 @@ onMounted(async () => {
 watch(
   () => song.genre,
   () => {
-    // const player = document.querySelector('audio') as HTMLAudioElement;
-    
     reloadPlayer(document.querySelector('audio') as HTMLAudioElement, document.querySelector('source') as HTMLSourceElement, song.genre);
     
     (document.querySelector('audio') as HTMLAudioElement).addEventListener("canplay", (event) => {

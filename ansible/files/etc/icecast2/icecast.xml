@@ -34,7 +34,7 @@
         <stream-name>Radio Som do Mato</stream-name>
         <stream-description>A mais sertaneja</stream-description>
         <stream-url>https://somdomato.com</stream-url>
-        <genre>Sertanejo</genre>
+        <genre>Geral</genre>
         <bitrate>128</bitrate>
     </listen-socket>
 
