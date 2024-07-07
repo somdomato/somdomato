@@ -5,7 +5,7 @@ import { Glob } from 'bun'
 import { basename, parse } from 'node:path'
 // import fg from 'fast-glob'
 
-const genre = Bun.argv[2] || 'Sertanejo'
+const genre = Bun.argv[2] || 'geral'
 const songsPath = Bun.env.SONGS_PATH
 let song: string | null
 
@@ -16,13 +16,21 @@ let song: string | null
 //   return files[index]
 // }
 
-async function getRandomSong(genre = 'Sertanejo') {
+async function getRandomSong() {
+  const [song] = await db.select()
+    .from(schema.songs)
+    .orderBy(sql`RANDOM()`)
+    .limit(1)
+
+  if (!song) return null
+  return song.path
+}
+
+async function getRandomGenreSong(genre: string) {
   const [song] = await db.select()
     .from(schema.songs)
     .where(eq(schema.songs.genre, genre))
-    .orderBy(
-      sql`RANDOM()`
-    )
+    .orderBy(sql`RANDOM()`)
     .limit(1)
 
   if (!song) return null
@@ -43,7 +51,11 @@ async function getRandomFile() {
   return files[Math.floor(Math.random() * files.length)].path
 }
 
-song = await getRandomSong(genre)
+if (genre !== 'geral' && genre !== 'Geral' && genre !== 'Sertanejo') {
+  song = await getRandomGenreSong(genre)
+} else {
+  song = await getRandomSong()
+}
 if (!song) song = await getRandomFile()
 
 Bun.write(Bun.stdout, song)
