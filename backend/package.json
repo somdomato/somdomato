@@ -9,6 +9,7 @@
     "studio": "bunx drizzle-kit studio"
   },
   "dependencies": {
+    "better-sqlite3": "^11.1.2",
     "drizzle-orm": "^0.31.2",
     "hono": "^4.4.12"
   },
