@@ -1,7 +1,8 @@
 import { migrate } from 'drizzle-orm/bun-sqlite/migrator'
 import { drizzle } from 'drizzle-orm/bun-sqlite'
 import { Database } from 'bun:sqlite'
+import { join } from 'node:path'
 
-const sqlite = new Database('sqlite.db')
+const sqlite = new Database(join(__dirname, '..', 'sqlite.db'))
 const db = drizzle(sqlite)
 await migrate(db, { migrationsFolder: './src/drizzle/migrations' })
