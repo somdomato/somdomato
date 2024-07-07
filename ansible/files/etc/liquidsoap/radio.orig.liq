@@ -1,10 +1,17 @@
 #!/usr/bin/env liquidsoap
 
 # %include "log.liq"
+
 #Log to stdout
-# settings.log.stdout.set(false)
+settings.log.stdout.set(false)
 settings.log.level.set(4)
 settings.log.file.path.set("/var/log/liquidsoap.log")
+
+emerg = single("/media/songs/vinhetas/060723 RADIO SOM DO MATO - VINHETAO HUMBERTO E RONALDO.mp3")
+
+def cross(g)
+  crossfade(fade_out=3., fade_in=3., duration=5., g)
+end
 
 def next(g)
   def request_function() =
@@ -20,11 +27,11 @@ uni = next('uni')
 love = next('love')
 gaucha = next('gaucha')
 
-mpgeral = fallback([geral, emerg])
-mpmodao = fallback([modao, emerg])
-mpuni = fallback([uni, emerg])
-mplove = fallback([love, emerg])
-mpgaucha = fallback([gaucha, emerg])
+geral = fallback([cross(geral), emerg])
+modao = fallback([cross(modao), emerg])
+uni = fallback([cross(uni), emerg])
+love = fallback([cross(love), emerg])
+gaucha = fallback([cross(gaucha), emerg])
 
 output.icecast(%mp3, 
   name='Radio Som do Mato',
@@ -35,7 +42,7 @@ output.icecast(%mp3,
   port=8000, 
   password="hackme", 
   mount="geral", 
-  mpgeral)
+  geral)
 
 output.icecast(%mp3, 
   name='Radio Som do Mato - Modao',
@@ -46,7 +53,7 @@ output.icecast(%mp3,
   port=8002, 
   password="hackme", 
   mount="modao", 
-  mpmodao)
+  modao)
 
 output.icecast(%mp3, 
   name='Radio Som do Mato - Universitario',
@@ -57,7 +64,7 @@ output.icecast(%mp3,
   port=8004, 
   password="hackme", 
   mount="universitario", 
-  mpuni)
+  uni)
 
 output.icecast(%mp3, 
   name='Radio Som do Mato - Romanticas',
@@ -68,7 +75,7 @@ output.icecast(%mp3,
   port=8006, 
   password="hackme", 
   mount="romantico", 
-  mplove)
+  love)
 
 output.icecast(%mp3, 
   name='Radio Som do Mato - Gaucha',
@@ -79,4 +86,4 @@ output.icecast(%mp3,
   port=8008, 
   password="hackme", 
   mount="gaucha", 
-  mpgaucha)
+  gaucha)
