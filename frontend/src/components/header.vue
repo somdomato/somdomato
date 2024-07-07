@@ -8,13 +8,21 @@ const song = useSongStore()
       <div class="container d-flex flex-wrap">
         <ul class="nav me-auto">
           <li class="nav-item">
-            <a href="#" class="nav-link link-body-emphasis text-white px-2">
-              <span class="badge text-bg-primary" v-if="song.genre.toLowerCase() === 'geral'">geral</span>
+            <a href="#" class="nav-link text-white fw-light fst-italic px-2">
+              <!-- <span class="badge text-bg-primary" v-if="song.genre.toLowerCase() === 'geral'">geral</span>
               <span class="badge text-bg-secondary" v-else-if="song.genre.toLowerCase() === 'modao'">modão</span>
               <span class="badge text-bg-success" v-else-if="song.genre.toLowerCase() === 'universitario'">universitário</span>
               <span class="badge text-bg-danger" v-else-if="song.genre.toLowerCase() === 'romantico'">romântico</span>
-              <span class="badge text-bg-warning" v-else-if="song.genre.toLowerCase() === 'gaucha'">gaúcha</span>
-              {{ song.title }}
+              <span class="badge text-bg-warning" v-else-if="song.genre.toLowerCase() === 'gaucha'">gaúcha</span> -->
+
+
+              <!-- <button v-tooltip title="Hello world from a button!">
+              I am a button
+              </button> -->
+
+              <span v-popover data-bs-trigger="hover focus" :data-bs-content="`Música: ${song.title}`">
+                {{ song.title }}
+              </span>
             </a>
           </li>
         </ul>

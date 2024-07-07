@@ -1,86 +1,34 @@
 #!/usr/bin/env liquidsoap
 
-%include "log.liq"
+#%include "log.liq"
+#%include "requests.liq"
 
-def next(g)
-  def request_function() =
-    # result = list.hd(default="", process.read.lines("SONGS_PATH=/media/songs /usr/share/liquidsoap/.bun/bin/bun /var/www/somdomato/backend/src/engine.ts #{g}"))
-    result = list.hd(default="", process.read.lines("engine.sh #{g}"))
-    #[request.create(result)]
-    request.create(result)
-  end
-  request.dynamic(request_function)
+songs = playlist("/media/songs")
+jingles = playlist("/media/jingles")
+
+def next()
+  uri = list.hd(process.read.lines("./next-song"))
+  request.create(uri)
 end
+s = request.dynamic(next)
 
-geral = next('geral')
-modao = next('modao')
-uni = next('uni')
-love = next('love')
-gaucha = next('gaucha')
-
-# mpgeral = fallback([geral, emerg])
-# mpmodao = fallback([modao, emerg])
-# mpuni = fallback([uni, emerg])
-# mplove = fallback([love, emerg])
-# mpgaucha = fallback([gaucha, emerg])
-
-mpgeral = mksafe(geral)
-mpmodao = mksafe(modao)
-mpuni = mksafe(uni)
-mplove = mksafe(love)
-mpgaucha = mksafe(gaucha)
+main = fallback(track_sensitive=false, [s, songs])
+radio = fallback([delay(1800., jingles), music])
 
 output.icecast(%mp3, 
-  name='Radio Som do Mato',
-  genre='Geral',
-  description='O melhor do sertanejo!',
-  url='https://somdomato.com',
-  host='localhost', 
+  name="Radio Som do Mato",
+  genre="Geral",
+  description="O melhor do sertanejo!",
+  url="https://somdomato.com",
+  host="localhost", 
   port=8000, 
-  password='hackme', 
-  mount='geral', 
+  password="hackme", 
+  mount="geral", 
   mpgeral)
 
-output.icecast(%mp3, 
-  name='Radio Som do Mato - Modao',
-  genre='Modao',
-  description='O melhor do modao!',
-  url='https://somdomato.com',
-  host='localhost', 
-  port=8002, 
-  password='hackme', 
-  mount='modao', 
-  mpmodao)
 
-output.icecast(%mp3, 
-  name='Radio Som do Mato - Sertanejo Universitario',
-  genre='Universitario',
-  description='O melhor do sertanejo universitário!',
-  url='https://somdomato.com',
-  host='localhost', 
-  port=8004, 
-  password='hackme', 
-  mount='universitario', 
-  mpuni)
 
-output.icecast(%mp3, 
-  name='Radio Som do Mato - Sertanejo Romantico',
-  genre='Romantico',
-  description='O melhor do sertanejo romantico!',
-  url='https://somdomato.com',
-  host='localhost', 
-  port=8006, 
-  password='hackme', 
-  mount='romantico', 
-  mplove)
 
-output.icecast(%mp3, 
-  name='Radio Som do Mato - Gaucha',
-  genre='Gaucha',
-  description='O melhor da musica gaucha!',
-  url='https://somdomato.com',
-  host='localhost', 
-  port=8008, 
-  password='hackme', 
-  mount='gaucha', 
-  mpgaucha)
+
+
+

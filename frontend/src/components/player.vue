@@ -5,7 +5,7 @@ import type { Song } from '@/types'
 
 const song = useSongStore()
 const streamUrl = 'https://radio.somdomato.com'
-const src = ref(`${streamUrl}/geral`)
+const src = ref(`${streamUrl}/sertanejo.mp3`)
 
 async function reloadPlayer(player: HTMLAudioElement, source: HTMLSourceElement, genre: string) {
   const ts = +new Date()
