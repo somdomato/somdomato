@@ -5,6 +5,21 @@
   remote_user: root
 
   tasks:
+    - name: Ensure group "icecast2" exists
+      ansible.builtin.group:
+        name: icecast2
+        state: present
+
+    - name: Add nginx, liquidsoap and icecast2 users
+      ansible.builtin.user:
+        name: "{{ item }}"
+        group: "{{ item }}"
+      with_items:
+        - "nginx"
+        - "icecast2"
+        - "liquidsoap"
+
+    # Sudoers
     - name: Ensure the sudoers.d directory exists
       ansible.builtin.file:
         path: /etc/sudoers.d
@@ -22,19 +37,14 @@
           - /usr/bin/systemctl status somdomato-hono.service
         nopassword: true
 
-    - name: Alterar as unidades do systemd
+    # LiquidSoap
+    - name: Instalar o executavel do LiquidSoap
       ansible.builtin.copy:
-        src: files/etc/systemd/system/{{ item }}
-        dest: /etc/systemd/system/{{ item }}
+        src: files/usr/local/bin/engine.sh
+        dest: /usr/local/bin/engine.sh
         owner: root
         group: root
-        mode: '0644'
-      with_items:
-        - "icecast2.service"
-        - "liquidsoap.service"
-        - "somdomato-hono.service"
-        - "matuto.service"
-      notify: Reload systemd
+        mode: '0755'
 
     - name: Criar o diretorio de configuracoes do LiquidSoap
       ansible.builtin.file:
@@ -44,23 +54,17 @@
 
     - name: Alterar as configurações do LiquidSoap
       ansible.builtin.copy:
-        src: files/etc/liquidsoap/radio.liq
-        dest: /etc/liquidsoap/radio.liq
+        src: "files/etc/liquidsoap/{{ item }}"
+        dest: "/etc/liquidsoap/{{ item }}"
         owner: liquidsoap
         group: liquidsoap
         mode: '0644'
-
-    - name: Reiniciar as unidades do systemd
-      ansible.builtin.systemd:
-        name: "{{ item }}"
-        state: restarted
-        enabled: true
       with_items:
-        - "icecast2.service"
-        - "liquidsoap.service"
-        - "somdomato-hono.service"
-        - "matuto.service"
+        - "radio.liq"
+        - "log.liq"
+      notify: Reload liquidsoap
 
+    # Nginx
     - name: Copy errors files
       ansible.builtin.copy:
         src: "files/etc/nginx/conf.d/{{ item }}"
@@ -98,12 +102,45 @@
       notify: Reload nginx
       register: copy_result
 
+    # Systemd
+    - name: Alterar as unidades do systemd
+      ansible.builtin.copy:
+        src: files/etc/systemd/system/{{ item }}
+        dest: /etc/systemd/system/{{ item }}
+        owner: root
+        group: root
+        mode: '0644'
+      with_items:
+        - "icecast2.service"
+        - "liquidsoap.service"
+        - "somdomato-hono.service"
+        - "matuto.service"
+      notify: Reload systemd
+
+    - name: Reiniciar as unidades do systemd
+      ansible.builtin.systemd:
+        name: "{{ item }}"
+        state: restarted
+        enabled: true
+      with_items:
+        - "icecast2.service"
+        - "liquidsoap.service"
+        - "somdomato-hono.service"
+        - "matuto.service"
+
   handlers:
     - name: Reload systemd
       ansible.builtin.systemd:
         daemon_reload: true
 
     - name: Reload nginx
+      ansible.builtin.systemd:
+        state: restarted
+        enabled: true
+        daemon_reload: true
+        name: nginx
+
+    - name: Reload liquidsoap
       ansible.builtin.systemd:
         state: restarted
         enabled: true

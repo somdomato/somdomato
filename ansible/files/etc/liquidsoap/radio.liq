@@ -1,16 +1,13 @@
 #!/usr/bin/env liquidsoap
 
-# %include "log.liq"
-#Log to stdout
-settings.log.stdout.set(false)
-settings.log.level.set(2)
-settings.log.file.path.set("/var/log/liquidsoap.log")
+%include "log.liq"
 
 def next(g)
   def request_function() =
-    result = list.hd(default="", process.read.lines("SONGS_PATH=/media/songs /usr/share/liquidsoap/.bun/bin/bun /var/www/somdomato/backend/src/engine.ts #{g}"))
-    [request.create(result)]
-    # request.create(uri)
+    # result = list.hd(default="", process.read.lines("SONGS_PATH=/media/songs /usr/share/liquidsoap/.bun/bin/bun /var/www/somdomato/backend/src/engine.ts #{g}"))
+    result = list.hd(default="", process.read.lines("engine.sh #{g}"))
+    #[request.create(result)]
+    request.create(result)
   end
   request.dynamic(request_function)
 end
