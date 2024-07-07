@@ -3,5 +3,5 @@ import * as schema from '@/drizzle/schema'
 import { Database } from 'bun:sqlite'
 import { join } from 'node:path'
 
-const sqlite = new Database(join(__dirname, '..', 'sqlite.db'))
+const sqlite = new Database(join(import.meta.dir, '..', '..', 'sqlite.db'))
 export const db = drizzle(sqlite, { schema })
