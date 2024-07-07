@@ -3,7 +3,6 @@ import { eq, sql } from 'drizzle-orm'
 import * as schema from '@/drizzle/schema'
 import { Glob } from 'bun'
 import { basename, parse } from 'node:path'
-// import fg from 'fast-glob'
 
 const genre = Bun.argv[2] || 'geral'
 const songsPath = Bun.env.SONGS_PATH

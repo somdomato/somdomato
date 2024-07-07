@@ -3,8 +3,8 @@
 # %include "log.liq"
 
 #Log to stdout
-settings.log.stdout.set(true)
-settings.log.level.set(3)
+settings.log.stdout.set(false)
+settings.log.level.set(4)
 settings.log.file.path.set("/var/log/liquidsoap.log")
 
 emerg = single("/media/songs/vinhetas/060723 RADIO SOM DO MATO - VINHETAO HUMBERTO E RONALDO.mp3")
@@ -21,7 +21,7 @@ def next(g)
   request.dynamic(request_function)
 end
 
-geral = next('g')
+geral = next('geral')
 modao = next('modao')
 uni = next('uni')
 love = next('love')
