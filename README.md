@@ -1,4 +1,4 @@
-# Rádio Som do Mato
+# 🎧 Rádio Som do Mato
 
 ![Rádio Som do Mato](frontend/public/images/logo.svg "Rádio Som do Mato")
 
