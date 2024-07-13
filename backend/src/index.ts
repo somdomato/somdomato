@@ -40,7 +40,7 @@ const server = Bun.serve<{ socketId: number }>({
       // removeClient(ws.data.socketId)
     }
   },
-  port: Bun.env.API_PORT
+  port: 3333
 })
 
 console.log(`Server running at http://localhost:${server.port}`)
