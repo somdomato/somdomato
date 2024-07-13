@@ -6,9 +6,9 @@ After=network.target
 Type=simple
 User=nginx
 WorkingDirectory=/var/www/somdomato/backend
-ExecStart=/home/nginx/.bun/bin/bun run src/index.ts
+ExecStart=/home/nginx/.bun/bin/bun run /var/www/somdomato/backend/src/index.ts
 Restart=always
-RestartSec=10s
+RestartSec=15s
 
 [Install]
 WantedBy=multi-user.target
