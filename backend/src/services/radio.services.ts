@@ -1,6 +1,6 @@
 import { Glob } from 'bun'
 
-const SONGS = Bun.env.SONGS_PATH as string
+const SONGS = process.env.SONGS_PATH as string
 
 export async function getRandomFile(genre: string): Promise<string> {
   const files = []
