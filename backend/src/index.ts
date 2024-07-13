@@ -5,5 +5,5 @@ app.get('/', (c) => c.text('Hono!'))
 
 export default {
   fetch: app.fetch,
-  port: 8787,
+  port: 3333
 }
