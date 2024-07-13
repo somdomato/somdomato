@@ -2,4 +2,4 @@
 
 PATH=$PATH:$HOME/.bun/bin
 # cd /var/www/somdomato/backend
-bun run src/index.ts
+bun run start

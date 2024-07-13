@@ -2,6 +2,7 @@
   "name": "@somdomato/backend",
   "version": "1.0.0",
   "scripts": {
+    "start": "bun run src/index.ts",
     "dev": "bun run --hot src/index.ts",
     "generate": "bunx drizzle-kit generate",
     "seed": "bun run ./src/drizzle/seed.ts",
