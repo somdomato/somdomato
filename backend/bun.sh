@@ -1,5 +1,5 @@
 #!/bin/bash
 
 PATH=$PATH:$HOME/.bun/bin
-cd /var/www/somdomato/backend
+# cd /var/www/somdomato/backend
 bun run src/index.ts
