@@ -1,11 +1,14 @@
+#server {
+#    listen 80;
+#    listen [::]:80;
+#    server_name api.somdomato.com;
+#    return 301 https://$host$request_uri;
+#}
+
 server {
     listen 80;
     listen [::]:80;
-    server_name api.somdomato.com;
-    return 301 https://$host$request_uri;
-}
 
-server {
     listen 443 ssl;
     listen [::]:443 ssl;
 
@@ -14,10 +17,10 @@ server {
 
     server_name api.somdomato.com;
 
-    include conf.d/sdm-errors.conf;
+    #include conf.d/sdm-errors.conf;
 
     location / {  
-        proxy_intercept_errors on;
+        #proxy_intercept_errors on;
         proxy_pass http://127.0.0.1:3333;  
         proxy_http_version 1.1;  
         proxy_set_header Upgrade $http_upgrade;  
