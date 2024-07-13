@@ -3,11 +3,12 @@ Description=Hono api.somdomato.com
 After=network.target
 
 [Service]
+Type=simple
 User=nginx
 WorkingDirectory=/var/www/somdomato/backend
-ExecStart=/home/nginx/.bun/bin/bun /var/www/somdomato/backend/src/index.ts
+ExecStart=/home/nginx/.bun/bin/bun run src/index.ts
 Restart=always
-RestartSec=5s
+RestartSec=10s
 
 [Install]
 WantedBy=multi-user.target

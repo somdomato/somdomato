@@ -10,8 +10,8 @@
   },
   "dependencies": {
     "better-sqlite3": "^11.1.2",
-    "drizzle-orm": "^0.31.2",
-    "hono": "^4.4.12"
+    "drizzle-orm": "^0.31.4",
+    "hono": "^4.4.13"
   },
   "devDependencies": {
     "@types/bun": "latest",
