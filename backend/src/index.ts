@@ -1,16 +1,9 @@
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
-// import { user } from '@/routes/users.routes'
-// import { post } from '@/routes/posts.routes'
-// import { media } from '@/routes/medias.routes'
-// import { comment } from '@/routes/comments.routes'
-// import { addClient, removeClient, broadcastMessage } from '@/utils/websocket'
 
 const app = new Hono()
 
 app.use('*', cors())
-
-// app.route('/users', user)
 
 app.get('/', (c) => {
   return c.text('Som do Mato API')
@@ -43,7 +36,7 @@ const server = Bun.serve<{ socketId: number }>({
       // removeClient(ws.data.socketId)
     }
   },
-  port: 3000
+  port: Bun.env.API_PORT
 })
 
 console.log(`Server running at http://localhost:${server.port}`)
