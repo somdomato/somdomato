@@ -16,4 +16,4 @@ cd ../frontend
 bun install
 bun run build
 
-sudo /usr/bin/systemctl restart somdomato-hono.service
+#sudo /usr/bin/systemctl restart somdomato-hono.service
