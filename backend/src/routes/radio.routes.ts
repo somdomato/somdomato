@@ -1,11 +1,16 @@
 import { Hono } from 'hono'
-import { getRandomFile } from '@/services/radio.services'
+import { getRandomSong, getRandomSongGenre } from '@/services/radio.services'
 
 const app = new Hono()
 
-app.get(':genre?', async (c) => {
+app.get('', async (c) => {
+  const song = await getRandomSong()
+  return c.text(song)
+})
+
+app.get(':genre', async (c) => {
   const { genre } = c.req.param()
-  const song = await getRandomFile(genre ?? 'principal')
+  const song = await getRandomSongGenre(genre)
   return c.text(song)
 })
 

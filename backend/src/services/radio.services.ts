@@ -1,8 +1,37 @@
+import { db } from '@/drizzle'
+import { eq, sql } from 'drizzle-orm'
+import * as schema from '@/drizzle/schema'
 import { Glob } from 'bun'
 
-export async function getRandomFile(genre: string): Promise<string> {
+const SONGS = Bun.env.SONGS_PATH
+
+export async function getRandomSong() {
+  const [song] = await db.select()
+    .from(schema.songs)
+    .orderBy(sql`RANDOM()`)
+    .limit(1)
+
+  return song.path
+}
+
+export async function getRandomSongGenre(genre = 'Sertanejo') {
+  const [song] = await db.select()
+    .from(schema.songs)
+    .where(
+      eq(schema.songs.genre, genre)
+    )
+    .orderBy(sql`RANDOM()`)
+    .limit(1)
+  
+  if (!song) return await getRandomSong()
+
+  return song.path
+}
+
+export async function getRandomFile(genre: string | null = null): Promise<string> {
   const files = []
-  const songsPath = `/media/songs/${genre}`  
+  let songsPath = `${SONGS}` 
+  if (genre) songsPath = `${SONGS}/${genre}` 
   const glob = new Glob(`${songsPath}/**/*.mp3`)
   
   for await (const file of glob.scan(songsPath)) {

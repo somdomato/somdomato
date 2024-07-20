@@ -4,7 +4,7 @@ import { Glob } from 'bun'
 import { basename, parse } from 'node:path'
 
 const songsPath = Bun.env.SONGS_PATH
-const glob = new Glob("**/*.mp3")
+const glob = new Glob(`${songsPath}/**/*.mp3`)
 const files = []
 
 for await (const file of glob.scan(songsPath)) {
@@ -16,4 +16,4 @@ for await (const file of glob.scan(songsPath)) {
 
 await db.insert(schema.songs).values(files).onConflictDoNothing()
 
-console.log('Seeding complete.')
+console.log('🌱 Seeding complete.')
