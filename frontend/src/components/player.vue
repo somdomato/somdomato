@@ -26,8 +26,13 @@ async function multiSongName() {
 }
 
 async function songName() {
-  const { icestats: { source: { title } } } = await (await fetch(`${streamUrl}/json`)).json()
-  song.title = title === '' ? song.setTitle('Rádio Som do Mato') : title.normalize('NFD')  
+  const { icestats: { source: { artist, title } } } = await (await fetch(`${streamUrl}/json`)).json()
+  const normalizedTitle = artist.normalize('NFD') + ' - ' + title.normalize('NFD')  
+  if (!title || title === '') {
+    song.setTitle('Rádio Som do Mato')
+  } else {
+    song.setTitle(normalizedTitle)
+  }
 }
 
 onMounted(async () => {
