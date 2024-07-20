@@ -11,7 +11,7 @@ for await (const file of glob.scan(songsPath)) {
   const filename = parse(basename(file)).name
   const title = filename.split('-').pop()
   const artist = filename.split('-')[0]
-  files.push({ artist: artist.trim(), title: title?.trim() || '', path: `${songsPath}/${file}` })
+  files.push({ artist: artist.trim(), title: title?.trim() || '', path: file })
 }
 
 await db.insert(schema.songs).values(files).onConflictDoNothing()
