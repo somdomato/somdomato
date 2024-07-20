@@ -1,6 +1,15 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { useSongStore } from '@/stores/song'
+import Icon from '@/components/icon.vue'
+
 const song = useSongStore()
+
+function share() {
+  const msg = encodeURIComponent(`Ouça ${song.title} na Rádio Som do Mato!\n\nhttps://somdomato.com`)
+  const url = `https://wa.me/?text=${msg}`
+  return url
+}
 </script>
 <template>
   <div class="sticky-top" style="background-color: #1E2326;">
@@ -21,7 +30,10 @@ const song = useSongStore()
               </button> -->
 
               <span v-popover data-bs-trigger="hover focus" :data-bs-content="`Música: ${song.title}`">
-                {{ song.title }}
+                {{ song.title }}&nbsp;&nbsp;
+                <a :href="share()" target="_blank">
+                  <icon name="whatsapp" />
+                </a>
               </span>
             </a>
           </li>
@@ -46,3 +58,8 @@ const song = useSongStore()
     </header>
   </div>
 </template>
+<style>
+svg {
+  cursor: pointer;
+}
+</style>
