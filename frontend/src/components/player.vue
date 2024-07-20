@@ -5,19 +5,29 @@ import type { Song } from '@/types'
 
 const song = useSongStore()
 const streamUrl = 'https://radio.somdomato.com'
-const src = ref(`${streamUrl}/sertanejo.mp3`)
+const src = ref(`${streamUrl}/radio.ogg`)
 
-async function reloadPlayer(player: HTMLAudioElement, source: HTMLSourceElement, genre: string) {
-  const ts = +new Date()
+async function reloadPlayerGenre(player: HTMLAudioElement, source: HTMLSourceElement, genre: string) {
   player.pause()
-  source.src = `${streamUrl}/${genre}?ts=${ts}`
+  source.src = `${streamUrl}/${genre}?ts=${+new Date()}`
   player.load()
 }
 
-async function songName() {
-  const { icestats: { source } } = await (await fetch('https://radio.somdomato.com/json')).json()
+async function reloadPlayer(player: HTMLAudioElement, source: HTMLSourceElement) {
+  player.pause()
+  source.src = `${streamUrl}/radio.ogg?ts=${+new Date()}`
+  player.load()
+}
+
+async function multiSongName() {
+  const { icestats: { source } } = await (await fetch(`${streamUrl}/json`)).json()
   const result = source.find((item: Song) => item.genre.toLocaleLowerCase() === song.genre)
   song.title = !result ? song.setTitle('Rádio Som do Mato') : result.title.normalize("NFD")  
+}
+
+async function songName() {
+  const { icestats: { source: { title } } } = await (await fetch(`${streamUrl}/json`)).json()
+  song.title = title === '' ? song.setTitle('Rádio Som do Mato') : title.normalize('NFD')  
 }
 
 onMounted(async () => {
@@ -26,12 +36,12 @@ onMounted(async () => {
   const restart = document.querySelector('.plyr__restart') as HTMLElement
 
   restart.addEventListener('click', async () => {
-    reloadPlayer(player, source, song.genre)
+    reloadPlayer(player, source)
     player.play()
     await songName()
   })
   
-  reloadPlayer(player, source, song.genre)
+  reloadPlayer(player, source)
   await songName()
   
   setInterval(async () => {
@@ -42,7 +52,7 @@ onMounted(async () => {
 watch(
   () => song.genre,
   () => {
-    reloadPlayer(document.querySelector('audio') as HTMLAudioElement, document.querySelector('source') as HTMLSourceElement, song.genre);
+    reloadPlayer(document.querySelector('audio') as HTMLAudioElement, document.querySelector('source') as HTMLSourceElement);
     
     (document.querySelector('audio') as HTMLAudioElement).addEventListener("canplay", (event) => {
       (document.querySelector('audio') as HTMLAudioElement).play();
