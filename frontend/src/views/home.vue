@@ -1,5 +1,6 @@
+<script setup lang="ts">
+import SearchForm from '@/components/search/index.vue'
+</script>
 <template>
-  <div class="about">
-    <h1>Home</h1>
-  </div>
+  <search-form />
 </template>

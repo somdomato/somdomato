@@ -6,11 +6,12 @@ RESET=1
 cd backend
 
 if [ $RESET == 1 ]; then
-  rm -fr sqlite.db src/drizzle/migrations/
   sudo /usr/bin/systemctl stop somdomato-hono.service
+  rm -fr sqlite.db src/drizzle/migrations/
+  cp .env.prod .env
+else
+  [ ! -f .env ] && cp .env.prod .env
 fi
-
-[ ! -f .env ] && cp .env.prod .env
 
 bun install
 bun run generate
@@ -19,7 +20,11 @@ bun run seed
 
 cd ../frontend
 
-[ ! -f .env ] && cp .env.prod .env
+if [ $RESET == 1 ]; then
+  cp .env.prod .env
+else
+  [ ! -f .env ] && cp .env.prod .env
+fi
 
 bun install
 bun run build

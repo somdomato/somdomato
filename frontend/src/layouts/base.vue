@@ -17,23 +17,33 @@ import Estilo from '@/components/sidebar/genre.vue'
       </div>
       <div class="row">
         <div class="col-md-9">
-          <div class="card">
-            <div class="card-header">
-              <h5 class="card-title">Bate-Papo</h5>
+          <div class="row mb-3">
+            <div class="col-12">
+          
+              <div class="card">
+                <div class="card-header">
+                  <h5 class="card-title">Bate-Papo</h5>
+                </div>
+                <div class="card-body p-0">
+                  <div class="chat-container"> 
+                    <iframe class="chat-iframe" src="https://chat.somdomato.com" />
+                  </div>
+                </div>
+              </div> 
+
             </div>
-            <div class="card-body p-0">
-              <div class="chat-container"> 
-                <iframe class="chat-iframe" src="https://chat.somdomato.com" />
-              </div>
+          </div>
+          <div class="row">
+            <div class="col-md-12">
+              <slot />
             </div>
-          </div> 
+          </div>
         </div> 
         <div class="col-md-3">
           <Estilo />
           <Ultimas />
         </div>
       </div>
-      <slot />
     </div>
   </main>
   <footer class="footer mt-auto py-3 bg-body-tertiary">
