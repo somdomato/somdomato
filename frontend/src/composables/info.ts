@@ -12,3 +12,10 @@
 //     song.setTitle(title.normalize('NFD'))
 //   }
 // }
+
+// async function reloadPlayer(player: HTMLAudioElement, source: string) {
+//   // player.pause()
+//   // source.src = `${src.value}?ts=${+new Date()}`
+//   src.value = source
+//   player.load()
+// }

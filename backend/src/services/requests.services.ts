@@ -3,7 +3,11 @@ import { eq } from 'drizzle-orm'
 import * as schema from '@/drizzle/schema'
 
 export async function addRequest(id: number) {
-  return await db.insert(schema.requests).values({ songId: id })
+  const request = await db.insert(schema.requests).values({ songId: id }).returning()
+
+  if (!request) return { message: 'Erro ao pedir música', ok: false }
+
+  return { message: 'Sucesso ao pedir música: ' + JSON.stringify(request), ok: true }
 }
 
 export async function getRequest() {
@@ -23,7 +27,7 @@ export async function getRequest() {
       eq(schema.requests.id, request.id)
     )
 
-  return request.song?.path || 'Sem pedidos'
+  return request.song || 'Sem pedidos'
 }
 
 export async function listRequests() {

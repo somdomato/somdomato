@@ -2,7 +2,7 @@
 import Header from '@/components/header.vue'
 import Player from '@/components/player.vue'
 import Ultimas from '@/components/sidebar/ultimas.vue'
-import Estilo from '@/components/sidebar/genre.vue'
+// import Estilo from '@/components/sidebar/genre.vue'
 </script>
 <template>
   <Header>
@@ -10,8 +10,8 @@ import Estilo from '@/components/sidebar/genre.vue'
   </Header>
   <main class="flex-shrink-0">
     <div class="container">
-      <div class="row m-3">
-        <div class="col p-5">
+      <div class="row m-2">
+        <div class="col p-3">
           <img src="/images/logo.svg" class="img-fluid" alt="Rádio Som do Mato" />
         </div>  
       </div>
@@ -40,7 +40,7 @@ import Estilo from '@/components/sidebar/genre.vue'
           </div>
         </div> 
         <div class="col-md-3">
-          <Estilo />
+          <!-- <Estilo /> -->
           <Ultimas />
         </div>
       </div>

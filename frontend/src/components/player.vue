@@ -1,18 +1,10 @@
 <script setup lang="ts">
 import { ref, watch, onMounted } from 'vue'
 import { useSongStore } from '@/stores/song'
-// import type { Song } from '@/types'
 
 const song = useSongStore()
 const streamUrl = 'https://radio.somdomato.com'
 const src = ref(`${streamUrl}/radio.mp3?ts=${+new Date()}`)
-
-// async function reloadPlayer(player: HTMLAudioElement, source: string) {
-//   // player.pause()
-//   // source.src = `${src.value}?ts=${+new Date()}`
-//   src.value = source
-//   player.load()
-// }
 
 async function songName() {
   const { icestats: { source: { title } } } = await (await fetch(`${streamUrl}/json`)).json()
@@ -26,11 +18,22 @@ async function songName() {
 onMounted(async () => {
   const player = document.querySelector('audio') as HTMLAudioElement
   const restart = document.querySelector('.plyr__restart') as HTMLElement
+  const toggle = document.querySelector('[data-plyr=play]') as HTMLElement
   // const sourceMpeg = player.querySelector("source[type='audio/mp3']") as HTMLSourceElement
+  
+  toggle.addEventListener('click', async (event) => {
+    event.preventDefault()
+    src.value = `${streamUrl}/radio.mp3?ts=${+new Date()}`
+    player.load()
+
+    if (toggle.getAttribute('aria-pressed') === 'false') {
+      player.play()
+    }
+  })
 
   restart.addEventListener('click', async () => {
     player.load()
-    src.value = `${streamUrl}/geral.mp3?ts=${+new Date()}`
+    src.value = `${streamUrl}/radio.mp3?ts=${+new Date()}`
     player.play()
     await songName()
   })
