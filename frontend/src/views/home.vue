@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import SearchForm from '@/components/search/index.vue'
+import Requests from '@/components/requests/index.vue'
 </script>
 <template>
-  <search-form />
+  <requests />
 </template>

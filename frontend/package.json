@@ -14,6 +14,7 @@
     "@skjnldsv/vue-plyr": "^7.5.0",
     "@types/bootstrap": "^5.2.10",
     "bootstrap": "^5.3.3",
+    "notivue": "^2.4.4",
     "pinia": "^2.1.7",
     "vue": "^3.4.33",
     "vue-router": "^4.4.0"
