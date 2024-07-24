@@ -33,6 +33,13 @@ export const requests = sqliteTable('requests', {
   requesterId: integer('requester_id').references(() => users.id)
 })
 
+export const requestsRelations = relations(requests, ({ one }) => ({
+  song: one(songs, {
+    fields: [requests.songId],
+    references: [songs.id]
+  })
+}))
+
 export const history = sqliteTable('history', {
   id: integer('id').primaryKey(),
   createdAt: text('created_at').default('CURRENT_TIMESTAMP'),
