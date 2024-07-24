@@ -2,9 +2,14 @@
 import { ref } from 'vue'
 
 const search = ref('')
+const results = ref([])
 
-function submit() {
+async function submit() {
   if (search.value === '' || search.value.length < 3) return
+
+  const data = await (await fetch(`${import.meta.env.VITE_API_URL}/song/search`, { method: 'post', body: JSON.stringify({ term: search.value }) })).json()
+
+  console.log(data)
 
 }
 </script>
