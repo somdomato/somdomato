@@ -8,10 +8,10 @@ app.get('', async (c) => {
   return c.text(song)
 })
 
-// app.get(':genre', async (c) => {
-//   const { genre } = c.req.param()
-//   const song = await getRandomSongGenre(genre)
-//   return c.text(song)
-// })
+app.get(':genre', async (c) => {
+  const { genre } = c.req.param()
+  const song = await getRandomSongGenre(genre)
+  return c.text(song)
+})
 
 export { app as radio }
