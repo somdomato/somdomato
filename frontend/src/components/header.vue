@@ -1,15 +1,48 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useSongStore } from '@/stores/song'
 import Icon from '@/components/icon.vue'
 
+const term = ref('')
 const song = useSongStore()
+
+
+// import { ref } from 'vue'
+
+// // Here's our template ref typed as HTMLElement or null
+// const pedidos = ref<HTMLElement | null>(null)
+
+// // Using scrollIntoView() function to achieve the scrolling
+// function scrollTo(view: Ref<HTMLElement | null>) { 
+//   view.value?.scrollIntoView({ behavior: 'smooth' }) 
+// }
 
 function share() {
   const msg = encodeURIComponent(`Ouça ${song.title} na Rádio Som do Mato!\n\nhttps://somdomato.com`)
   const url = `https://wa.me/?text=${msg}`
   return url
 }
+
+function search() {
+  const pedidos = document.querySelector(".pedidos") as HTMLElement | null
+  if (term.value === '' || term.value.length < 3) return
+  song.setRequest(term.value)
+  if (pedidos) scrollTo(pedidos)
+}
+
+function scrollTo(el: HTMLElement | null) { 
+  el?.scrollIntoView({ behavior: 'smooth' }) 
+}
+
+onMounted(() => {
+  
+
+// element.scrollIntoView();
+// element.scrollIntoView(false);
+// element.scrollIntoView({ block: "end" });
+// pedidos.scrollIntoView({ block: "end", behavior: "smooth" });
+
+})
 </script>
 <template>
   <div class="sticky-top" style="background-color: #1E2326;">
@@ -43,9 +76,9 @@ function share() {
           <img width="46" height="46" class="me-2" src="/images/logotipo.svg" alt="Som do Mato">
           <span class="fs-4">Som do Mato</span>
         </a>
-        <form class="col-12 col-lg-auto mb-3 mb-lg-0" role="search">
-          <input type="search" class="form-control shadow-none" placeholder="Pesquisar música ou artista..." aria-label="Pesquisar" />
-        </form>
+        <div class="col-12 col-lg-auto mb-3 mb-lg-0">
+          <input v-model="term" type="search" class="form-control shadow-none" placeholder="Pesquisar música ou artista..." aria-label="Pesquisar" @keyup.enter.prevent="search" />
+        </div>
       </div>
     </header>
   </div>

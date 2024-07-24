@@ -1,3 +1,4 @@
 export const routes = [
-  { path: '/', name: 'home', component: () => import('@/views/home.vue')  }
+  { path: '/', name: 'Home', component: () => import('@/views/home.vue') },
+  { path: '/upload', name: 'Upload', component: () => import('@/views/upload.vue') }
 ]

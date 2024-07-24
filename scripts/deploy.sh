@@ -5,6 +5,9 @@ RESET=1
 
 cd backend
 
+[ ! -L uploads ] && ln -s /media/songs/uploads uploads
+[ ! -d /media/songs/uploads ] && mkdir -p /media/songs/uploads
+
 if [ $RESET == 1 ]; then
   sudo /usr/bin/systemctl stop somdomato-hono.service
   rm -fr sqlite.db src/drizzle/migrations/

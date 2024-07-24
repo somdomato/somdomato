@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { push } from 'notivue'
+import { useSongStore } from '@/stores/song'
 import type { Song } from '@/types'
 
+const songStore = useSongStore()
 const term = ref('')
 const aviso = ref('')
 const songs = ref<Song[]>([])
@@ -23,6 +25,13 @@ async function request(id: number, artist = '', title = '') {
   setTimeout(() => { aviso.value = '' }, 5000)
 }
 
+function onFocus() {
+  if (songStore.request !== '') {
+    term.value = songStore.request
+    songStore.request = ''
+  }
+}
+
 async function search() {
   if (term.value === '' || term.value.length < 3) return
   const data = await (await fetch(`${import.meta.env.VITE_API_URL}/song/search`, { method: 'post', body: JSON.stringify({ term: term.value }) })).json()
@@ -32,9 +41,9 @@ async function search() {
 </script>
 <template>
   <div class="p-5 mb-4 bg-body-tertiary rounded-3">
-    <div class="mb-3">
+    <div class="mb-3 pedidos">
       <label for="search" class="form-label">Música ou artista</label>
-      <input v-model="term" type="search" class="form-control shadow-none" id="search" @keyup.enter.prevent="search" />
+      <input v-model="term" type="search" class="form-control shadow-none" id="search" @keyup.enter.prevent="search" @focus="onFocus" />
     </div>
     <button class="btn btn-primary" @click.prevent="search">Pesquisar</button>
     <div class="mt-3">
