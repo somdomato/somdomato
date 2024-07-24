@@ -5,45 +5,41 @@ import { useSongStore } from '@/stores/song'
 
 const song = useSongStore()
 const streamUrl = 'https://radio.somdomato.com'
-const src = ref(`${streamUrl}/radio.mp3`)
-const oggSrc = ref(`${streamUrl}/radio.ogg`)
+const src = ref(`${streamUrl}/radio.mp3?ts=${+new Date()}`)
 
-// async function multiSongName() {
-//   const { icestats: { source } } = await (await fetch(`${streamUrl}/json`)).json()
-//   const result = source.find((item: Song) => item.genre.toLocaleLowerCase() === song.genre)
-//   song.title = !result ? song.setTitle('Rádio Som do Mato') : result.title.normalize("NFD")  
+// async function reloadPlayer(player: HTMLAudioElement, source: string) {
+//   // player.pause()
+//   // source.src = `${src.value}?ts=${+new Date()}`
+//   src.value = source
+//   player.load()
 // }
 
 async function songName() {
-  const { icestats: { source: { artist, title } } } = await (await fetch(`${streamUrl}/json`)).json()
-  const normalizedTitle = `${artist.normalize('NFD')} - ${title.normalize('NFD')}`  
-  if (!title || title === 'undefined' || title === '') {
+  const { icestats: { source: { title } } } = await (await fetch(`${streamUrl}/json`)).json()
+  if (!title || title === '' || title === 'undefined') {
     song.setTitle('Rádio Som do Mato')
   } else {
-    song.setTitle(normalizedTitle)
+    song.setTitle(title.normalize('NFD'))
   }
 }
 
 onMounted(async () => {
   const player = document.querySelector('audio') as HTMLAudioElement
   const restart = document.querySelector('.plyr__restart') as HTMLElement
-  const sourceOgg = player.querySelector("source[type='audio/ogg']") as HTMLSourceElement
-  const sourceMpeg = player.querySelector("source[type='audio/mp3']") as HTMLSourceElement
+  // const sourceMpeg = player.querySelector("source[type='audio/mp3']") as HTMLSourceElement
 
   restart.addEventListener('click', async () => {
-    sourceMpeg.src = src.value
-    sourceOgg.src = oggSrc.value
     player.load()
+    src.value = `${streamUrl}/geral.mp3?ts=${+new Date()}`
     player.play()
     await songName()
   })
-  
-  // reloadPlayer(player, source)
+    
   await songName()
   
   setInterval(async () => {
     await songName()
-  }, 10000)
+  }, 5000)
 })
 
 watch(
@@ -61,7 +57,6 @@ watch(
   <div class="d-md-flex align-items-center justify-content-between">
     <vue-plyr ref="plyr">
       <audio controls crossorigin="true" playsinline data-plyr-config='{ "tooltips": { "controls": "false", "seek": "false" } }'>
-        <source :src="oggSrc" type="audio/ogg" />
         <source :src type="audio/mp3" />
       </audio>
     </vue-plyr>

@@ -1,21 +1,16 @@
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
-import { radio } from '@/routes/radio.routes'
-// import { addClient, removeClient, broadcastMessage } from '@/utils/websocket'
+import { main, radio, song, request } from '@/routes'
+import { addClient, removeClient, broadcastMessage } from '@/utils/websocket'
 
 const app = new Hono()
 
 app.use('*', cors())
 
+app.route('/', main)
 app.route('/radio', radio)
-
-app.get('/', (c) => {
-  return c.text('Som do Mato API')
-})
-
-app.notFound((c) => {
-  return c.text('Rota não encontrada', 404)
-})
+app.route('/song', song)
+app.route('/request', request)
 
 const server = Bun.serve<{ socketId: number }>({
   fetch(req, server) {
@@ -28,16 +23,16 @@ const server = Bun.serve<{ socketId: number }>({
     open(ws) {
       const socketId = Math.random()
       ws.data = { socketId } // Inicializa ws.data
-      // console.log(`WebSocket connection opened: ${socketId}`)
-      // addClient(socketId, ws)
+      console.log(`WebSocket connection opened: ${socketId}`)
+      addClient(socketId, ws)
     },
     message(ws, message) {
-      // console.log(`Received ${message} from ${ws.data.socketId}`)
-      // broadcastMessage(String(message))
+      console.log(`Received ${message} from ${ws.data.socketId}`)
+      broadcastMessage(String(message))
     },
     close(ws) {
-      // console.log(`WebSocket connection closed: ${ws.data.socketId}`)
-      // removeClient(ws.data.socketId)
+      console.log(`WebSocket connection closed: ${ws.data.socketId}`)
+      removeClient(ws.data.socketId)
     }
   },
   port: 3333

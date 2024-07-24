@@ -30,7 +30,7 @@ export const requests = sqliteTable('requests', {
   id: integer('id').primaryKey(),
   createdAt: text('created_at').default('CURRENT_TIMESTAMP'),
   songId: integer('song_id').references(() => songs.id),
-  requesterId: integer('requester_id').references(() => songs.id)
+  requesterId: integer('requester_id').references(() => users.id)
 })
 
 export const history = sqliteTable('history', {

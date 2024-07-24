@@ -2,10 +2,14 @@ import { db } from '@/drizzle'
 import { eq, sql } from 'drizzle-orm'
 import * as schema from '@/drizzle/schema'
 import { Glob } from 'bun'
+import { getRequest } from './requests.services'
 
 const SONGS = Bun.env.SONGS_PATH
 
 export async function getRandomSong() {
+  const request = await getRequest()
+  if (request && request !== 'Sem pedidos') return request
+
   const [song] = await db.select()
     .from(schema.songs)
     .orderBy(sql`RANDOM()`)
