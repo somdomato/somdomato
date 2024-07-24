@@ -1,13 +1,18 @@
 import { db } from '@/drizzle'
 import { eq } from 'drizzle-orm'
 import * as schema from '@/drizzle/schema'
+import { getSong } from '@/services/songs.services'
+import { broadcastMessage } from '@/utils/websocket'
 
 export async function addRequest(id: number) {
+  const song = await getSong(id)
+  if (!song.ok) return { message: 'Música não encontrada', ok: false }
+
   const request = await db.insert(schema.requests).values({ songId: id }).returning()
-
   if (!request) return { message: 'Erro ao pedir música', ok: false }
-
-  return { message: 'Sucesso ao pedir música: ' + JSON.stringify(request), ok: true }
+  
+  broadcastMessage(JSON.stringify({ action: 'new-request', song }))
+  return { message: 'Sucesso ao pedir música', request, ok: true }
 }
 
 export async function getRequest() {
@@ -19,15 +24,13 @@ export async function getRequest() {
     }
   })
 
-  if (!request) return 'Sem pedidos'
+  if (!request) return { message: 'Nenhum pedido na fila', ok: false }
 
   await db.update(schema.requests)
     .set({ played: true })
-    .where(
-      eq(schema.requests.id, request.id)
-    )
+    .where(eq(schema.requests.id, request.id))
 
-  return request.song || 'Sem pedidos'
+  return { message: 'Sucesso ao recuperar o último pedido', request: request.song, ok: false }
 }
 
 export async function listRequests() {

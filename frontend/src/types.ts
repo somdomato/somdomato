@@ -6,6 +6,14 @@ export interface Song {
   genre: string
 }
 
+export interface History {
+	id: number
+	createdAt: string
+	songId: number
+	requester: string
+	song: Song
+}
+
 // export interface Song {
 //   audio_info: string
 //   bitrate: number

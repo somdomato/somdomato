@@ -2,7 +2,8 @@
 import Header from '@/components/header.vue'
 import Player from '@/components/player.vue'
 import Ultimas from '@/components/sidebar/ultimas.vue'
-// import Estilo from '@/components/sidebar/genre.vue'
+import Birds from '@/components/birds.vue'
+import Proximas from '@/components/sidebar/proximas.vue'
 </script>
 <template>
   <Header>
@@ -13,6 +14,7 @@ import Ultimas from '@/components/sidebar/ultimas.vue'
       <div class="row m-2">
         <div class="col p-3">
           <img src="/images/logo.svg" class="img-fluid" alt="Rádio Som do Mato" />
+          <birds />
         </div>  
       </div>
       <div class="row">
@@ -40,8 +42,8 @@ import Ultimas from '@/components/sidebar/ultimas.vue'
           </div>
         </div> 
         <div class="col-md-3">
-          <!-- <Estilo /> -->
-          <Ultimas />
+          <proximas />
+          <ultimas />
         </div>
       </div>
     </div>

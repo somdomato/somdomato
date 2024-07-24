@@ -17,25 +17,17 @@ function share() {
       <div class="container d-flex flex-wrap">
         <ul class="nav me-auto">
           <li class="nav-item">
-            <a href="#" class="nav-link text-white fw-light fst-italic px-2">
-              <!-- <span class="badge text-bg-primary" v-if="song.genre.toLowerCase() === 'geral'">geral</span>
-              <span class="badge text-bg-secondary" v-else-if="song.genre.toLowerCase() === 'modao'">modão</span>
-              <span class="badge text-bg-success" v-else-if="song.genre.toLowerCase() === 'universitario'">universitário</span>
-              <span class="badge text-bg-danger" v-else-if="song.genre.toLowerCase() === 'romantico'">romântico</span>
-              <span class="badge text-bg-warning" v-else-if="song.genre.toLowerCase() === 'gaucha'">gaúcha</span> -->
-
-
-              <!-- <button v-tooltip title="Hello world from a button!">
-              I am a button
-              </button> -->
-
-              <span v-popover data-bs-trigger="hover focus" :data-bs-content="`Música: ${song.title}`">
-                {{ song.title }}&nbsp;&nbsp;
-                <a :href="share()" target="_blank">
-                  <icon name="whatsapp" />
-                </a>
+            <div class="d-flex align-items-center">
+              <span class="d-inline-block text-truncate nav-link text-white fw-light fst-italic py-1" style="max-width: 70vw;">
+                {{ song.title }}
               </span>
-            </a>
+
+              <!-- <span v-popover data-bs-trigger="hover focus" :data-bs-content="song.title"> -->
+                <a class="-mt-3" :href="share()" target="_blank">
+                  <icon name="whatsapp" class="text-secondary"  />
+                </a>
+              <!-- </span> -->
+            </div>
           </li>
         </ul>
         <ul class="nav">

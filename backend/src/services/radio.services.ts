@@ -9,8 +9,8 @@ import { broadcastMessage } from '@/utils/websocket'
 const SONGS = Bun.env.SONGS_PATH
 
 export async function getRandomSong() {
-  const request = await getRequest()
-  if (request && request !== 'Sem pedidos') {
+  const { request } = await getRequest()
+  if (request) {
     addHistory(request.id, 'Anônimo')    
     return request.path
   }
