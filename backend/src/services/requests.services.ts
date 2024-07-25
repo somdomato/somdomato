@@ -6,7 +6,7 @@ import { broadcast } from '@/utils/websocket'
 
 export async function addRequest(id: number) {
   const song = await getSong(id)
-  if (!song.ok) return { message: 'Música não encontrada', ok: false }
+  if (!song) return { message: 'Música não encontrada', ok: false }
 
   const request = await db.insert(schema.requests).values({ songId: id }).returning()
   if (!request) return { message: 'Erro ao pedir música', ok: false }

@@ -16,9 +16,9 @@ export async function getSong(id: number) {
     .from(schema.songs)
     .where(eq(schema.songs.id, id)).limit(1)
 
-  if (!song) return { message: 'Música não encontrada', ok: false }
+  if (!song) return null
 
-  return { message: 'Música encontrada', song, ok: true }
+  return song
 }
 
 export async function findSong(term: string) {
