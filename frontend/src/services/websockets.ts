@@ -1,11 +1,10 @@
-import { useWebSocket } from '@vueuse/core'
-import { ref } from 'vue'
+// import { ref } from 'vue'
+import { useWebSocket, type UseWebSocketReturn } from '@vueuse/core'
 import type { WebSocketEvent } from '@/types'
 
-const event = ref<WebSocketEvent | null>(null)
+// const data = ref<WebSocketEvent | null>(null)
 
-// const { data } = useWebSocket('wss://ws.somdomato.com', {
-const { data } = useWebSocket(`${import.meta.env.VITE_WS_URL}`, {
+const webSocket: UseWebSocketReturn<WebSocketEvent> = useWebSocket('wss://ws.somdomato.com', {
   heartbeat: true,
   autoReconnect: {
     retries: 99999,
@@ -16,10 +15,6 @@ const { data } = useWebSocket(`${import.meta.env.VITE_WS_URL}`, {
   },
 })
 
-data.value?.then((res: WebSocketEvent | null) => {
-  event.value = res
-})
-
 export function useWebSocketService() {
-  return { event }
+  return { ...webSocket }
 }

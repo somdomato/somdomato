@@ -5,7 +5,7 @@ import { useSongStore } from '@/stores/song'
 import { push } from 'notivue'
 import { useWebSocketStore } from '@/stores/websockets'
 
-const ws = useWebSocketStore()
+const { data, send, status, close, open } = useWebSocketStore()
 
 // const { status, data, send, open, close } = useWebSocket('wss://ws.somdomato.com', {
 //   heartbeat: true,
@@ -32,7 +32,7 @@ async function songName() {
 }
 
 watch(
-  () => ws.event,
+  () => data,
   (newData) => {
     push.info(`PUSH: ${newData}`)
     // const data = JSON.parse(newData.data)

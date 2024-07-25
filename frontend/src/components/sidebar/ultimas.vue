@@ -3,7 +3,7 @@ import { ref, watch } from 'vue'
 import type { History } from '@/types'
 import { useWebSocketStore } from '@/stores/websockets'
 
-const ws = useWebSocketStore()
+const { data, send, status, close, open } = useWebSocketStore()
 
 // import { useWebSocket } from '@vueuse/core'
 
@@ -30,14 +30,14 @@ async function getLastSongs() {
 // }, { deep: true })
 
 watch(
-  () => ws.data,
+  () => data,
   (newEvent) => {
-    const data = JSON.parse(newEvent.value)
+    // const data = JSON.parse(newEvent)
     console.info(data)
     
-    if (data.action === 'new-song') {
-      getLastSongs()
-    }
+    // if (data.action === 'new-song') {
+    //   getLastSongs()
+    // }
   },
   { deep: true }
 )

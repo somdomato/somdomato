@@ -7,16 +7,6 @@ const url = 'https://radio.somdomato.com'
 function check() {
   fetch(url)
     .then((response) => {
-      console.log("response.type =", response.type);
-      console.log("response.url =", response.url);
-      console.log("response.status =", response.status);
-      console.log("response.ok =", response.ok);
-      console.log("response.statusText =", response.statusText);
-      console.log("response.headers =", response.headers);
-      if (!response.ok) {
-        throw new Error(`HTTP error, status = ${response.status}`);
-      }
-
       if (response.ok) {
         online.value = true
       } else {
@@ -24,13 +14,12 @@ function check() {
       }
     })
     .catch((error) => {
-      console.log(`Error: ${error.message}`)
       online.value = false
     })
 }
 
 onMounted(() => {
-  setInterval(check, 10000)
+  setInterval(check, 5000)
 })
 </script>
 <template>
@@ -46,8 +35,7 @@ onMounted(() => {
   position: absolute; 
   width: 30px;
   height: 30px;
-  // border: 1px solid red;
-  margin-right: 10px;
+  // margin-right: 10px;
 }
 
 .pulse {
