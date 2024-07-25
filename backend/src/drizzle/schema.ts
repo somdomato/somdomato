@@ -1,5 +1,5 @@
 import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core'
-import { relations } from 'drizzle-orm'
+import { sql, relations } from 'drizzle-orm'
 
 export const users = sqliteTable('users', {
   id: integer('id').primaryKey(),
@@ -16,7 +16,10 @@ export const songs = sqliteTable('songs', {
   artist: text('artist'),
   title: text('title'),
   path: text('path').notNull().unique(),
-  genre: text('genre').default('Sertanejo')
+  genre: text('genre').default('Sertanejo'),
+  likes: integer('likes').default(0),
+  enabled: integer('enabled', { mode: 'boolean' }).default(true),
+  rotation: text('rotation').default('normal') // ultraheavy, heavy, normal, light, ultralight
 })
 
 export const songsRelations = relations(songs, ({ one }) => ({
@@ -28,9 +31,10 @@ export const songsRelations = relations(songs, ({ one }) => ({
 
 export const requests = sqliteTable('requests', {
   id: integer('id').primaryKey(),
-  createdAt: text('created_at').default('CURRENT_TIMESTAMP'),
+  createdAt: text('created_at').notNull().default(sql`(current_timestamp)`),
   songId: integer('song_id').references(() => songs.id),
   requesterId: integer('requester_id').references(() => users.id),
+  requested: integer('requested').default(0),
   played: integer('played', { mode: 'boolean' }).default(false)
 })
 
@@ -43,7 +47,7 @@ export const requestsRelations = relations(requests, ({ one }) => ({
 
 export const history = sqliteTable('history', {
   id: integer('id').primaryKey(),
-  createdAt: text('created_at').default('CURRENT_TIMESTAMP'),
+  createdAt: text('created_at').notNull().default(sql`(current_timestamp)`),
   songId: integer('song_id').references(() => songs.id),
   requester: text('requester').default('AutoDJ')
 })

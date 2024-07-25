@@ -1,6 +1,7 @@
 import YTDlpWrap from 'yt-dlp-wrap-plus'
 import { mkdir } from 'node:fs/promises'
 import { join } from 'node:path'
+import { addSong } from '@/services/songs.services'
 
 const ROOT = join(import.meta.dir, '..', '..')
 const ytDlpWrap = new YTDlpWrap()
@@ -31,6 +32,8 @@ export async function downloadSong(url: string) {
 
   try {
     await ytDlpWrap.execPromise([url, '--cookies', `${ROOT}/cookies.txt`, '--audio-format', 'mp3', '-x', '--restrict-filenames', '-o', file])
+    if (await folderExists(file)) addSong(path)
+
     return { message: 'Download concluído', file, ok: true }  
   } catch (error) {
     return { message: 'Erro ao realizar download', ok: false }    

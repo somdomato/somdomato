@@ -1,6 +1,15 @@
 import { db } from '@/drizzle'
 import { eq, or, like } from 'drizzle-orm'
 import * as schema from '@/drizzle/schema'
+import { basename, parse } from 'node:path'
+
+export async function addSong(path: string, rotation = 'normal', enabled = true) {
+  const filename = parse(basename(path)).name
+  const title = filename.split('-').pop()
+  const artist = filename.split('-')[0]
+  const songData = { artist: artist.trim(), title: title?.trim() || '', path: path.trim(), enabled, rotation }
+  await db.insert(schema.songs).values(songData).onConflictDoNothing()
+}
 
 export async function getSong(id: number) {
   const [song] = await db.select()

@@ -32,7 +32,7 @@ async function search() {
     </div>
 
     <button class="btn btn-primary" @click.prevent="search">Pesquisar</button>
-    
+        
     <div class="mt-3">
       <div class="alert alert-warning alert-dismissible fade show" role="alert" v-if="aviso" v-html="aviso"></div>
     </div>
