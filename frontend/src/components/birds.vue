@@ -8,13 +8,13 @@
       <div class="bird bird--two"></div>
     </div>
     
-    <div class="bird-container bird-container--three">
+    <!-- <div class="bird-container bird-container--three">
       <div class="bird bird--three"></div>
     </div>
     
     <div class="bird-container bird-container--four">
       <div class="bird bird--four"></div>
-    </div>	
+    </div>	 -->
   </div>
 </template>
 <style lang="scss">

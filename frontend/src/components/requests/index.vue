@@ -20,8 +20,14 @@ async function request(id: number, artist = '', title = '') {
 async function search() {
   if (term.value === '' || term.value.length < 3) return
   const data = await (await fetch(`${import.meta.env.VITE_API_URL}/song/search`, { method: 'post', body: JSON.stringify({ term: term.value }) })).json()
-  if (data) songs.value = data.songs
-  term.value = ''
+  
+  if (data && data.songs && data.songs.length > 0) {
+    songs.value = data.songs
+    term.value = ''
+  } else {
+    aviso.value = 'Nenhuma música encontrada'
+    songs.value = []
+  }  
 }
 </script>
 <template>
@@ -31,7 +37,8 @@ async function search() {
       <input v-model="term" type="search" class="form-control shadow-none" id="search" @keyup.enter.prevent="search" />
     </div>
 
-    <button class="btn btn-primary" @click.prevent="search">Pesquisar</button>
+    <button class="btn btn-primary me-2" @click.prevent="search">Pesquisar</button>
+    <button class="btn btn-danger" @click.prevent="term = '' ; songs = [] ; aviso = ''">Limpar</button>
         
     <div class="mt-3">
       <div class="alert alert-warning alert-dismissible fade show" role="alert" v-if="aviso" v-html="aviso"></div>

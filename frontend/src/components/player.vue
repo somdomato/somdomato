@@ -1,10 +1,8 @@
 <script setup lang="ts">
 import { ref, watch, onMounted } from 'vue'
 import { useSongStore } from '@/stores/song'
-import { push } from 'notivue'
-import { useWebSocketStore } from '@/stores/socket'
+import { data } from '@/utils/socket'
 
-const socket = useWebSocketStore()
 const song = useSongStore()
 const streamUrl = 'https://radio.somdomato.com'
 const src = ref(`${streamUrl}/radio.mp3?ts=${+new Date()}`)
@@ -19,26 +17,12 @@ async function songName() {
 }
 
 watch(
-  () => socket.data,
-  (data) => {
-    push.info(`PUSH: ${data.song}`)
-
-    // action: "new-request",
-    // "song": { "message": "Música encontrada", "song":{"id":48,"artist":"Marilia Mendonca","title":"Como Faz Com Ela","path":"/media/songs/uni/marilia_mendonca/Marilia Mendonca - Como Faz Com Ela.mp3","genre":"Sertanejo","likes":0,"enabled":true,"rotation":"normal"},"ok":true}}
-
-    // const data = JSON.parse(event)
-    console.info(data)
-    // if (data.action === 'new-song') {
-      songName()
-      song.setTitle(`${data.song.artist} - ${data.song.title}`) 
-    // }
+  () => data,
+  () => {
+    songName()
   },
   { deep: true }
 )
-
-// watch([x, () => y.value], ([newX, newY]) => {
-//   console.log(`x is ${newX} and y is ${newY}`)
-// })
 
 onMounted(async () => {
   const player = document.querySelector('audio') as HTMLAudioElement
@@ -63,17 +47,6 @@ onMounted(async () => {
     await songName()
   })
 })
-
-// watch(
-//   () => song.genre,
-//   () => {
-//     // reloadPlayer(document.querySelector('audio') as HTMLAudioElement, document.querySelector('source') as HTMLSourceElement);
-    
-//     (document.querySelector('audio') as HTMLAudioElement).addEventListener("canplay", () => {
-//       (document.querySelector('audio') as HTMLAudioElement).play();
-//     });
-//   }
-// )
 </script>
 <template>
   <div class="d-md-flex align-items-center justify-content-between">

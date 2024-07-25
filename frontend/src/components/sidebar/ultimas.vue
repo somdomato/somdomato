@@ -1,22 +1,7 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import type { History } from '@/types'
-import { useWebSocketStore } from '@/stores/websockets'
-
-const { data, send, status, close, open } = useWebSocketStore()
-
-// import { useWebSocket } from '@vueuse/core'
-
-// const { data: event } = useWebSocket('wss://ws.somdomato.com', {
-//   heartbeat: true,
-//   autoReconnect: {
-//     retries: 99999,
-//     delay: 5000,
-//     onFailed() {
-//       alert('Failed to connect WebSocket after 3 retries')
-//     },
-//   },
-// })
+import { data } from '@/utils/socket'
 
 const history = ref<History[]>([])
 
@@ -25,19 +10,13 @@ async function getLastSongs() {
   history.value = data
 }
 
-// watch(data, (data) => {
-//   console.log('History', data.value)
-// }, { deep: true })
-
 watch(
   () => data,
-  (newEvent) => {
-    // const data = JSON.parse(newEvent)
-    console.info(data)
-    
-    // if (data.action === 'new-song') {
-    //   getLastSongs()
-    // }
+  (newdata) => {
+    console.info('From HISTORY', newdata.value)
+    if (newdata.value.action === 'new-song') {
+      getLastSongs()    
+    }
   },
   { deep: true }
 )
