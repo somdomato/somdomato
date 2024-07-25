@@ -1,8 +1,9 @@
 [Unit]
-Description=Timer de catálogo de músicas
+Description=Timer de limpeza de catálogo de músicas
 
 [Timer]
-OnCalendar=daily
+#OnCalendar=daily
+OnCalendar=hourly
 Persistent=true
 
 [Install]
