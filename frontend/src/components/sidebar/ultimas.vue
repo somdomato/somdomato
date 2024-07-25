@@ -3,7 +3,7 @@ import { ref, watch } from 'vue'
 import type { History } from '@/types'
 import { useWebSocket } from '@vueuse/core'
 
-const { data } = useWebSocket('wss://ws.somdomato.com', {
+const { data: event } = useWebSocket('wss://ws.somdomato.com', {
   heartbeat: true,
   autoReconnect: {
     retries: 99999,
@@ -21,9 +21,22 @@ async function getLastSongs() {
   history.value = data
 }
 
-watch(data, (data) => {
-  console.log('History', data.value)
-}, { deep: true })
+// watch(data, (data) => {
+//   console.log('History', data.value)
+// }, { deep: true })
+
+watch(
+  () => event,
+  (newEvent) => {
+    const data = JSON.parse(newEvent.value)
+    console.info(data)
+    
+    if (data.action === 'new-song') {
+      getLastSongs()
+    }
+  },
+  { deep: true }
+)
 </script>
 <template>
   <div class="card mb-3">
