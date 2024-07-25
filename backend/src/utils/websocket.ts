@@ -10,7 +10,7 @@ export const removeClient = (id: number) => {
   clients.delete(id)
 }
 
-export function broadcastMessage(message: string) {
+export function broadcast(message: string) {
   for (const client of clients.values()) {
     client.send(message)
   }

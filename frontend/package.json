@@ -13,6 +13,7 @@
     "@popperjs/core": "^2.11.8",
     "@skjnldsv/vue-plyr": "^7.5.0",
     "@types/bootstrap": "^5.2.10",
+    "@vueuse/core": "^10.11.0",
     "bootstrap": "^5.3.3",
     "notivue": "^2.4.4",
     "pinia": "^2.1.7",

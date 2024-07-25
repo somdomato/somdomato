@@ -1,7 +1,7 @@
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import { main, radio, song, request, history, upload } from '@/routes'
-import { addClient, removeClient, broadcastMessage } from '@/utils/websocket'
+import { addClient, removeClient, broadcast } from '@/utils/websocket'
 
 const app = new Hono()
 
@@ -23,15 +23,15 @@ const server = Bun.serve<{ socketId: number }>({
   },
   websocket: {
     open(ws) {
-      // const socketId = Math.random()
-      const socketId = Number(Bun.hash(String(Math.random()), 1234))
+      const socketId = Math.random()
+      // const socketId = Number(Bun.hash(String(Math.random()), 1234))
       ws.data = { socketId } // Inicializa ws.data
       console.log(`WebSocket connection opened: ${socketId}`)
       addClient(socketId, ws)
     },
     message(ws, message) {
       console.log(`Received ${message} from ${ws.data.socketId}`)
-      broadcastMessage(String(message))
+      broadcast(String(message))
     },
     close(ws) {
       console.log(`WebSocket connection closed: ${ws.data.socketId}`)
@@ -41,4 +41,4 @@ const server = Bun.serve<{ socketId: number }>({
   port: 3333
 })
 
-console.log(`Server running at http://localhost:${server.port}`)
+console.log(`Server running at http://${server.hostname}:${server.port}`)

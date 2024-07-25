@@ -4,6 +4,7 @@ import Player from '@/components/player.vue'
 import Ultimas from '@/components/sidebar/ultimas.vue'
 import Birds from '@/components/birds.vue'
 import Proximas from '@/components/sidebar/proximas.vue'
+import Chat from '@/components/chat.vue'
 </script>
 <template>
   <Header>
@@ -20,19 +21,8 @@ import Proximas from '@/components/sidebar/proximas.vue'
       <div class="row">
         <div class="col-md-9">
           <div class="row mb-3">
-            <div class="col-12">
-          
-              <div class="card">
-                <div class="card-header">
-                  <h5 class="card-title">Bate-Papo</h5>
-                </div>
-                <div class="card-body p-0">
-                  <div class="chat-container"> 
-                    <iframe class="chat-iframe" src="https://chat.somdomato.com" />
-                  </div>
-                </div>
-              </div> 
-
+            <div class="col-12">          
+              <chat />
             </div>
           </div>
           <div class="row">

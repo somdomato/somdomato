@@ -23,33 +23,18 @@ const notivue = createNotivue({
   }
 })
 
-const app = createApp(App)
+startApp()
 
-app.use(notivue)
-app
- .directive('tooltip', tooltip)
- .directive('popover', popover)
+async function startApp() {
+  const app = createApp(App)
+  const pinia = createPinia()
 
-app.use(VuePlyr, { 
-  plyr: { controls } 
-})
+  app.use(notivue)
+  app.directive('tooltip', tooltip)
+  app.directive('popover', popover)
+  app.use(VuePlyr, { plyr: { controls } })
+  app.use(pinia)
+  app.use(router)
 
-
-app.use(createPinia())
-app.use(router)
-
-app.mount('#app')
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  app.mount('#app')
+}

@@ -2,7 +2,7 @@ import { db } from '@/drizzle'
 import { eq } from 'drizzle-orm'
 import * as schema from '@/drizzle/schema'
 import { getSong } from '@/services/songs.services'
-import { broadcastMessage } from '@/utils/websocket'
+import { broadcast } from '@/utils/websocket'
 
 export async function addRequest(id: number) {
   const song = await getSong(id)
@@ -11,7 +11,7 @@ export async function addRequest(id: number) {
   const request = await db.insert(schema.requests).values({ songId: id }).returning()
   if (!request) return { message: 'Erro ao pedir música', ok: false }
   
-  broadcastMessage(JSON.stringify({ action: 'new-request', song }))
+  broadcast(JSON.stringify({ action: 'new-request', song }))
   return { message: 'Sucesso ao pedir música', request, ok: true }
 }
 
