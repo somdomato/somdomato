@@ -3,7 +3,10 @@ import { sql, relations } from 'drizzle-orm'
 
 export const users = sqliteTable('users', {
   id: integer('id').primaryKey(),
-  name: text('name')
+  name: text('name'),
+  username: text('username').unique().notNull(),
+  email: text('email').unique().notNull(),
+  password: text('password').notNull()
 })
 
 export const artists = sqliteTable('artists', {

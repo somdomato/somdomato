@@ -19,6 +19,7 @@ async function songName() {
 watch(
   () => data,
   () => {
+    console.info('Data received from socket to player', new Date() + ' - ' + data.value)
     songName()
   },
   { deep: true }

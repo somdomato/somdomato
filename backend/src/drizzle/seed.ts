@@ -15,6 +15,6 @@ for await (const file of glob.scan(songsPath)) {
 }
 
 await db.insert(schema.songs).values(files).onConflictDoNothing()
-await db.insert(schema.users).values({ name: "Rádio Som do Mato" }).onConflictDoNothing()
+await db.insert(schema.users).values({ username: 'Admin', name: 'Rádio Som do Mato', password: '123', email: 'somdomato@somdomato.com' }).onConflictDoNothing()
 
 console.log('🌱 Seeding complete.')

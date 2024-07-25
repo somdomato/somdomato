@@ -1,7 +1,7 @@
 import { useWebSocket } from '@vueuse/core'
 
-const url = 'wss://ws.somdomato.com'
-// const url = import.meta.env.VITE_WS_URL as string
+//const url = 'wss://ws.somdomato.com'
+const url = import.meta.env.VITE_WS_URL as string
 
 export const { status, data, send, open, close } = useWebSocket(url, {
   autoReconnect: {

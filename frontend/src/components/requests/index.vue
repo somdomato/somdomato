@@ -31,7 +31,7 @@ async function search() {
 }
 </script>
 <template>
-  <div class="bg-body-tertiary rounded-3 p-5 mb-4">
+  <div>
     <div class="mb-3 pedidos">
       <label for="search" class="form-label">Música ou artista</label>
       <input v-model="term" type="search" class="form-control shadow-none" id="search" @keyup.enter.prevent="search" />

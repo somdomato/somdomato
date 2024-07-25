@@ -20,14 +20,16 @@ import Chat from '@/components/chat.vue'
       </div>
       <div class="row">
         <div class="col-md-9">
-          <div class="row mb-3">
+          <div class="row mb-3" v-if="$route.name === 'Home'">
             <div class="col-12">          
               <chat />
             </div>
           </div>
           <div class="row">
             <div class="col-md-12">
-              <slot />
+              <div class="bg-body-tertiary rounded-3 p-5 mb-4">
+                <slot />
+              </div>
             </div>
           </div>
         </div> 
