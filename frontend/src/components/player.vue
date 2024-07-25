@@ -32,15 +32,15 @@ async function songName() {
 }
 
 watch(
-  () => ws.data,
+  () => ws.event,
   (newData) => {
-    push.info(`PUSH: ${newData.value}`)
-    const data = JSON.parse(newData.value)
-    console.info(data)
-    if (data.action === 'new-song') {
-      songName()
+    push.info(`PUSH: ${newData}`)
+    // const data = JSON.parse(newData.data)
+    // console.info(data)
+    // if (data.action === 'new-song') {
+      // songName()
       // song.setTitle(`${data.song.artist} - ${data.song.title}`) 
-    }
+    // }
   },
   { deep: true }
 )
