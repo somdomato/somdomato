@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { push } from 'notivue'
+import { useWebSocket } from '@/composables/websocket'
 
+const ws = useWebSocket()
 const url = ref('')
 const progress = ref('Progresso')
 
@@ -20,15 +22,12 @@ async function submit() {
 }
 
 onMounted(() => {
-  const socket = new WebSocket(import.meta.env.VITE_WS_URL)
-  socket.onmessage = async (event) => {
+  ws.socket.onmessage = async (event) => {
     const data = JSON.parse(event.data)
     console.log(JSON.stringify(data))
     if (data.action === 'upload') {
-
       // progress.value = JSON.stringify(data)
-      //push.success(`Um novo pedido foi feito.`)
-
+      push.success(`Upload`)
     }
   } 
 })

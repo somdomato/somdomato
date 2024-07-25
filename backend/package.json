@@ -15,7 +15,7 @@
     "better-sqlite3": "^11.1.2",
     "drizzle-orm": "^0.31.4",
     "hono": "^4.4.13",
-    "yt-dlp-wrap": "^2.3.12"
+    "yt-dlp-wrap-plus": "^2.3.19"
   },
   "devDependencies": {
     "@types/bun": "latest",

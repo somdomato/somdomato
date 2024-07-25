@@ -16,12 +16,14 @@
     "bootstrap": "^5.3.3",
     "notivue": "^2.4.4",
     "pinia": "^2.1.7",
+    "socket.io-client": "^4.7.5",
     "vue": "^3.4.33",
     "vue-router": "^4.4.0"
   },
   "devDependencies": {
     "@tsconfig/node20": "^20.1.4",
-    "@types/node": "^20.14.11",
+    "@types/bun": "^1.1.6",
+    "@types/node": "^20.14.12",
     "@vitejs/plugin-vue": "^5.0.5",
     "@vue/tsconfig": "^0.5.1",
     "npm-run-all2": "^6.2.2",

@@ -13,14 +13,14 @@ async function getNextSongs() {
 onMounted(() => {
   getNextSongs()
   
-  const socket = new WebSocket(import.meta.env.VITE_WS_URL)
-  socket.onmessage = async (event) => {
-    const data = JSON.parse(event.data)
-    if (data.action === 'new-request') {
-      push.success(`Um novo pedido foi feito.`)
-      getNextSongs()
-    }
-  } 
+  // const socket = new WebSocket(import.meta.env.VITE_WS_URL)
+  // socket.onmessage = async (event) => {
+  //   const data = JSON.parse(event.data)
+  //   if (data.action === 'new-request') {
+  //     push.success(`Um novo pedido foi feito.`)
+  //     getNextSongs()
+  //   }
+  // } 
 })
 </script>
 <template>

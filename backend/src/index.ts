@@ -23,9 +23,10 @@ const server = Bun.serve<{ socketId: number }>({
   },
   websocket: {
     open(ws) {
-      const socketId = Math.random()
+      // const socketId = Math.random()
+      const socketId = Number(Bun.hash(String(Math.random()), 1234))
       ws.data = { socketId } // Inicializa ws.data
-      // console.log(`WebSocket connection opened: ${socketId}`)
+      console.log(`WebSocket connection opened: ${socketId}`)
       addClient(socketId, ws)
     },
     message(ws, message) {

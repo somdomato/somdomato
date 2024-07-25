@@ -7,8 +7,7 @@ app.post('', async (c) => {
   try {
     const { url } = await c.req.json()
     const data = await downloadSong(url)
-    // return c.json(data)
-    return c.text('OK', 200)
+    return c.json(data, 200)
   } catch (error) {
     return c.text('Erro ao baixar música:' + error, 500)
   }
