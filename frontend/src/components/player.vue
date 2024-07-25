@@ -33,8 +33,10 @@ watch(
   (newData) => {
     push.info(`PUSH: ${newData.value}`)
     const data = JSON.parse(newData.value)
-    console.log(data.song.song.artist)
-    song.setTitle(`${data.song.song.artist} - ${data.song.song.title}`) 
+    console.info(data)
+    if (data.action === 'new-song') {
+      song.setTitle(`${data.song.artist} - ${data.song.title}`) 
+    }
   },
   { deep: true }
 )

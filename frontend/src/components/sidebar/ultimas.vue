@@ -1,7 +1,18 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { push } from 'notivue'
+import { ref, watch } from 'vue'
 import type { History } from '@/types'
+import { useWebSocket } from '@vueuse/core'
+
+const { data } = useWebSocket('wss://ws.somdomato.com', {
+  heartbeat: true,
+  autoReconnect: {
+    retries: 99999,
+    delay: 5000,
+    onFailed() {
+      alert('Failed to connect WebSocket after 3 retries')
+    },
+  },
+})
 
 const history = ref<History[]>([])
 
@@ -10,18 +21,9 @@ async function getLastSongs() {
   history.value = data
 }
 
-onMounted(() => {
-  getLastSongs()
-
-  // const socket = new WebSocket(import.meta.env.VITE_WS_URL)
-  // socket.onmessage = async (event) => {
-  //   const data = JSON.parse(event.data)
-  //   if (data.action === 'new-song') {
-  //     push.success('Uma nova música está tocando!!!')
-  //     getLastSongs()
-  //   }
-  // } 
-})
+watch(data, (data) => {
+  console.log('History', data.value)
+}, { deep: true })
 </script>
 <template>
   <div class="card mb-3">
