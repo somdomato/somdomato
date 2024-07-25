@@ -12,6 +12,8 @@ function share(title: string | undefined, provider = 'wa') {
   else msg = encodeURIComponent(`Ouça *${title}* na _Rádio Som do Mato_!\n\nhttps://somdomato.com`)
   
   if (provider === 'wa') return `https://wa.me/?text=${msg}`
+  if (provider === 'tw') return `https://twitter.com/intent/tweet?text=${msg}`
+
   else return `https://wa.me/?text=${msg}`
 }
 </script>
@@ -21,8 +23,11 @@ function share(title: string | undefined, provider = 'wa') {
     <span v-popover data-bs-trigger="hover focus" :data-bs-content="song" class="d-inline-block text-truncate nav-link text-white fw-light fst-italic ms-2 py-1" style="max-width: 70vw;">
       {{ song }}
     </span>
-    <a class="-mt-3" :href="share(song, 'wa')" target="_blank">
-      <icon name="whatsapp" class="text-secondary"  />
+    <a class="me-1" :href="share(song, 'wa')" target="_blank">
+      <icon size="20" name="whatsapp" class="text-white"  />
+    </a>
+    <a :href="share(song, 'tw')" target="_blank">
+      <icon size="20" name="x" class="text-white"  />
     </a>
   </div>
 </template>

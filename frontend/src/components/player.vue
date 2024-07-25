@@ -1,19 +1,22 @@
 <script setup lang="ts">
 import { ref, watch, onMounted } from 'vue'
 import { useSongStore } from '@/stores/song'
-import { useWebSocket } from '@vueuse/core'
+// import { useWebSocket } from '@vueuse/core'
 import { push } from 'notivue'
+import { useWebSocketStore } from '@/stores/websockets'
 
-const { status, data, send, open, close } = useWebSocket('wss://ws.somdomato.com', {
-  heartbeat: true,
-  autoReconnect: {
-    retries: 99999,
-    delay: 5000,
-    onFailed() {
-      alert('Failed to connect WebSocket after 3 retries')
-    },
-  },
-})
+const ws = useWebSocketStore()
+
+// const { status, data, send, open, close } = useWebSocket('wss://ws.somdomato.com', {
+//   heartbeat: true,
+//   autoReconnect: {
+//     retries: 99999,
+//     delay: 5000,
+//     onFailed() {
+//       alert('Failed to connect WebSocket after 3 retries')
+//     },
+//   },
+// })
 
 const song = useSongStore()
 const streamUrl = 'https://radio.somdomato.com'
@@ -29,13 +32,14 @@ async function songName() {
 }
 
 watch(
-  () => data,
+  () => ws.data,
   (newData) => {
     push.info(`PUSH: ${newData.value}`)
     const data = JSON.parse(newData.value)
     console.info(data)
     if (data.action === 'new-song') {
-      song.setTitle(`${data.song.artist} - ${data.song.title}`) 
+      songName()
+      // song.setTitle(`${data.song.artist} - ${data.song.title}`) 
     }
   },
   { deep: true }

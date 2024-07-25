@@ -8,6 +8,7 @@ html {
   -moz-background-size: cover;
   -o-background-size: cover;
   background-size: cover;
+  min-height: 100vh;
 }
 
 body {
@@ -23,6 +24,12 @@ body {
   // box-shadow: rgba(0, 0, 0, 0.15) 1.95px 1.95px 2.6px;
   box-shadow: rgba(0, 0, 0, 0.19) 0px 10px 20px, rgba(0, 0, 0, 0.23) 0px 6px 6px;
   border-bottom: 3px solid rgba(0, 0, 0, .9);
+}
+
+@media (max-width: 600px) {
+  .header {
+    background-size: cover;
+  }
 }
 
 .chat-container {
