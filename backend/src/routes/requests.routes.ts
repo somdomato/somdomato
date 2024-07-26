@@ -26,7 +26,7 @@ app.get('/get', async (c) => {
 
 app.get('', async (c) => {
   const data = await listRequests()
-  return c.text(JSON.stringify(data))
+  return c.json(data)
 })
 
 export { app as request }
