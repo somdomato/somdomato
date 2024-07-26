@@ -2,7 +2,7 @@ import { db } from '@/drizzle'
 import { eq, desc, or, like, count } from 'drizzle-orm'
 import * as schema from '@/drizzle/schema'
 import { basename, parse } from 'node:path'
-import { timeDiffMinutes } from '@/utils/time'
+import { getCurrentDate, timeDiffMinutes } from '@/utils/time'
 
 export async function addSong(path: string, rotation = 'normal', enabled = true) {
   const filename = parse(basename(path)).name
@@ -18,7 +18,6 @@ export async function getSong(id: number) {
     .where(eq(schema.songs.id, id)).limit(1)
 
   if (!song) return null
-
   return song
 }
 
@@ -58,4 +57,14 @@ export async function playedAt(songId: number) {
     .limit(1)
 
   return data.playedAt ? timeDiffMinutes(data.playedAt) : null
+}
+
+export async function setPlayed(id: number) {
+  const createdAt = getCurrentDate()
+  await db.update(schema.songs).set({ playedAt: createdAt }).where(eq(schema.songs.id, id))
+}
+
+export async function setPlayedAndRequested(id: number) {
+  const createdAt = getCurrentDate()
+  await db.update(schema.songs).set({ playedAt: createdAt, requestedAt: createdAt }).where(eq(schema.songs.id, id))
 }

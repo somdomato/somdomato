@@ -1,16 +1,14 @@
 import { db } from '@/drizzle'
 import { sql } from 'drizzle-orm'
 import * as schema from '@/drizzle/schema'
+import { setPlayed, setPlayedAndRequested } from '@/services/songs.services'
 import { getRequest } from '@/services/requests.services'
-import { addHistory } from '@/services/history.services'
 import { broadcast } from '@/utils/websocket'
-
-const SONGS = Bun.env.SONGS_PATH
 
 export async function getSong() {
   const { request } = await getRequest()
   if (request) {
-    addHistory(request.id, 'Anônimo')    
+    setPlayedAndRequested(request.id)
     return request.path
   }
 
@@ -19,9 +17,7 @@ export async function getSong() {
     .orderBy(sql`RANDOM()`)
     .limit(1)
 
-  addHistory(song.id, 'AutoDJ')
-
+  setPlayed(song.id)
   broadcast(JSON.stringify({ action: 'new-song', song }))
-
   return song.path
 }

@@ -1,6 +1,6 @@
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
-import { main, auth, radio, artist, song, request, history, upload } from '@/routes'
+import { main, auth, radio, artist, song, tags, request, history, upload, stats } from '@/routes'
 import { addClient, removeClient, broadcast } from '@/utils/websocket'
 
 const app = new Hono()
@@ -16,10 +16,12 @@ app.route('/', main)
 app.route('/auth', auth)
 app.route('/radio', radio)
 app.route('/song', song)
+app.route('/tags', tags)
 app.route('/artist', artist)
 app.route('/request', request)
 app.route('/history', history)
 app.route('/upload', upload)
+app.route('/stats', stats)
 
 const server = Bun.serve<{ socketId: number }>({
   fetch(req, server) {
