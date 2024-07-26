@@ -1,18 +1,16 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { push } from 'notivue'
-import { useSongStore } from '@/stores/song'
 import Pagination from '@/components/pagination.vue'
 import type { Song } from '@/types'
 
-const songStore = useSongStore()
 const term = ref('')
 const aviso = ref('')
 const songs = ref<Song[]>([])
 const current = ref(1)
 const pages = ref(0)
 const total = ref(0)
-const pageSize = 5
+const pageSize = 2
 
 async function handlePageChange(page: number) {
   current.value = page
@@ -64,21 +62,17 @@ async function search(page = 1) {
   }
 }
 </script>
-
 <template>
   <div>
     <div class="mb-3 pedidos">
       <label for="search" class="form-label">Música ou artista</label>
       <input v-model="term" type="search" class="form-control shadow-none" id="search" @keyup.enter.prevent="search()" />
     </div>
-
     <button class="btn btn-primary me-2" @click.prevent="search()">Pesquisar</button>
     <button class="btn btn-danger" @click.prevent="term = '' ; songs = [] ; aviso = ''">Limpar</button>
-        
-    <div class="mt-3">
-      <div class="alert alert-warning alert-dismissible fade show" role="alert" v-if="aviso" v-html="aviso"></div>
+    <div class="mt-3" v-if="aviso">
+      <div class="alert alert-warning alert-dismissible fade show" role="alert" v-html="aviso"></div>
     </div>
-    
     <div>
       <div class="table-responsive">
         <table class="table">
@@ -92,7 +86,7 @@ async function search(page = 1) {
           </thead>
           <tbody>
           <tr v-for="(song, index) in songs" :key="song.id">
-            <th scope="row">{{ index + 1 }}</th> <!-- Ajustado para exibir a posição correta -->
+            <th scope="row">{{ index }}</th>
             <td>{{ song.artist }}</td>
             <td>{{ song.title }}</td>
             <td>

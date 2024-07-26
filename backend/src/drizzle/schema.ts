@@ -9,6 +9,24 @@ export const users = sqliteTable('users', {
   password: text('password').notNull()
 })
 
+export const usersRelations = relations(users, ({ many }) => ({
+  tokens: many(tokens)
+}))
+
+export const tokens = sqliteTable('tokens', {
+  id: integer('id').primaryKey(),
+  userId: integer('user_id').references(() => artists.id),
+  refreshToken: text('refresh_token'),
+  createdAt: text('created_at').notNull().default(sql`(current_timestamp)`)
+})
+
+export const tokensRelations = relations(tokens, ({ one }) => ({
+  user: one(users, {
+    fields: [tokens.userId],
+    references: [users.id]
+  })
+}))
+
 export const artists = sqliteTable('artists', {
   id: integer('id').primaryKey(),
   name: text('name').unique().notNull(),
@@ -27,8 +45,11 @@ export const songs = sqliteTable('songs', {
   path: text('path').notNull().unique(),
   genre: text('genre').default('Sertanejo'),
   likes: integer('likes').default(0),
+  requestedAt: text('created_at'),
+  playedAt: text('created_at'),
   enabled: integer('enabled', { mode: 'boolean' }).default(true),
-  rotation: text('rotation').default('normal') // ultraheavy, heavy, normal, light, ultralight
+  // 100 => ultraheavy, 75 => heavy, 50 => normal, 25 => light, 0 => ultralight
+  weight: integer('weight').default(50) 
 })
 
 export const songsRelations = relations(songs, ({ one }) => ({

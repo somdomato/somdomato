@@ -1,12 +1,12 @@
 import { Hono } from 'hono'
-import { addRequest, getRequest, listRequests } from '@/services/requests.services'
+import { addRequest, addRequestWihtoutArtist, getRequest, listRequests } from '@/services/requests.services'
 
 const app = new Hono()
 
 app.post('', async (c) => {
   try {
-    const { songId } = await c.req.json()
-    const data = await addRequest(Number(songId))
+    const { artistId, songId } = await c.req.json()
+    const data = await addRequest(Number(songId), Number(artistId))
     return c.json(data, 201)
   } catch (error) {
     return c.json({ message: 'Erro ao pedir música' }, 500)
@@ -15,7 +15,7 @@ app.post('', async (c) => {
 
 app.get(':id{[0-9]+}', async (c) => {
   const { id } = c.req.param()
-  const data = await addRequest(Number(id))
+  const data = await addRequestWihtoutArtist(Number(id))
   return c.json(data)
 })
 

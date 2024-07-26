@@ -1,6 +1,6 @@
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
-import { main, auth, radio, song, request, history, upload } from '@/routes'
+import { main, auth, radio, artist, song, request, history, upload } from '@/routes'
 import { addClient, removeClient, broadcast } from '@/utils/websocket'
 
 const app = new Hono()
@@ -16,6 +16,7 @@ app.route('/', main)
 app.route('/auth', auth)
 app.route('/radio', radio)
 app.route('/song', song)
+app.route('/artist', artist)
 app.route('/request', request)
 app.route('/history', history)
 app.route('/upload', upload)

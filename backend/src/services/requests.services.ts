@@ -4,13 +4,31 @@ import * as schema from '@/drizzle/schema'
 import { getSong } from '@/services/songs.services'
 import { broadcast } from '@/utils/websocket'
 import { getLatestHistSong, getLatestHistArtist } from '@/services/history.services'
-import { timeDiffMinutes } from '@/utils/time'
+import { getCurrentDate, getCurrentDateUnix, timeDiffMinutes } from '@/utils/time'
 
 const MIN_TIME_ARTIST = 30
 const MIN_TIME_SONG = 50
 
-export async function addRequest(id: number) {
-  const song = await getSong(id)
+export async function addRequest(artistId: number, songId: number) {
+  const createdAt = getCurrentDate()
+  const song = await getSong(songId)
+  
+  if (!song) return { message: 'Música não encontrada', ok: false }
+
+  if (song.playedAt) {
+    const diff = timeDiffMinutes(song.playedAt)
+    if (diff < MIN_TIME_SONG) return { message: `Música pedida recentemente aguarde ${MIN_TIME_SONG - timeDiffMinutes(createdAt)} minutos para pedir novamente.`, ok: false }
+  }
+
+  await db.insert(schema.requests).values({ artistId, songId, createdAt })
+  await db.update(schema.songs).set({ playedAt: createdAt }).where(eq(schema.songs.id, songId))
+
+  broadcast(JSON.stringify({ action: 'new-request', song }))
+  return { message: 'Sucesso ao pedir música', request: song, ok: true }
+}
+
+export async function addRequestWihtoutArtist(songId: number) {
+  const song = await getSong(songId)
   if (!song || !song.artistId) return { message: 'Música não encontrada', ok: false }
 
   const lastRequestBySong = await getLatestRequestSong(song.id)
@@ -25,7 +43,7 @@ export async function addRequest(id: number) {
   const lastHistArtist = await getLatestHistArtist(song.artistId)
   if (lastHistArtist && lastHistArtist < MIN_TIME_ARTIST) return { message: 'Música pedida recentemente', ok: false }
 
-  const request = await db.insert(schema.requests).values({ artistId: song.artistId, songId: id, createdAt: new Date().toISOString().replace('T', ' ').substring(0, 19) }).returning()
+  const request = await db.insert(schema.requests).values({ artistId: song.artistId, songId: songId, createdAt: new Date().toISOString().replace('T', ' ').substring(0, 19) }).returning()
   if (!request) return { message: 'Erro ao pedir música', ok: false }
   
   broadcast(JSON.stringify({ action: 'new-request', song }))

@@ -1,6 +1,7 @@
 export interface Song {
   id: number
   artist: string
+  artistId?: number | null
   title: string
   path: string
   genre: string

@@ -14,46 +14,36 @@ function goToPage(page: number) {
   }
 }
 
-function generatePages(current: number, total: number): (number | string)[] {
+function generatePages(current: number, total: number) {
+  const pages = []
   const delta = 2
-  const range: number[] = []
-  const pages: (number | string)[] = []
-  let left = current - delta
-  let right = current + delta
+  const left = current - delta
+  const right = current + delta
+  const range = []
+  const rangeWithDots = []
+  let l
 
-  // Ensure the range does not go out of bounds
-  if (left < 2) {
-    left = 2
-    right = left + delta * 2
+  for (let i = 1; i <= total; i++) {
+    if (i === 1 || i === total || (i >= left && i <= right)) {
+      range.push(i)
+    }
   }
-  if (right > total - 1) {
-    right = total - 1
-    left = right - delta * 2
-    if (left < 2) left = 2
-  }
-
-  range.push(1)
-  for (let i = left; i <= right; i++) {
-    range.push(i)
-  }
-  range.push(total)
 
   for (let i of range) {
-    if (pages.length > 0) {
-      const lastPage = pages[pages.length - 1] as number
-      if (i - lastPage === 2) {
-        pages.push(lastPage + 1)
-      } else if (i - lastPage !== 1) {
-        pages.push('...')
+    if (l) {
+      if (i - l === 2) {
+        rangeWithDots.push(l + 1)
+      } else if (i - l !== 1) {
+        rangeWithDots.push('...')
       }
     }
-    pages.push(i)
+    rangeWithDots.push(i)
+    l = i
   }
 
-  return pages
+  return rangeWithDots
 }
 </script>
-
 <template>
   <nav aria-label="Page navigation">
     <ul class="pagination">
@@ -76,7 +66,6 @@ function generatePages(current: number, total: number): (number | string)[] {
     </ul>
   </nav>
 </template>
-
 <style scoped>
 .pagination {
   display: flex;
