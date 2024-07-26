@@ -32,15 +32,15 @@ const server = Bun.serve<{ socketId: number }>({
       const socketId = Math.random()
       // const socketId = Number(Bun.hash(String(Math.random()), 1234))
       ws.data = { socketId } // Inicializa ws.data
-      console.log(`WebSocket connection opened: ${socketId}`)
+      //console.log(`WebSocket connection opened: ${socketId}`)
       addClient(socketId, ws)
     },
     message(ws, message) {
-      console.log(`Received ${message} from ${ws.data.socketId}`)
+      //console.log(`Received ${message} from ${ws.data.socketId}`)
       broadcast(String(message))
     },
     close(ws) {
-      console.log(`WebSocket connection closed: ${ws.data.socketId}`)
+      //console.log(`WebSocket connection closed: ${ws.data.socketId}`)
       removeClient(ws.data.socketId)
     }
   },

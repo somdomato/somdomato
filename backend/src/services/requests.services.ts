@@ -13,6 +13,7 @@ export async function addRequest(id: number) {
   if (!song) return { message: 'Música não encontrada', ok: false }
 
   const lastBySong = await getHistBySong(song.id)
+  console.log(lastBySong)
   if (lastBySong && lastBySong.request && lastBySong.request.time && lastBySong.request.time < MIN_TIME_SONG) return { message: 'Música pedida recentemente', ok: false }
   if (lastBySong && lastBySong.history && lastBySong.history.time && lastBySong.history.time < MIN_TIME_SONG) return { message: 'Música pedida recentemente', ok: false }
   
