@@ -3,11 +3,19 @@ import { ref } from 'vue'
 import { push } from 'notivue'
 import { useSongStore } from '@/stores/song'
 import type { Song } from '@/types'
+import Pagination from '@/components/pagination.vue'
 
 const songStore = useSongStore()
 const term = ref('')
 const aviso = ref('')
 const songs = ref<Song[]>([])
+const currentPage = ref(1)
+const totalPages = ref(0)
+const pageSize = 5
+
+function handlePageChange(page: number) {
+  search(page)
+}
 
 async function request(id: number, artist = '', title = '') {
   if (!id) return
@@ -27,9 +35,16 @@ async function request(id: number, artist = '', title = '') {
   setTimeout(() => { aviso.value = '' }, 5000)
 }
 
-async function search() {
+async function search(page = 1) {
   if (term.value === '' || term.value.length < 3) return
-  const data = await (await fetch(`${import.meta.env.VITE_API_URL}/song/search`, { method: 'post', body: JSON.stringify({ term: term.value }) })).json()
+  
+  const data = await (await fetch(
+    `${import.meta.env.VITE_API_URL}/song/search?page=${page}&pageSize=${pageSize}`,  
+    { 
+      method: 'post', 
+      body: JSON.stringify({ term: term.value }) 
+    }
+  )).json()
   
   if (data && data.songs && data.songs.length > 0) {
     songs.value = data.songs
@@ -44,10 +59,10 @@ async function search() {
   <div>
     <div class="mb-3 pedidos">
       <label for="search" class="form-label">Música ou artista</label>
-      <input v-model="term" type="search" class="form-control shadow-none" id="search" @keyup.enter.prevent="search" />
+      <input v-model="term" type="search" class="form-control shadow-none" id="search" @keyup.enter.prevent="search()" />
     </div>
 
-    <button class="btn btn-primary me-2" @click.prevent="search">Pesquisar</button>
+    <button class="btn btn-primary me-2" @click.prevent="search()">Pesquisar</button>
     <button class="btn btn-danger" @click.prevent="term = '' ; songs = [] ; aviso = ''">Limpar</button>
         
     <div class="mt-3">
@@ -77,6 +92,7 @@ async function search() {
           </tbody>
         </table>
       </div>
+      <pagination :current="currentPage" :total="totalPages" @change="handlePageChange" v-if="totalPages > pageSize" />
     </div>
 
   </div>

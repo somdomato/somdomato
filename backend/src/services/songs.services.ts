@@ -21,17 +21,35 @@ export async function getSong(id: number) {
   return song
 }
 
-export async function findSong(term: string) {
-  const results = await db.select()
-    .from(schema.songs)
-    .where(
-      or(
-        like(schema.songs.artist, `%${term}%`),
-        like(schema.songs.title, `%${term}%`)
-      )
-    ).limit(20)
+// export async function findSong(term: string) {
+//   const results = await db.select()
+//     .from(schema.songs)
+//     .where(
+//       or(
+//         like(schema.songs.artist, `%${term}%`),
+//         like(schema.songs.title, `%${term}%`)
+//       )
+//     ).limit(20)
 
-  console.log(results[0])
+//   console.log(results[0])
+
+//   return { songs: results }
+// }
+
+export const findSong = async (term: string, page = 1, pageSize = 10) => {
+  const offset = (page - 1) * pageSize
+  
+  const results = await db.query.songs.findMany({
+    where: (s, { or, like }) => (
+      or(
+        like(s.artist, `%${term}%`),
+        like(s.title, `%${term}%`)
+      )
+    ),
+    orderBy: (song, { asc }) => [asc(song.artist), asc(song.title)],
+    limit: pageSize,
+    offset: offset
+  })
 
   return { songs: results }
 }

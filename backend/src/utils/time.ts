@@ -16,7 +16,8 @@ export function timeDiff(time1: number, time2: number) {
 
 export function timeDiffMinutes(dateStr: string) {
   const now = Math.floor((+new Date()) / 1000)
-  const past = Math.floor(new Date(dateStr).getTime() / 1000)
+  const dateStrUTC = new Date(`${dateStr}Z`) // Adicionando 'Z' no final para garantir que seja interpretada como UTC
+  const past = Math.floor(new Date(dateStrUTC).getTime() / 1000)
   const diff = now - past
   const minutes = Math.floor(diff / 60)
   return minutes

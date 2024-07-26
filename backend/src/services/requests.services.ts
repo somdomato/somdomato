@@ -1,27 +1,29 @@
 import { db } from '@/drizzle'
-import { eq } from 'drizzle-orm'
+import { eq, desc } from 'drizzle-orm'
 import * as schema from '@/drizzle/schema'
 import { getSong } from '@/services/songs.services'
 import { broadcast } from '@/utils/websocket'
-import { getHistBySong, getHistByArtist } from '@/services/history.services'
+import { getLatestHistSong, getLatestHistArtist } from '@/services/history.services'
+import { timeDiffMinutes } from '@/utils/time'
 
 const MIN_TIME_ARTIST = 30
 const MIN_TIME_SONG = 50
 
 export async function addRequest(id: number) {
   const song = await getSong(id)
-  if (!song) return { message: 'Música não encontrada', ok: false }
+  if (!song || !song.artistId) return { message: 'Música não encontrada', ok: false }
 
-  const lastBySong = await getHistBySong(song.id)
-  console.log(lastBySong)
-  if (lastBySong && lastBySong.request && lastBySong.request.time && lastBySong.request.time < MIN_TIME_SONG) return { message: 'Música pedida recentemente', ok: false }
-  if (lastBySong && lastBySong.history && lastBySong.history.time && lastBySong.history.time < MIN_TIME_SONG) return { message: 'Música pedida recentemente', ok: false }
-  
-  if (song.artistId) {
-    const lastByArtist = await getHistByArtist(song.artistId)
-    if (lastByArtist && lastByArtist.request && lastByArtist.request.time && lastByArtist.request.time < MIN_TIME_ARTIST) return { message: 'Artista pedido recentemente', ok: false }
-    if (lastByArtist && lastByArtist.history && lastByArtist.history.time && lastByArtist.history.time < MIN_TIME_ARTIST) return { message: 'Artista pedido recentemente', ok: false }
-  }
+  const lastRequestBySong = await getLatestRequestSong(song.id)
+  if (lastRequestBySong && lastRequestBySong < MIN_TIME_SONG) return { message: 'Música pedida recentemente', ok: false }
+
+  const lastRequestByArtist = await getLatestRequestArtist(song.artistId)
+  if (lastRequestByArtist && lastRequestByArtist < MIN_TIME_ARTIST) return { message: 'Música pedida recentemente', ok: false }
+
+  const lastHistSong = await getLatestHistSong(song.id)
+  if (lastHistSong && lastHistSong < MIN_TIME_SONG) return { message: 'Música pedida recentemente', ok: false }
+
+  const lastHistArtist = await getLatestHistArtist(song.artistId)
+  if (lastHistArtist && lastHistArtist < MIN_TIME_ARTIST) return { message: 'Música pedida recentemente', ok: false }
 
   const request = await db.insert(schema.requests).values({ artistId: song.artistId, songId: id, createdAt: new Date().toISOString().replace('T', ' ').substring(0, 19) }).returning()
   if (!request) return { message: 'Erro ao pedir música', ok: false }
@@ -57,4 +59,26 @@ export async function listRequests() {
   })
 
   return result
+}
+
+export async function getLatestRequestSong(songId: number) {
+  const [data] = await db.select()
+    .from(schema.requests)
+    .where(eq(schema.requests.songId, songId))
+    .orderBy(desc(schema.requests.createdAt))
+    .limit(1)
+
+  return data ? timeDiffMinutes(data.createdAt) : null
+}
+
+export async function getLatestRequestArtist(artistId: number) {
+  const [data] = await db.select()
+    .from(schema.requests)
+    .where(eq(schema.requests.artistId, artistId))
+    .orderBy(desc(schema.requests.createdAt))
+    .limit(1)
+
+    // console.log(timeDiffMinutes(data.createdAt))
+
+  return data ? timeDiffMinutes(data.createdAt) : null
 }
