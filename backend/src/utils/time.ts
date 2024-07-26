@@ -30,4 +30,8 @@ export function unixToDate(unix: number) {
   return new Date(unix * 1000)
 }
 
+export function newDate(unix: number) {
+  new Date().toISOString().replace('T', ' ').substring(0, 19)
+}
+
 

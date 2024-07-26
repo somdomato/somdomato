@@ -22,7 +22,7 @@ export async function addRequest(id: number) {
     if (lastByArtist && lastByArtist.history && lastByArtist.history.time && lastByArtist.history.time < MIN_TIME_ARTIST) return { message: 'Artista pedido recentemente', ok: false }
   }
 
-  const request = await db.insert(schema.requests).values({ songId: id }).returning()
+  const request = await db.insert(schema.requests).values({ artistId: song.artistId, songId: id, createdAt: new Date().toISOString().replace('T', ' ').substring(0, 19) }).returning()
   if (!request) return { message: 'Erro ao pedir música', ok: false }
   
   broadcast(JSON.stringify({ action: 'new-request', song }))

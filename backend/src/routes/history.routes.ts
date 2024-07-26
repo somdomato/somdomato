@@ -3,11 +3,11 @@ import { getHistory, addHistory, getHistBySong, getHistByArtist } from '@/servic
 
 const app = new Hono()
 
-app.get(':id', async (c) => {
-  const { id } = c.req.param()
-  const data = await addHistory(Number(id))
-  return c.json(data)
-})
+// app.get(':id', async (c) => {
+//   const { id } = c.req.param()
+//   const data = await addHistory(Number(id))
+//   return c.json(data)
+// })
 
 app.get('/song/:song', async (c) => {
   const { song } = c.req.param()

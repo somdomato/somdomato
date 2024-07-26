@@ -1,9 +1,11 @@
 import { db } from '@/drizzle'
 import { eq, desc } from 'drizzle-orm'
 import * as schema from '@/drizzle/schema'
+import { getSong } from './songs.services'
 
 export async function addHistory(id: number, requester = 'AutoDJ') {
-  const request = await db.insert(schema.history).values({ songId: id, requester }).returning()
+  const song = await getSong(id)
+  const request = await db.insert(schema.history).values({ artistId: song?.id, songId: id, requester, createdAt: new Date().toISOString().replace('T', ' ').substring(0, 19) }).returning()
   if (!request) return { message: 'Erro ao pedir música', ok: false }
   return { message: 'Sucesso ao pedir música: ' + JSON.stringify(request), ok: true }
 }
@@ -25,9 +27,8 @@ export async function getHistBySong(songId: number) {
     .from(schema.history)
     .where(eq(schema.history.songId, songId))
     .leftJoin(schema.requests, eq(schema.requests.songId, songId))
-    .orderBy(desc(schema.history.id))
+    .orderBy(desc(schema.history.id), desc(schema.requests.id))
     .limit(1)
-
 
   if (!data) return null
   
@@ -72,7 +73,7 @@ export async function getHistByArtist(artistId: number) {
     .from(schema.history)
     .where(eq(schema.history.artistId, artistId))
     .leftJoin(schema.requests, eq(schema.requests.artistId, artistId))
-    .orderBy(desc(schema.history.id))
+    .orderBy(desc(schema.history.id), desc(schema.requests.id))
     .limit(1)
 
   if (!data) return null

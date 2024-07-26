@@ -34,8 +34,9 @@
         group: root
         mode: '0644'
       with_items:
-        - "26-somdomato.com.conf"
         - "21-api.somdomato.com.conf"
+        - "22-ws.somdomato.com.conf"
+        - "26-somdomato.com.conf"
         - "40-somdomato.com.br.conf"
       notify: Reload nginx
       register: copy_result
