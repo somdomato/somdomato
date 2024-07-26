@@ -3,10 +3,24 @@ import { eq } from 'drizzle-orm'
 import * as schema from '@/drizzle/schema'
 import { getSong } from '@/services/songs.services'
 import { broadcast } from '@/utils/websocket'
+import { getHistBySong, getHistByArtist } from '@/services/history.services'
+
+const MIN_TIME_ARTIST = 30
+const MIN_TIME_SONG = 50
 
 export async function addRequest(id: number) {
   const song = await getSong(id)
   if (!song) return { message: 'Música não encontrada', ok: false }
+
+  const lastBySong = await getHistBySong(song.id)
+  if (lastBySong && lastBySong.request && lastBySong.request.time && lastBySong.request.time < MIN_TIME_SONG) return { message: 'Música pedida recentemente', ok: false }
+  if (lastBySong && lastBySong.history && lastBySong.history.time && lastBySong.history.time < MIN_TIME_SONG) return { message: 'Música pedida recentemente', ok: false }
+  
+  if (song.artistId) {
+    const lastByArtist = await getHistByArtist(song.artistId)
+    if (lastByArtist && lastByArtist.request && lastByArtist.request.time && lastByArtist.request.time < MIN_TIME_ARTIST) return { message: 'Artista pedido recentemente', ok: false }
+    if (lastByArtist && lastByArtist.history && lastByArtist.history.time && lastByArtist.history.time < MIN_TIME_ARTIST) return { message: 'Artista pedido recentemente', ok: false }
+  }
 
   const request = await db.insert(schema.requests).values({ songId: id }).returning()
   if (!request) return { message: 'Erro ao pedir música', ok: false }

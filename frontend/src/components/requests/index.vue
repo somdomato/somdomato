@@ -11,9 +11,19 @@ const songs = ref<Song[]>([])
 
 async function request(id: number, artist = '', title = '') {
   if (!id) return
-  await (await fetch(`${import.meta.env.VITE_API_URL}/request/add`, { method: 'post', body: JSON.stringify({ songId: id }) })).json()
-  push.success(`Você acabou de pedir a música ${title} - ${artist}\n\nObrigado!`)
-  songs.value = []
+  
+  const data = await (await fetch(`${import.meta.env.VITE_API_URL}/request`, { method: 'post', body: JSON.stringify({ songId: id }) })).json()
+  
+  if (data && data.ok) {
+    push.success(`Você acabou de pedir a música ${title} - ${artist}\n\nObrigado!`)
+    songs.value = []
+  } else if (data && !data.ok && data.message) {
+    push.error(data.message)
+  } else {
+    push.error('Erro ao pedir música')
+    songs.value = []
+  }
+    
   setTimeout(() => { aviso.value = '' }, 5000)
 }
 

@@ -13,3 +13,21 @@ export function timeDiff(time1: number, time2: number) {
 
   return `${days}d, ${hours}h, ${minutes}m, ${seconds.toFixed(3)}s`
 }
+
+export function timeDiffMinutes(dateStr: string) {
+  const now = Math.floor((+new Date()) / 1000)
+  const past = Math.floor(new Date(dateStr).getTime() / 1000)
+  const diff = now - past
+  const minutes = Math.floor(diff / 60)
+  return minutes
+}
+
+export function dateToUnix(dateStr: string) {
+  return Math.floor(new Date(dateStr).getTime() / 1000)
+}
+
+export function unixToDate(unix: number) {
+  return new Date(unix * 1000)
+}
+
+

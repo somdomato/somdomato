@@ -3,19 +3,23 @@ import { ref, watch } from 'vue'
 import type { History } from '@/types'
 import { data } from '@/utils/socket'
 
+const url = 'https://api.somdomato.com'
+//const url = import.meta.env.VITE_API_URL
 const history = ref<History[]>([])
 
 async function getLastSongs() {
-  const data = await (await fetch(`${import.meta.env.VITE_API_URL}/history`)).json()
+  const data = await (await fetch(`${url}/history`)).json()
   history.value = data
 }
 
 watch(
   () => data,
   (newdata) => {
-    console.info('From HISTORY', newdata.value)
-    if (newdata.value.action === 'new-song') {
-      getLastSongs()    
+    if (newdata.value) {
+      const json = JSON.parse(newdata.value)
+      if (json.action === 'new-song') {
+        getLastSongs()    
+      }
     }
   },
   { deep: true }

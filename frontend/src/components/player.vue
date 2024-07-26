@@ -19,7 +19,8 @@ async function songName() {
 watch(
   () => data,
   () => {
-    console.info('Data received from socket to player', new Date() + ' - ' + data.value)
+    const json = JSON.parse(data.value)
+    console.info('Data received from socket to player', new Date() + ' - ' + JSON.stringify(json.song))
     songName()
   },
   { deep: true }

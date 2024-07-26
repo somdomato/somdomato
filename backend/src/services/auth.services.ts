@@ -5,13 +5,14 @@ import * as schema from '@/drizzle/schema'
 export async function signin(identifier: string, password: string) {
   const user = await findUserByIdentifier(identifier)
   if (!user) return { message: 'O usuário não existe', ok: false }
-  if (user.password !== password) return { message: 'Senha incorreta', ok: false }
-  
-  return { message: 'Usuário adicionado com sucesso', ok: true }
+  const isMatch = await Bun.password.verify(password, user.password)
+  if (!isMatch) return { message: 'Senha incorreta', ok: false }  
+  return { message: 'Usuário logado com sucesso', ok: true }
 }
 
 export async function signup(username: string, email: string, password: string) {
-  const data = await db.insert(schema.users).values({ username, email, password }).onConflictDoNothing().returning()
+  const hash = await Bun.password.hash(password)
+  const data = await db.insert(schema.users).values({ username, email, password: hash }).onConflictDoNothing().returning()
   if (!data) return { message: 'O usuário já existe', ok: false }
   return { message: 'Usuário adicionado com sucesso', ok: true }
 }

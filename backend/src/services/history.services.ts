@@ -1,4 +1,5 @@
 import { db } from '@/drizzle'
+import { eq, desc } from 'drizzle-orm'
 import * as schema from '@/drizzle/schema'
 
 export async function addHistory(id: number, requester = 'AutoDJ') {
@@ -15,4 +16,79 @@ export async function getHistory() {
       song: true      
     }
   })
+}
+
+export async function getHistBySong(songId: number) {
+  const now = Math.floor(Date.now() / 1000)
+
+  const [data] = await db.select()
+    .from(schema.history)
+    .where(eq(schema.history.songId, songId))
+    .leftJoin(schema.requests, eq(schema.requests.songId, songId))
+    .orderBy(desc(schema.history.id))
+    .limit(1)
+
+
+  if (!data) return null
+  
+  const createdHistory = new Date(data.history.createdAt + 'Z') // Adicionando 'Z' no final para garantir que seja interpretada como UTC
+  const pastHistory = Math.floor(createdHistory.getTime() / 1000)
+  const diffHistory = now - pastHistory
+  const timeHistory = Math.floor(diffHistory / 60)  
+
+  if (data.requests) {
+    const createdRequest = new Date(data.requests.createdAt + 'Z') // Adicionando 'Z' no final para garantir que seja interpretada como UTC
+    const pastRequest = Math.floor(createdRequest.getTime() / 1000)
+    const diffRequest = now - pastRequest
+    const timeRequest = Math.floor(diffRequest / 60)  
+    return { history: { time: timeHistory }, request: { time: timeRequest } }
+  }
+  
+  return { history: { time: timeHistory }, request: { time: null } }
+}
+
+// export async function getHistByArtist(artistId: number) {
+//   const now = Math.floor(Date.now() / 1000)
+  
+//   const [history] = await db.query.history.findMany({
+//     orderBy: (history, { desc }) => [desc(history.id)],
+//     where: (history, { eq }) => (eq(history.artistId, artistId)),
+//     limit: 1,
+//     with: { song: true }
+//   })
+
+//   if (!history) return null
+//   const createdAtUTC = new Date(history.createdAt + 'Z') // Adicionando 'Z' no final para garantir que seja interpretada como UTC
+//   const past = Math.floor(createdAtUTC.getTime() / 1000)
+//   const diff = now - past
+//   const time = Math.floor(diff / 60)
+//   return { now, past, diff, time }
+// }
+
+export async function getHistByArtist(artistId: number) {
+  const now = Math.floor(Date.now() / 1000)
+  
+  const [data] = await db.select()
+    .from(schema.history)
+    .where(eq(schema.history.artistId, artistId))
+    .leftJoin(schema.requests, eq(schema.requests.artistId, artistId))
+    .orderBy(desc(schema.history.id))
+    .limit(1)
+
+  if (!data) return null
+  
+  const createdHistory = new Date(data.history.createdAt + 'Z') // Adicionando 'Z' no final para garantir que seja interpretada como UTC
+  const pastHistory = Math.floor(createdHistory.getTime() / 1000)
+  const diffHistory = now - pastHistory
+  const timeHistory = Math.floor(diffHistory / 60)  
+
+  if (data.requests) {
+    const createdRequest = new Date(data.requests.createdAt + 'Z') // Adicionando 'Z' no final para garantir que seja interpretada como UTC
+    const pastRequest = Math.floor(createdRequest.getTime() / 1000)
+    const diffRequest = now - pastRequest
+    const timeRequest = Math.floor(diffRequest / 60)  
+    return { history: { time: timeHistory }, request: { time: timeRequest } }
+  }
+  
+  return { history: { time: timeHistory }, request: { time: null } }
 }

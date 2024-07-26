@@ -1,9 +1,0 @@
-[Unit]
-Description=Serviço de limpeza de catálogo de músicas
-After=network.target
-
-[Service]
-Type=oneshot
-User=nginx
-WorkingDirectory=/var/www/somdomato/backend
-ExecStart=/home/nginx/.bun/bin/bun /var/www/somdomato/backend/src/drizzle/cleanup.ts

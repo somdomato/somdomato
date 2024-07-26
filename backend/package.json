@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "scripts": {
     "start": "bun run src/index.ts",
-    "dev": "bun run --hot src/index.ts",
+    "dev": "NODE_ENV=development bun run --hot src/index.ts",
     "reset": "rm -rf sqlite.db src/drizzle/migrations/",
     "init": "bunx drizzle-kit generate && bun run ./src/drizzle/migrate.ts && bun run ./src/drizzle/seed.ts",
     "generate": "bunx drizzle-kit generate",

@@ -4,6 +4,7 @@ import Player from '@/components/player.vue'
 import Ultimas from '@/components/sidebar/ultimas.vue'
 import Birds from '@/components/birds.vue'
 import Proximas from '@/components/sidebar/proximas.vue'
+import Artista from '@/components/sidebar/artista.vue'
 import Chat from '@/components/chat.vue'
 </script>
 <template>
@@ -34,6 +35,7 @@ import Chat from '@/components/chat.vue'
           </div>
         </div> 
         <div class="col-md-3">
+          <!-- <artista /> -->
           <proximas />
           <ultimas />
         </div>

@@ -1,0 +1,10 @@
+[Unit]
+Description=Timer de limpeza de catálogo de músicas
+
+[Timer]
+#OnCalendar=daily
+OnCalendar=hourly
+Persistent=true
+
+[Install]
+WantedBy=timers.target

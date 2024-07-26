@@ -4,9 +4,14 @@ import { main, auth, radio, song, request, history, upload } from '@/routes'
 import { addClient, removeClient, broadcast } from '@/utils/websocket'
 
 const app = new Hono()
+// const worker = new Worker('@/worker.ts')
+
+// worker.postMessage('hello')
+// worker.onmessage = event => {
+//   console.log(event.data)
+// }
 
 app.use('*', cors())
-
 app.route('/', main)
 app.route('/auth', auth)
 app.route('/radio', radio)

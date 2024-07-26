@@ -1,0 +1,50 @@
+---
+- name: Update systemd unit and reload daemon
+  hosts: all
+  become: true
+  remote_user: root
+
+  tasks:
+    - name: Add nginx, liquidsoap and icecast2 users
+      ansible.builtin.user:
+        name: "{{ item }}"
+        group: "{{ item }}"
+      with_items:
+        - "nginx"
+
+    # Nginx
+    - name: Copy errors files
+      ansible.builtin.copy:
+        src: "etc/nginx/conf.d/{{ item }}"
+        dest: "/etc/nginx/conf.d/{{ item }}"
+        owner: root
+        group: root
+        mode: '0644'
+      with_items:
+        - "errors.map"
+        - "sdm-errors.conf"
+        - "hono.conf"
+        - "cache.conf"
+
+    - name: Copy Nginx configuration files
+      ansible.builtin.copy:
+        src: "etc/nginx/sites.d/{{ item }}"
+        dest: "/etc/nginx/sites.d/{{ item }}"
+        owner: root
+        group: root
+        mode: '0644'
+      with_items:
+        - "26-somdomato.com.conf"
+        - "21-api.somdomato.com.conf"
+        - "40-somdomato.com.br.conf"
+      notify: Reload nginx
+      register: copy_result
+
+
+  handlers:
+    - name: Reload nginx
+      ansible.builtin.systemd:
+        state: restarted
+        enabled: true
+        daemon_reload: true
+        name: nginx

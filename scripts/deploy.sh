@@ -2,6 +2,7 @@
 
 PATH=$PATH:/home/nginx/.bun/bin
 RESET=1
+PLAYBOOK="nginx"
 
 cd backend
 

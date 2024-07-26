@@ -40,7 +40,7 @@
     # Nginx
     - name: Copy errors files
       ansible.builtin.copy:
-        src: "files/etc/nginx/conf.d/{{ item }}"
+        src: "etc/nginx/conf.d/{{ item }}"
         dest: "/etc/nginx/conf.d/{{ item }}"
         owner: root
         group: root
@@ -53,7 +53,7 @@
 
     - name: Copy Nginx configuration files
       ansible.builtin.copy:
-        src: "files/etc/nginx/sites.d/{{ item }}"
+        src: "etc/nginx/sites.d/{{ item }}"
         dest: "/etc/nginx/sites.d/{{ item }}"
         owner: root
         group: root
@@ -68,7 +68,7 @@
     # Systemd
     - name: Alterar as unidades do systemd
       ansible.builtin.copy:
-        src: files/etc/systemd/system/{{ item }}
+        src: etc/systemd/system/{{ item }}
         dest: /etc/systemd/system/{{ item }}
         owner: root
         group: root
