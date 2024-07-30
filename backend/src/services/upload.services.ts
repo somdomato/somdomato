@@ -31,7 +31,7 @@ export async function downloadSong(url: string) {
   const file = `${path}/${formatted}.mp3`
 
   try {
-    await ytDlpWrap.execPromise([url, '--cookies', `${ROOT}/cookies.txt`, '--audio-format', 'mp3', '-x', '--restrict-filenames', '-o', file])
+    await ytDlpWrap.execPromise([url, '--audio-format', 'mp3', '-x', '--restrict-filenames', '-o', file])
     if (await folderExists(file)) addSong(path)
 
     return { message: 'Download concluído', file, ok: true }  
@@ -41,6 +41,6 @@ export async function downloadSong(url: string) {
 }
 
 async function getVideoInfo(url: string) {
-  const metadata = JSON.parse((await ytDlpWrap.execPromise([url, '-q', '--no-warnings', '--dump-json', '--cookies', `${ROOT}/cookies.txt`])))
+  const metadata = JSON.parse((await ytDlpWrap.execPromise([url, '-q', '--no-warnings', '--dump-json'])))
   return metadata.title
 }
