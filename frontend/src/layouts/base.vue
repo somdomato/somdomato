@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import Header from '@/components/header.vue'
+import Footer from '@/components/footer.vue'
 import Player from '@/components/player.vue'
 import Ultimas from '@/components/sidebar/ultimas.vue'
 import Birds from '@/components/birds.vue'
@@ -9,12 +10,12 @@ import Chat from '@/components/chat.vue'
 </script>
 <template>
   <Header>
-    <Player />
+    <player />
   </Header>
   <main class="flex-shrink-0">
     <div class="container">
       <div class="row m-2">
-        <div class="col p-3">
+        <div class="col p-0 p-md-3">
           <img src="/images/logo.svg" class="img-fluid" alt="Rádio Som do Mato" />
           <birds />
         </div>  
@@ -42,9 +43,5 @@ import Chat from '@/components/chat.vue'
       </div>
     </div>
   </main>
-  <footer class="footer mt-auto py-3 bg-body-tertiary">
-    <div class="container">
-      <span class="text-body-secondary">Por amor à música sertaneja.</span>
-    </div>
-  </footer>
+  <Footer />
 </template>

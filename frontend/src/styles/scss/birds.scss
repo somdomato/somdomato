@@ -167,8 +167,8 @@
 // @media (min-width: 1400px) { ... }
 
 
-@media (min-width: 768px) {
-	.bird-main-container {
-		top: -.5rem;
+@media (max-width: 768px) {
+	.bird-container {
+		top: 30%;
 	}
 }
