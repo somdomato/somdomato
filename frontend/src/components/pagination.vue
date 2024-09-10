@@ -4,9 +4,7 @@ const props = defineProps<{
   total: number
 }>()
 
-const emit = defineEmits<{
-  (e: 'change', page: number): void
-}>()
+const emit = defineEmits<(e: 'change', page: number) => void>()
 
 function goToPage(page: number) {
   if (page >= 1 && page <= props.total) {
@@ -38,7 +36,7 @@ function generatePages(current: number, total: number): (number | string)[] {
   }
   range.push(total)
 
-  for (let i of range) {
+  for (const i of range) {
     if (pages.length > 0) {
       const lastPage = pages[pages.length - 1] as number
       if (i - lastPage === 2) {

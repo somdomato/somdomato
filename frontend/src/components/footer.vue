@@ -5,7 +5,7 @@
         <div class="col-12 col-md">
           <img class="mb-2" src="/images/logotipo.svg" alt="" width="24" height="24">
           <small class="d-block text-body-secondary">
-            &copy; 2017–{{ new Date().getFullYear() }} Rádio Som do Mato<br />
+            &copy; 2012–{{ new Date().getFullYear() }} Rádio Som do Mato<br />
           </small>
           <small class="d-block mb-3 text-body-secondary fst-italic">Por amor à música sertaneja.</small>
         </div>
