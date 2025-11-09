@@ -1,9 +1,11 @@
+"use server";
+
 import { db } from "@/db";
 import { songs, requests } from "@/db/schema";
 import { or, like, sql } from "drizzle-orm";
-import type { Song } from "@/types/song";
+import type { SongData } from "@/types/song";
 
-export async function SearchSongs(song: string): Promise<Song[]> {
+export async function SearchSongs(song: string): Promise<SongData[]> {
   if (!song) return [];
 
   const searchTerm = `%${song}%`;

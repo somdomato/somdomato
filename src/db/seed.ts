@@ -2,6 +2,7 @@ import { getAllFilesRecursive, extractAndSaveCover } from "@/lib";
 import { db } from "@/db";
 import { songs } from "@/db/schema";
 import NodeID3 from "node-id3";
+import { parse } from "node:path";
 
 interface Tag {
   title: string;
@@ -20,6 +21,12 @@ async function main() {
     NodeID3.read(song as string, async (err: Error | null, tags: Tag) => {
       if (err) return null;
 
+      const extension = parse(song).ext;
+      if (!['.mp3', '.flac', '.wav', '.m4a', '.ogg'].includes(extension.toLowerCase())) {
+        return;
+      }
+
+      const filename = parse(song).name;
       let title: string;
       let artist: string;
       let path: string;
@@ -35,8 +42,8 @@ async function main() {
       }
 
       if (tags) {
-        artist = tags.artist || song.slice(0, song.indexOf(sep));
-        title = tags.title || song.slice(0, song.lastIndexOf(sep));
+        artist = tags.artist ? parse(tags.artist).name : filename.slice(0, filename.indexOf(sep));
+        title = tags.title ? parse(tags.title).name : filename.slice(0, filename.lastIndexOf(sep));
         path = song;
         await db
           .insert(songs)
@@ -48,8 +55,8 @@ async function main() {
           })
           .onConflictDoNothing();
       } else {
-        artist = song.slice(0, song.indexOf(sep));
-        title = song.slice(0, song.lastIndexOf(sep));
+        artist = filename.slice(0, filename.indexOf(sep));
+        title = filename.slice(0, filename.lastIndexOf(sep));
         path = song;
         await db
           .insert(songs)

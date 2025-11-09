@@ -1,3 +1,7 @@
+import { songs } from "@/db/schema";
+
+export type SongData = typeof songs.$inferSelect;
+
 export interface Song {
   id: number;
   title: string;
