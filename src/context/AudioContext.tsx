@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useRef, useState } from "react";
+import { createContext, useContext, useEffect, useRef, useState } from "react";
 
 interface AudioContextType {
   playing: boolean;
@@ -36,6 +36,12 @@ export const AudioProvider = ({ children }: { children: React.ReactNode }) => {
       audioRef.current.src = `${source}?t=${Date.now()/1000}`;
     }
   };
+
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.volume = volume
+    }    
+  }, [volume])
 
   return (
     <AudioContext.Provider value={{ play, pause, playing, volume, setVolume, muted, setMuted }}>

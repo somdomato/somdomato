@@ -11,7 +11,10 @@ export default function Home() {
         height={200}
         priority
       />
-      <iframe src="https://chat.somdomato.com" />
+      <iframe 
+        src="https://chat.somdomato.com" 
+        className="w-full aspect-video rounded-lg border-2 border-black/60 ring-2 ring-black/60" 
+      />
     </>
   );
 }
