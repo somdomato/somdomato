@@ -6,6 +6,10 @@ interface AudioContextType {
   playing: boolean;
   play: () => void;
   pause: () => void;
+  volume: number;
+  setVolume: (volume: number) => void;
+  muted: boolean;
+  setMuted: (muted: boolean) => void;
 }
 
 // interface AudioContextType {
@@ -31,8 +35,8 @@ export const AudioProvider = ({ children }: { children: React.ReactNode }) => {
 
   // const [currentTrack, setCurrentTrack] = useState("");
   // const [currentSource, setCurrentSource] = useState("https://radio.somdomato.com/radio.mp3");
-  // const [volume, setVolumeState] = useState(1);
-  // const [muted, setMuted] = useState(false);
+  const [volume, setVolume] = useState(1);
+  const [muted, setMuted] = useState(false);
 
   // const reload = () => {
   //   if (audioRef.current) {
@@ -60,7 +64,7 @@ export const AudioProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   return (
-    <AudioContext.Provider value={{ play, pause, playing }}>
+    <AudioContext.Provider value={{ play, pause, playing, volume, setVolume, muted, setMuted }}>
       {children}
       <audio ref={audioRef} src={source} />
     </AudioContext.Provider>
