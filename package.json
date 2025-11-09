@@ -1,0 +1,37 @@
+{
+  "name": "somdomato",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "bun ./src/server.ts",
+    "start": "NODE_ENV=production /home/nginx/.bun/bin/bun ./src/server.ts",
+    "build": "next build",
+    "lint": "biome check --max-diagnostics 100",
+    "format": "biome format --write",
+    "push": "npx drizzle-kit push",
+    "seed": "bun ./src/db/seed.ts"
+  },
+  "dependencies": {
+    "@libsql/client": "^0.15.15",
+    "dotenv": "^17.2.3",
+    "drizzle-orm": "^0.44.7",
+    "lucide-react": "^0.553.0",
+    "next": "16.0.1",
+    "node-id3": "^0.2.9",
+    "react": "19.2.0",
+    "react-dom": "19.2.0",
+    "socket.io": "^4.8.1",
+    "socket.io-client": "^4.8.1"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.2.0",
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "drizzle-kit": "^0.31.6",
+    "tailwindcss": "^4",
+    "tsx": "^4.20.6",
+    "typescript": "^5"
+  }
+}
