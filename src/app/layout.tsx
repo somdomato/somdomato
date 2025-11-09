@@ -4,6 +4,7 @@ import { Nunito } from "next/font/google";
 import { Toaster } from 'sonner'
 import type { Metadata } from "next";
 import "./globals.css";
+import { Guitar } from "lucide-react";
 
 const nunito = Nunito({
   variable: "--font-nunito",
@@ -58,9 +59,10 @@ export default function RootLayout({
                 {children}
               </main>
             </div>
-            <footer className="sticky z-50 bg-background bottom-0">
-              <div className="container mx-auto text-center">
-                Copyright © 2012-{new Date().getFullYear()} Rádio Som do Mato
+            <footer className="sticky z-50 bg-background bottom-0 border-t-2 border-t-black/50 shadow-sm">
+              <div className="container mx-auto text-center py-4 text-sm text-gray-400 italic">
+                Copyright © 2012-{new Date().getFullYear()} Rádio Som do Mato<br />
+                Por amor a música sertaneja <Guitar className="inline" size={20} />
               </div>
             </footer>
           </div>

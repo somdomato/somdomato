@@ -1,26 +1,16 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
+import { useState } from "react";
+import { ListMusic } from "lucide-react";
 import AudioPlayer from "./AudioPlayer";
 
 export default function Header() {
-  return (
-    // <header className="sticky z-50 bg-background top-0">
-    //   <div className="container mx-auto">
-    //     <Link href="/" className="flex items-center gap-2 text-2xl">
-    //       <Image
-    //         src="/images/logotipo.svg"
-    //         alt="Rádio Som do Mato"
-    //         width={40}
-    //         height={40}
-    //         priority
-    //       />
-    //       <span className="hidden md:block">Rádio Som do Mato</span>
-    //       <span className="block md:hidden">SDM</span>
-    //     </Link>
-    //   </div>
-    // </header>
+  const [ open, setOpen ] = useState(false);
 
-    <header className="sticky z-50 bg-background top-0">
+  return (
+    <header className="sticky z-50 bg-background top-0 border-b-2 border-b-black/50 shadow-sm">
       <div className="container mx-auto flex h-16 items-center gap-8">
         {/* <Link className="block text-teal-600" href="/"> */}
         <Link href="/" className="flex items-center gap-2 text-2xl">
@@ -31,12 +21,12 @@ export default function Header() {
             height={40}
             priority
           />
-          <span className="hidden md:block">Rádio Som do Mato</span>
+          <span className="hidden md:block">Som do Mato</span>
           <span className="block md:hidden">SDM</span>
         </Link>
         <div className="flex flex-1 items-center justify-end md:justify-between">
           <nav aria-label="Global" className="hidden md:block">
-            <ul className="flex items-center gap-6 text-sm">
+            {/* <ul className="flex items-center gap-6 text-sm">
               <li>
                 <Link 
                   href="/pedidos"
@@ -44,18 +34,11 @@ export default function Header() {
                 >
                   Pedidos
                 </Link>
-                <a
-                  className="text-gray-500 transition hover:text-gray-500/75"
-                  href="/"
-                >
-                  {" "}
-                  Início{" "}
-                </a>
               </li>
-            </ul>
+            </ul> */}
           </nav>
           <div className="flex items-center gap-4">
-            <div className="sm:flex sm:gap-4">
+            <div className="md:flex md:gap-4">
               <AudioPlayer />
               {/* <a
                 className="block rounded-md bg-teal-600 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-teal-700"
@@ -63,17 +46,17 @@ export default function Header() {
               >
                 Login
               </a> */}
-
-              {/* <a
-                className="hidden rounded-md bg-gray-100 px-5 py-2.5 text-sm font-medium text-teal-600 transition hover:text-teal-600/75 sm:block"
+              <a
+                className={`${open ? "block" : "hidden"} rounded-md bg-gray-100 px-5 py-2.5 text-sm font-medium text-teal-600 transition hover:text-teal-600/75`}
                 href="/"
               >
                 Register
-              </a> */}
+              </a>
             </div>
-            <button className="block rounded-sm bg-gray-100 p-2.5 text-gray-600 transition hover:text-gray-600/75 md:hidden">
+            <button onClick={() => setOpen(!open)} className="block rounded-sm bg-gray-100 p-2.5 text-gray-600 transition hover:text-gray-600/75 md:hidden">
               <span className="sr-only">Toggle menu</span>
-              <svg
+              <ListMusic className="size-5" />
+              {/* <svg
                 xmlns="http://www.w3.org/2000/svg"
                 className="size-5"
                 fill="none"
@@ -86,7 +69,7 @@ export default function Header() {
                   strokeLinejoin="round"
                   d="M4 6h16M4 12h16M4 18h16"
                 ></path>
-              </svg>
+              </svg> */}
             </button>
           </div>
         </div>

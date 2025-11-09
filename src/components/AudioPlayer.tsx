@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useState } from "react";
 import { useAudio } from "@/context/AudioContext";
 import { Pause, Play, VolumeX, Volume2 } from "lucide-react";
@@ -8,8 +9,7 @@ import { toast } from "sonner";
 import type { PlayerData } from "@/types/song";
 
 export default function AudioPlayer() {
-  const { play, pause, playing, volume, setVolume, muted, setMuted } =
-    useAudio();
+  const { play, pause, playing, volume, setVolume, muted, setMuted } =  useAudio();
   const [song, setSong] = useState<PlayerData | null>({
     title: "Rádio Som do Mato",
     artist: "",
@@ -77,13 +77,22 @@ export default function AudioPlayer() {
   }, []);
 
   return (
-    <div className="w-full bg-background text-white p-2 flex items-center justify-between">
+    <div className="w-full bg-background text-white p-2 flex items-center justify-between gap-2">
       <div>
-        <h2 className="text-lg font-semibold">
-          {truncate(song?.artist || "Rádio Som do Mato", 32)}
+        <Image
+          src={cover}
+          alt="Capa do álbum"
+          width={40}
+          height={40}
+          className="w-10 h-10 rounded-full object-cover animate-[spin_5s_linear_infinite]"
+        />
+      </div>
+      <div>
+        <h2 className="font-semibold -mb-1">
+          {truncate(song?.title || "Rádio Som do Mato", 32)}
         </h2>
         <p className="text-sm">
-          {truncate(song?.title || "A mais sertaneja", 32)}
+          {truncate(song?.artist || "A mais sertaneja", 32)}
         </p>
       </div>
 
@@ -93,13 +102,13 @@ export default function AudioPlayer() {
         <button
           type="button"
           onClick={() => setMuted(!muted)}
-          className="flex items-center justify-center w-6 h-6 rounded-full bg-black/40 hover:bg-black/20 text-gray-300 transition-colors duration-200 cursor-pointer"
+          className="flex items-center justify-center w-8 h-8 rounded-full bg-black/40 hover:bg-black/20 text-gray-300 transition-colors duration-200 cursor-pointer"
           aria-label={muted ? "Ativar som" : "Silenciar"}
         >
           {muted || volume === 0 ? (
-            <VolumeX size={12} />
+            <VolumeX size={14} />
           ) : (
-            <Volume2 size={12} />
+            <Volume2 size={14} />
           )}
         </button>
 
@@ -124,7 +133,7 @@ export default function AudioPlayer() {
         <button
           type="button"
           onClick={() => (playing ? pause() : play())}
-          className="flex items-center justify-center w-7 h-7 rounded-full bg-green-600 hover:bg-green-700 text-white transition-colors duration-200 disabled:opacity-50 cursor-pointer"
+          className="flex items-center justify-center w-8 h-8 rounded-full bg-black/50 hover:bg-green-700 text-white transition-colors duration-200 disabled:opacity-50 cursor-pointer"
           aria-label={playing ? "Pausar" : "Reproduzir"}
         >
           {playing ? (
