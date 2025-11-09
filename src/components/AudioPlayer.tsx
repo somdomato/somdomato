@@ -8,30 +8,8 @@ import { socket } from "@/lib/socket";
 import { toast } from "sonner";
 import type { PlayerData } from "@/types/song";
 
-export function ButtonGroup1() {
-  return (
-    <section className="pb-10 pt-20 lg:pb-20 lg:pt-[120px] ">
-      <div className="container">
-        <div className="flex justify-center">
-          <div className="inline-flex items-center overflow-hidden rounded-lg border border-stroke ">
-            <button className="border-r border-stroke px-4 py-3 text-base font-medium text-dark last-of-type:border-r-0 hover:bg-gray-2 hover:text-primary ">
-              Button Text
-            </button>
-            <button className="border-r border-stroke px-4 py-3 text-base font-medium text-dark last-of-type:border-r-0 hover:bg-gray-2 hover:text-primary ">
-              Button Text
-            </button>
-            <button className="border-r border-stroke px-4 py-3 text-base font-medium text-dark last-of-type:border-r-0 hover:bg-gray-2 hover:text-primary ">
-              Button Text
-            </button>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
 export default function AudioPlayer() {
-  const { play, pause, playing, volume, setVolume, muted, setMuted } =
+  const { play, pause, playing, volume, setVolume, muted, toggleMute } =
     useAudio();
   const [song, setSong] = useState<PlayerData | null>({
     title: "Rádio Som do Mato",
@@ -46,8 +24,8 @@ export default function AudioPlayer() {
   const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newVolume = Number(e.target.value);
     setVolume(newVolume);
-    if (newVolume === 0) setMuted(true);
-    else if (muted) setMuted(false);
+    if (newVolume === 0) toggleMute(true);
+    else if (muted) toggleMute(false);
   };
 
   useEffect(() => {
@@ -139,7 +117,7 @@ export default function AudioPlayer() {
               <div className="border-r border-black/50 px-3 py-2 text-base font-medium text-dark last-of-type:border-r-0 hover:text-primary cursor-pointer flex items-center gap-2">
                 <button
                   type="button"
-                  onClick={() => setMuted(!muted)}
+                  onClick={() => toggleMute(!muted)}
                   className="md:mr-2 cursor-pointer"
                   aria-label={muted ? "Ativar som" : "Silenciar"}
                 >

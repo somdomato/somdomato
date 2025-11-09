@@ -1,18 +1,20 @@
 import { db } from "@/db";
 import { songs, requests } from "@/db/schema";
-import { or, sql, ilike } from "drizzle-orm";
+import { or, like, sql } from "drizzle-orm";
 import type { Song } from "@/types/song";
 
 export async function SearchSongs(song: string): Promise<Song[]> {
   if (!song) return [];
 
+  const searchTerm = `%${song}%`;
+  
   const result = await db
     .select()
     .from(songs)
     .where(
       or(
-        ilike(songs.title, `%${song}%`),
-        ilike(songs.artist, `%${song}%`),
+        like(sql`LOWER(${songs.title})`, searchTerm.toLowerCase()),
+        like(sql`LOWER(${songs.artist})`, searchTerm.toLowerCase()),
       ),
     )
     .orderBy(songs.title)

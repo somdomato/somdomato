@@ -9,7 +9,7 @@ interface AudioContextType {
   volume: number;
   setVolume: (volume: number) => void;
   muted: boolean;
-  setMuted: (muted: boolean) => void;
+  toggleMute: (muted: boolean) => void;
 }
 
 const AudioContext = createContext<AudioContextType | undefined>(undefined);
@@ -37,6 +37,13 @@ export const AudioProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
+  function toggleMute() {
+    setMuted(!muted);
+    if (audioRef.current) {
+      audioRef.current.muted = !muted;
+    }
+  }
+
   useEffect(() => {
     if (audioRef.current) {
       audioRef.current.volume = volume
@@ -44,7 +51,7 @@ export const AudioProvider = ({ children }: { children: React.ReactNode }) => {
   }, [volume])
 
   return (
-    <AudioContext.Provider value={{ play, pause, playing, volume, setVolume, muted, setMuted }}>
+    <AudioContext.Provider value={{ play, pause, playing, volume, setVolume, toggleMute, muted }}>
       {children}
       <audio ref={audioRef} src={source} />
     </AudioContext.Provider>

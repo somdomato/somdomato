@@ -3,8 +3,8 @@
 DELETE="--delete"
 MACHINE="tyche"
 REMOTE_USER="liquidsoap"
-PARAMS="-avzz"
-LOCAL_DIR="/home/lucas/music/sdm/"
+PARAMS="-avz --progress"
+LOCAL_DIR="/Users/lucas/Music/sdm/"
 REMOTE_DIR="/var/music/sdm/"
 EXCLUDES="--exclude '*.part' --exclude 'lost+found/' --exclude 'temp/' --exclude 'incomplete/' --exclude '.DS_Store'"
 

@@ -136,7 +136,7 @@ export default function SearchForm() {
                     className="flex items-center gap-4 p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow"
                   >
                     {/* Capa da Música */}
-                    <div className="flex-shrink-0">
+                    <div className="shrink-0">
                       <Image
                         src={song.cover || "/images/logotipo.svg"}
                         alt={`Capa de ${song.title}`}
