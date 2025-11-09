@@ -41,7 +41,9 @@ export async function GET(request: Request) {
       );
 
     // Filtrar músicas de artistas que tocaram recentemente
-    const filteredSongs = availableSongs.filter((song) => !blockedArtists.includes(song.artist));
+    const filteredSongs = availableSongs.filter(
+      (song) => !blockedArtists.includes(song.artist),
+    );
 
     if (filteredSongs.length === 0) {
       const notification = includeNotification
@@ -64,6 +66,10 @@ export async function GET(request: Request) {
         title: songs.title,
         artist: songs.artist,
         path: songs.path,
+        cover: songs.cover,
+        timeSlots: songs.timeSlots,
+        createdAt: songs.createdAt,
+        requestId: requests.id,
       })
       .from(requests)
       .orderBy(asc(requests.id))
@@ -71,8 +77,16 @@ export async function GET(request: Request) {
       .innerJoin(songs, eq(songs.id, requests.songId));
 
     if (requestResult) {
-      selectedSong = requestResult;
-      await db.delete(requests).where(eq(requests.id, requestResult.id));
+      selectedSong = {
+        id: requestResult.id,
+        title: requestResult.title,
+        artist: requestResult.artist,
+        path: requestResult.path,
+        cover: requestResult.cover,
+        timeSlots: requestResult.timeSlots,
+        createdAt: requestResult.createdAt,
+      };
+      await db.delete(requests).where(eq(requests.id, requestResult.requestId));
     }
 
     for (let attempt = 0; attempt < 100; attempt++) {
@@ -99,28 +113,9 @@ export async function GET(request: Request) {
 
     await db.insert(history).values({ songId: selectedSong.id });
 
-    // TODO: Replace with your actual socket instance import or context
-    // import { io } from "@/lib/socket"; // Example import
-    
-    // if (io) {
-    //   io.emit("music-changed", selectedSong);
-    // }
-
-    // await fetch(broadcastUrl, {
-    //   method: "POST",
-    //   headers: { "Content-Type": "application/json" },
-    //   body: JSON.stringify({ event: "music-changed", data: selectedSong }),
-    // });
-
-    // if (socket) {
-    //   socket.on("connection", () => {
-    //     socket.emit("music-changed", selectedSong);
-    //   });
-    // }
-
-  if (global.io) {
-    global.io.emit("song:changed", selectedSong);
-  }
+    if (global.io) {
+      global.io.emit("song:changed", selectedSong);
+    }
 
     return Response.json({ ...selectedSong });
   } catch (error) {
@@ -138,6 +133,9 @@ export async function GET(request: Request) {
         }
       : null;
 
-    return Response.json({ error: "Falha ao buscar música", notification }, { status: 500 });
+    return Response.json(
+      { error: "Falha ao buscar música", notification },
+      { status: 500 },
+    );
   }
 }

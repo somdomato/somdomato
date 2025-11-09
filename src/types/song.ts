@@ -3,6 +3,9 @@ export interface Song {
   title: string;
   artist: string;
   path: string;
+  cover: string | null;
+  timeSlots: number | null;
+  createdAt: Date | null;
 }
 
 export interface PlayerData {

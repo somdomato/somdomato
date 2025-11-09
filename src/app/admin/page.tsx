@@ -2,6 +2,8 @@ import { sql } from "drizzle-orm";
 import { db } from "@/db";
 import { songs, history, requests } from "@/db/schema";
 
+const PAGE_SIZE = 10;
+
 async function getRequests(page: number) {
   const offset = (page - 1) * PAGE_SIZE;
   const data = await db
@@ -29,8 +31,6 @@ async function getHistory(page: number) {
     .from(history);
   return { data, total: Number(count) };
 }
-
-const PAGE_SIZE = 10;
 
 async function getSongs(page: number) {
   const offset = (page - 1) * PAGE_SIZE;

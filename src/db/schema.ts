@@ -1,4 +1,4 @@
-import { int, sqliteTable, text, integer } from "drizzle-orm/sqlite-core";
+import { int, sqliteTable, text } from "drizzle-orm/sqlite-core";
 import { relations } from "drizzle-orm";
 
 export const songs = sqliteTable("songs", {
@@ -8,6 +8,7 @@ export const songs = sqliteTable("songs", {
   path: text().notNull().unique(),
   cover: text().default("/images/logotipo.svg"), // Nova coluna para URL da capa
   timeSlots: int().default(15), // Sistema de bits: 0=nenhum, 1=madrugada, 2=manhã, 4=tarde, 8=noite, 15=todos
+  createdAt: int({ mode: 'timestamp' }).$defaultFn(() => new Date()),
 });
 
 export const requests = sqliteTable("requests", {
@@ -22,7 +23,7 @@ export const history = sqliteTable("history", {
   songId: int()
     .notNull()
     .references(() => songs.id),
-  createdAt: integer({ mode: 'timestamp' }).$defaultFn(() => new Date()),
+  createdAt: int({ mode: 'timestamp' }).$defaultFn(() => new Date()),
 });
 
 export const likes = sqliteTable("likes", {
@@ -31,7 +32,7 @@ export const likes = sqliteTable("likes", {
     .notNull()
     .references(() => songs.id),
   userIp: text().notNull(), // IP do usuário para identificação
-  createdAt: integer({ mode: 'timestamp' }).$defaultFn(() => new Date()),
+  createdAt: int({ mode: 'timestamp' }).$defaultFn(() => new Date()),
 });
 
 // Relações corretas
