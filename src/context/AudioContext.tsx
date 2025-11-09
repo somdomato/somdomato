@@ -12,40 +12,14 @@ interface AudioContextType {
   setMuted: (muted: boolean) => void;
 }
 
-// interface AudioContextType {
-//   isPlaying: boolean;
-//   volume: number;
-//   muted: boolean;
-//   currentTrack: string;
-//   play: (src: string) => void;
-//   reload: () => void;
-//   pause: () => void;
-//   setVolume: (volume: number) => void;
-//   setMuted: (muted: boolean) => void;
-//   currentSource: string;
-//   setCurrentSource: (src: string) => void;
-// }
-
 const AudioContext = createContext<AudioContextType | undefined>(undefined);
 
 export const AudioProvider = ({ children }: { children: React.ReactNode }) => {
   const audioRef = useRef<HTMLAudioElement>(null);
   const source = "https://radio.somdomato.com/radio.mp3";
   const [playing, setPlaying] = useState(false);
-
-  // const [currentTrack, setCurrentTrack] = useState("");
-  // const [currentSource, setCurrentSource] = useState("https://radio.somdomato.com/radio.mp3");
   const [volume, setVolume] = useState(1);
   const [muted, setMuted] = useState(false);
-
-  // const reload = () => {
-  //   if (audioRef.current) {
-  //     setCurrentSource(currentSource);
-  //     audioRef.current.src = currentSource;
-  //     audioRef.current.play();
-  //     setIsPlaying(true);
-  //   }
-  // };
 
   const play = () => {
     if (audioRef.current) {
