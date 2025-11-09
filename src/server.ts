@@ -4,7 +4,7 @@ import { Server } from "socket.io";
 
 const dev = process.env.NODE_ENV !== "production";
 const port = dev ? 3000 : 3333;
-const hostname = dev ? "0.0.0.0" : "somdomato.com";
+const hostname = dev ? "localhost" : "somdomato.com";
 const app = next({ hostname, port, dev, turbo: false });
 const handler = app.getRequestHandler();
 
@@ -16,14 +16,8 @@ app.prepare().then(() => {
     global.io = io;
 
   io.on("connection", (socket) => {
-    console.log("New client connected");
-
-    socket.on("music-change", (newSong) => {
-      io.emit("music-change", newSong);
-    });
-
-    socket.on("disconnect", () => {
-      console.log("Client disconnected");
+    socket.on("song:changed", (newSong) => {
+      io.emit("song:changed", newSong);
     });
   });
 

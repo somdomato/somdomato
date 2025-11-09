@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+PATH=$PATH:/home/nginx/.bun/bin
+
 NAME=somdomato
 SERVICE=$NAME.service
 TEMP_DIR=/tmp/$NAME
@@ -12,10 +14,10 @@ cd "$TEMP_DIR" || exit 1
 git clean -fxd -e .env.production -e cookies.txt
 cp -f .env.production .env
 
-npm install
-npm run push
-npm run seed
-npm run build || exit 1
+bun install
+bun run push
+bun run seed
+bun run build || exit 1
 
 sudo /usr/bin/systemctl stop $SERVICE
 rm -rf "$PROJECT_DIR"

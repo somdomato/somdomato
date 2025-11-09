@@ -4,13 +4,7 @@ import fs from "node:fs/promises";
 import { songs, history, requests } from "@/db/schema";
 import { getCurrentTimeSlot } from "@/lib/time";
 import { getBlockedSongIds } from "@/lib/protections";
-
-interface Song {
-  id: number;
-  title: string;
-  artist: string;
-  path: string;
-}
+import type { Song } from "@/types/song";
 
 async function checkFileExists(filePath: string) {
   try {
@@ -125,7 +119,7 @@ export async function GET(request: Request) {
     // }
 
   if (global.io) {
-    global.io.emit("music-change", selectedSong);
+    global.io.emit("song:changed", selectedSong);
   }
 
     return Response.json({ ...selectedSong });

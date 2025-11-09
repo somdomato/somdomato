@@ -7,6 +7,7 @@ import "./globals.css";
 const nunito = Nunito({
   variable: "--font-nunito",
   subsets: ["latin"],
+  preload: false,
 });
 
 export const metadata: Metadata = {
