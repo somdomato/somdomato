@@ -4,16 +4,17 @@ import { useEffect, useState } from "react";
 import { useAudio } from "@/context/AudioContext";
 import { Pause, Play, VolumeX, Volume2 } from "lucide-react";
 import { socket } from "@/lib/socket";
-import type { Song } from "@/types/song";
+import { toast } from "sonner";
+import type { PlayerData } from "@/types/song";
 
 export default function AudioPlayer() {
-  const { play, pause, playing, volume, setVolume, muted, setMuted } = useAudio();
-  const [song, setSong] = useState<Song | null>({
+  const { play, pause, playing, volume, setVolume, muted, setMuted } =
+    useAudio();
+  const [song, setSong] = useState<PlayerData | null>({
     title: "Rádio Som do Mato",
     artist: "",
-    id: 0,
-    path: "",
   });
+  const [cover, setCover] = useState("/images/logotipo.svg");
 
   function truncate(text: string, max: number) {
     return text.length > max ? `${text.slice(0, max)}…` : text;
@@ -29,8 +30,45 @@ export default function AudioPlayer() {
   useEffect(() => {
     socket.on("song:changed", onSongChanged);
 
-    function onSongChanged(song: Song) {
-      setSong(song);
+    async function onSongChanged(nextSong: {
+      title: string;
+      artist: string;
+      cover?: string;
+    }) {
+      if (typeof window !== "undefined") {
+        const storedCover = localStorage.getItem("cover");
+        if (storedCover) setCover(storedCover);
+        if (nextSong.cover) localStorage.setItem("cover", nextSong.cover);
+      }
+
+      const request = await fetch("https://radio.somdomato.com/json");
+      if (request.ok) {
+        const {
+          icestats: { source },
+        } = await request.json();
+        let artist = source.artist;
+        let title = source.title;
+
+        // Se não houver artist, tenta separar pelo padrão "Artista - Música"
+        if (!artist && title) {
+          const parts = title.split(" - ");
+          if (parts.length > 1) {
+            artist = parts[0].trim();
+            title = parts.slice(1).join(" - ").trim();
+          }
+        }
+
+        setSong({ title, artist });
+
+        // Usar a capa salva no localStorage
+        const nextCover = localStorage.getItem("cover");
+        setCover(nextCover || "/images/logotipo.svg");
+        localStorage.removeItem("cover");
+
+        toast.success(`Tocando agora: ${title} - ${artist}`, {
+          duration: 5000,
+        });
+      }
     }
 
     return () => {
@@ -41,12 +79,16 @@ export default function AudioPlayer() {
   return (
     <div className="w-full bg-background text-white p-2 flex items-center justify-between">
       <div>
-        <h2 className="text-lg font-semibold">{truncate(song?.artist || "Rádio Som do Mato", 32)}</h2>
-        <p className="text-sm">{truncate(song?.title || "A mais sertaneja", 32)}</p>
+        <h2 className="text-lg font-semibold">
+          {truncate(song?.artist || "Rádio Som do Mato", 32)}
+        </h2>
+        <p className="text-sm">
+          {truncate(song?.title || "A mais sertaneja", 32)}
+        </p>
       </div>
 
       {/* Controles de Volume */}
-      <div className="flex items-center gap-1 flex-shrink-0 mr-1">
+      <div className="flex items-center gap-1 shrink-0 mr-1">
         {/* Botão Mute/Unmute */}
         <button
           type="button"

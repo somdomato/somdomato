@@ -4,3 +4,9 @@ export interface Song {
   artist: string;
   path: string;
 }
+
+export interface PlayerData {
+  title: string;
+  artist: string;
+  cover?: string;
+}

@@ -1,6 +1,7 @@
 import Header from "@/components/Header";
 import { AudioProvider } from "@/context/AudioContext";
 import { Nunito } from "next/font/google";
+import { Toaster } from 'sonner'
 import type { Metadata } from "next";
 import "./globals.css";
 
@@ -33,10 +34,10 @@ export const metadata: Metadata = {
 
 export default function RootLayout({
   children,
-  pedidos,
+  requests,
 }: Readonly<{
   children: React.ReactNode;
-  pedidos: React.ReactNode;
+  requests: React.ReactNode;
 }>) {
   return (
     <html lang="en">
@@ -63,7 +64,8 @@ export default function RootLayout({
               </div>
             </footer>
           </div>
-          {pedidos}
+          {requests}
+          <Toaster />
         </AudioProvider>
       </body>
     </html>
