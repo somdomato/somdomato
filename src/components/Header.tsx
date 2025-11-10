@@ -11,7 +11,7 @@ export default function Header() {
 
   return (
     <>
-      <header className="sticky z-50 bg-background top-0 border-b-2 border-b-black/50 shadow-sm">
+      <header className="sticky z-50 bg-background top-0 border-b-2 border-b-black/50 shadow-sm px-4 md:px-0">
         <div className="container mx-auto flex h-16 items-center gap-8">
           <Link href="/" className="flex items-center gap-2 text-2xl shrink-0">
             <Image
@@ -59,12 +59,12 @@ export default function Header() {
               {/* </div> */}
               <button 
                 onClick={() => setOpen(!open)} 
-                className="block rounded-sm bg-background border-2 border-black/50 p-2.5 text-gray-300 transition hover:text-gray-600/75 md:hidden"
+                className="block rounded-md bg-background border border-black/50 p-2 text-gray-300 transition hover:text-gray-600/75 md:hidden"
                 aria-expanded={open}
                 aria-controls="mobile-menu"
                 aria-label="Toggle mobile menu"
               >
-                {open ? <X className="size-5" /> : <ListMusic className="size-5" />}
+                {open ? <X size={20} /> : <ListMusic size={20} />}
               </button>
             </div>
           </div>
@@ -102,12 +102,12 @@ export default function Header() {
             </li>
             <li>
               <Link 
-                href="/pedir"
+                href="/pedidos"
                 onClick={() => setOpen(false)}
-                className="flex items-center gap-3 px-4 py-3 rounded-lg transition hover:bg-gray-100 hover:text-gray-900"
+                className="flex items-center gap-3 px-4 py-3 rounded-lg transition hover:bg-gray-100 hover:text-gray-900 shrink-0"
               >
                 <Music className="size-5" />
-                <span>Pedir Música</span>
+                <span className="shrink-0">Pedir Música</span>
               </Link>
             </li>
             <li>
