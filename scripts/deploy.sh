@@ -11,8 +11,7 @@ PROJECT_DIR=/var/www/$NAME
 cp -a "$PROJECT_DIR" "$TEMP_DIR"
 cd "$TEMP_DIR" || exit 1
 
-git clean -fxd -e .env.production -e cookies.txt
-cp -f .env.production .env
+git clean -fxd -e .env
 
 bun install
 bun run push
