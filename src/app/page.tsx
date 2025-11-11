@@ -1,8 +1,8 @@
 import Image from "next/image";
-import { getRequests, getHistory } from "@/actions/song";
+import { getHistory } from "@/actions/song";
+import Requests from "@/components/Requests";
 
 export default async function Home() {
-  const requests = await getRequests();
   const history = await getHistory();
 
   return (
@@ -37,15 +37,7 @@ export default async function Home() {
               </div>
             ))}
           </div>
-          <div className="bg-background border-2 border-black/50 rounded-lg p-4">
-            <h2 className="text-2xl font-bold mb-4">Próximas</h2>
-            {requests.map(({ songs }) => (
-              <div key={songs?.id} className="mb-2">
-                <p className="font-semibold">{songs?.title}</p>
-                <p className="text-sm text-gray-600">{songs?.artist}</p>
-              </div>
-            ))}
-          </div>
+          <Requests />
         </div>
       </section>
     </>
