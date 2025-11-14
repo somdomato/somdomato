@@ -87,7 +87,7 @@ export async function GET(request: Request) {
         createdAt: requestResult.createdAt,
       };
       await db.delete(requests).where(eq(requests.id, requestResult.requestId));
-      
+
       if (global.io) global.io.emit("request:removed", requestResult);
     }
 
@@ -113,8 +113,11 @@ export async function GET(request: Request) {
       });
     }
 
-    const [historyEntry] = await db.insert(history).values({ songId: selectedSong.id }).returning();
-    
+    const [historyEntry] = await db
+      .insert(history)
+      .values({ songId: selectedSong.id })
+      .returning();
+
     if (global.io) {
       global.io.emit("song:changed", selectedSong);
       global.io.emit("history:added", historyEntry);

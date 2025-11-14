@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { getHistory } from "@/actions/song";
 import Requests from "@/components/Requests";
+import TopSongs from "@/components/TopSongs";
 
 export default async function Home() {
   const history = await getHistory();
@@ -20,14 +21,16 @@ export default async function Home() {
         </div>
         <iframe
           src="https://gamja.somdomato.com"
-          className="w-full min-h-[600px] aspect-video md:rounded-lg border-2 border-black/60 ring-2 ring-black/60 focus:outline-none"
+          // On mobile the iframe used to be taller than the viewport because of `min-h-[600px]`.
+          // Use `aspect-video` for the correct aspect ratio and cap its height to 70vh
+          // so the page remains scrollable on mobile. On larger screens, keep the
+          // min-height to preserve desktop layout.
+          className="w-full aspect-video max-h-[70vh] md:min-h-[600px] md:aspect-video md:rounded-lg border-2 border-black/60 ring-2 ring-black/60 focus:outline-none"
         />
       </section>
       <section className="mb-6">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          <div className="bg-background border-2 border-black/50 rounded-lg p-4">
-            <h2 className="text-2xl font-bold mb-4">TOP 10</h2>
-          </div>
+          <TopSongs />
           <div className="bg-background border-2 border-black/50 rounded-lg p-4">
             <h2 className="text-2xl font-bold mb-4">Últimas</h2>
             {history.map(({ songs }) => (

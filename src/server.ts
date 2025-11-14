@@ -12,8 +12,8 @@ let io: Server;
 
 app.prepare().then(() => {
   const server = createServer(handler);
-    io = new Server(server);
-    global.io = io;
+  io = new Server(server);
+  global.io = io;
 
   io.on("connection", (socket) => {
     socket.on("song:changed", (newSong) => {
@@ -24,4 +24,3 @@ app.prepare().then(() => {
   server.listen(port);
   console.log(`🚀 Server listening on port ${port}`);
 });
-

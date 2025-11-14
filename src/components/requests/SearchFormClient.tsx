@@ -10,7 +10,9 @@ interface SearchFormClientProps {
   initialSongs?: SongData[];
 }
 
-export default function SearchFormClient({ initialSongs = [] }: SearchFormClientProps) {
+export default function SearchFormClient({
+  initialSongs = [],
+}: SearchFormClientProps) {
   const [songs, setSongs] = useState<SongData[]>(initialSongs);
   const [searchTerm, setSearchTerm] = useState("");
   const [hasSearched, setHasSearched] = useState(false);
@@ -23,7 +25,7 @@ export default function SearchFormClient({ initialSongs = [] }: SearchFormClient
     if (!searchTerm.trim()) return;
 
     setHasSearched(true);
-    
+
     startTransition(async () => {
       try {
         const results = await SearchSongs(searchTerm.trim());
@@ -38,13 +40,13 @@ export default function SearchFormClient({ initialSongs = [] }: SearchFormClient
   const handleRequestSong = async (songId: number) => {
     if (requestingIds.has(songId) || requestedIds.has(songId)) return;
 
-    setRequestingIds(prev => new Set([...prev, songId]));
-    
+    setRequestingIds((prev) => new Set([...prev, songId]));
+
     startTransition(async () => {
       try {
         const result = await RequestSong(songId);
         if (result.success) {
-          setRequestedIds(prev => new Set([...prev, songId]));
+          setRequestedIds((prev) => new Set([...prev, songId]));
         } else {
           alert(result.message);
         }
@@ -52,7 +54,7 @@ export default function SearchFormClient({ initialSongs = [] }: SearchFormClient
         console.error("Erro ao pedir música:", error);
         alert("Erro ao pedir música. Tente novamente.");
       } finally {
-        setRequestingIds(prev => {
+        setRequestingIds((prev) => {
           const newSet = new Set(prev);
           newSet.delete(songId);
           return newSet;
@@ -74,7 +76,10 @@ export default function SearchFormClient({ initialSongs = [] }: SearchFormClient
         {/* Formulário de Busca */}
         <form onSubmit={handleSearch} className="space-y-4">
           <div>
-            <label htmlFor="song" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+            <label
+              htmlFor="song"
+              className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+            >
               Nome da Música ou Artista
             </label>
             <div className="relative">
@@ -90,7 +95,7 @@ export default function SearchFormClient({ initialSongs = [] }: SearchFormClient
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 size-4" />
             </div>
           </div>
-          
+
           <button
             type="submit"
             disabled={isPending || !searchTerm.trim()}
@@ -132,7 +137,7 @@ export default function SearchFormClient({ initialSongs = [] }: SearchFormClient
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                 Resultados encontrados ({songs.length})
               </h3>
-              
+
               <div className="space-y-2 max-h-96 overflow-y-auto">
                 {songs.map((song) => (
                   <div
@@ -149,7 +154,7 @@ export default function SearchFormClient({ initialSongs = [] }: SearchFormClient
                         className="rounded-md object-cover"
                       />
                     </div>
-                    
+
                     {/* Informações da Música */}
                     <div className="flex-1 min-w-0">
                       <h4 className="font-medium text-gray-900 dark:text-white truncate">
@@ -159,11 +164,13 @@ export default function SearchFormClient({ initialSongs = [] }: SearchFormClient
                         {song.artist}
                       </p>
                     </div>
-                    
+
                     {/* Botão de Pedir */}
                     <button
                       onClick={() => handleRequestSong(song.id)}
-                      disabled={requestingIds.has(song.id) || requestedIds.has(song.id)}
+                      disabled={
+                        requestingIds.has(song.id) || requestedIds.has(song.id)
+                      }
                       className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
                         requestedIds.has(song.id)
                           ? "text-green-600 bg-green-50 dark:bg-green-900/20 dark:text-green-400"

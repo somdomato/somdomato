@@ -1,4 +1,4 @@
-import { songs, requests, history } from "@/db/schema";
+import type { songs, requests, history } from "@/db/schema";
 
 export type SongData = typeof songs.$inferSelect;
 export type Requests = typeof requests.$inferSelect;

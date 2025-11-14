@@ -22,7 +22,11 @@ async function main() {
       if (err) return null;
 
       const extension = parse(song).ext;
-      if (!['.mp3', '.flac', '.wav', '.m4a', '.ogg'].includes(extension.toLowerCase())) {
+      if (
+        ![".mp3", ".flac", ".wav", ".m4a", ".ogg"].includes(
+          extension.toLowerCase(),
+        )
+      ) {
         return;
       }
 
@@ -42,8 +46,12 @@ async function main() {
       }
 
       if (tags) {
-        artist = tags.artist ? parse(tags.artist).name : filename.slice(0, filename.indexOf(sep));
-        title = tags.title ? parse(tags.title).name : filename.slice(0, filename.lastIndexOf(sep));
+        artist = tags.artist
+          ? parse(tags.artist).name
+          : filename.slice(0, filename.indexOf(sep));
+        title = tags.title
+          ? parse(tags.title).name
+          : filename.slice(0, filename.lastIndexOf(sep));
         path = song;
         await db
           .insert(songs)
@@ -51,7 +59,7 @@ async function main() {
             title,
             artist,
             path,
-            cover
+            cover,
           })
           .onConflictDoNothing();
       } else {
@@ -64,7 +72,7 @@ async function main() {
             title,
             artist,
             path,
-            cover
+            cover,
           })
           .onConflictDoNothing();
       }

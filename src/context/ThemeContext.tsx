@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useState, useEffect } from "react";
+import { createContext, useState } from "react";
 
 export const ThemeContext = createContext({
   theme: "light",
@@ -27,15 +27,15 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
   // }, []);
 
   // const toggleTheme = () => {
-    // setTheme((prevTheme) => (prevTheme === "light" ? "dark" : "light"));
-    if (currentHour >= 18 || currentHour < 6) {
-      setTheme("dark");
-      document.documentElement.setAttribute("data-theme", "dark"); // Apply theme class to HTML
-    } else {
-      setTheme("light");
-      document.documentElement.setAttribute("data-theme", "light"); // Apply theme class to HTML
-    }
-    // setTheme((prevTheme) => (prevTheme === "light" ? "dark" : "light"));
+  // setTheme((prevTheme) => (prevTheme === "light" ? "dark" : "light"));
+  if (currentHour >= 18 || currentHour < 6) {
+    setTheme("dark");
+    document.documentElement.setAttribute("data-theme", "dark"); // Apply theme class to HTML
+  } else {
+    setTheme("light");
+    document.documentElement.setAttribute("data-theme", "light"); // Apply theme class to HTML
+  }
+  // setTheme((prevTheme) => (prevTheme === "light" ? "dark" : "light"));
   // };
 
   // Optional: Save theme preference to local storage
@@ -45,8 +45,6 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
   // }, [theme]);
 
   return (
-    <ThemeContext.Provider value={{ theme }}>
-      {children}
-    </ThemeContext.Provider>
+    <ThemeContext.Provider value={{ theme }}>{children}</ThemeContext.Provider>
   );
 };

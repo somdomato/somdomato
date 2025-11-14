@@ -8,6 +8,8 @@ import { socket } from "@/lib/socket";
 import { toast } from "sonner";
 import type { PlayerData } from "@/types/song";
 
+const DEFAULT_TITLE = "Rádio Som do Mato";
+
 export default function AudioPlayer() {
   const { play, pause, playing, volume, setVolume, muted, toggleMute } =
     useAudio();
@@ -59,7 +61,10 @@ export default function AudioPlayer() {
           }
         }
 
-        setSong({ title, artist });
+        const unknownArtist = artist === "Unknown" ? DEFAULT_TITLE : artist;
+        const unknownTitle = title === "Unknown" ? DEFAULT_TITLE : title;
+
+        setSong({ title: unknownTitle, artist: unknownArtist });
 
         // Usar a capa salva no localStorage
         const nextCover = localStorage.getItem("cover");

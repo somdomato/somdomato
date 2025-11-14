@@ -1,6 +1,6 @@
 export function getFilenameFromPath(fullPath: string): string {
-  const lastSlashIndex = fullPath.lastIndexOf('/');
-  const lastBackslashIndex = fullPath.lastIndexOf('\\');
+  const lastSlashIndex = fullPath.lastIndexOf("/");
+  const lastBackslashIndex = fullPath.lastIndexOf("\\");
   const lastSeparatorIndex = Math.max(lastSlashIndex, lastBackslashIndex);
 
   if (lastSeparatorIndex === -1) {

@@ -23,7 +23,7 @@ export const AudioProvider = ({ children }: { children: React.ReactNode }) => {
 
   const play = () => {
     if (audioRef.current) {
-      audioRef.current.src = `${source}?t=${Date.now()/1000}`;
+      audioRef.current.src = `${source}?t=${Date.now() / 1000}`;
       audioRef.current.play();
       setPlaying(true);
     }
@@ -33,7 +33,7 @@ export const AudioProvider = ({ children }: { children: React.ReactNode }) => {
     if (audioRef.current) {
       audioRef.current.pause();
       setPlaying(false);
-      audioRef.current.src = `${source}?t=${Date.now()/1000}`;
+      audioRef.current.src = `${source}?t=${Date.now() / 1000}`;
     }
   };
 
@@ -46,12 +46,14 @@ export const AudioProvider = ({ children }: { children: React.ReactNode }) => {
 
   useEffect(() => {
     if (audioRef.current) {
-      audioRef.current.volume = volume
-    }    
-  }, [volume])
+      audioRef.current.volume = volume;
+    }
+  }, [volume]);
 
   return (
-    <AudioContext.Provider value={{ play, pause, playing, volume, setVolume, toggleMute, muted }}>
+    <AudioContext.Provider
+      value={{ play, pause, playing, volume, setVolume, toggleMute, muted }}
+    >
       {children}
       <audio ref={audioRef} src={source} />
     </AudioContext.Provider>

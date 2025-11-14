@@ -23,7 +23,7 @@ function normalizeArtistName(name: string): string {
  */
 export async function findCoverByArtist(
   artist: string,
-  coversDir: string = "public/covers"
+  coversDir: string = "public/covers",
 ): Promise<string | null> {
   const normalized = normalizeArtistName(artist);
   const dirs = await readdir(coversDir, { withFileTypes: true });
@@ -126,8 +126,8 @@ export async function extractAndSaveCover(
 
         // Retornar o caminho relativo para uso no frontend (sempre com barras normais)
         const relativePath = coverPath
-          .replace(/\\/g, "/")           // Converter barras do Windows para web
-          .replace("public/", "/");       // Remover "public" do início
+          .replace(/\\/g, "/") // Converter barras do Windows para web
+          .replace("public/", "/"); // Remover "public" do início
         resolve(relativePath);
       } catch (error) {
         reject(error);

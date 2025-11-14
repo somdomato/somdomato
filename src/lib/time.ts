@@ -1,10 +1,10 @@
 // Sistema de bits para horários
 export const TIME_SLOTS = {
-  NENHUM: 0,        // 0000 - Somente por pedido
-  MADRUGADA: 1,     // 0001 - 0h-6h
-  MANHA: 2,         // 0010 - 6h-12h  
-  TARDE: 4,         // 0100 - 12h-18h
-  NOITE: 8,         // 1000 - 18h-24h
+  NENHUM: 0, // 0000 - Somente por pedido
+  MADRUGADA: 1, // 0001 - 0h-6h
+  MANHA: 2, // 0010 - 6h-12h
+  TARDE: 4, // 0100 - 12h-18h
+  NOITE: 8, // 1000 - 18h-24h
 } as const;
 
 // Todas as combinações possíveis
@@ -50,7 +50,7 @@ export const TIME_SLOT_SHORT_LABELS = {
 // Função para obter o slot de horário atual
 export function getCurrentTimeSlot(): number {
   const currentHour = new Date().getHours();
-  
+
   if (currentHour >= 0 && currentHour < 6) {
     return TIME_SLOTS.MADRUGADA;
   } else if (currentHour >= 6 && currentHour < 12) {
@@ -60,26 +60,32 @@ export function getCurrentTimeSlot(): number {
   } else if (currentHour >= 18 && currentHour < 24) {
     return TIME_SLOTS.NOITE;
   }
-  
+
   return TIME_SLOTS.NENHUM;
 }
 
 // Função para verificar se pode tocar no horário atual
 export function canPlayAtCurrentTime(timeSlots: number): boolean {
   if (timeSlots === TIME_SLOTS.NENHUM) return false;
-  
+
   const currentSlot = getCurrentTimeSlot();
-  
+
   // Verifica se o horário atual está habilitado usando operação bitwise
   return (timeSlots & currentSlot) !== 0;
 }
 
 // Função para obter o nome do horário
 export function getTimeSlotName(timeSlots: number): string {
-  return TIME_SLOT_COMBINATIONS[timeSlots as keyof typeof TIME_SLOT_COMBINATIONS] || "Desconhecido";
+  return (
+    TIME_SLOT_COMBINATIONS[timeSlots as keyof typeof TIME_SLOT_COMBINATIONS] ||
+    "Desconhecido"
+  );
 }
 
 // Função para obter o label curto
 export function getTimeSlotShortLabel(timeSlots: number): string {
-  return TIME_SLOT_SHORT_LABELS[timeSlots as keyof typeof TIME_SLOT_SHORT_LABELS] || "?";
+  return (
+    TIME_SLOT_SHORT_LABELS[timeSlots as keyof typeof TIME_SLOT_SHORT_LABELS] ||
+    "?"
+  );
 }

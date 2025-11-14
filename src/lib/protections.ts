@@ -4,11 +4,13 @@ import { eq, desc } from "drizzle-orm";
 
 export interface RepetitionCheckResult {
   isRepeated: boolean;
-  reason?: 'song_in_history' | 'song_in_requests' | 'artist_recent';
+  reason?: "song_in_history" | "song_in_requests" | "artist_recent";
   message?: string;
 }
 
-export async function checkMusicRepetition(songId: number): Promise<RepetitionCheckResult> {
+export async function checkMusicRepetition(
+  songId: number,
+): Promise<RepetitionCheckResult> {
   // Verificar se a música existe
   const [song] = await db
     .select()
@@ -19,8 +21,8 @@ export async function checkMusicRepetition(songId: number): Promise<RepetitionCh
   if (!song) {
     return {
       isRepeated: true,
-      reason: 'song_in_history', // Usar como fallback
-      message: "Música não encontrada"
+      reason: "song_in_history", // Usar como fallback
+      message: "Música não encontrada",
     };
   }
 
@@ -31,13 +33,13 @@ export async function checkMusicRepetition(songId: number): Promise<RepetitionCh
     .orderBy(desc(history.id))
     .limit(100);
 
-  const last100SongIds = last100Songs.map(h => h.songId);
+  const last100SongIds = last100Songs.map((h) => h.songId);
 
   if (last100SongIds.includes(songId)) {
     return {
       isRepeated: true,
-      reason: 'song_in_history',
-      message: `A música "${song.title}" já foi tocada nas últimas 100 músicas.`
+      reason: "song_in_history",
+      message: `A música "${song.title}" já foi tocada nas últimas 100 músicas.`,
     };
   }
 
@@ -51,15 +53,15 @@ export async function checkMusicRepetition(songId: number): Promise<RepetitionCh
   if (existingRequest.length > 0) {
     return {
       isRepeated: true,
-      reason: 'song_in_requests',
-      message: `A música "${song.title}" já está na fila de pedidos.`
+      reason: "song_in_requests",
+      message: `A música "${song.title}" já está na fila de pedidos.`,
     };
   }
 
   // 3. Verificar repetição de artista: últimas 10 músicas do histórico
   const recentHistory = await db
     .select({
-      artist: songs.artist
+      artist: songs.artist,
     })
     .from(history)
     .innerJoin(songs, eq(history.songId, songs.id))
@@ -69,18 +71,21 @@ export async function checkMusicRepetition(songId: number): Promise<RepetitionCh
   // 4. Verificar artistas dos pedidos pendentes
   const pendingArtists = await db
     .select({
-      artist: songs.artist
+      artist: songs.artist,
     })
     .from(requests)
     .innerJoin(songs, eq(requests.songId, songs.id));
 
-  const recentArtists = [...recentHistory.map(h => h.artist), ...pendingArtists.map(p => p.artist)];
+  const recentArtists = [
+    ...recentHistory.map((h) => h.artist),
+    ...pendingArtists.map((p) => p.artist),
+  ];
 
   if (recentArtists.includes(song.artist)) {
     return {
       isRepeated: true,
-      reason: 'artist_recent',
-      message: `O artista "${song.artist}" tocou recentemente ou já está nos pedidos pendentes.`
+      reason: "artist_recent",
+      message: `O artista "${song.artist}" tocou recentemente ou já está nos pedidos pendentes.`,
     };
   }
 
@@ -109,7 +114,7 @@ export async function getBlockedSongIds(): Promise<{
   // Artistas das últimas 10 músicas do histórico
   const recentHistory = await db
     .select({
-      artist: songs.artist
+      artist: songs.artist,
     })
     .from(history)
     .innerJoin(songs, eq(history.songId, songs.id))
@@ -119,13 +124,19 @@ export async function getBlockedSongIds(): Promise<{
   // Artistas dos requests pendentes
   const pendingArtists = await db
     .select({
-      artist: songs.artist
+      artist: songs.artist,
     })
     .from(requests)
     .innerJoin(songs, eq(requests.songId, songs.id));
 
   return {
-    songIds: [...last100Songs.map(h => h.songId), ...pendingRequests.map(r => r.songId)],
-    artists: [...recentHistory.map(h => h.artist), ...pendingArtists.map(p => p.artist)]
+    songIds: [
+      ...last100Songs.map((h) => h.songId),
+      ...pendingRequests.map((r) => r.songId),
+    ],
+    artists: [
+      ...recentHistory.map((h) => h.artist),
+      ...pendingArtists.map((p) => p.artist),
+    ],
   };
 }
