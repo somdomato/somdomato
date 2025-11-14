@@ -2,7 +2,7 @@ import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { db } from "@/db";
 import { requests, songs } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { checkMusicRepetition } from "@/lib/protections";
 
 export async function GET() {
@@ -80,6 +80,14 @@ export async function POST(request: NextRequest) {
       .insert(requests)
       .values({ songId: id })
       .returning();
+
+    await db
+      .update(songs)
+      .set({
+        likes: sql`${songs.likes} + 1`,
+        requests: sql`${songs.requests} + 1`,
+      })
+      .where(eq(songs.id, id));
 
     // Emit socket event para atualizar o admin e a página principal
     // emitToRoom("admin", "request-created", newRequest[0]);

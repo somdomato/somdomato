@@ -15,6 +15,7 @@ export interface Song {
 }
 
 export interface PlayerData {
+  id?: number;
   title: string;
   artist: string;
   cover?: string;
@@ -25,6 +26,7 @@ export interface SongWithRequests extends Requests {
   requestsCount: number;
 }
 
-export interface SongWithHistory extends History {
-  songs: Song;
-}
+export type HistoryWithSongs = {
+  history: History;
+  song: Song;
+};

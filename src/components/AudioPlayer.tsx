@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import { useAudio } from "@/context/AudioContext";
-import { Pause, Play, VolumeX, Volume2 } from "lucide-react";
+import { Pause, Play, VolumeX, Volume2, Heart } from "lucide-react";
 import { socket } from "@/lib/socket";
 import { toast } from "sonner";
 import type { PlayerData } from "@/types/song";
@@ -14,10 +14,31 @@ export default function AudioPlayer() {
   const { play, pause, playing, volume, setVolume, muted, toggleMute } =
     useAudio();
   const [song, setSong] = useState<PlayerData | null>({
+    id: 0,
     title: "Rádio Som do Mato",
     artist: "",
   });
   const [cover, setCover] = useState("/images/logotipo.svg");
+  const [liked, setLiked] = useState(false);
+
+  async function likeSong(id: number | undefined) {
+    if (!id || id === 0) return;
+    try {
+      await fetch("/api/likes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ songId: id }),
+      }).then((res) => res.json())
+      .then((json) => {
+        if (json.success) {
+          setLiked(true);
+          toast.success("Obrigado pelo like!");
+        }
+      });
+    } catch (err) {
+      console.error("Error liking song:", err);
+    }
+  }
 
   function truncate(text: string, max: number) {
     return text.length > max ? `${text.slice(0, max)}…` : text;
@@ -34,6 +55,7 @@ export default function AudioPlayer() {
     socket.on("song:changed", onSongChanged);
 
     async function onSongChanged(nextSong: {
+      id: number;
       title: string;
       artist: string;
       cover?: string;
@@ -104,19 +126,26 @@ export default function AudioPlayer() {
         </p>
       </div>
 
-      {/* Controles de Volume */}
+      {/* Controles */}
       <div className="flex items-center gap-1 shrink-0 mr-1">
         <div className="flex items-center justify-center">
           <div className="inline-flex items-center overflow-hidden rounded-lg border border-black/50">
             <button
               type="button"
               onClick={() => (playing ? pause() : play())}
-              className="border-r border-black/50 px-3 py-2 text-base font-medium text-dark last-of-type:border-r-0 hover:bg-gray-2 hover:text-primary cursor-pointer"
+              className="border-r border-black/50 px-3 py-2 text-base font-medium text-dark hover:bg-gray-2 hover:text-primary cursor-pointer"
               aria-label={playing ? "Pausar" : "Reproduzir"}
             >
               {playing ? <Pause size={18} /> : <Play size={18} />}
             </button>
-            <div className="border-r border-black/50 px-3 py-2 text-base font-medium text-dark last-of-type:border-r-0 hover:text-primary cursor-pointer flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => likeSong(song?.id)}
+              className="border-r border-black/50 px-3 py-2 text-base font-medium text-dark hover:bg-gray-2 hover:text-primary cursor-pointer"
+            >
+              <Heart size={18} className={liked ? "text-red-500" : ""} />
+            </button>
+            <div className="border-r border-black/50 last-of-type:border-r-0 px-3 py-2 text-base font-medium text-dark hover:text-primary cursor-pointer flex items-center gap-2">
               <button
                 type="button"
                 onClick={() => toggleMute(!muted)}
@@ -124,9 +153,9 @@ export default function AudioPlayer() {
                 aria-label={muted ? "Ativar som" : "Silenciar"}
               >
                 {muted || volume === 0 ? (
-                  <VolumeX size={16} />
+                  <VolumeX size={18} />
                 ) : (
-                  <Volume2 size={16} />
+                  <Volume2 size={18} />
                 )}
               </button>
               <button className="hidden md:block -mt-1 cursor-pointer">

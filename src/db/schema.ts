@@ -10,6 +10,7 @@ export const songs = sqliteTable("songs", {
   timeSlots: int().default(15), // Sistema de bits: 0=nenhum, 1=madrugada, 2=manhã, 4=tarde, 8=noite, 15=todos
   createdAt: int({ mode: "timestamp" }).$defaultFn(() => new Date()),
   requests: int().default(0),
+  likes: int().default(0),
 });
 
 export const requests = sqliteTable("requests", {

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/db";
-import { likes } from "@/db/schema";
-import { eq, and } from "drizzle-orm";
+import { likes, songs } from "@/db/schema";
+import { eq, and, sql } from "drizzle-orm";
 // No SQL helper required here.
 
 export async function POST(request: Request) {
@@ -34,8 +34,12 @@ export async function POST(request: Request) {
       .values({ songId, userIp })
       .returning();
 
-    if (global.io)
-      global.io.emit("likes:added", { songId, likeId: inserted.id });
+    if (global.io) global.io.emit("like:added", { songId, likeId: inserted.id });
+
+    await db
+      .update(songs)
+      .set({ likes: sql`${songs.likes} + 1` })
+      .where(eq(songs.id, songIdNum));
 
     return NextResponse.json({ success: true, like: inserted });
   } catch (error) {

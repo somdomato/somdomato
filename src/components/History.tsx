@@ -2,12 +2,12 @@
 
 import { socket } from "@/lib/socket";
 import { useEffect, useState } from "react";
-import type { SongWithHistory } from "@/types/song";
 import { Heart } from "lucide-react";
 import { toast } from "sonner";
+import type { HistoryWithSongs } from "@/types/song";
 
 export default function History() {
-  const [history, setHistory] = useState<SongWithHistory[]>([]);
+  const [history, setHistory] = useState<HistoryWithSongs[]>([]);
 
   useEffect(() => {
     function fetchRequests() {
@@ -22,23 +22,21 @@ export default function History() {
     fetchRequests();
 
     // Attach listeners (socket queues until connect)
-    socket.on("history:added", fetchRequests);
-    socket.on("song:updated", fetchRequests);
+    socket.on("song:changed", fetchRequests);
 
     return () => {
-      socket.off("history:added", fetchRequests);
-      socket.off("song:updated", fetchRequests);
+      socket.off("song:changed", fetchRequests);
     };
   }, []);
 
   return (
     <div className="bg-background border-2 border-black/50 rounded-lg p-4">
       <h2 className="text-2xl font-bold mb-4">Últimas</h2>
-      {history.map(({ songs }) => (
-        <div key={songs?.id} className="mb-2 flex items-center justify-between">
+      {history.map(({ song, history }) => (
+        <div key={song?.id} className="mb-2 flex items-center justify-between">
           <div>
-            <p className="font-semibold">{songs?.title}</p>
-            <p className="text-sm text-gray-600">{songs?.artist}</p>
+            <p className="font-semibold">{song?.title}</p>
+            <p className="text-sm text-gray-600">{song?.artist}</p>
           </div>
           <div>
             <button
@@ -47,7 +45,7 @@ export default function History() {
                   const res = await fetch("/api/likes", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ songId: songs?.id }),
+                    body: JSON.stringify({ songId: history?.songId }),
                   });
                   const json = await res.json();
                   if (json.success) toast.success("Obrigado pelo like!");

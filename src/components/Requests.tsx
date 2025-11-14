@@ -60,7 +60,9 @@ export default function Requests() {
                     const res = await fetch("/api/likes", {
                       method: "POST",
                       headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({ songId: song?.id }),
+                      // The server returns only 'song' metadata without id in the requests API.
+                      // Use the request's songId directly to ensure we send the real song id.
+                      body: JSON.stringify({ songId: req.songId }),
                     });
                     const json = await res.json();
                     if (json.success) toast.success("Obrigado pelo like!");

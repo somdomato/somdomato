@@ -22,14 +22,11 @@ export default function TopSongs() {
 
     fetchTop();
 
-    socket.on("history:added", fetchTop);
-    socket.on("song:updated", fetchTop);
+    socket.on("song:changed", fetchTop);
     socket.on("like:added", fetchTop);
-    socket.on("likes:added", fetchTop);
     return () => {
-      socket.off("history:added", fetchTop);
+      socket.off("song:changed", fetchTop);
       socket.off("like:added", fetchTop);
-      socket.off("likes:added", fetchTop);
     };
   }, [by]);
 
