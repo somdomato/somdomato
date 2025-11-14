@@ -23,8 +23,8 @@ export default function Header() {
       {
         y: "-100%",
         loop: true,
-        loopDelay: 350,
-        duration: 750,
+        loopDelay: 950,
+        duration: 450,
         ease: "inOut(2)",
       },
       stagger(150, { from: "center" }),
@@ -37,7 +37,7 @@ export default function Header() {
         <div className="container mx-auto flex h-16 items-center gap-8">
           <Link
             href="/"
-            className="flex items-center gap-2 shrink-0 border border-yellow-500"
+            className="flex items-center gap-2 shrink-0"
           >
             <Image
               src="/images/logotipo.svg"
@@ -46,13 +46,13 @@ export default function Header() {
               height={40}
               priority
             />
-            <div className="flex flex-col justify-center items-center">
-              <span className="hidden md:block border border-red-500">
+            <div className="flex flex-col items-end gap-0">
+              <span className="hidden md:block mt-1 text-2xl font-bold leading-none">
                 Som do Mato
               </span>
-              <span className="block md:hidden">SDM</span>
+              <span className="block md:hidden mt-1 text-lg font-bold leading-none">SDM</span>
               {day === 5 && (
-                <span className="sextou text-sm border border-blue-500">
+                <span className="block sextou text-sm -mt-1 mr-3 italic -rotate-5">
                   sextou
                 </span>
               )}
