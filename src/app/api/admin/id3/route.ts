@@ -27,11 +27,33 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Song not found" }, { status: 404 });
     }
 
-    const filePath = path.join(
-      process.cwd(),
-      "public",
-      song.path.replace(/^\/?/, ""),
-    );
+    // Determine actual filesystem path for song.path
+    const publicRoot = path.join(process.cwd(), "public");
+    const normalizedSongPath = song.path || "";
+    let filePath: string;
+    if (
+      normalizedSongPath.startsWith("/music/") ||
+      normalizedSongPath.startsWith("music/")
+    ) {
+      // project relative path under public
+      filePath = path.join(publicRoot, normalizedSongPath.replace(/^\/?/, ""));
+    } else if (path.isAbsolute(normalizedSongPath)) {
+      // true filesystem absolute path
+      filePath = normalizedSongPath;
+    } else {
+      // default: relative to public
+      filePath = path.join(publicRoot, normalizedSongPath.replace(/^\/?/, ""));
+    }
+
+    // Validate file exists first
+    try {
+      await import("node:fs/promises").then((fs) => fs.access(filePath));
+    } catch (_err) {
+      return NextResponse.json(
+        { error: "File not found on disk" },
+        { status: 404 },
+      );
+    }
 
     // Update ID3 tags. Wrap in a promise to support async
     await new Promise<void>((resolve, reject) => {

@@ -84,6 +84,9 @@ export default function AdminSongEditor({ song }: { song: Song }) {
     setShowConfirm(true);
   }
 
+  const buttonClass =
+    "px-2 py-1 rounded text-white border-2 border-[#6b4f3a] bg-black hover:bg-green-700";
+
   return (
     <div className="mt-2">
       <button
@@ -116,7 +119,7 @@ export default function AdminSongEditor({ song }: { song: Song }) {
           <button
             disabled={loading}
             onClick={saveTags}
-            className="px-2 py-1 bg-blue-600 text-white rounded mr-2"
+            className={`${buttonClass} mr-2`}
           >
             Salvar Tags
           </button>
@@ -136,7 +139,7 @@ export default function AdminSongEditor({ song }: { song: Song }) {
           <button
             disabled={loading}
             onClick={handleRenameClick}
-            className="px-2 py-1 bg-green-600 text-white rounded"
+            className={`${buttonClass}`}
           >
             Renomear
           </button>
@@ -159,13 +162,13 @@ export default function AdminSongEditor({ song }: { song: Song }) {
                     await renameFile();
                     setShowConfirm(false);
                   }}
-                  className="px-2 py-1 bg-green-600 text-white rounded"
+                  className={`${buttonClass}`}
                 >
                   Confirmar
                 </button>
                 <button
                   onClick={() => setShowConfirm(false)}
-                  className="px-2 py-1 bg-gray-200 rounded"
+                  className="px-2 py-1 rounded bg-[#2a2a2a] text-white border-2 border-[#6b4f3a] hover:bg-green-700"
                 >
                   Cancelar
                 </button>

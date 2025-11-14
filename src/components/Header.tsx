@@ -35,10 +35,7 @@ export default function Header() {
     <>
       <header className="sticky z-50 bg-background top-0 border-b-2 border-b-black/50 shadow-sm px-4 md:px-0">
         <div className="container mx-auto flex h-16 items-center gap-8">
-          <Link
-            href="/"
-            className="flex items-center gap-2 shrink-0"
-          >
+          <Link href="/" className="flex items-center gap-2 shrink-0">
             <Image
               src="/images/logotipo.svg"
               alt="Rádio Som do Mato"
@@ -50,7 +47,9 @@ export default function Header() {
               <span className="hidden md:block mt-1 text-2xl font-bold leading-none">
                 Som do Mato
               </span>
-              <span className="block md:hidden mt-1 text-lg font-bold leading-none">SDM</span>
+              <span className="block md:hidden mt-1 text-lg font-bold leading-none">
+                SDM
+              </span>
               {day === 5 && (
                 <span className="block sextou text-sm -mt-1 mr-3 italic -rotate-5">
                   sextou

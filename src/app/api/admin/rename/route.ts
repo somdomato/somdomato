@@ -33,17 +33,31 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Song not found" }, { status: 404 });
     }
 
-    const oldPath = path.join(
-      process.cwd(),
-      "public",
-      song.path.replace(/^\/?/, ""),
-    );
-    const newRelative = `/music/${finalName}`;
-    const newPath = path.join(
-      process.cwd(),
-      "public",
-      newRelative.replace(/^\/?/, ""),
-    );
+    const publicRoot = path.join(process.cwd(), "public");
+    const normalizedSongPath = song.path || "";
+    let oldPath: string;
+    let willUsePublicRelative = false;
+    if (
+      normalizedSongPath.startsWith("/music/") ||
+      normalizedSongPath.startsWith("music/")
+    ) {
+      oldPath = path.join(publicRoot, normalizedSongPath.replace(/^\/?/, ""));
+      willUsePublicRelative = true;
+    } else if (path.isAbsolute(normalizedSongPath)) {
+      oldPath = normalizedSongPath;
+    } else {
+      oldPath = path.join(publicRoot, normalizedSongPath.replace(/^\/?/, ""));
+      willUsePublicRelative = true;
+    }
+    // keep dir the same as the old file to avoid moving between directories
+    const oldDir = path.dirname(oldPath);
+    const newPath = path.join(oldDir, finalName);
+    let newDbPath: string;
+    if (willUsePublicRelative && newPath.startsWith(publicRoot)) {
+      newDbPath = `/${path.relative(publicRoot, newPath).replace(/\\/g, "/")}`;
+    } else {
+      newDbPath = newPath;
+    }
 
     // Validate file exists
     try {
@@ -66,9 +80,20 @@ export async function POST(request: Request) {
       // expected, continue
     }
 
-    await fs.rename(oldPath, newPath);
+    try {
+      await fs.rename(oldPath, newPath);
+    } catch (err: unknown) {
+      // If rename fails across devices, fall back to copy + unlink
+      const e = err as { code?: string };
+      if (e.code === "EXDEV") {
+        await fs.copyFile(oldPath, newPath);
+        await fs.unlink(oldPath);
+      } else {
+        throw err;
+      }
+    }
 
-    await db.update(songs).set({ path: newRelative }).where(eq(songs.id, id));
+    await db.update(songs).set({ path: newDbPath }).where(eq(songs.id, id));
     // Emit socket event so clients can refresh
     const [updated] = await db
       .select()
@@ -77,7 +102,7 @@ export async function POST(request: Request) {
       .limit(1);
     if (global.io) global.io.emit("song:updated", updated);
 
-    return NextResponse.json({ success: true, path: newRelative });
+    return NextResponse.json({ success: true, path: newDbPath });
   } catch (error) {
     console.error("Error renaming file:", error);
     return NextResponse.json(

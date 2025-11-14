@@ -45,21 +45,24 @@ export default function AdminTokenInput() {
     setValue("");
   }
 
+  const buttonClass =
+    "px-2 py-1 rounded text-white border-2 border-[#6b4f3a] bg-black hover:bg-green-700";
+
   return (
     <div className="mb-2 flex items-center gap-2">
       <input
         value={value}
         onChange={(e) => setValue(e.target.value)}
         placeholder="Admin token"
-        className="border p-1 rounded"
+        className="border p-1 rounded bg-[#111] text-white"
       />
-      <button
-        className="px-2 py-1 bg-blue-600 text-white rounded"
-        onClick={() => save()}
-      >
+      <button className={buttonClass} onClick={() => save()}>
         Salvar token
       </button>
-      <button className="px-2 py-1 bg-gray-200 rounded" onClick={() => clear()}>
+      <button
+        className="px-2 py-1 rounded bg-[#2a2a2a] text-white border-2 border-[#6b4f3a] hover:bg-green-700"
+        onClick={() => clear()}
+      >
         Limpar
       </button>
     </div>
