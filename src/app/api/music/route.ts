@@ -113,10 +113,7 @@ export async function GET(request: Request) {
       });
     }
 
-    await db
-      .insert(history)
-      .values({ songId: selectedSong.id })
-      .returning();
+    await db.insert(history).values({ songId: selectedSong.id }).returning();
 
     if (global.io) global.io.emit("song:changed", selectedSong);
 

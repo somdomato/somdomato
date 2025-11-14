@@ -5,6 +5,7 @@ import { db } from "@/db";
 import { songs } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { requireAdmin } from "@/lib/adminAuth";
+import { revalidatePath } from "next/cache";
 
 export async function POST(request: Request) {
   const authResp = requireAdmin(request);
@@ -101,6 +102,13 @@ export async function POST(request: Request) {
       .where(eq(songs.id, id))
       .limit(1);
     if (global.io) global.io.emit("song:updated", updated);
+    try {
+      await revalidatePath("/");
+      await revalidatePath("/admin/musicas");
+      await revalidatePath("/admin/estatisticas");
+    } catch (err) {
+      console.warn("Revalidate failed:", err);
+    }
 
     return NextResponse.json({ success: true, path: newDbPath });
   } catch (error) {

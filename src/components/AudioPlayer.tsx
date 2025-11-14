@@ -28,13 +28,14 @@ export default function AudioPlayer() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ songId: id }),
-      }).then((res) => res.json())
-      .then((json) => {
-        if (json.success) {
-          setLiked(true);
-          toast.success("Obrigado pelo like!");
-        }
-      });
+      })
+        .then((res) => res.json())
+        .then((json) => {
+          if (json.success) {
+            setLiked(true);
+            toast.success("Obrigado pelo like!");
+          }
+        });
     } catch (err) {
       console.error("Error liking song:", err);
     }
