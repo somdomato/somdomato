@@ -24,9 +24,12 @@ export default function TopSongs() {
 
     socket.on("song:changed", fetchTop);
     socket.on("like:added", fetchTop);
+    // Older event name used in backend was plural. Support both for backwards compatibility.
+    socket.on("likes:added", fetchTop);
     return () => {
       socket.off("song:changed", fetchTop);
       socket.off("like:added", fetchTop);
+      socket.off("likes:added", fetchTop);
     };
   }, [by]);
 

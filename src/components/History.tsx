@@ -33,7 +33,7 @@ export default function History() {
     <div className="bg-background border-2 border-black/50 rounded-lg p-4">
       <h2 className="text-2xl font-bold mb-4">Últimas</h2>
       {history.map(({ song, history }) => (
-        <div key={song?.id} className="mb-2 flex items-center justify-between">
+        <div key={history?.songId} className="mb-2 flex items-center justify-between">
           <div>
             <p className="font-semibold">{song?.title}</p>
             <p className="text-sm text-gray-600">{song?.artist}</p>

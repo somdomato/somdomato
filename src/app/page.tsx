@@ -1,11 +1,11 @@
 import Image from "next/image";
-import { getHistory } from "@/actions/song";
+import History from "@/components/History";
 import Requests from "@/components/Requests";
 import TopSongs from "@/components/TopSongs";
 
 export default async function Home() {
-  const history = await getHistory();
-
+  // Use the client-side History component for live updates via websocket.
+  // Keep server fetched data as fallback initially if needed (not used here).
   return (
     <>
       <section className="mb-6">
@@ -31,15 +31,7 @@ export default async function Home() {
       <section className="mb-6">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           <TopSongs />
-          <div className="bg-background border-2 border-black/50 rounded-lg p-4">
-            <h2 className="text-2xl font-bold mb-4">Últimas</h2>
-            {history.map(({ songs }) => (
-              <div key={songs?.id} className="mb-2">
-                <p className="font-semibold">{songs?.title}</p>
-                <p className="text-sm text-gray-600">{songs?.artist}</p>
-              </div>
-            ))}
-          </div>
+          <History />
           <Requests />
         </div>
       </section>

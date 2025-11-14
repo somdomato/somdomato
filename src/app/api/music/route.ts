@@ -3,6 +3,7 @@ import { asc, eq, and, sql } from "drizzle-orm";
 import fs from "node:fs/promises";
 import { songs, history, requests } from "@/db/schema";
 import { getCurrentTimeSlot } from "@/lib/time";
+import { revalidatePath } from "next/cache";
 import { getBlockedSongIds } from "@/lib/protections";
 import type { Song } from "@/types/song";
 
@@ -89,6 +90,7 @@ export async function GET(request: Request) {
       await db.delete(requests).where(eq(requests.id, requestResult.requestId));
 
       if (global.io) global.io.emit("request:removed", requestResult);
+      else console.warn("No socket.io server available: cannot emit request:removed event");
     }
 
     for (let attempt = 0; attempt < 100; attempt++) {
@@ -115,7 +117,19 @@ export async function GET(request: Request) {
 
     await db.insert(history).values({ songId: selectedSong.id }).returning();
 
+    // Revalidate the main page and top 10 so server-side rendered content is refreshed
+    // in production (when ISR/caching is used). Also useful when clients don't rely
+    // solely on socket updates.
+    try {
+      await revalidatePath("/");
+      await revalidatePath("/top10");
+    } catch (err) {
+      // revalidatePath might be unsupported in certain environments; warn but don't crash
+      console.warn("Revalidate failed:", err);
+    }
+
     if (global.io) global.io.emit("song:changed", selectedSong);
+    else console.warn("No socket.io server available: cannot emit song:changed event");
 
     return Response.json({ ...selectedSong });
   } catch (error) {

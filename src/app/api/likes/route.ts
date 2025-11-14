@@ -35,8 +35,14 @@ export async function POST(request: Request) {
       .values({ songId, userIp })
       .returning();
 
-    if (global.io)
+    // Emit singular event name to match other socket events convention (e.g. "request:added").
+    // Keep plural event for backward compatibility if some clients still listen for it.
+    if (global.io) {
+      global.io.emit("like:added", { songId, likeId: inserted.id });
       global.io.emit("likes:added", { songId, likeId: inserted.id });
+    } else {
+      console.warn("No socket.io server available: cannot emit like events in production");
+    }
     try {
       revalidatePath("/");
       revalidatePath("/top10");

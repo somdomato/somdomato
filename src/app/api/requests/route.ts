@@ -95,6 +95,8 @@ export async function POST(request: NextRequest) {
 
     if (global.io) {
       global.io.emit("request:added", newRequest);
+    } else {
+      console.warn("No socket.io server available: cannot emit request:added event");
     }
 
     return NextResponse.json(
