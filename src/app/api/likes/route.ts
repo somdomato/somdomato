@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/db";
 import { likes } from "@/db/schema";
+import { eq, and } from "drizzle-orm";
 // No SQL helper required here.
 
 export async function POST(request: Request) {
@@ -22,8 +23,7 @@ export async function POST(request: Request) {
     const [existingLike] = await db
       .select()
       .from(likes)
-      .where(likes.songId.eq(songIdNum))
-      .where(likes.userIp.eq(userIp))
+      .where(and(eq(likes.songId, songIdNum), eq(likes.userIp, userIp)))
       .limit(1);
     if (existingLike) {
       return NextResponse.json({ error: "Already liked" }, { status: 409 });

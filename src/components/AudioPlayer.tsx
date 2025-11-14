@@ -49,31 +49,33 @@ export default function AudioPlayer() {
         const {
           icestats: { source },
         } = await request.json();
-        let artist = source.artist;
-        let title = source.title;
+        let iceArtist = source.artist;
+        let iceTitle = source.title;
 
         // Se não houver artist, tenta separar pelo padrão "Artista - Música"
-        if (!artist && title) {
-          const parts = title.split(" - ");
+        if (!iceArtist && iceTitle) {
+          const parts = iceTitle.split(" - ");
           if (parts.length > 1) {
-            artist = parts[0].trim();
-            title = parts.slice(1).join(" - ").trim();
+            iceArtist = parts[0].trim();
+            iceTitle = parts.slice(1).join(" - ").trim();
           }
         }
 
-        const unknownArtist = artist === "Unknown" ? DEFAULT_TITLE : artist;
-        const unknownTitle = title === "Unknown" ? DEFAULT_TITLE : title;
+        const artist = iceArtist === "Unknown" ? DEFAULT_TITLE : iceArtist;
+        const title = iceTitle === "Unknown" ? DEFAULT_TITLE : iceTitle;
 
-        setSong({ title: unknownTitle, artist: unknownArtist });
+        setSong({ title, artist });
 
         // Usar a capa salva no localStorage
         const nextCover = localStorage.getItem("cover");
         setCover(nextCover || "/images/logotipo.svg");
         localStorage.removeItem("cover");
 
-        toast.success(`Tocando agora: ${title} - ${artist}`, {
-          duration: 5000,
-        });
+        if (title !== DEFAULT_TITLE && artist !== DEFAULT_TITLE) {
+          toast.success(`Tocando agora: ${title} - ${artist}`, {
+            duration: 5000,
+          });
+        }
       }
     }
 

@@ -36,20 +36,24 @@ export default function Requests() {
   return (
     <div className="bg-background border-2 border-black/50 rounded-lg p-4">
       <h2 className="text-2xl font-bold mb-4">Próximas</h2>
-      {requests.map(({ songs }) => (
-        <div key={songs?.id} className="mb-2 flex items-center justify-between">
-          <div>
-            <p className="font-semibold">{songs?.title}</p>
-            <p className="text-sm text-gray-600">{songs?.artist}</p>
-          </div>
-          <div>
+      {requests.map((req) => {
+        type RequestLike = { id?: number; song?: { id?: number; title?: string; artist?: string }; songs?: { id?: number; title?: string; artist?: string } };
+        const r = req as unknown as RequestLike;
+        const song = r.song ?? r.songs;
+        return (
+          <div key={req.id ?? song?.id} className="mb-2 flex items-center justify-between">
+            <div>
+              <p className="font-semibold">{song?.title}</p>
+              <p className="text-sm text-gray-600">{song?.artist}</p>
+            </div>
+            <div>
             <button
               onClick={async () => {
                 try {
                   const res = await fetch("/api/likes", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ songId: songs?.id }),
+                      body: JSON.stringify({ songId: song?.id }),
                   });
                   const json = await res.json();
                   if (json.success) toast.success("Obrigado pelo like!");
@@ -65,7 +69,8 @@ export default function Requests() {
             </button>
           </div>
         </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
