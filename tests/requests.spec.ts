@@ -2,12 +2,12 @@ import { describe, it, expect, beforeEach, afterEach } from "bun:test";
 
 import * as actions from "@/actions/song";
 import * as dbModule from "@/db";
-import * as protections from "@/lib/protections";
+// avoid importing protections directly to prevent read-only binding issues
 import { POST } from "@/app/api/requests/route";
 import type { NextRequest } from "next/server";
 
 describe("requests realtime", () => {
-  let origCheck: PropertyDescriptor | undefined;
+  // no-op placeholder, removed protections override to avoid ESM binding issues
   let origIo: PropertyDescriptor | undefined;
   let calls: Array<{ evt: string; payload: Record<string, unknown> }>;
   let origDbInsert: unknown;
@@ -15,12 +15,8 @@ describe("requests realtime", () => {
   let origDbSelect: unknown;
 
   beforeEach(() => {
-    // stub protections to always allow requests
-    origCheck = Object.getOwnPropertyDescriptor(protections, "checkMusicRepetition");
-    Object.defineProperty(protections, "checkMusicRepetition", {
-      configurable: true,
-      value: async () => ({ isRepeated: false }),
-    });
+    // No rewrite of exported module functions: instead we'll stub `db` calls
+    // so that checkMusicRepetition resolves with `isRepeated: false`.
 
     // stub global.socket
     calls = [];
@@ -36,12 +32,50 @@ describe("requests realtime", () => {
     origDbUpdate = Object.getOwnPropertyDescriptor(dbModule.db, "update");
     origDbSelect = Object.getOwnPropertyDescriptor(dbModule.db, "select");
 
+    // Stub DB select to return a specific dataset based on call index so that
+    // checkMusicRepetition passes all checks and RequestSong can proceed.
+    let selectCallIdx = 0;
+    Object.defineProperty(dbModule.db, "select", {
+      configurable: true,
+      value: () => {
+        const call = selectCallIdx++;
+        // Make a builder that supports the chain calls used by the app
+        if (call === 4) {
+          // pendingArtists case: no limit/ordering, innerJoin expected to
+          // return an array directly
+          return {
+            from: () => ({ innerJoin: () => [] }),
+          } as unknown;
+        }
+
+        return {
+          from: () => ({
+            where: () => ({
+              limit: async () => {
+                // 0: verify song exists -> return a song
+                // Return a song for the first select (song exists check) and
+                // again when the API re-fetches the song (after validations).
+                if (call === 0 || call === 5)
+                  return [{ id: 999, title: "Test Song", artist: "Test Artist", cover: null }];
+                // all other `.limit` calls -> empty arrays
+                return [];
+              },
+            }),
+            orderBy: () => ({ limit: async () => [] }),
+            innerJoin: () => ({ orderBy: () => ({ limit: async () => [] }) }),
+          }),
+          orderBy: () => ({ limit: async () => [] }),
+          innerJoin: () => ({ orderBy: () => ({ limit: async () => [] }) }),
+        } as unknown;
+      },
+    });
+
     Object.defineProperty(dbModule.db, "insert", {
       configurable: true,
       value: () => ({
-      values: () => ({
-        returning: async () => [{ id: 42, songId: 999 }],
-      }),
+        values: () => ({
+          returning: async () => [{ id: 42, songId: 999 }],
+        }),
       }),
     });
 
@@ -50,20 +84,12 @@ describe("requests realtime", () => {
       value: () => ({ set: () => ({ where: async () => [] }) }),
     });
 
-    Object.defineProperty(dbModule.db, "select", {
-      configurable: true,
-      value: () => ({
-      from: () => ({
-        where: () => ({
-          limit: async () => [{ id: 999, title: "Test Song", artist: "Test Artist", cover: null }],
-        }),
-      }),
-      }),
-    });
+    // `select` stub above will be used by checkMusicRepetition to ensure no
+    // conflicts; nothing else to do here.
   });
 
   afterEach(() => {
-    if (origCheck) Object.defineProperty(protections, "checkMusicRepetition", origCheck);
+    // no protections restore step since we didn't override the exported function
     if (origIo) Object.defineProperty(globalThis, "io", origIo);
     if (origDbInsert) Object.defineProperty(dbModule.db, "insert", origDbInsert);
     if (origDbUpdate) Object.defineProperty(dbModule.db, "update", origDbUpdate);
