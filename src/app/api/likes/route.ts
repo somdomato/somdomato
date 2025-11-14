@@ -41,7 +41,9 @@ export async function POST(request: Request) {
       global.io.emit("like:added", { songId, likeId: inserted.id });
       global.io.emit("likes:added", { songId, likeId: inserted.id });
     } else {
-      console.warn("No socket.io server available: cannot emit like events in production");
+      console.warn(
+        "No socket.io server available: cannot emit like events in production",
+      );
     }
     try {
       revalidatePath("/");

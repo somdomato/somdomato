@@ -23,7 +23,10 @@ describe("requests realtime", () => {
     origIo = Object.getOwnPropertyDescriptor(globalThis, "io");
     Object.defineProperty(globalThis, "io", {
       configurable: true,
-      value: { emit: (evt: string, payload: Record<string, unknown>) => calls.push({ evt, payload }) },
+      value: {
+        emit: (evt: string, payload: Record<string, unknown>) =>
+          calls.push({ evt, payload }),
+      },
     });
 
     // stub DB operations used by RequestSong and POST
@@ -56,7 +59,14 @@ describe("requests realtime", () => {
                 // Return a song for the first select (song exists check) and
                 // again when the API re-fetches the song (after validations).
                 if (call === 0 || call === 5)
-                  return [{ id: 999, title: "Test Song", artist: "Test Artist", cover: null }];
+                  return [
+                    {
+                      id: 999,
+                      title: "Test Song",
+                      artist: "Test Artist",
+                      cover: null,
+                    },
+                  ];
                 // all other `.limit` calls -> empty arrays
                 return [];
               },
@@ -91,9 +101,12 @@ describe("requests realtime", () => {
   afterEach(() => {
     // no protections restore step since we didn't override the exported function
     if (origIo) Object.defineProperty(globalThis, "io", origIo);
-    if (origDbInsert) Object.defineProperty(dbModule.db, "insert", origDbInsert);
-    if (origDbUpdate) Object.defineProperty(dbModule.db, "update", origDbUpdate);
-    if (origDbSelect) Object.defineProperty(dbModule.db, "select", origDbSelect);
+    if (origDbInsert)
+      Object.defineProperty(dbModule.db, "insert", origDbInsert);
+    if (origDbUpdate)
+      Object.defineProperty(dbModule.db, "update", origDbUpdate);
+    if (origDbSelect)
+      Object.defineProperty(dbModule.db, "select", origDbSelect);
   });
 
   it("RequestSong emits request:added with payload", async () => {
@@ -104,7 +117,10 @@ describe("requests realtime", () => {
     const evt = calls.find((c) => c.evt === "request:added");
     expect(evt).toBeTruthy();
     if (!evt) throw new Error("Expected event");
-    const payload = evt.payload as { request?: unknown; song?: { title?: string } };
+    const payload = evt.payload as {
+      request?: unknown;
+      song?: { title?: string };
+    };
     expect(payload.request).not.toBeUndefined();
     expect(payload.song?.title).toBe("Test Song");
   });

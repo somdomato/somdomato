@@ -33,12 +33,17 @@ export default function History() {
     <div className="bg-background border-2 border-black/50 rounded-lg p-4">
       <h2 className="text-2xl font-bold mb-4">Últimas</h2>
       {history.map(({ song, history }) => (
-        <div key={history?.songId} className="mb-2 flex items-center justify-between">
+        <div
+          key={history?.songId}
+          className="mb-2 flex items-center justify-between"
+        >
           <div>
             {/* Support older rows that still may come as `songs` or missing.
             `song` is now provided by the API, but keep a graceful fallback. */}
             <p className="font-semibold">{song?.title ?? "Música removida"}</p>
-            <p className="text-sm text-gray-600">{song?.artist ?? "Artista desconhecido"}</p>
+            <p className="text-sm text-gray-600">
+              {song?.artist ?? "Artista desconhecido"}
+            </p>
           </div>
           <div>
             <button

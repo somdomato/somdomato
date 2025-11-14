@@ -58,16 +58,26 @@ export async function RequestSong(
 
   try {
     // Insert request and return the created record so we can broadcast it.
-    const [newRequest] = await db.insert(requests).values({ songId }).returning();
+    const [newRequest] = await db
+      .insert(requests)
+      .values({ songId })
+      .returning();
 
     // Increment the request counter on the song so other parts of the app
     // can reflect the new request without an extra query.
-    await db.update(songs).set({ requests: sql`${songs.requests} + 1` }).where(eq(songs.id, songId));
+    await db
+      .update(songs)
+      .set({ requests: sql`${songs.requests} + 1` })
+      .where(eq(songs.id, songId));
 
     // Emit a socket event so all connected clients update instantly. Emit the
     // song metadata too so clients can append the request without an extra
     // network call.
-    const [song] = await db.select().from(songs).where(eq(songs.id, songId)).limit(1);
+    const [song] = await db
+      .select()
+      .from(songs)
+      .where(eq(songs.id, songId))
+      .limit(1);
 
     if (global.io) {
       global.io.emit("request:added", {
@@ -79,7 +89,9 @@ export async function RequestSong(
         },
       });
     } else {
-      console.warn("No socket.io server available: cannot emit request:added event (RequestSong action)");
+      console.warn(
+        "No socket.io server available: cannot emit request:added event (RequestSong action)",
+      );
     }
 
     return {

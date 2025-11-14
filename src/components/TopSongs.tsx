@@ -57,7 +57,12 @@ export default function TopSongs() {
     <div className="bg-background border-2 border-black/50 rounded-lg p-4">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold mb-4">TOP 10</h2>
-        <Toggle />
+        <Toggle
+          isChecked={by === "likes"}
+          onChange={(checked) => setBy(checked ? "likes" : "plays")}
+          leftLabel="Tocados"
+          rightLabel="Curtidas"
+        />
         <div className="flex gap-2">
           <button
             className={`px-2 py-1 rounded ${by === "plays" ? "bg-gray-700 text-white" : "bg-gray-200"}`}

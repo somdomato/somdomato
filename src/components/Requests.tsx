@@ -30,7 +30,10 @@ export default function Requests() {
         setRequests((prev) => {
           const exists = prev.some((r) => r.id === payload.request.id);
           if (exists) return prev;
-          return [...prev, { ...payload.request, song: payload.song } as SongWithRequests];
+          return [
+            ...prev,
+            { ...payload.request, song: payload.song } as SongWithRequests,
+          ];
         });
       } else {
         fetchRequests();
@@ -74,7 +77,7 @@ export default function Requests() {
             key={req.id ?? song?.id}
             className="mb-2 flex items-center justify-between"
           >
-              <div>
+            <div>
               <p className="font-semibold">{title}</p>
               <p className="text-sm text-gray-600">{artist}</p>
             </div>

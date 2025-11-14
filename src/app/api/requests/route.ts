@@ -103,7 +103,9 @@ export async function POST(request: NextRequest) {
         },
       });
     } else {
-      console.warn("No socket.io server available: cannot emit request:added event");
+      console.warn(
+        "No socket.io server available: cannot emit request:added event",
+      );
     }
 
     return NextResponse.json(

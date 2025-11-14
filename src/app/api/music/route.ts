@@ -90,7 +90,10 @@ export async function GET(request: Request) {
       await db.delete(requests).where(eq(requests.id, requestResult.requestId));
 
       if (global.io) global.io.emit("request:removed", requestResult);
-      else console.warn("No socket.io server available: cannot emit request:removed event");
+      else
+        console.warn(
+          "No socket.io server available: cannot emit request:removed event",
+        );
     }
 
     for (let attempt = 0; attempt < 100; attempt++) {
@@ -129,7 +132,10 @@ export async function GET(request: Request) {
     }
 
     if (global.io) global.io.emit("song:changed", selectedSong);
-    else console.warn("No socket.io server available: cannot emit song:changed event");
+    else
+      console.warn(
+        "No socket.io server available: cannot emit song:changed event",
+      );
 
     return Response.json({ ...selectedSong });
   } catch (error) {
