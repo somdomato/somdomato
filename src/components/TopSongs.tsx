@@ -2,9 +2,10 @@
 
 import { socket } from "@/lib/socket";
 import { useEffect, useState } from "react";
-import type { Song } from "@/types/song";
 import { Heart } from "lucide-react";
 import { toast } from "sonner";
+import Toggle from "./ui/Toggle";
+import type { Song } from "@/types/song";
 
 export default function TopSongs() {
   const [by, setBy] = useState<"plays" | "likes">("plays");
@@ -54,8 +55,9 @@ export default function TopSongs() {
 
   return (
     <div className="bg-background border-2 border-black/50 rounded-lg p-4">
-      <h2 className="text-2xl font-bold mb-4">TOP 10</h2>
       <div className="flex items-center justify-between">
+        <h2 className="text-2xl font-bold mb-4">TOP 10</h2>
+        <Toggle />
         <div className="flex gap-2">
           <button
             className={`px-2 py-1 rounded ${by === "plays" ? "bg-gray-700 text-white" : "bg-gray-200"}`}

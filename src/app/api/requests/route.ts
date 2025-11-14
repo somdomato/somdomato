@@ -94,7 +94,14 @@ export async function POST(request: NextRequest) {
     // emitToRoom("main", "requests-updated", {});
 
     if (global.io) {
-      global.io.emit("request:added", newRequest);
+      global.io.emit("request:added", {
+        request: newRequest,
+        song: {
+          title: song?.title,
+          artist: song?.artist,
+          cover: song?.cover,
+        },
+      });
     } else {
       console.warn("No socket.io server available: cannot emit request:added event");
     }

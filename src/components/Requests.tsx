@@ -22,13 +22,33 @@ export default function Requests() {
     fetchRequests();
 
     // Always attach listeners. socket.io-client queues them until connect.
-    socket.on("request:added", fetchRequests);
-    socket.on("request:removed", fetchRequests);
+    socket.on("request:added", (payload) => {
+      // If payload contains the request + song metadata, update the list in
+      // place to avoid an extra network request and show the new request
+      // instantly. Otherwise fall back to fetching the full list.
+      if (payload?.request) {
+        setRequests((prev) => {
+          const exists = prev.some((r) => r.id === payload.request.id);
+          if (exists) return prev;
+          return [...prev, { ...payload.request, song: payload.song } as SongWithRequests];
+        });
+      } else {
+        fetchRequests();
+      }
+    });
+
+    socket.on("request:removed", (payload) => {
+      if (payload?.requestId) {
+        setRequests((prev) => prev.filter((r) => r.id !== payload.requestId));
+      } else {
+        fetchRequests();
+      }
+    });
     socket.on("song:updated", fetchRequests);
 
     return () => {
-      socket.off("request:added", fetchRequests);
-      socket.off("request:removed", fetchRequests);
+      socket.off("request:added");
+      socket.off("request:removed");
       socket.off("song:updated", fetchRequests);
     };
   }, []);
@@ -44,14 +64,19 @@ export default function Requests() {
         };
         const r = req as unknown as RequestLike;
         const song = r.song ?? r.songs;
+        // If the referenced song was removed from DB, show a fallback so the
+        // UI doesn't look empty. This can happen if a request points to a song
+        // that no longer exists (deleted file, db cleanup, etc.).
+        const title = song?.title ?? "Música removida";
+        const artist = song?.artist ?? "Artist desconhecido";
         return (
           <div
             key={req.id ?? song?.id}
             className="mb-2 flex items-center justify-between"
           >
-            <div>
-              <p className="font-semibold">{song?.title}</p>
-              <p className="text-sm text-gray-600">{song?.artist}</p>
+              <div>
+              <p className="font-semibold">{title}</p>
+              <p className="text-sm text-gray-600">{artist}</p>
             </div>
             <div>
               <button

@@ -12,7 +12,16 @@ export async function GET() {
       .orderBy(history.id)
       .limit(20);
 
-    return NextResponse.json({ history: allHistory }, { status: 200 });
+    // Drizzle returns rows with keys matching table names (history, songs). The
+    // frontend `History` component expects `history` + `song` (singular). Map
+    // the results to the expected shape for consistency with other endpoints
+    // and the `HistoryWithSongs` type.
+    const normalized = allHistory.map((row) => ({
+      history: row.history,
+      song: row.songs,
+    }));
+
+    return NextResponse.json({ history: normalized }, { status: 200 });
   } catch (error) {
     console.error("Error fetching requests:", error);
     return NextResponse.json(

@@ -35,8 +35,10 @@ export default function History() {
       {history.map(({ song, history }) => (
         <div key={history?.songId} className="mb-2 flex items-center justify-between">
           <div>
-            <p className="font-semibold">{song?.title}</p>
-            <p className="text-sm text-gray-600">{song?.artist}</p>
+            {/* Support older rows that still may come as `songs` or missing.
+            `song` is now provided by the API, but keep a graceful fallback. */}
+            <p className="font-semibold">{song?.title ?? "Música removida"}</p>
+            <p className="text-sm text-gray-600">{song?.artist ?? "Artista desconhecido"}</p>
           </div>
           <div>
             <button
