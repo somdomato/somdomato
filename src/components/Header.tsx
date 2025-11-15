@@ -35,7 +35,7 @@ export default function Header() {
     <>
       <header className="sticky z-50 bg-background top-0 border-b-2 border-b-black/50 shadow-sm px-4 md:px-0">
         <div className="container mx-auto flex h-16 items-center gap-8">
-          <Link href="/" className="flex items-center gap-2 shrink-0">
+          <Link href="/" className="flex items-center gap-1 md:gap-2 shrink-0">
             <Image
               src="/images/logotipo.svg"
               alt="Rádio Som do Mato"
@@ -51,7 +51,7 @@ export default function Header() {
                 SDM
               </span>
               {day === 5 && (
-                <span className="block sextou text-sm -mt-1 mr-3 italic -rotate-5">
+                <span className="block sextou text-sm -mt-1 mr-0 md:mr-2 italic -rotate-5">
                   sextou
                 </span>
               )}
