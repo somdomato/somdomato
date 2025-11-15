@@ -7,12 +7,12 @@ export function Modal({ children }: { children: React.ReactNode }) {
 
   return (
     <div
-      className="fixed inset-0 z-50 grid place-content-center bg-black/50 p-4"
+      className="fixed inset-0 z-50 grid place-content-center bg-black/80 p-4"
       role="dialog"
       aria-modal="true"
       aria-labelledby="modalTitle"
     >
-      <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-lg dark:bg-gray-900">
+      <div className="w-2xl rounded-lg bg-background border-2 border-black/70 p-6 shadow-lg">
         {children}
         <footer className="mt-6 flex justify-end gap-2">
           <button
@@ -24,13 +24,6 @@ export function Modal({ children }: { children: React.ReactNode }) {
           >
             Fechar
           </button>
-
-          {/* <button
-            type="button"
-            className="rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700"
-          >
-            Done
-          </button> */}
         </footer>
       </div>
     </div>

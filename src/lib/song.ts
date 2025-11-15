@@ -1,12 +1,23 @@
 import { readdir } from "node:fs/promises";
+import path from "node:path";
 
 export async function getAllFilesRecursive(dir: string): Promise<string[]> {
-  const dirents = await readdir(dir, { recursive: true, withFileTypes: true });
-  const files: string[] = [];
-  for (const dirent of dirents) {
-    if (dirent.isFile()) files.push(`${dir}/${dirent.name}`);
+  // Implement explicit recursive traversal so this works across Node/Bun versions
+  // without relying on readdir's `recursive` option which is only supported
+  // in newer Node versions. This is more robust and portable.
+  const results: string[] = [];
+
+  async function walk(directory: string) {
+    const dirents = await readdir(directory, { withFileTypes: true });
+    for (const dirent of dirents) {
+      const resolved = path.join(directory, dirent.name);
+      if (dirent.isDirectory()) await walk(resolved);
+      else if (dirent.isFile()) results.push(resolved);
+    }
   }
-  return files;
+
+  await walk(dir);
+  return results;
 }
 
 export async function getRandomFile(

@@ -59,8 +59,20 @@ async function main() {
   const seenTag = new Map<string, string>();
 
   for await (const song of musicFiles) {
-    NodeID3.read(song as string, async (err: Error | null, tags: Tag) => {
-      if (err) return null;
+    // Promisify NodeID3.read callback so we can await and ensure the script
+    // doesn't exit before all files are processed.
+    const readTags = (filePath: string) =>
+      new Promise<Tag | null>((resolve) => {
+        NodeID3.read(filePath, (err: Error | null, tags: Tag) => {
+          if (err) return resolve(null);
+          resolve(tags || null);
+        });
+      });
+
+    const tags = await readTags(song as string);
+    if (!tags) {
+      // No tags or error reading tags; continue but treat as 'no tags' branch
+    }
 
       const extension = parse(song).ext;
       if (
@@ -87,7 +99,9 @@ async function main() {
         console.error(`Erro ao extrair capa de ${song}:`, error);
       }
 
-      if (tags) {
+      // Treat as tagged only when at least one of title/artist is present.
+      const hasTags = Boolean(tags && (tags.title || tags.artist));
+      if (hasTags) {
         const tagKey = normalizeString(
           `${tags.title || ""}-${tags.artist || ""}`,
         );
@@ -162,9 +176,8 @@ async function main() {
           .onConflictDoNothing();
 
         seenFilename.set(filenameKey, resolvedSongPath);
-        seenTag.set(tagKey, resolvedSongPath);
-      }
-    });
+          seenTag.set(tagKey, resolvedSongPath);
+        }
   }
 }
 
