@@ -28,6 +28,10 @@ input {
   @apply focus:outline-none;
 }
 
+button {
+  @apply cursor-pointer;
+}
+
 /* Temas */
 .theme-manha {
   background-color: #87ceeb;

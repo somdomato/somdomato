@@ -11,7 +11,7 @@ import type { PlayerData } from "@/types/song";
 const DEFAULT_TITLE = "Rádio Som do Mato";
 
 export default function AudioPlayer() {
-  const { play, pause, playing, volume, setVolume, muted, toggleMute } =
+  const { play, pause, playing, volume, setVolume, muted, toggleMute, title, artist, setTitle, setArtist } =
     useAudio();
   const [song, setSong] = useState<PlayerData | null>({
     id: 0,
@@ -68,10 +68,9 @@ export default function AudioPlayer() {
       }
 
       const request = await fetch("https://radio.somdomato.com/json");
+
       if (request.ok) {
-        const {
-          icestats: { source },
-        } = await request.json();
+        const { icestats: { source } } = await request.json();
         let iceArtist = source.artist;
         let iceTitle = source.title;
 
@@ -95,9 +94,7 @@ export default function AudioPlayer() {
         localStorage.removeItem("cover");
 
         if (title !== DEFAULT_TITLE && artist !== DEFAULT_TITLE) {
-          toast.success(`Tocando agora: ${title} - ${artist}`, {
-            duration: 5000,
-          });
+          toast.success(`Tocando agora: ${title} - ${artist}`, { duration: 5000 });
         }
       }
     }

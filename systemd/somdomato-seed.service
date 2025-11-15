@@ -1,0 +1,16 @@
+[Unit]
+Description=Som do Mato - Seed Watcher (Upsert new music files and update metadata)
+After=network.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/home/lucas/code/sdm/somdomato
+Environment=MUSIC_PATH=/home/lucas/music/sdm
+Environment=DB_FILE_NAME=file:drizzle/database.db
+ExecStart=/bin/sh -lc 'bun ./src/db/seed-watcher.ts'
+RemainAfterExit=no
+User=lucas
+Group=lucas
+
+[Install]
+WantedBy=multi-user.target

@@ -100,7 +100,7 @@ export default function Requests() {
                     toast.error("Falha ao curtir");
                   }
                 }}
-                className="px-2 py-1 rounded bg-gray-200 hover:bg-gray-300"
+                className="px-2 py-1 rounded hover:text-gray-300"
               >
                 <Heart size={16} />
               </button>

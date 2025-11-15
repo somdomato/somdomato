@@ -1,7 +1,7 @@
 #!/bin/bash
 
 SESSION_NAME=${1:-"somdomato"}
-[ "$(sw_vers -productName)" == "macOS" ] && \
+[ "$(sw_vers -productName 2> /dev/null)" == "macOS" ] && \
     PROJECT_DIR="/Users/lucas/code/sdm/somdomato" || \
     PROJECT_DIR="/home/lucas/code/sdm/somdomato"
 

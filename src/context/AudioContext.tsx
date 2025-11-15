@@ -3,6 +3,10 @@
 import { createContext, useContext, useEffect, useRef, useState } from "react";
 
 interface AudioContextType {
+  title: string;
+  artist: string;
+  setTitle: (title: string) => void;
+  setArtist: (artist: string) => void;
   playing: boolean;
   play: () => void;
   pause: () => void;
@@ -16,10 +20,12 @@ const AudioContext = createContext<AudioContextType | undefined>(undefined);
 
 export const AudioProvider = ({ children }: { children: React.ReactNode }) => {
   const audioRef = useRef<HTMLAudioElement>(null);
-  const source = "https://radio.somdomato.com/radio.mp3";
+  const source = process.env.NEXT_PUBLIC_RADIO_SOURCE || "https://radio.somdomato.com/radio.mp3";
   const [playing, setPlaying] = useState(false);
   const [volume, setVolume] = useState(1);
   const [muted, setMuted] = useState(false);
+  const [title, setTitle] = useState("");
+  const [artist, setArtist] = useState("");
 
   const play = () => {
     if (audioRef.current) {
@@ -52,7 +58,7 @@ export const AudioProvider = ({ children }: { children: React.ReactNode }) => {
 
   return (
     <AudioContext.Provider
-      value={{ play, pause, playing, volume, setVolume, toggleMute, muted }}
+      value={{ play, pause, playing, volume, setVolume, toggleMute, muted, title, artist, setTitle, setArtist }}
     >
       {children}
       <audio ref={audioRef} src={source} />

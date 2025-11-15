@@ -74,6 +74,7 @@ export async function GET(request: Request) {
       })
       .from(requests)
       .orderBy(asc(requests.id))
+      .where(eq(requests.songId, songs.id))
       .limit(1)
       .innerJoin(songs, eq(songs.id, requests.songId));
 
@@ -88,12 +89,7 @@ export async function GET(request: Request) {
         createdAt: requestResult.createdAt,
       };
       await db.delete(requests).where(eq(requests.id, requestResult.requestId));
-
       if (global.io) global.io.emit("request:removed", requestResult);
-      else
-        console.warn(
-          "No socket.io server available: cannot emit request:removed event",
-        );
     }
 
     for (let attempt = 0; attempt < 100; attempt++) {
@@ -123,13 +119,13 @@ export async function GET(request: Request) {
     // Revalidate the main page and top 10 so server-side rendered content is refreshed
     // in production (when ISR/caching is used). Also useful when clients don't rely
     // solely on socket updates.
-    try {
-      await revalidatePath("/");
-      await revalidatePath("/top10");
-    } catch (err) {
-      // revalidatePath might be unsupported in certain environments; warn but don't crash
-      console.warn("Revalidate failed:", err);
-    }
+    // try {
+    //   await revalidatePath("/");
+    //   await revalidatePath("/top10");
+    // } catch (err) {
+    //   // revalidatePath might be unsupported in certain environments; warn but don't crash
+    //   console.warn("Revalidate failed:", err);
+    // }
 
     if (global.io) global.io.emit("song:changed", selectedSong);
     else
