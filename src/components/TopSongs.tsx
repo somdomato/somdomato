@@ -63,7 +63,7 @@ export default function TopSongs() {
           leftLabel="Tocados"
           rightLabel="Curtidas"
         />
-        <div className="flex gap-2">
+        {/* <div className="flex gap-2">
           <button
             className={`px-2 py-1 rounded ${by === "plays" ? "bg-gray-700 text-white" : "bg-gray-200"}`}
             onClick={() => setBy("plays")}
@@ -76,18 +76,18 @@ export default function TopSongs() {
           >
             Curtidas
           </button>
-        </div>
+        </div> */}
       </div>
       {top.map((song) => (
         <div key={song.id} className="mb-2 flex items-center justify-between">
           <div>
             <p className="font-semibold">{song.title}</p>
-            <p className="text-sm text-gray-600">{song.artist}</p>
+            <p className="text-sm text-gray-400">{song.artist}</p>
           </div>
           <div>
             <button
               onClick={() => likeSong(song.id)}
-              className="px-2 py-1 rounded bg-gray-200 hover:bg-gray-300"
+              className="px-2 py-1 rounded hover:text-gray-300"
             >
               <Heart size={16} />
             </button>

@@ -12,10 +12,11 @@ type ToggleProps = {
 export default function Toggle({
   isChecked,
   onChange,
-  leftLabel = "General",
-  rightLabel = "Project",
+  leftLabel = "Opt1",
+  rightLabel = "Opt2",
 }: ToggleProps) {
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+
+  function handleInputChange(e: React.ChangeEvent<HTMLInputElement>) {
     onChange?.(e.target.checked);
   };
 
