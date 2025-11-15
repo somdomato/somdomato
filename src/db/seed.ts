@@ -25,6 +25,21 @@ function normalizeString(s?: string | null) {
     .toLowerCase();
 }
 
+function parseFilenameToArtistTitle(filename: string) {
+  // Prefer more explicit separators such as " - " (space-hyphen-space)
+  const separators = [" - ", " — ", " – ", "—", "–", " -", "- ", "-"];
+  for (const sep of separators) {
+    if (filename.includes(sep)) {
+      const parts = filename.split(sep).map((p) => p.trim());
+      const artist = parts[0] || "";
+      const title = parts.slice(1).join(sep).trim() || "";
+      return { artist, title };
+    }
+  }
+  // If no obvious separator is found, fallback to returning filename as title
+  return { artist: "", title: filename };
+}
+
 async function main() {
   const musicFiles = await getAllFilesRecursive(process.env.MUSIC_PATH!);
 
@@ -59,6 +74,7 @@ async function main() {
   const seenTag = new Map<string, string>();
 
   for await (const song of musicFiles) {
+    console.log(`[seed] processing: ${song}`);
     // Promisify NodeID3.read callback so we can await and ensure the script
     // doesn't exit before all files are processed.
     const readTags = (filePath: string) =>
@@ -85,9 +101,11 @@ async function main() {
       const filename = parse(song).name;
       const filenameKey = normalizeString(filename);
       const resolvedSongPath = path.resolve(song as string);
+      let songDbPath = resolvedSongPath; // consistently store resolved absolute filesystem path
       let title: string;
       let artist: string;
-      let songDbPath: string;
+      let detectedTitleFromFilename = "";
+      let detectedArtistFromFilename = "";
       let cover: string | null = null;
 
       const sep = "-";
@@ -101,10 +119,14 @@ async function main() {
 
       // Treat as tagged only when at least one of title/artist is present.
       const hasTags = Boolean(tags && (tags.title || tags.artist));
+      const tagTitle = String(tags?.title ?? "");
+      const tagArtist = String(tags?.artist ?? "");
+      // Try to detect artist/title from filename if tags are missing or incomplete
+      const fileParsed = parseFilenameToArtistTitle(filename);
+      detectedArtistFromFilename = fileParsed.artist;
+      detectedTitleFromFilename = fileParsed.title;
       if (hasTags) {
-        const tagKey = normalizeString(
-          `${tags.title || ""}-${tags.artist || ""}`,
-        );
+        const tagKey = normalizeString(`${tagTitle}-${tagArtist}`);
         // Check duplicates against DB
         if (
           (existingFilenameMap.has(filenameKey) &&
@@ -113,7 +135,7 @@ async function main() {
             seenFilename.get(filenameKey) !== resolvedSongPath)
         ) {
           console.warn(
-            `[seed] Duplicate detected by filename: ${song} matches ${existingFilenameMap.get(filenameKey) || seenFilename.get(filenameKey)}`,
+            `[seed] Duplicate detected by filename: ${song} matches ${existingFilenameMap.get(filenameKey) || seenFilename.get(filenameKey)} (filenameKey=${filenameKey})`,
           );
           return;
         }
@@ -123,32 +145,29 @@ async function main() {
           (seenTag.has(tagKey) && seenTag.get(tagKey) !== resolvedSongPath)
         ) {
           console.warn(
-            `[seed] Duplicate detected by tags: ${song} matches ${existingTagMap.get(tagKey) || seenTag.get(tagKey)}`,
+            `[seed] Duplicate detected by tags: ${song} matches ${existingTagMap.get(tagKey) || seenTag.get(tagKey)} (tagKey=${tagKey})`,
           );
           return;
         }
-        artist = tags.artist
-          ? parse(tags.artist).name
-          : filename.slice(0, filename.indexOf(sep));
-        title = tags.title
-          ? parse(tags.title).name
-          : filename.slice(0, filename.lastIndexOf(sep));
+        artist = tagArtist
+          ? parse(tagArtist).name
+          : detectedArtistFromFilename || filename.slice(0, filename.indexOf(sep));
+        title = tagTitle
+          ? parse(tagTitle).name
+          : detectedTitleFromFilename || filename.slice(0, filename.lastIndexOf(sep));
         songDbPath = String(song);
         // mark seen
         seenFilename.set(filenameKey, resolvedSongPath);
-        seenTag.set(
-          normalizeString(`${tags.title || ""}-${tags.artist || ""}`),
-          resolvedSongPath,
-        );
+        seenTag.set(normalizeString(`${tagTitle}-${tagArtist}`), resolvedSongPath);
+        // Upsert metadata when path conflict occurs; otherwise insert a new row
         await db
           .insert(songs)
-          .values({
-            title,
-            artist,
-            path: songDbPath,
-            cover,
-          })
-          .onConflictDoNothing();
+          .values({ title, artist, path: songDbPath, cover })
+          .onConflictDoUpdate({
+            target: songs.path,
+            set: { title, artist, cover },
+          });
+        console.log(`[seed] upserted: ${song} -> title="${title}" artist="${artist}"`);
       } else {
         const tagKey = normalizeString(`${filename}`);
         if (
@@ -158,22 +177,18 @@ async function main() {
             seenFilename.get(filenameKey) !== resolvedSongPath)
         ) {
           console.warn(
-            `[seed] Duplicate detected by filename: ${song} matches ${existingFilenameMap.get(filenameKey) || seenFilename.get(filenameKey)}`,
+            `[seed] Duplicate detected by filename: ${song} matches ${existingFilenameMap.get(filenameKey) || seenFilename.get(filenameKey)} (filenameKey=${filenameKey})`,
           );
           return;
         }
-        artist = filename.slice(0, filename.indexOf(sep));
-        title = filename.slice(0, filename.lastIndexOf(sep));
+        artist = detectedArtistFromFilename || filename.slice(0, filename.indexOf(sep));
+        title = detectedTitleFromFilename || filename.slice(0, filename.lastIndexOf(sep));
         songDbPath = String(song);
         await db
           .insert(songs)
-          .values({
-            title,
-            artist,
-            path: songDbPath,
-            cover,
-          })
-          .onConflictDoNothing();
+          .values({ title, artist, path: songDbPath, cover })
+          .onConflictDoUpdate({ target: songs.path, set: { title, artist, cover } });
+        console.log(`[seed] upserted: ${song} -> title="${title}" artist="${artist}"`);
 
         seenFilename.set(filenameKey, resolvedSongPath);
           seenTag.set(tagKey, resolvedSongPath);
