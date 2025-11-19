@@ -3,7 +3,6 @@ import { asc, eq, and, sql } from "drizzle-orm";
 import fs from "node:fs/promises";
 import { songs, history, requests } from "@/db/schema";
 import { getCurrentTimeSlot } from "@/lib/time";
-import { revalidatePath } from "next/cache";
 import { getBlockedSongIds } from "@/lib/protections";
 import type { Song } from "@/types/song";
 
