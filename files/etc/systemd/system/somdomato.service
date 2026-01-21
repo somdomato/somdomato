@@ -1,0 +1,17 @@
+[Unit]
+Description=Som do Mato Next.js Application Service
+After=network.target
+
+[Service]
+Type=simple
+User=nginx
+Group=nginx
+Environment=NODE_ENV=production
+ExecStart=/home/nginx/.local/share/pnpm/pnpm start
+WorkingDirectory=/var/www/somdomato
+Restart=always
+# Optional: Set the port if not using the default 3000
+# Environment=PORT=3001
+
+[Install]
+WantedBy=multi-user.target
