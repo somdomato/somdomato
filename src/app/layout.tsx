@@ -37,7 +37,7 @@ export default function RootLayout({
       <body className={nunito.className}>
         <div className="flex flex-col min-h-screen">
           <Header />
-          <main className="flex-grow">{children}</main>
+          <main className="flex-1 container px-2 md:px-4">{children}</main>
           <Footer />
         </div>
       </body>
