@@ -12,10 +12,11 @@ cp -a "$PROJECT_DIR" "$TEMP_DIR"
 cd "$TEMP_DIR" || exit 1
 
 git clean -fxd -e .env
+cp .env .env.production 
 
 pnpm install
-#pnpm run push
-#pnpm run seed
+pnpm run push
+pnpm run seed
 pnpm run build || exit 1
 
 sudo /usr/bin/systemctl stop $SERVICE
