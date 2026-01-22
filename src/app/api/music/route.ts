@@ -31,27 +31,17 @@ export async function GET(request: Request) {
     const availableSongs = await db
       .select()
       .from(songs)
-      .where(
-        and(
-          sql`(${songs.timeSlots} & ${currentTimeSlot}) > 0`,
-          blockedSongIds.length > 0
-            ? sql`${songs.id} NOT IN (${blockedSongIds.join(",")})`
-            : sql`1=1`,
-        ),
-      );
+      .where(and(sql`(${songs.timeSlots} & ${currentTimeSlot}) > 0`, blockedSongIds.length > 0 ? sql`${songs.id} NOT IN (${blockedSongIds.join(",")})` : sql`1=1`));
 
     // Filtrar músicas de artistas que tocaram recentemente
-    const filteredSongs = availableSongs.filter(
-      (song) => !blockedArtists.includes(song.artist),
-    );
+    const filteredSongs = availableSongs.filter((song) => !blockedArtists.includes(song.artist));
 
     if (filteredSongs.length === 0) {
       const notification = includeNotification
         ? {
             type: "warning" as const,
             title: "Nenhuma música disponível",
-            message:
-              "Todas as músicas permitidas para este horário foram tocadas recentemente.",
+            message: "Todas as músicas permitidas para este horário foram tocadas recentemente.",
           }
         : null;
 
@@ -118,9 +108,7 @@ export async function GET(request: Request) {
     if (global.io) {
       global.io.emit("song:changed", selectedSong);
     } else {
-      console.warn(
-        "No socket.io server available: cannot emit song:changed event",
-      );
+      console.warn("No socket.io server available: cannot emit song:changed event");
     }
 
     return Response.json({ ...selectedSong });
@@ -139,9 +127,6 @@ export async function GET(request: Request) {
         }
       : null;
 
-    return Response.json(
-      { error: "Falha ao buscar música", notification },
-      { status: 500 },
-    );
+    return Response.json({ error: "Falha ao buscar música", notification }, { status: 500 });
   }
 }

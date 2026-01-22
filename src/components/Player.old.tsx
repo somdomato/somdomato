@@ -29,20 +29,10 @@ export default function Player() {
   return (
     <div>
       <div>
-        {isPlaying ? (
-          <button onClick={toggleIsPlaying}>Pause</button>
-        ) : (
-          <button onClick={toggleIsPlaying}>Play</button>
-        )}
+        {isPlaying ? <button onClick={toggleIsPlaying}>Pause</button> : <button onClick={toggleIsPlaying}>Play</button>}
         <button>Reload</button>
       </div>
-      <audio
-        src="https://radio.somdomato.com/geral.mp3"
-        autoPlay={true}
-        ref={audioRef}
-        onPlay={() => setPlayingState(true)}
-        onPause={() => setPlayingState(false)}
-      />
+      <audio src="https://radio.somdomato.com/geral.mp3" autoPlay={true} ref={audioRef} onPlay={() => setPlayingState(true)} onPause={() => setPlayingState(false)} />
     </div>
   );
 }

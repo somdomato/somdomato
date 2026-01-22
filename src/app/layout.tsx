@@ -1,5 +1,6 @@
 import { AudioProvider } from "@/context/AudioContext";
 import { Nunito } from "next/font/google";
+import { Toaster } from "sonner";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import type { Metadata } from "next";
@@ -33,20 +34,14 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        <link
-          rel="icon"
-          href="/images/logotipo.svg"
-          sizes="any"
-          type="image/svg+xml"
-        />
+        <link rel="icon" href="/images/logotipo.svg" sizes="any" type="image/svg+xml" />
       </head>
       <body className={nunito.className}>
+        <Toaster position="top-right" />
         <AudioProvider>
           <div className="flex flex-col min-h-screen">
             <Header />
-            <main className="flex-1 flex items-center justify-center min-h-0 w-full px-2 md:px-4">
-              {children}
-            </main>
+            <main className="flex-1 flex items-center justify-center min-h-0 w-full px-2 md:px-4">{children}</main>
             <Footer />
           </div>
         </AudioProvider>

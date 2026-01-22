@@ -20,9 +20,7 @@ export async function getAllFilesRecursive(dir: string): Promise<string[]> {
   return results;
 }
 
-export async function getRandomFile(
-  directoryPath: string,
-): Promise<string | undefined> {
+export async function getRandomFile(directoryPath: string): Promise<string | undefined> {
   const files = await getAllFilesRecursive(directoryPath);
   if (files.length === 0) return undefined; // No files found
   const index = Math.floor(Math.random() * files.length);

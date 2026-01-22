@@ -7,9 +7,7 @@ async function main() {
     process.exit(1);
   }
   const stats = await seedUtils.scanAndUpsertAllFiles(musicPath);
-  console.log(
-    `[seed] processed=${stats.processed} new=${stats.newOrUpdated} updated=${stats.updated} skipped=${stats.skipped}`,
-  );
+  console.log(`[seed] processed=${stats.processed} new=${stats.newOrUpdated} updated=${stats.updated} skipped=${stats.skipped}`);
 }
 
 (async () => {

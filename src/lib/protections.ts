@@ -8,15 +8,9 @@ export interface RepetitionCheckResult {
   message?: string;
 }
 
-export async function checkMusicRepetition(
-  songId: number,
-): Promise<RepetitionCheckResult> {
+export async function checkMusicRepetition(songId: number): Promise<RepetitionCheckResult> {
   // Verificar se a música existe
-  const [song] = await db
-    .select()
-    .from(songs)
-    .where(eq(songs.id, songId))
-    .limit(1);
+  const [song] = await db.select().from(songs).where(eq(songs.id, songId)).limit(1);
 
   if (!song) {
     return {
@@ -27,11 +21,7 @@ export async function checkMusicRepetition(
   }
 
   // 1. Verificar se a música está nas últimas 100 do histórico
-  const last100Songs = await db
-    .select({ songId: history.songId })
-    .from(history)
-    .orderBy(desc(history.id))
-    .limit(100);
+  const last100Songs = await db.select({ songId: history.songId }).from(history).orderBy(desc(history.id)).limit(100);
 
   const last100SongIds = last100Songs.map((h) => h.songId);
 
@@ -44,11 +34,7 @@ export async function checkMusicRepetition(
   }
 
   // 2. Verificar se a música já está nos pedidos pendentes
-  const existingRequest = await db
-    .select()
-    .from(requests)
-    .where(eq(requests.songId, songId))
-    .limit(1);
+  const existingRequest = await db.select().from(requests).where(eq(requests.songId, songId)).limit(1);
 
   if (existingRequest.length > 0) {
     return {
@@ -76,10 +62,7 @@ export async function checkMusicRepetition(
     .from(requests)
     .innerJoin(songs, eq(requests.songId, songs.id));
 
-  const recentArtists = [
-    ...recentHistory.map((h) => h.artist),
-    ...pendingArtists.map((p) => p.artist),
-  ];
+  const recentArtists = [...recentHistory.map((h) => h.artist), ...pendingArtists.map((p) => p.artist)];
 
   if (recentArtists.includes(song.artist)) {
     return {
@@ -100,16 +83,10 @@ export async function getBlockedSongIds(): Promise<{
   artists: string[];
 }> {
   // Histórico das últimas 100 músicas
-  const last100Songs = await db
-    .select({ songId: history.songId })
-    .from(history)
-    .orderBy(desc(history.id))
-    .limit(100);
+  const last100Songs = await db.select({ songId: history.songId }).from(history).orderBy(desc(history.id)).limit(100);
 
   // Requests pendentes
-  const pendingRequests = await db
-    .select({ songId: requests.songId })
-    .from(requests);
+  const pendingRequests = await db.select({ songId: requests.songId }).from(requests);
 
   // Artistas das últimas 10 músicas do histórico
   const recentHistory = await db
@@ -130,13 +107,7 @@ export async function getBlockedSongIds(): Promise<{
     .innerJoin(songs, eq(requests.songId, songs.id));
 
   return {
-    songIds: [
-      ...last100Songs.map((h) => h.songId),
-      ...pendingRequests.map((r) => r.songId),
-    ],
-    artists: [
-      ...recentHistory.map((h) => h.artist),
-      ...pendingArtists.map((p) => p.artist),
-    ],
+    songIds: [...last100Songs.map((h) => h.songId), ...pendingRequests.map((r) => r.songId)],
+    artists: [...recentHistory.map((h) => h.artist), ...pendingArtists.map((p) => p.artist)],
   };
 }

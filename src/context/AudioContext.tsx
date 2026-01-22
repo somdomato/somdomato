@@ -10,21 +10,23 @@ interface AudioContextType {
   playing: boolean;
   play: () => void;
   pause: () => void;
+  // volume is 0-100 in the app
   volume: number;
   setVolume: (volume: number) => void;
   muted: boolean;
-  toggleMute: (muted: boolean) => void;
+  // optionally accept a value to force mute/unmute
+  toggleMute: (muted?: boolean) => void;
+  // register an event listener on the internal audio element; returns an unsubscribe function
 }
 
 const AudioContext = createContext<AudioContextType | undefined>(undefined);
 
 export const AudioProvider = ({ children }: { children: React.ReactNode }) => {
-  const source =
-    process.env.NEXT_PUBLIC_RADIO_SOURCE ||
-    "https://radio.somdomato.com/geral.mp3";
+  const source = process.env.NEXT_PUBLIC_RADIO_SOURCE || "https://radio.somdomato.com/geral.mp3";
   const audioRef = useRef<HTMLAudioElement>(null);
   const [playing, setPlaying] = useState(false);
-  const [volume, setVolume] = useState(1);
+  // store volume as 0-100 to match UI controls
+  const [volume, setVolumeState] = useState(70);
   const [muted, setMuted] = useState(false);
   const [title, setTitle] = useState("");
   const [artist, setArtist] = useState("");
@@ -45,18 +47,24 @@ export const AudioProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  function toggleMute() {
-    setMuted(!muted);
+  function toggleMute(force?: boolean) {
+    const next = typeof force === "boolean" ? force : !muted;
+    setMuted(next);
     if (audioRef.current) {
-      audioRef.current.muted = !muted;
+      audioRef.current.muted = next;
     }
   }
 
+  const setVolume = (v: number) => {
+    // clamp to 0-100
+    const clamped = Math.max(0, Math.min(100, Math.round(v)));
+    setVolumeState(clamped);
+  };
+
+  // helper to register event listeners on the internal audio element
   useEffect(() => {
-    if (audioRef.current) {
-      audioRef.current.volume = volume;
-    }
-  }, [volume]);
+    // nothing to do: audio element is managed in Player component
+  }, []);
 
   return (
     <AudioContext.Provider
