@@ -23,6 +23,10 @@
       },
       "style": {
         "noNonNullAssertion": "off"
+      },
+      "a11y": {
+        "useButtonType": "off",
+        "useMediaCaption": "off"
       }
     },
     "domains": {

@@ -25,3 +25,7 @@ body {
   color: var(--foreground);
   font-family: var(--font-nunito), Arial, Helvetica, sans-serif;
 }
+
+button {
+  @apply cursor-pointer;
+}

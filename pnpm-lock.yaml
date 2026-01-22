@@ -23,6 +23,9 @@ importers:
       next:
         specifier: 16.1.4
         version: 16.1.4(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
+      node-id3:
+        specifier: ^0.2.9
+        version: 0.2.9
       react:
         specifier: 19.2.3
         version: 19.2.3
@@ -1127,6 +1130,10 @@ packages:
   graceful-fs@4.2.11:
     resolution: {integrity: sha512-RbJ5/jmFcNNCcDV5o9eTnBLJ/HszWV0P73bc+Ff4nS/rJj+YaS6IGyiOL0VoBYX+l1Wrl3k63h/KrH+nhJ0XvQ==}
 
+  iconv-lite@0.6.2:
+    resolution: {integrity: sha512-2y91h5OpQlolefMPmUlivelittSWy0rP+oYVpn6A7GwVHNE8AWzoYOBNmlwks3LobaJxgHCYZAnyNo2GgpNRNQ==}
+    engines: {node: '>=0.10.0'}
+
   jiti@2.6.1:
     resolution: {integrity: sha512-ekilCSN1jwRvIbgeg/57YFh8qQDNbwDb9xT/qu2DAHbFFZUicIl4ygVaAvzveMhMVr3LnpSKTNnwt8PoOfmKhQ==}
     hasBin: true
@@ -1264,6 +1271,9 @@ packages:
     resolution: {integrity: sha512-dRB78srN/l6gqWulah9SrxeYnxeddIG30+GOqK/9OlLVyLg3HPnr6SqOWTWOXKRwC2eGYCkZ59NNuSgvSrpgOA==}
     engines: {node: ^12.20.0 || ^14.13.1 || >=16.0.0}
 
+  node-id3@0.2.9:
+    resolution: {integrity: sha512-dSxhuxrkkGVRgUhDHFxdY0pilzOREcodO01HcZWfaRkCaPWGmo0dOgD8ygyL6ln4Iv4cmfRxAWn1WD9bIB9Bhw==}
+
   picocolors@1.1.1:
     resolution: {integrity: sha512-xceH2snhtb5M9liqDsmEw56le376mTZkEX/jEb/RxNFyegNul7eNslCXP9FDj/Lcu0X8KEyMceP2ntpaHrDEVA==}
 
@@ -1289,6 +1299,9 @@ packages:
 
   resolve-pkg-maps@1.0.0:
     resolution: {integrity: sha512-seS2Tj26TBVOC2NIc2rOe2y2ZO7efxITtLZcGSOnHHNOQ7CkiUBfw0Iw2ck6xkIhPwLhKNLS8BO+hEpngQlqzw==}
+
+  safer-buffer@2.1.2:
+    resolution: {integrity: sha512-YZo3K82SD7Riyi0E1EQPojLz7kpepnSQI9IyPbHHg1XXXevb5dJI7tpyN2ADxGcQbHG7vcyRHk0cbwqcQriUtg==}
 
   scheduler@0.27.0:
     resolution: {integrity: sha512-eNv+WrVbKu1f3vbYJT/xtiF5syA5HPIMtf9IgY/nKg0sWqzAUEvqY/xm7OcZc/qafLx/iO9FgOmeSAp4v5ti/Q==}
@@ -2101,6 +2114,10 @@ snapshots:
 
   graceful-fs@4.2.11: {}
 
+  iconv-lite@0.6.2:
+    dependencies:
+      safer-buffer: 2.1.2
+
   jiti@2.6.1: {}
 
   js-base64@3.7.8: {}
@@ -2217,6 +2234,10 @@ snapshots:
       fetch-blob: 3.2.0
       formdata-polyfill: 4.0.10
 
+  node-id3@0.2.9:
+    dependencies:
+      iconv-lite: 0.6.2
+
   picocolors@1.1.1: {}
 
   postcss@8.4.31:
@@ -2241,6 +2262,8 @@ snapshots:
   react@19.2.3: {}
 
   resolve-pkg-maps@1.0.0: {}
+
+  safer-buffer@2.1.2: {}
 
   scheduler@0.27.0: {}
 

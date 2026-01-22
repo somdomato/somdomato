@@ -6,8 +6,11 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "push": "drizzle-kit push",
+    "seed": "tsx src/db/seed.ts",
     "lint": "biome check",
-    "format": "biome format --write"
+    "format": "biome format --write",
+    "check": "tsc --noEmit"
   },
   "dependencies": {
     "@libsql/client": "^0.17.0",
@@ -15,6 +18,7 @@
     "drizzle-orm": "^0.45.1",
     "lucide-react": "^0.562.0",
     "next": "16.1.4",
+    "node-id3": "^0.2.9",
     "react": "19.2.3",
     "react-dom": "19.2.3"
   },
@@ -28,5 +32,6 @@
     "tailwindcss": "^4",
     "tsx": "^4.21.0",
     "typescript": "^5"
-  }
+  },
+  "packageManager": "pnpm@10.28.1"
 }
