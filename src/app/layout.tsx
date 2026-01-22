@@ -32,7 +32,12 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        <link rel="icon" href="/images/logotipo.svg" sizes="any" type="image/svg+xml" />
+        <link
+          rel="icon"
+          href="/images/logotipo.svg"
+          sizes="any"
+          type="image/svg+xml"
+        />
       </head>
       <body className={nunito.className}>
         <div className="flex flex-col min-h-screen">
