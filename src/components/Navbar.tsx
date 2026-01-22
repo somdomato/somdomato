@@ -6,6 +6,9 @@ export default function Navbar() {
       <Link href="/" className="font-semibold">
         Início
       </Link>
+      <Link href="/pedidos" className="font-semibold">
+        Pedidos
+      </Link>
     </nav>
   );
 }
