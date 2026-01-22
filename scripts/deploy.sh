@@ -16,11 +16,13 @@ cp .env .env.production
 
 pnpm install
 pnpm run push
-pnpm run seed
 pnpm run build || exit 1
 
 sudo /usr/bin/systemctl stop $SERVICE
+pnpm run seed
 rm -rf "$PROJECT_DIR"
 mv "$TEMP_DIR" "$PROJECT_DIR"
 ln -sf /var/music/sdm "$PROJECT_DIR/public/music"
 sudo /usr/bin/systemctl start $SERVICE
+
+sudo /usr/bin/systemctl restart somdomato-icecast.service somdomato-liquidsoap.service
