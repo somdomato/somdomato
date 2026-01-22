@@ -152,10 +152,7 @@ export default function IcecastPlayer({
           play();
           setIsLoading(false);
         }}
-        onPause={() => {
-          pause();
-          setIsLoading(false);
-        }}
+        onPause={() => play()}
         onWaiting={() => setIsLoading(true)}
         onCanPlay={() => setIsLoading(false)}
       />

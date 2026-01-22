@@ -3,56 +3,83 @@
 import Image from "next/image";
 import { useState, useRef, useEffect } from "react";
 import { Play, Pause, RotateCw, Volume2, VolumeX } from "lucide-react";
-import { useAudio } from "@/context/AudioContext";
-import { socket } from "@/lib/socket";
-import type { PlayerData } from "@/types";
 
 interface IcecastPlayerProps {
   streamUrl?: string;
   coverImage?: string;
+  defaultTitle?: string;
+  defaultArtist?: string;
   className?: string;
 }
-
-const DEFAULT_TITLE = "Rádio Som do Mato";
 
 export default function IcecastPlayer({
   streamUrl = "https://radio.somdomato.com/geral.mp3",
   coverImage = "/images/logotipo.svg",
+  defaultTitle = "Ao Vivo",
+  defaultArtist = "Rádio",
   className = "",
 }: IcecastPlayerProps) {
-  const audioRef = useRef<HTMLAudioElement>(null);
-  const {
-    play,
-    pause,
-    playing,
-    volume,
-    setVolume,
-    muted,
-    toggleMute,
-    title,
-    artist,
-  } = useAudio();
-  const [_song, setSong] = useState<PlayerData | null>({
-    id: 0,
-    title: "Rádio Som do Mato",
-    artist: "A mais sertaneja",
-  });
-  const [_cover, setCover] = useState("/images/logotipo.svg");
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [isMuted, setIsMuted] = useState(false);
+  const [volume, setVolume] = useState(70);
   const [isLoading, setIsLoading] = useState(false);
+  const [metadata, setMetadata] = useState({
+    title: defaultTitle,
+    artist: defaultArtist,
+  });
+
+  const audioRef = useRef<HTMLAudioElement>(null);
 
   // Atualiza o volume do áudio
   useEffect(() => {
     if (audioRef.current) {
-      audioRef.current.volume = muted ? 0 : volume / 100;
+      audioRef.current.volume = isMuted ? 0 : volume / 100;
     }
-  }, [volume, muted]);
+  }, [volume, isMuted]);
+
+  // Tentativa de buscar metadados do Icecast (simplificado)
+  useEffect(() => {
+    if (!isPlaying) return;
+
+    const fetchMetadata = async () => {
+      try {
+        // Exemplo de endpoint - ajuste conforme seu servidor Icecast
+        const statusUrl = streamUrl.replace(/\/stream$/, "/status-json.xsl");
+        const response = await fetch(statusUrl);
+        const data = await response.json();
+
+        // Ajuste conforme estrutura do seu Icecast
+        if (data?.icestats?.source) {
+          const source = Array.isArray(data.icestats.source)
+            ? data.icestats.source[0]
+            : data.icestats.source;
+
+          if (source.title) {
+            const [artist, title] = source.title.split(" - ");
+            setMetadata({
+              artist: artist || defaultArtist,
+              title: title || source.title || defaultTitle,
+            });
+          }
+        }
+      } catch (error) {
+        // Silenciosamente ignora erros de metadata
+        console.debug("Metadata fetch failed:", error);
+      }
+    };
+
+    fetchMetadata();
+    const interval = setInterval(fetchMetadata, 10000); // Atualiza a cada 10s
+
+    return () => clearInterval(interval);
+  }, [isPlaying, streamUrl, defaultTitle, defaultArtist]);
 
   const togglePlay = () => {
     if (!audioRef.current) return;
 
-    if (playing) {
+    if (isPlaying) {
       audioRef.current.pause();
-      pause();
+      setIsPlaying(false);
     } else {
       setIsLoading(true);
       audioRef.current.play().catch((error) => {
@@ -65,7 +92,7 @@ export default function IcecastPlayer({
   const handleReload = () => {
     if (!audioRef.current) return;
 
-    const wasPlaying = playing;
+    const wasPlaying = isPlaying;
     audioRef.current.load();
 
     if (wasPlaying) {
@@ -77,67 +104,17 @@ export default function IcecastPlayer({
     }
   };
 
+  const toggleMute = () => {
+    setIsMuted(!isMuted);
+  };
+
   const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newVolume = Number(e.target.value);
     setVolume(newVolume);
-    if (newVolume > 0 && muted) {
-      toggleMute(false);
+    if (newVolume > 0 && isMuted) {
+      setIsMuted(false);
     }
   };
-
-  useEffect(() => {
-    socket.on("song:changed", onSongChanged);
-
-    async function onSongChanged(nextSong: {
-      id: number;
-      title: string;
-      artist: string;
-      cover?: string;
-    }) {
-      if (typeof window !== "undefined") {
-        const storedCover = localStorage.getItem("cover");
-        if (storedCover) setCover(storedCover);
-        if (nextSong.cover) localStorage.setItem("cover", nextSong.cover);
-      }
-
-      const request = await fetch("https://radio.somdomato.com/json");
-
-      if (request.ok) {
-        const {
-          icestats: { source },
-        } = await request.json();
-        let iceArtist = source.artist;
-        let iceTitle = source.title;
-
-        // Se não houver artist, tenta separar pelo padrão "Artista - Música"
-        if (!iceArtist && iceTitle) {
-          const parts = iceTitle.split(" - ");
-          if (parts.length > 1) {
-            iceArtist = parts[0].trim();
-            iceTitle = parts.slice(1).join(" - ").trim();
-          }
-        }
-
-        const artist = iceArtist === "Unknown" ? DEFAULT_TITLE : iceArtist;
-        const title = iceTitle === "Unknown" ? DEFAULT_TITLE : iceTitle;
-
-        setSong({ title, artist });
-
-        // Usar a capa salva no localStorage
-        const nextCover = localStorage.getItem("cover");
-        setCover(nextCover || "/images/logotipo.svg");
-        localStorage.removeItem("cover");
-
-        //if (title !== DEFAULT_TITLE && artist !== DEFAULT_TITLE) {
-        //toast.success(`Tocando agora: ${title} - ${artist}`, { duration: 5000 });
-        //}
-      }
-    }
-
-    return () => {
-      socket.off("song:changed", onSongChanged);
-    };
-  }, []);
 
   return (
     <div
@@ -149,13 +126,10 @@ export default function IcecastPlayer({
         src={streamUrl}
         preload="none"
         onPlaying={() => {
-          play();
+          setIsPlaying(true);
           setIsLoading(false);
         }}
-        onPause={() => {
-          pause();
-          setIsLoading(false);
-        }}
+        onPause={() => setIsPlaying(false)}
         onWaiting={() => setIsLoading(true)}
         onCanPlay={() => setIsLoading(false)}
       />
@@ -177,8 +151,10 @@ export default function IcecastPlayer({
 
       {/* Metadata */}
       <div className="flex-1 min-w-0 hidden sm:block">
-        <div className="text-sm font-semibold text-white truncate">{title}</div>
-        <div className="text-xs text-slate-400 truncate">{artist}</div>
+        <div className="text-sm font-semibold text-white truncate">
+          {metadata.title}
+        </div>
+        <div className="text-xs text-slate-400 truncate">{metadata.artist}</div>
       </div>
 
       {/* Controls */}
@@ -188,9 +164,9 @@ export default function IcecastPlayer({
           onClick={togglePlay}
           disabled={isLoading}
           className="w-9 h-9 flex items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-md transition-all hover:shadow-lg active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
-          aria-label={playing ? "Pause" : "Play"}
+          aria-label={isPlaying ? "Pause" : "Play"}
         >
-          {playing ? (
+          {isPlaying ? (
             <Pause className="w-4 h-4" fill="currentColor" />
           ) : (
             <Play className="w-4 h-4 ml-0.5" fill="currentColor" />
@@ -209,11 +185,11 @@ export default function IcecastPlayer({
         {/* Volume Controls - Hidden on mobile */}
         <div className="hidden md:flex items-center gap-2 ml-1">
           <button
-            onClick={() => toggleMute(!muted)}
+            onClick={toggleMute}
             className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-700/50 hover:bg-slate-600/50 text-slate-300 hover:text-white transition-all active:scale-95"
-            aria-label={muted ? "Unmute" : "Mute"}
+            aria-label={isMuted ? "Unmute" : "Mute"}
           >
-            {muted ? (
+            {isMuted ? (
               <VolumeX className="w-4 h-4" />
             ) : (
               <Volume2 className="w-4 h-4" />
@@ -224,7 +200,7 @@ export default function IcecastPlayer({
           <div className="relative w-20 h-1 bg-slate-700 rounded-full overflow-hidden group">
             <div
               className="absolute h-full bg-gradient-to-r from-blue-500 to-blue-600 transition-all"
-              style={{ width: `${muted ? 0 : volume}%` }}
+              style={{ width: `${isMuted ? 0 : volume}%` }}
             />
             <input
               type="range"
