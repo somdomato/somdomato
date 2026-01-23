@@ -97,8 +97,12 @@ export default function IcecastPlayer({ className = "" }: IcecastPlayerProps) {
 
       {/* Metadata */}
       <div className="flex-1 min-w-0 hidden sm:block">
-        <div className="text-sm font-semibold text-white truncate">{title}</div>
-        <div className="text-xs text-slate-400 truncate">{artist}</div>
+        <div className="text-sm font-semibold text-white truncate overflow-hidden text-ellipsis whitespace-nowrap" title={title}>
+          {title}
+        </div>
+        <div className="text-xs text-slate-400 truncate overflow-hidden text-ellipsis whitespace-nowrap" title={artist}>
+          {artist}
+        </div>
       </div>
 
       {/* Controls */}
