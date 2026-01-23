@@ -1,0 +1,10 @@
+[Unit]
+Description=Monitor music directory for changes
+After=network.target
+
+[Path]
+PathModified=/var/music/sdm
+Unit=somdomato-sync.service
+
+[Install]
+WantedBy=multi-user.target

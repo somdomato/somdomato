@@ -23,15 +23,20 @@ export default function IcecastPlayer({ coverImage = DEFAULT_COVER, className = 
   useEffect(() => {
     const handleSongChanged = async (nextSong: { id: number; title: string; artist: string; cover?: string }) => {
       // Salvar dados no localStorage imediatamente
-      localStorage.setItem("nextSong", JSON.stringify({
-        title: nextSong.title,
-        artist: nextSong.artist,
-        cover: nextSong.cover
-      }));
+      localStorage.setItem(
+        "nextSong",
+        JSON.stringify({
+          title: nextSong.title,
+          artist: nextSong.artist,
+          cover: nextSong.cover,
+        }),
+      );
 
       try {
         const response = await fetch("https://radio.somdomato.com/json");
-        const { icestats: { source } } = await response.json();
+        const {
+          icestats: { source },
+        } = await response.json();
 
         let iceArtist = source.artist;
         let iceTitle = source.title;
@@ -47,8 +52,8 @@ export default function IcecastPlayer({ coverImage = DEFAULT_COVER, className = 
         const storedData = localStorage.getItem("nextSong");
         const parsedData = storedData ? JSON.parse(storedData) : null;
 
-        const finalArtist = (iceArtist && iceArtist !== "Unknown") ? iceArtist : (parsedData?.artist || DEFAULT_TITLE);
-        const finalTitle = (iceTitle && iceTitle !== "Unknown") ? iceTitle : (parsedData?.title || DEFAULT_TITLE);
+        const finalArtist = iceArtist && iceArtist !== "Unknown" ? iceArtist : parsedData?.artist || DEFAULT_TITLE;
+        const finalTitle = iceTitle && iceTitle !== "Unknown" ? iceTitle : parsedData?.title || DEFAULT_TITLE;
 
         setTitle(finalTitle);
         setArtist(finalArtist);
@@ -61,7 +66,7 @@ export default function IcecastPlayer({ coverImage = DEFAULT_COVER, className = 
         localStorage.removeItem("nextSong");
       } catch (error) {
         console.error("Error fetching song info:", error);
-        
+
         // Se falhar a API do Icecast, usa os dados salvos do WebSocket
         const storedData = localStorage.getItem("nextSong");
         if (storedData) {
@@ -97,7 +102,7 @@ export default function IcecastPlayer({ coverImage = DEFAULT_COVER, className = 
       <div className="flex items-center gap-1.5 sm:gap-2">
         {/* Play/Pause */}
         <button
-          onClick={() => playing ? pause() : play()}
+          onClick={() => (playing ? pause() : play())}
           className="w-9 h-9 flex items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-md transition-all hover:shadow-lg active:scale-95 disabled:opacity-50"
           aria-label={playing ? "Pause" : "Play"}
         >
@@ -120,11 +125,7 @@ export default function IcecastPlayer({ coverImage = DEFAULT_COVER, className = 
 
         {/* Volume Controls */}
         <div className="hidden md:flex items-center gap-2 ml-1">
-          <button
-            onClick={() => toggleMute()}
-            className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-700/50 hover:bg-slate-600/50 text-slate-300 hover:text-white transition-all active:scale-95"
-            aria-label={muted ? "Unmute" : "Mute"}
-          >
+          <button onClick={() => toggleMute()} className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-700/50 hover:bg-slate-600/50 text-slate-300 hover:text-white transition-all active:scale-95" aria-label={muted ? "Unmute" : "Mute"}>
             {muted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
           </button>
 
@@ -138,10 +139,10 @@ export default function IcecastPlayer({ coverImage = DEFAULT_COVER, className = 
               const newVolume = Number(e.target.value);
               setVolume(newVolume);
               if (newVolume > 0) {
-                toggleMute(false)
+                toggleMute(false);
               } else if (newVolume === 0) {
-                toggleMute(true)
-              };
+                toggleMute(true);
+              }
             }}
             className="w-20 h-1 bg-slate-700 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-blue-500 [&::-moz-range-thumb]:w-3 [&::-moz-range-thumb]:h-3 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-blue-500 [&::-moz-range-thumb]:border-0"
             style={{

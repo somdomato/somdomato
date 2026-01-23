@@ -50,5 +50,5 @@ drizzle/**
 *.old*
 
 # covers
-#public/covers/**
-#!public/covers/.gitkeep
+public/covers/**
+!public/covers/.gitkeep

@@ -8,7 +8,7 @@ export default function Header() {
     <header className="sticky top-0 z-50 border-b-2 border-black/50 p-1 md:flex md:items-center md:justify-between md:p-2 relative">
       {/* Background com fallback */}
       <div className="absolute inset-0 -z-20 bg-background bg-[url('/images/wood.jpg')] bg-repeat-x bg-top bg-contain" />
-      
+
       {/* Overlay escuro */}
       <div className="absolute inset-0 -z-10 bg-background/90" />
 

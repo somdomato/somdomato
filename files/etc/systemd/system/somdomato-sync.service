@@ -1,0 +1,15 @@
+[Unit]
+Description=Sync music database with filesystem
+After=network.target
+
+[Service]
+Type=oneshot
+User=nginx
+Group=nginx
+WorkingDirectory=/var/www/somdomato
+ExecStart=/var/www/somdomato/scripts/sync-music.sh
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
