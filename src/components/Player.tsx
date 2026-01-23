@@ -16,8 +16,8 @@ interface IcecastPlayerProps {
 const DEFAULT_TITLE = "Rádio Som do Mato";
 const DEFAULT_COVER = "/images/logotipo.svg";
 
-export default function IcecastPlayer({ coverImage = DEFAULT_COVER, className = "" }: IcecastPlayerProps) {
-  const { playing, play, pause, volume, setVolume, muted, toggleMute, title, artist, setTitle, setArtist } = useAudio();
+export default function IcecastPlayer({ className = "" }: IcecastPlayerProps) {
+  const { playing, play, pause, volume, setVolume, muted, toggleMute, title, artist, cover, setTitle, setArtist, setCover } = useAudio();
 
   // Socket listener for song changes
   useEffect(() => {
@@ -54,9 +54,11 @@ export default function IcecastPlayer({ coverImage = DEFAULT_COVER, className = 
 
         const finalArtist = iceArtist && iceArtist !== "Unknown" ? iceArtist : parsedData?.artist || DEFAULT_TITLE;
         const finalTitle = iceTitle && iceTitle !== "Unknown" ? iceTitle : parsedData?.title || DEFAULT_TITLE;
+        const finalCover = parsedData?.cover || DEFAULT_COVER;
 
         setTitle(finalTitle);
         setArtist(finalArtist);
+        setCover(finalCover);
 
         if (finalTitle !== DEFAULT_TITLE && finalArtist !== DEFAULT_TITLE) {
           toast.success(`Tocando agora: ${finalTitle} - ${finalArtist}`, { duration: 5000 });
@@ -73,6 +75,7 @@ export default function IcecastPlayer({ coverImage = DEFAULT_COVER, className = 
           const parsedData = JSON.parse(storedData);
           setTitle(parsedData.title);
           setArtist(parsedData.artist);
+          setCover(parsedData.cover || DEFAULT_COVER);
           toast.success(`Tocando agora: ${parsedData.title} - ${parsedData.artist}`, { duration: 5000 });
           localStorage.removeItem("nextSong");
         }
@@ -83,13 +86,13 @@ export default function IcecastPlayer({ coverImage = DEFAULT_COVER, className = 
     return () => {
       socket.off("song:changed", handleSongChanged);
     };
-  }, [setTitle, setArtist]);
+  }, [setTitle, setArtist, setCover]);
 
   return (
     <div className={`flex items-center gap-3 bg-gradient-to-r from-background-alt to-[#2c3b26] rounded-lg px-3 py-1.5 shadow-lg border-2 border-black/50 ${className}`}>
       {/* Cover Image */}
       <div className="relative flex-shrink-0 w-8 h-8 sm:w-10 sm:h-10 rounded overflow-hidden shadow-md">
-        <Image src={coverImage} alt="Cover" className="w-full h-full object-cover" fill />
+        <Image src={cover} alt="Cover" className="w-full h-full object-cover" fill />
       </div>
 
       {/* Metadata */}

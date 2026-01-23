@@ -5,8 +5,10 @@ import { createContext, useContext, useEffect, useRef, useState } from "react";
 interface AudioContextType {
   title: string;
   artist: string;
+  cover: string;
   setTitle: (title: string) => void;
   setArtist: (artist: string) => void;
+  setCover: (cover: string) => void;
   playing: boolean;
   play: () => void;
   pause: () => void;
@@ -30,6 +32,7 @@ export const AudioProvider = ({ children }: { children: React.ReactNode }) => {
   const [muted, setMuted] = useState(false);
   const [title, setTitle] = useState("");
   const [artist, setArtist] = useState("");
+  const [cover, setCover] = useState("/images/logotipo.svg");
 
   const play = () => {
     if (audioRef.current) {
@@ -81,8 +84,10 @@ export const AudioProvider = ({ children }: { children: React.ReactNode }) => {
         muted,
         title,
         artist,
+        cover,
         setTitle,
         setArtist,
+        setCover,
       }}
     >
       {children}
