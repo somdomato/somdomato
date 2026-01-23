@@ -5,13 +5,19 @@ import Player from "./Player";
 
 export default function Header() {
   return (
-    <header className="md:flex md:items-center md:justify-between sticky z-50 bg-background top-0 p-1 md:p-2 border-b-2 border-black/50">
-      <Link href="/" className="flex items-center gap-2 md:gap-4 font-bold sm:text-xl md:text-2xl">
+    <header className="sticky top-0 z-50 border-b-2 border-black/50 p-1 md:flex md:items-center md:justify-between md:p-2 relative">
+      {/* Background com fallback */}
+      <div className="absolute inset-0 -z-20 bg-background bg-[url('/images/wood.jpg')] bg-repeat-x bg-top bg-contain" />
+      
+      {/* Overlay escuro */}
+      <div className="absolute inset-0 -z-10 bg-background/90" />
+
+      <Link href="/" className="flex items-center gap-2 font-bold md:gap-4 sm:text-xl md:text-2xl">
         <Image src="/images/logotipo.svg" alt="Rádio Som do Mato" width={40} height={40} className="shrink-0" />
-        <span className="hidden md:inline-block shrink-0">Rádio Som do Mato</span>
-        <span className="inline-block md:hidden shrink-0">SDM</span>
+        <span className="hidden shrink-0 md:inline-block">Rádio Som do Mato</span>
+        <span className="inline-block shrink-0 md:hidden">SDM</span>
       </Link>
-      <div className="md:flex md:items-center gap-2 space-y-0 md:space-y-2 mt-2 md:mt-0">
+      <div className="mt-2 gap-2 space-y-0 md:mt-0 md:flex md:items-center md:space-y-2">
         <Navbar />
         <Player />
       </div>

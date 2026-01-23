@@ -45,3 +45,10 @@ drizzle/**
 !drizzle/.gitkeep
 *.db
 *.sqlite
+
+# custom
+*.old*
+
+# covers
+#public/covers/**
+#!public/covers/.gitkeep

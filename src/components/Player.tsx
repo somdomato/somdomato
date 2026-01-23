@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useState, useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { Play, Pause, RotateCw, Volume2, VolumeX } from "lucide-react";
 import { useAudio } from "@/context/AudioContext";
 import { socket } from "@/lib/socket";
@@ -14,158 +14,77 @@ interface IcecastPlayerProps {
 }
 
 const DEFAULT_TITLE = "Rádio Som do Mato";
+const DEFAULT_COVER = "/images/logotipo.svg";
 
-export default function IcecastPlayer({ streamUrl = "https://radio.somdomato.com/geral.mp3", coverImage = "/images/logotipo.svg", className = "" }: IcecastPlayerProps) {
-  const { play, pause, playing, volume, setVolume, muted, toggleMute, title, artist, setTitle, setArtist } = useAudio();
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  const [_cover, setCover] = useState("/images/logotipo.svg");
-  const [isLoading, setIsLoading] = useState(false);
+export default function IcecastPlayer({ coverImage = DEFAULT_COVER, className = "" }: IcecastPlayerProps) {
+  const { playing, play, pause, volume, setVolume, muted, toggleMute, title, artist, setTitle, setArtist } = useAudio();
 
-  // Attach listeners directly to the audio element
+  // Socket listener for song changes
   useEffect(() => {
-    const el = audioRef.current;
-    if (!el) return;
+    const handleSongChanged = async (nextSong: { id: number; title: string; artist: string; cover?: string }) => {
+      // Salvar dados no localStorage imediatamente
+      localStorage.setItem("nextSong", JSON.stringify({
+        title: nextSong.title,
+        artist: nextSong.artist,
+        cover: nextSong.cover
+      }));
 
-    const onPlaying = () => {
-      play();
-      setIsLoading(false);
-    };
-    const onPause = () => {
-      pause();
-      setIsLoading(false);
-    };
-    const onWaiting = () => setIsLoading(true);
-    const onCanPlay = () => setIsLoading(false);
+      try {
+        const response = await fetch("https://radio.somdomato.com/json");
+        const { icestats: { source } } = await response.json();
 
-    el.addEventListener("playing", onPlaying);
-    el.addEventListener("pause", onPause);
-    el.addEventListener("waiting", onWaiting);
-    el.addEventListener("canplay", onCanPlay);
-
-    return () => {
-      el.removeEventListener("playing", onPlaying);
-      el.removeEventListener("pause", onPause);
-      el.removeEventListener("waiting", onWaiting);
-      el.removeEventListener("canplay", onCanPlay);
-    };
-  }, [play, pause]);
-
-  // Sync element volume/mute with context
-  useEffect(() => {
-    const el = audioRef.current;
-    if (!el) return;
-    el.muted = muted;
-    el.volume = Math.max(0, Math.min(1, (volume ?? 0) / 100));
-  }, [muted, volume]);
-
-  const togglePlay = () => {
-    const el = audioRef.current;
-    if (!el) return;
-
-    if (playing) {
-      el.pause();
-      // onPause handler will update context
-    } else {
-      setIsLoading(true);
-      // set fresh src to avoid caching
-      el.src = `${streamUrl}?t=${Date.now() / 1000}`;
-      el.play().catch((error) => {
-        console.error("Playback failed:", error);
-        setIsLoading(false);
-      });
-    }
-  };
-
-  const handleReload = () => {
-    const el = audioRef.current;
-    if (!el) return;
-
-    const wasPlaying = playing;
-    el.load();
-
-    if (wasPlaying) {
-      setIsLoading(true);
-      el.play().catch((error) => {
-        console.error("Reload playback failed:", error);
-        setIsLoading(false);
-      });
-    }
-  };
-
-  const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newVolume = Number(e.target.value);
-    setVolume(newVolume);
-    if (newVolume > 0 && muted) {
-      toggleMute(false);
-    }
-  };
-
-  useEffect(() => {
-    socket.on("song:changed", onSongChanged);
-
-    async function onSongChanged(nextSong: { id: number; title: string; artist: string; cover?: string }) {
-      if (typeof window !== "undefined") {
-        const storedCover = localStorage.getItem("cover");
-        if (storedCover) setCover(storedCover);
-        if (nextSong.cover) localStorage.setItem("cover", nextSong.cover);
-      }
-
-      const request = await fetch("https://radio.somdomato.com/json");
-
-      if (request.ok) {
-        const {
-          icestats: { source },
-        } = await request.json();
         let iceArtist = source.artist;
         let iceTitle = source.title;
 
-        // Se não houver artist, tenta separar pelo padrão "Artista - Música"
-        if (!iceArtist && iceTitle) {
-          const parts = iceTitle.split(" - ");
-          if (parts.length > 1) {
-            iceArtist = parts[0].trim();
-            iceTitle = parts.slice(1).join(" - ").trim();
-          }
+        if (!iceArtist && iceTitle?.includes(" - ")) {
+          const [artist, ...titleParts] = iceTitle.split(" - ");
+          iceArtist = artist.trim();
+          iceTitle = titleParts.join(" - ").trim();
         }
 
-        const artist = iceArtist === "Unknown" ? DEFAULT_TITLE : iceArtist;
-        const title = iceTitle === "Unknown" ? DEFAULT_TITLE : iceTitle;
+        // Se o Icecast tiver dados válidos, usa eles
+        // Caso contrário, usa os dados do localStorage
+        const storedData = localStorage.getItem("nextSong");
+        const parsedData = storedData ? JSON.parse(storedData) : null;
 
-        // update global context title/artist so UI elsewhere stays in sync
-        setTitle(title);
-        setArtist(artist);
+        const finalArtist = (iceArtist && iceArtist !== "Unknown") ? iceArtist : (parsedData?.artist || DEFAULT_TITLE);
+        const finalTitle = (iceTitle && iceTitle !== "Unknown") ? iceTitle : (parsedData?.title || DEFAULT_TITLE);
 
-        // Usar a capa salva no localStorage
-        const nextCover = localStorage.getItem("cover");
-        setCover(nextCover || "/images/logotipo.svg");
-        localStorage.removeItem("cover");
+        setTitle(finalTitle);
+        setArtist(finalArtist);
 
-        if (title !== DEFAULT_TITLE && artist !== DEFAULT_TITLE) {
-          toast.success(`Tocando agora: ${title} - ${artist}`, {
-            duration: 5000,
-          });
+        if (finalTitle !== DEFAULT_TITLE && finalArtist !== DEFAULT_TITLE) {
+          toast.success(`Tocando agora: ${finalTitle} - ${finalArtist}`, { duration: 5000 });
+        }
+
+        // Limpar dados após uso
+        localStorage.removeItem("nextSong");
+      } catch (error) {
+        console.error("Error fetching song info:", error);
+        
+        // Se falhar a API do Icecast, usa os dados salvos do WebSocket
+        const storedData = localStorage.getItem("nextSong");
+        if (storedData) {
+          const parsedData = JSON.parse(storedData);
+          setTitle(parsedData.title);
+          setArtist(parsedData.artist);
+          toast.success(`Tocando agora: ${parsedData.title} - ${parsedData.artist}`, { duration: 5000 });
+          localStorage.removeItem("nextSong");
         }
       }
-    }
+    };
 
+    socket.on("song:changed", handleSongChanged);
     return () => {
-      socket.off("song:changed", onSongChanged);
+      socket.off("song:changed", handleSongChanged);
     };
   }, [setTitle, setArtist]);
 
   return (
-    <div className={`flex items-center gap-3 bg-gradient-to-r from-slate-900 to-slate-800 rounded-lg px-3 py-1.5 shadow-lg border-2 border-black/50 ${className}`}>
-      {/* Audio Element */}
-      <audio ref={audioRef} src={streamUrl} preload="none" />
-
+    <div className={`flex items-center gap-3 bg-gradient-to-r from-background-alt to-[#2c3b26] rounded-lg px-3 py-1.5 shadow-lg border-2 border-black/50 ${className}`}>
       {/* Cover Image */}
       <div className="relative flex-shrink-0 w-8 h-8 sm:w-10 sm:h-10 rounded overflow-hidden shadow-md">
         <Image src={coverImage} alt="Cover" className="w-full h-full object-cover" fill />
-        {isLoading && (
-          <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-          </div>
-        )}
       </div>
 
       {/* Metadata */}
@@ -176,32 +95,60 @@ export default function IcecastPlayer({ streamUrl = "https://radio.somdomato.com
 
       {/* Controls */}
       <div className="flex items-center gap-1.5 sm:gap-2">
-        {/* Play/Pause Button */}
+        {/* Play/Pause */}
         <button
-          onClick={togglePlay}
-          disabled={isLoading}
-          className="w-9 h-9 flex items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-md transition-all hover:shadow-lg active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+          onClick={() => playing ? pause() : play()}
+          className="w-9 h-9 flex items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-md transition-all hover:shadow-lg active:scale-95 disabled:opacity-50"
           aria-label={playing ? "Pause" : "Play"}
         >
           {playing ? <Pause className="w-4 h-4" fill="currentColor" /> : <Play className="w-4 h-4 ml-0.5" fill="currentColor" />}
         </button>
 
-        {/* Reload Button */}
-        <button onClick={handleReload} className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-700/50 hover:bg-slate-600/50 text-slate-300 hover:text-white transition-all active:scale-95" aria-label="Reload">
+        {/* Reload */}
+        <button
+          onClick={() => {
+            if (playing) {
+              pause();
+              setTimeout(() => play(), 100);
+            }
+          }}
+          className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-700/50 hover:bg-slate-600/50 text-slate-300 hover:text-white transition-all active:scale-95"
+          aria-label="Reload"
+        >
           <RotateCw className="w-3.5 h-3.5" />
         </button>
 
-        {/* Volume Controls - Hidden on mobile */}
+        {/* Volume Controls */}
         <div className="hidden md:flex items-center gap-2 ml-1">
-          <button onClick={() => toggleMute(!muted)} className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-700/50 hover:bg-slate-600/50 text-slate-300 hover:text-white transition-all active:scale-95" aria-label={muted ? "Unmute" : "Mute"}>
+          <button
+            onClick={() => toggleMute()}
+            className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-700/50 hover:bg-slate-600/50 text-slate-300 hover:text-white transition-all active:scale-95"
+            aria-label={muted ? "Unmute" : "Mute"}
+          >
             {muted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
           </button>
 
           {/* Volume Slider */}
-          <div className="relative w-20 h-1 bg-slate-700 rounded-full overflow-hidden group">
-            <div className="absolute h-full bg-gradient-to-r from-blue-500 to-blue-600 transition-all" style={{ width: `${muted ? 0 : volume}%` }} />
-            <input type="range" min="0" max="100" value={volume} onChange={handleVolumeChange} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" aria-label="Volume" />
-          </div>
+          <input
+            type="range"
+            min="0"
+            max="100"
+            value={volume}
+            onChange={(e) => {
+              const newVolume = Number(e.target.value);
+              setVolume(newVolume);
+              if (newVolume > 0) {
+                toggleMute(false)
+              } else if (newVolume === 0) {
+                toggleMute(true)
+              };
+            }}
+            className="w-20 h-1 bg-slate-700 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-blue-500 [&::-moz-range-thumb]:w-3 [&::-moz-range-thumb]:h-3 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-blue-500 [&::-moz-range-thumb]:border-0"
+            style={{
+              background: `linear-gradient(to right, rgb(59 130 246) 0%, rgb(59 130 246) ${volume}%, rgb(51 65 85) ${volume}%, rgb(51 65 85) 100%)`,
+            }}
+            aria-label="Volume"
+          />
         </div>
       </div>
     </div>

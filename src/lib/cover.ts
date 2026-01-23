@@ -4,6 +4,34 @@ import * as path from "node:path";
 import * as NodeID3 from "node-id3";
 import * as crypto from "node:crypto";
 
+interface ID3Tags {
+  title?: string;
+  artist?: string;
+  album?: string;
+  year?: string;
+  image?: {
+    mime: string;
+    type: {
+      id: number;
+      name: string;
+    };
+    description?: string;
+    imageBuffer: Buffer;
+  };
+}
+
+export interface ImageData {
+  buffer: Buffer;
+  mimeType: string;
+  extension: string;
+}
+
+export interface CoverResult {
+  filePath: string;
+  cover: string | null;
+  error?: string;
+}
+
 /**
  * Normaliza nome de artista para busca inteligente
  */
@@ -36,34 +64,6 @@ export async function findCoverByArtist(artist: string, coversDir: string = "pub
     }
   }
   return null;
-}
-
-interface ID3Tags {
-  title?: string;
-  artist?: string;
-  album?: string;
-  year?: string;
-  image?: {
-    mime: string;
-    type: {
-      id: number;
-      name: string;
-    };
-    description?: string;
-    imageBuffer: Buffer;
-  };
-}
-
-export interface ImageData {
-  buffer: Buffer;
-  mimeType: string;
-  extension: string;
-}
-
-export interface CoverResult {
-  filePath: string;
-  cover: string | null;
-  error?: string;
 }
 
 /**

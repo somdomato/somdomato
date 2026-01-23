@@ -61,10 +61,13 @@ export const AudioProvider = ({ children }: { children: React.ReactNode }) => {
     setVolumeState(clamped);
   };
 
-  // helper to register event listeners on the internal audio element
+  // Sync volume and muted state to audio element
   useEffect(() => {
-    // nothing to do: audio element is managed in Player component
-  }, []);
+    if (audioRef.current) {
+      audioRef.current.volume = volume / 100;
+      audioRef.current.muted = muted;
+    }
+  }, [volume, muted]);
 
   return (
     <AudioContext.Provider

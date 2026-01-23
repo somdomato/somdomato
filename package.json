@@ -2,8 +2,9 @@
   "name": "somdomato",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "scripts": {
-    "dev": "node src/server.ts",
+    "dev": "node --no-trace-warnings src/server.ts",
     "build": "next build",
     "start": "NODE_ENV=production node src/server.ts",
     "push": "drizzle-kit push",
