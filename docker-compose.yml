@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  icecast:
+    image: moul/icecast
+    container_name: somdomato-icecast
+    ports:
+      - "8000:8000"
+    environment:
+      - ICECAST_SOURCE_PASSWORD=hackme
+      - ICECAST_ADMIN_PASSWORD=hackme
+      - ICECAST_PASSWORD=hackme
+      - ICECAST_RELAY_PASSWORD=hackme
+      - ICECAST_HOSTNAME=localhost
+    volumes:
+      - ./files/etc/icecast/icecast.xml:/etc/icecast2/icecast.xml:ro
+    restart: unless-stopped
+    networks:
+      - radio-network
+
+  liquidsoap:
+    build:
+      context: .
+      dockerfile: Dockerfile.liquidsoap
+    container_name: somdomato-liquidsoap
+    depends_on:
+      - icecast
+    volumes:
+      - ./files/etc/liquidsoap/somdomato-docker.liq:/etc/liquidsoap/somdomato.liq:ro
+      - ${MUSIC_PATH:-/var/music/sdm}:/var/music/sdm:ro
+    environment:
+      - LIQUIDSOAP_LOG_LEVEL=info
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - radio-network
+    restart: unless-stopped
+
+networks:
+  radio-network:
+    driver: bridge

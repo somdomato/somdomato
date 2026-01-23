@@ -1,0 +1,28 @@
+FROM debian:trixie-slim
+
+# Instalar dependências
+RUN apt-get update && apt-get install -y \
+    liquidsoap \
+    curl \
+    jq \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+# Criar diretório de logs
+RUN mkdir -p /var/log/liquidsoap && \
+    chmod 755 /var/log/liquidsoap
+
+# Criar diretório para músicas
+RUN mkdir -p /var/music/sdm
+
+# Copiar script do liquidsoap (será sobrescrito pelo volume)
+COPY files/etc/liquidsoap/somdomato.liq /etc/liquidsoap/somdomato.liq
+
+# Ajustar permissões
+RUN chmod +x /etc/liquidsoap/somdomato.liq
+
+# Expor porta para harbor (transmissão ao vivo)
+EXPOSE 8010
+
+# Comando para iniciar o liquidsoap
+CMD ["liquidsoap", "/etc/liquidsoap/somdomato.liq"]

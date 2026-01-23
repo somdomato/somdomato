@@ -8,6 +8,7 @@ export const songs = sqliteTable("songs", {
   path: text().notNull().unique(),
   cover: text().default("/images/logotipo.svg"), // Nova coluna para URL da capa
   timeSlots: int().default(15), // Sistema de bits: 0=nenhum, 1=madrugada, 2=manhã, 4=tarde, 8=noite, 15=todos
+  rotation: text().default("normal"), // inativo, leve, normal, pesado
   createdAt: int({ mode: "timestamp" }).$defaultFn(() => new Date()),
   requests: int().default(0),
   likes: int().default(0),
@@ -18,6 +19,8 @@ export const requests = sqliteTable("requests", {
   songId: int()
     .notNull()
     .references(() => songs.id),
+  order: int().notNull().default(0), // Ordem dos pedidos
+  createdAt: int({ mode: "timestamp" }).$defaultFn(() => new Date()),
 });
 
 export const history = sqliteTable("history", {

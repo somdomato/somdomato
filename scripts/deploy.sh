@@ -24,5 +24,3 @@ rm -rf "$PROJECT_DIR"
 mv "$TEMP_DIR" "$PROJECT_DIR"
 ln -sf /var/music/sdm "$PROJECT_DIR/public/music"
 sudo /usr/bin/systemctl start $SERVICE
-
-sudo /usr/bin/systemctl restart somdomato-icecast.service somdomato-liquidsoap.service
