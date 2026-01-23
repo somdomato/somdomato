@@ -56,27 +56,36 @@ export async function updateSong(
   const song = await db.select().from(songs).where(eq(songs.id, id)).get();
   if (!song) throw new Error("Música não encontrada");
 
+  let currentPath = song.path;
+  let newPath = song.path;
+
   // Se o nome do arquivo mudou, renomear o arquivo físico
-  if (data.filename && data.filename !== path.basename(song.path)) {
+  const currentFilename = path.basename(song.path);
+  if (data.filename && data.filename !== currentFilename) {
     const oldPath = song.path;
     const dir = path.dirname(oldPath);
-    const newPath = path.join(dir, data.filename);
+    newPath = path.join(dir, data.filename);
 
     try {
       await fs.rename(oldPath, newPath);
+      currentPath = newPath;
       data.filename = newPath; // Atualizar caminho no banco
-    } catch {
-      throw new Error("Erro ao renomear arquivo");
+    } catch (error) {
+      console.error("Erro ao renomear arquivo:", error);
+      throw new Error(`Erro ao renomear arquivo: ${error instanceof Error ? error.message : "desconhecido"}`);
     }
+  } else {
+    // Se não está renomeando, não atualizar o path no banco
+    data.filename = undefined;
   }
 
-  // Atualizar tags ID3
+  // Atualizar tags ID3 (usar o path atual, que pode ser o novo se foi renomeado)
   if (data.title || data.artist) {
     const tags: NodeID3.Tags = {};
     if (data.title) tags.title = data.title;
     if (data.artist) tags.artist = data.artist;
 
-    const success = NodeID3.update(tags, song.path);
+    const success = NodeID3.update(tags, currentPath);
     if (!success) {
       console.error("Erro ao atualizar tags ID3");
     }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useAuth, LoginForm } from "@/components/AdminAuth";
 import { getRequests, deleteRequest, addRequest, reorderRequests, getAllSongsForSelect } from "../actions";
 import { Music, LogOut, Trash2, Plus, ArrowUp, ArrowDown } from "lucide-react";
@@ -39,7 +39,7 @@ export default function RequestsPage() {
   const [selectedSongId, setSelectedSongId] = useState<number | null>(null);
   const [adding, setAdding] = useState(false);
 
-  const loadRequests = async () => {
+  const loadRequests = useCallback(async () => {
     if (!password) return;
     setLoading(true);
     try {
@@ -53,9 +53,9 @@ export default function RequestsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [page, limit, password]);
 
-  const loadSongs = async () => {
+  const loadSongs = useCallback(async () => {
     if (!password) return;
     try {
       const allSongs = await getAllSongsForSelect(password);
@@ -63,21 +63,19 @@ export default function RequestsPage() {
     } catch (error) {
       console.error(error);
     }
-  };
+  }, [password]);
 
   useEffect(() => {
     if (isAuthenticated && password) {
       loadRequests();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, limit, isAuthenticated, password]);
+  }, [isAuthenticated, password, loadRequests]);
 
   useEffect(() => {
     if (isAuthenticated && password && showAddModal) {
       loadSongs();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [showAddModal, isAuthenticated, password]);
+  }, [showAddModal, isAuthenticated, password, loadSongs]);
 
   if (!isAuthenticated || !password) {
     return <LoginForm onLogin={login} />;
@@ -178,8 +176,11 @@ export default function RequestsPage() {
           {/* Controles */}
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-2">
-              <label className="text-sm">Mostrar:</label>
+              <label htmlFor="limit" className="text-sm">
+                Mostrar:
+              </label>
               <select
+                id="limit"
                 value={limit}
                 onChange={(e) => {
                   setLimit(Number(e.target.value));
@@ -288,8 +289,10 @@ export default function RequestsPage() {
             </div>
             <div className="p-6 space-y-4">
               <div>
-                <label className="block text-sm font-medium mb-2">Selecione a Música</label>
-                <select value={selectedSongId || ""} onChange={(e) => setSelectedSongId(Number(e.target.value))} className="w-full px-4 py-2 bg-background border border-primary/30 rounded-md focus:outline-none focus:ring-2 focus:ring-primary">
+                <label htmlFor="song" className="block text-sm font-medium mb-2">
+                  Selecione a Música
+                </label>
+                <select id="song" value={selectedSongId || ""} onChange={(e) => setSelectedSongId(Number(e.target.value))} className="w-full px-4 py-2 bg-background border border-primary/30 rounded-md focus:outline-none focus:ring-2 focus:ring-primary">
                   <option value="">Escolha uma música...</option>
                   {songs.map((song) => (
                     <option key={song.id} value={song.id}>
