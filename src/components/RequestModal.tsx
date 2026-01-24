@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { searchSongs, requestSong } from "@/app/pedidos/actions";
+import { searchSongs, requestSong } from "@/actions/requests";
 import Image from "next/image";
 import { X, Search, Music, Loader2 } from "lucide-react";
 import { toast } from "sonner";

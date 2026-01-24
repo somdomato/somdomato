@@ -2,7 +2,7 @@
 
 import { db } from "@/db";
 import { songs, requests } from "@/db/schema";
-import { eq, desc, like, or } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 import { checkMusicRepetition } from "@/lib/protections";
 import { revalidatePath } from "next/cache";
 

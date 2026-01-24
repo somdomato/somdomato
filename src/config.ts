@@ -12,5 +12,11 @@ export const slides = [
     src: "/images/slides/hej.webp",
     alt: "Henrique & Juliano",
     title: "Henrique & Juliano",
-  }
+  },
+  {
+    id: 3,
+    src: "/images/slides/mek.webp",
+    alt: "Matheus & Kauan",
+    title: "Matheus & Kauan",
+  },
 ];

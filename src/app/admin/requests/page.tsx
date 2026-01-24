@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useAuth, LoginForm } from "@/components/AdminAuth";
-import { getRequests, deleteRequest, addRequest, reorderRequests, getAllSongsForSelect } from "../actions";
+import { getRequests, deleteRequest, addRequest, reorderRequests, getAllSongsForSelect } from "@/actions/admin";
 import { Music, LogOut, Trash2, Plus, ArrowUp, ArrowDown } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";

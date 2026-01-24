@@ -1,6 +1,7 @@
 import { db } from "@/db";
 import { asc, eq, and, sql } from "drizzle-orm";
 import fs from "node:fs/promises";
+import path from "node:path";
 import { songs, history, requests } from "@/db/schema";
 import { getCurrentTimeSlot } from "@/lib/time";
 import { getBlockedSongIds } from "@/lib/protections";
@@ -104,6 +105,51 @@ export async function GET(request: Request) {
     }
 
     await db.insert(history).values({ songId: selectedSong.id }).returning();
+
+    // Garantir que haja um caminho de capa no banco antes de emitir (melhor esforço)
+    try {
+      const { extractAndSaveCover, findCoverByArtist } = await import("@/lib/cover");
+
+      let coverPath: string | null = selectedSong.cover ?? null;
+
+      // Se já houver cover salvo, verificar se o arquivo físico existe. Se não existir, forçar nova busca.
+      if (coverPath) {
+        const coverFsPath = path.join(process.cwd(), "public", coverPath.replace(/^\/+/, ""));
+        try {
+          await fs.access(coverFsPath);
+        } catch {
+          coverPath = null;
+        }
+      }
+
+      // Tentar extrair capa embutida no MP3 (preferível para evitar buscar por artista)
+      if (!coverPath) {
+        try {
+          const extracted = await extractAndSaveCover(selectedSong.path);
+          if (extracted) coverPath = extracted;
+        } catch (err) {
+          console.error("Erro ao extrair capa:", err);
+        }
+      }
+
+      // Se não extraímos, procurar por capa existente por artista
+      if (!coverPath) {
+        try {
+          const found = await findCoverByArtist(selectedSong.artist);
+          if (found) coverPath = found;
+        } catch (err) {
+          console.error("Erro ao procurar capa por artista:", err);
+        }
+      }
+
+      // Atualizar DB se encontramos um caminho válido
+      if (coverPath && coverPath !== selectedSong.cover) {
+        await db.update(songs).set({ cover: coverPath }).where(eq(songs.id, selectedSong.id));
+        selectedSong.cover = coverPath;
+      }
+    } catch (err) {
+      console.error("Erro ao processar capa da música:", err);
+    }
 
     if (global.io) {
       global.io.emit("song:changed", selectedSong);

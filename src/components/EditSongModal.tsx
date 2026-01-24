@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { updateSong, type RotationType } from "@/app/admin/actions";
+import { updateSong, type RotationType } from "@/actions/admin";
 import { X } from "lucide-react";
 import { toast } from "sonner";
 

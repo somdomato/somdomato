@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { getSongs, deleteSong } from "@/app/admin/actions";
+import { getSongs, deleteSong } from "@/actions/admin";
 import { EditSongModal } from "@/components/EditSongModal";
 import { Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";

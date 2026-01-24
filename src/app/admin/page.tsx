@@ -1,9 +1,9 @@
 "use client";
 
+import Link from "next/link";
 import { useAuth, LoginForm } from "@/components/AdminAuth";
 import { SongsTable } from "@/components/SongsTable";
 import { Music, ListOrdered, LogOut } from "lucide-react";
-import Link from "next/link";
 
 export default function AdminPage() {
   const { password, isAuthenticated, login, logout } = useAuth();

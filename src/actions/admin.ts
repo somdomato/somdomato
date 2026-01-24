@@ -4,8 +4,8 @@ import { revalidatePath } from "next/cache";
 import { db } from "@/db";
 import { songs, requests } from "@/db/schema";
 import { eq, asc, desc } from "drizzle-orm";
-import { promises as fs } from "fs";
-import path from "path";
+import { promises as fs } from "node:fs";
+import path from "node:path";
 import NodeID3 from "node-id3";
 
 // Tipos
