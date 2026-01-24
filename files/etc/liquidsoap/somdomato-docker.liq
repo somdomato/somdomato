@@ -1,5 +1,8 @@
 #!/usr/bin/env liquidsoap
 
+# Permitir execução como root (necessário para Docker)
+settings.init.allow_root := true
+
 # Configuração do input ao vivo
 live = input.harbor("aovivo", port=8010, user="dj", password="hackme")
 

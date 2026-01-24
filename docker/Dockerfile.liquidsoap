@@ -15,11 +15,8 @@ RUN mkdir -p /var/log/liquidsoap && \
 # Criar diretório para músicas
 RUN mkdir -p /var/music/sdm
 
-# Copiar script do liquidsoap (será sobrescrito pelo volume)
-COPY files/etc/liquidsoap/somdomato.liq /etc/liquidsoap/somdomato.liq
-
-# Ajustar permissões
-RUN chmod +x /etc/liquidsoap/somdomato.liq
+# Criar diretório para o script do liquidsoap (será montado via volume)
+RUN mkdir -p /etc/liquidsoap
 
 # Expor porta para harbor (transmissão ao vivo)
 EXPOSE 8010

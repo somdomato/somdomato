@@ -21,69 +21,79 @@ export default function IcecastPlayer({ className = "" }: IcecastPlayerProps) {
 
   // Socket listener for song changes
   useEffect(() => {
+    let timeoutId: NodeJS.Timeout | null = null;
+    
     const handleSongChanged = async (nextSong: { id: number; title: string; artist: string; cover?: string }) => {
-      // Salvar dados no localStorage imediatamente
-      localStorage.setItem(
-        "nextSong",
-        JSON.stringify({
-          title: nextSong.title,
-          artist: nextSong.artist,
-          cover: nextSong.cover,
-        }),
-      );
-
-      try {
-        const response = await fetch("https://radio.somdomato.com/json");
-        const {
-          icestats: { source },
-        } = await response.json();
-
-        let iceArtist = source.artist;
-        let iceTitle = source.title;
-
-        if (!iceArtist && iceTitle?.includes(" - ")) {
-          const [artist, ...titleParts] = iceTitle.split(" - ");
-          iceArtist = artist.trim();
-          iceTitle = titleParts.join(" - ").trim();
-        }
-
-        // Se o Icecast tiver dados válidos, usa eles
-        // Caso contrário, usa os dados do localStorage
-        const storedData = localStorage.getItem("nextSong");
-        const parsedData = storedData ? JSON.parse(storedData) : null;
-
-        const finalArtist = iceArtist && iceArtist !== "Unknown" ? iceArtist : parsedData?.artist || DEFAULT_TITLE;
-        const finalTitle = iceTitle && iceTitle !== "Unknown" ? iceTitle : parsedData?.title || DEFAULT_TITLE;
-        const finalCover = parsedData?.cover || DEFAULT_COVER;
-
-        setTitle(finalTitle);
-        setArtist(finalArtist);
-        setCover(finalCover);
-
-        if (finalTitle !== DEFAULT_TITLE && finalArtist !== DEFAULT_TITLE) {
-          toast.success(`Tocando agora: ${finalTitle} - ${finalArtist}`, { duration: 5000 });
-        }
-
-        // Limpar dados após uso
-        localStorage.removeItem("nextSong");
-      } catch (error) {
-        console.error("Error fetching song info:", error);
-
-        // Se falhar a API do Icecast, usa os dados salvos do WebSocket
-        const storedData = localStorage.getItem("nextSong");
-        if (storedData) {
-          const parsedData = JSON.parse(storedData);
-          setTitle(parsedData.title);
-          setArtist(parsedData.artist);
-          setCover(parsedData.cover || DEFAULT_COVER);
-          toast.success(`Tocando agora: ${parsedData.title} - ${parsedData.artist}`, { duration: 5000 });
-          localStorage.removeItem("nextSong");
-        }
+      // Debounce: cancela chamadas anteriores se houver
+      if (timeoutId) {
+        clearTimeout(timeoutId);
       }
+      
+      timeoutId = setTimeout(async () => {
+        // Salvar dados no localStorage imediatamente
+        localStorage.setItem(
+          "nextSong",
+          JSON.stringify({
+            title: nextSong.title,
+            artist: nextSong.artist,
+            cover: nextSong.cover,
+          }),
+        );
+
+        try {
+          const response = await fetch("https://radio.somdomato.com/json");
+          const {
+            icestats: { source },
+          } = await response.json();
+
+          let iceArtist = source.artist;
+          let iceTitle = source.title;
+
+          if (!iceArtist && iceTitle?.includes(" - ")) {
+            const [artist, ...titleParts] = iceTitle.split(" - ");
+            iceArtist = artist.trim();
+            iceTitle = titleParts.join(" - ").trim();
+          }
+
+          // Se o Icecast tiver dados válidos, usa eles
+          // Caso contrário, usa os dados do localStorage
+          const storedData = localStorage.getItem("nextSong");
+          const parsedData = storedData ? JSON.parse(storedData) : null;
+
+          const finalArtist = iceArtist && iceArtist !== "Unknown" ? iceArtist : parsedData?.artist || DEFAULT_TITLE;
+          const finalTitle = iceTitle && iceTitle !== "Unknown" ? iceTitle : parsedData?.title || DEFAULT_TITLE;
+          const finalCover = parsedData?.cover || DEFAULT_COVER;
+
+          setTitle(finalTitle);
+          setArtist(finalArtist);
+          setCover(finalCover);
+
+          if (finalTitle !== DEFAULT_TITLE && finalArtist !== DEFAULT_TITLE) {
+            toast.success(`Tocando agora: ${finalTitle} - ${finalArtist}`, { duration: 5000 });
+          }
+
+          // Limpar dados após uso
+          localStorage.removeItem("nextSong");
+        } catch (error) {
+          console.error("Error fetching song info:", error);
+
+          // Se falhar a API do Icecast, usa os dados salvos do WebSocket
+          const storedData = localStorage.getItem("nextSong");
+          if (storedData) {
+            const parsedData = JSON.parse(storedData);
+            setTitle(parsedData.title);
+            setArtist(parsedData.artist);
+            setCover(parsedData.cover || DEFAULT_COVER);
+            toast.success(`Tocando agora: ${parsedData.title} - ${parsedData.artist}`, { duration: 5000 });
+            localStorage.removeItem("nextSong");
+          }
+        }
+      }, 300); // Debounce de 300ms
     };
 
     socket.on("song:changed", handleSongChanged);
     return () => {
+      if (timeoutId) clearTimeout(timeoutId);
       socket.off("song:changed", handleSongChanged);
     };
   }, [setTitle, setArtist, setCover]);

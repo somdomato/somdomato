@@ -15,9 +15,7 @@ app.prepare().then(() => {
   global.io = io;
 
   io.on("connection", (socket) => {
-    socket.on("song:changed", (newSong) => {
-      io.emit("song:changed", newSong);
-    });
+    console.log("Client connected:", socket.id);
   });
 
   server.listen(port);
