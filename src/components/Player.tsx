@@ -134,18 +134,18 @@ export default function IcecastPlayer({ className = "" }: IcecastPlayerProps) {
   }, [setTitle, setArtist, setCover]);
 
   return (
-    <div className={`flex items-center gap-3 bg-gradient-to-r from-background-alt to-[#2c3b26] rounded-lg px-3 py-1.5 shadow-lg border-2 border-black/50 ${className}`}>
+    <div className={`flex items-center max-w-md gap-3 bg-gradient-to-r from-background-alt to-[#2c3b26] rounded-md px-3 py-1.5 border-3 border-black/50 ${className}`}>
       {/* Cover Image */}
-      <div className="relative flex-shrink-0 w-8 h-8 sm:w-10 sm:h-10 rounded overflow-hidden shadow-md">
+      <div className="relative flex-shrink-0 w-6 h-6 sm:w-8 sm:h-8 rounded overflow-hidden border border-black/40">
         <Image src={cover} alt="Cover" className="w-full h-full object-cover" fill />
       </div>
 
       {/* Metadata */}
       <div className="flex-1 min-w-0 hidden sm:block">
-        <div className="text-sm font-semibold text-white truncate" title={title}>
+        <div className="text-sm/3 text-white truncate cursor-pointer" title={title}>
           {title}
         </div>
-        <div className="text-xs text-slate-400 truncate" title={artist}>
+        <div className="text-xs/3 text-slate-400/60 italic truncate cursor-pointer" title={artist}>
           {artist}
         </div>
       </div>
@@ -155,7 +155,7 @@ export default function IcecastPlayer({ className = "" }: IcecastPlayerProps) {
         {/* Play/Pause */}
         <button
           onClick={() => (playing ? pause() : play())}
-          className="w-9 h-9 flex items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white shadow-md transition-all hover:shadow-lg active:scale-95 disabled:opacity-50"
+          className="w-8 h-8 flex items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white shadow-md transition-all hover:shadow-lg active:scale-95 disabled:opacity-50"
           aria-label={playing ? "Pause" : "Play"}
         >
           {playing ? <Pause className="w-4 h-4" fill="currentColor" /> : <Play className="w-4 h-4 ml-0.5" fill="currentColor" />}
