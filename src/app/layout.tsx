@@ -28,8 +28,10 @@ export const metadata: Metadata = {
 
 export default function RootLayout({
   children,
+  modal,
 }: Readonly<{
   children: React.ReactNode;
+  modal?: React.ReactNode;
 }>) {
   return (
     <html lang="en">
@@ -39,11 +41,13 @@ export default function RootLayout({
       <body className={nunito.className}>
         <Toaster position="top-right" />
         <AudioProvider>
-          <div className="flex flex-col min-h-screen">
+          <div className="flex flex-col min-h-screen relative">
             <Header />
             {/* <main className="flex-1 flex items-center justify-center min-h-0 w-full px-2 md:px-4">{children}</main> */}
             <main className="flex-1">{children}</main>
             <Footer />
+            {/* Slot for parallel route modals (app/@modal) */}
+            {modal}
           </div>
         </AudioProvider>
       </body>

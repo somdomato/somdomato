@@ -1,3 +1,5 @@
+export const LAST_SONGS_HISTORY_LIMIT = 10;
+
 export const slides = [
   {
     id: 1,

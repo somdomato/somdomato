@@ -1,0 +1,10 @@
+[Unit]
+Description=Monitor music directory for sync trigger
+After=network.target
+
+[Path]
+PathModified=/home/lucas/music/sdm
+Unit=somdomato-local-sync.service
+
+[Install]
+WantedBy=default.target

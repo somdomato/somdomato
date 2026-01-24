@@ -1,0 +1,10 @@
+[Unit]
+Description=Music Sync Monitor for Som do Mato
+After=network.target
+
+[Service]
+Type=oneshot
+ExecStart=/home/lucas/code/somdomato/scripts/sync.sh
+
+[Install]
+WantedBy=default.target

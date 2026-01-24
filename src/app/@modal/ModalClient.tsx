@@ -3,8 +3,8 @@
 import { useRouter } from "next/navigation";
 import { RequestModal } from "@/components/RequestModal";
 
-export default function PedidosPage() {
+export default function ModalClient() {
   const router = useRouter();
 
-  return <RequestModal isOpen={true} onClose={() => router.push("/")} />;
+  return <RequestModal isOpen={true} onClose={() => router.back()} />;
 }
