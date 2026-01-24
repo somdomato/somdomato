@@ -16,7 +16,12 @@ export async function POST(request: Request) {
 
     await verifyAdmin(password);
 
-    const s = await db.select().from(songs).where(eq(songs.id, Number(songId))).limit(1).get();
+    const s = await db
+      .select()
+      .from(songs)
+      .where(eq(songs.id, Number(songId)))
+      .limit(1)
+      .get();
     if (!s) return new Response(JSON.stringify({ error: "song not found" }), { status: 404 });
 
     // make sure file exists

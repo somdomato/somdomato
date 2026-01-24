@@ -146,10 +146,23 @@ export async function GET(request: Request) {
       if (coverPath && coverPath !== selectedSong.cover) {
         await db.update(songs).set({ cover: coverPath }).where(eq(songs.id, selectedSong.id));
         selectedSong.cover = coverPath;
+      } else if (!coverPath && selectedSong.cover) {
+        // Se a capa referenciada no DB não existe mais, remover referência para evitar
+        // que o Next Image tente buscar um recurso inexistente e lance erro.
+        try {
+          await db.update(songs).set({ cover: null }).where(eq(songs.id, selectedSong.id));
+        } catch (e) {
+          console.error("Erro ao limpar campo cover no DB:", e);
+        }
+        selectedSong.cover = null;
       }
     } catch (err) {
       console.error("Erro ao processar capa da música:", err);
     }
+
+    // Garantir um valor seguro para envio ao frontend (fallback se não tivermos capa)
+    const safeCover = selectedSong.cover || "/images/logotipo.svg";
+    selectedSong.cover = safeCover;
 
     if (global.io) {
       global.io.emit("song:changed", selectedSong);

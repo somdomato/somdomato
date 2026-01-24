@@ -34,11 +34,13 @@ function AdminSkipButton() {
 
   return (
     <button onClick={handle} title="Skip (admin)" className="w-8 h-8 flex items-center justify-center rounded-full bg-yellow-500 text-black hover:opacity-90 transition">
-      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 4v16l12-8z"></path><line x1="6" y1="4" x2="6" y2="20"></line></svg>
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M6 4v16l12-8z"></path>
+        <line x1="6" y1="4" x2="6" y2="20"></line>
+      </svg>
     </button>
   );
 }
-
 
 interface IcecastPlayerProps {
   streamUrl?: string;
