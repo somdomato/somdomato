@@ -113,26 +113,29 @@ export async function POST(request: Request) {
     // }
 
     const controlUrl = process.env.LIQUIDSOAP_CONTROL_URL || "http://localhost:8080";
-if (controlUrl) {
-  try {
-    // Criar comando telnet para adicionar música na fila
-    const escapedPath = s.path.replace(/'/g, "'\\''");
-    const escapedTitle = s.title.replace(/'/g, "'\\''");
-    const escapedArtist = s.artist.replace(/'/g, "'\\''");
-    
-    const uri = `annotate:title="${escapedTitle}",artist="${escapedArtist}":${escapedPath}`;
-    
-    // Usar telnet para controlar o Liquidsoap
-    const execPromise = util.promisify(exec);
-    
-    await execPromise(`echo 'manual_queue.push ${uri}' | nc localhost 1234`);
-    await execPromise(`echo 'next_track.skip' | nc localhost 1234`);
-    
-    console.log("Música injetada via telnet com sucesso");
-  } catch (err) {
-    console.error("Error calling liquidsoap telnet:", err);
-  }
-}
+    if (controlUrl) {
+      try {
+        // Escapar aspas para o comando telnet
+        const escapedPath = s.path.replace(/"/g, '\\"');
+        const escapedTitle = s.title.replace(/"/g, '\\"');
+        const escapedArtist = s.artist.replace(/"/g, '\\"');
+        
+        const uri = `annotate:title="${escapedTitle}",artist="${escapedArtist}":${escapedPath}`;
+        
+        // Usar telnet para controlar o Liquidsoap
+        const execPromise = util.promisify(exec);
+        
+        // Push da música na fila
+        await execPromise(`echo 'request_queue.push ${uri}' | nc localhost 1234`);
+        
+        // Skip da música atual para tocar a injetada
+        await execPromise(`echo 'request_queue.skip' | nc localhost 1234`);
+        
+        console.log("Música injetada via telnet com sucesso");
+      } catch (err) {
+        console.error("Error calling liquidsoap telnet:", err);
+      }
+    }
 
     return new Response(JSON.stringify({ success: true, song: selectedSong }), { status: 200 });
   } catch (error) {
