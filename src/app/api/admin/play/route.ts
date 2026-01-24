@@ -3,6 +3,8 @@ import { songs, history } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import fs from "node:fs/promises";
 import { extractAndSaveCover, findCoverByArtist } from "@/lib/cover";
+import util from "node:util";
+import { exec } from "node:child_process";
 
 async function verifyAdmin(password?: string) {
   const adminPassword = process.env.ADMIN_PASSWORD;
@@ -92,23 +94,45 @@ export async function POST(request: Request) {
     //   }
     // }
 
+    // const controlUrl = process.env.LIQUIDSOAP_CONTROL_URL || "http://localhost:8080";
+    // if (controlUrl) {
+    //   try {
+    //     // Envia os dados da música para o Liquidsoap
+    //     await fetch(`${controlUrl}/play`, {
+    //       method: "POST",
+    //       headers: { "Content-Type": "application/json" },
+    //       body: JSON.stringify({
+    //         path: s.path,
+    //         title: s.title,
+    //         artist: s.artist,
+    //       }),
+    //     }).catch((e) => console.error("liquidsoap play call failed", e));
+    //   } catch (err) {
+    //     console.error("Error calling liquidsoap control endpoint:", err);
+    //   }
+    // }
+
     const controlUrl = process.env.LIQUIDSOAP_CONTROL_URL || "http://localhost:8080";
-    if (controlUrl) {
-      try {
-        // Envia os dados da música para o Liquidsoap
-        await fetch(`${controlUrl}/play`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            path: s.path,
-            title: s.title,
-            artist: s.artist,
-          }),
-        }).catch((e) => console.error("liquidsoap play call failed", e));
-      } catch (err) {
-        console.error("Error calling liquidsoap control endpoint:", err);
-      }
-    }
+if (controlUrl) {
+  try {
+    // Criar comando telnet para adicionar música na fila
+    const escapedPath = s.path.replace(/'/g, "'\\''");
+    const escapedTitle = s.title.replace(/'/g, "'\\''");
+    const escapedArtist = s.artist.replace(/'/g, "'\\''");
+    
+    const uri = `annotate:title="${escapedTitle}",artist="${escapedArtist}":${escapedPath}`;
+    
+    // Usar telnet para controlar o Liquidsoap
+    const execPromise = util.promisify(exec);
+    
+    await execPromise(`echo 'manual_queue.push ${uri}' | nc localhost 1234`);
+    await execPromise(`echo 'next_track.skip' | nc localhost 1234`);
+    
+    console.log("Música injetada via telnet com sucesso");
+  } catch (err) {
+    console.error("Error calling liquidsoap telnet:", err);
+  }
+}
 
     return new Response(JSON.stringify({ success: true, song: selectedSong }), { status: 200 });
   } catch (error) {
