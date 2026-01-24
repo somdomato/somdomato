@@ -4,7 +4,8 @@
   --foreground: #ffffff;
   --background: #2c2525;
   --background-alt: #394634;
-  --primary: #df8f2d;
+  --primary: #d5984e;
+  --primary-alt: #daa05a;
 }
 
 @theme inline {
@@ -12,6 +13,7 @@
   --color-background-alt: var(--background-alt);
   --color-foreground: var(--foreground);
   --color-primary: var(--primary);
+  --color-primary-alt: var(--primary-alt);
 }
 
 html,
@@ -29,4 +31,24 @@ body {
 
 button {
   @apply cursor-pointer;
+}
+
+h1 {
+  @apply text-3xl font-bold mb-4;
+}
+
+h2 {
+  @apply text-2xl font-semibold mb-3;
+}
+
+h3 {
+  @apply text-xl font-semibold mb-2;
+}
+
+h4 {
+  @apply text-lg font-semibold mb-1;
+}
+
+a:not(.logo) {
+  @apply text-primary-alt hover:text-white transition-colors duration-400;
 }
