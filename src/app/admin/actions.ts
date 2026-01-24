@@ -103,6 +103,23 @@ export async function updateSong(
     })
     .where(eq(songs.id, id));
 
+  // Tentar extrair/salvar capa do arquivo (ou procurar por capa existente por artista)
+  try {
+    const { extractAndSaveCover, findCoverByArtist } = await import("@/lib/cover");
+    // currentPath aponta para o caminho atual do arquivo (pode ter sido renomeado)
+    const coverPath = await extractAndSaveCover(currentPath);
+    if (coverPath) {
+      await db.update(songs).set({ cover: coverPath }).where(eq(songs.id, id));
+    } else if (data.artist) {
+      const found = await findCoverByArtist(data.artist);
+      if (found) {
+        await db.update(songs).set({ cover: found }).where(eq(songs.id, id));
+      }
+    }
+  } catch (error) {
+    console.error("Erro ao processar capa da música:", error);
+  }
+
   revalidatePath("/admin");
   return { success: true };
 }

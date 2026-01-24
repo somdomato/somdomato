@@ -12,36 +12,47 @@ interface SearchSongsParams {
   limit?: number;
 }
 
+import { normalizeString } from "@/db/utils";
+
 export async function searchSongs({ query = "", page = 1, limit = 10 }: SearchSongsParams) {
   const offset = (page - 1) * limit;
 
-  // Se houver query de busca, filtrar por artista, título ou path
-  const allSongs =
-    query && query.trim() !== ""
-      ? await db
-          .select()
-          .from(songs)
-          .where(or(like(songs.artist, `%${query}%`), like(songs.title, `%${query}%`), like(songs.path, `%${query}%`)))
-          .limit(limit)
-          .offset(offset)
-          .orderBy(songs.title)
-      : await db.select().from(songs).limit(limit).offset(offset).orderBy(songs.title);
+  // Se houver query de busca, normaliza e filtra sem acentos/caixa
+  if (query && query.trim() !== "") {
+    const qn = normalizeString(query);
 
-  // Contar total de registros
-  const countResult =
-    query && query.trim() !== ""
-      ? await db
-          .select()
-          .from(songs)
-          .where(or(like(songs.artist, `%${query}%`), like(songs.title, `%${query}%`), like(songs.path, `%${query}%`)))
-      : await db.select().from(songs);
+    // Buscar todos (small DB expected) e filtrar em JS usando normalizeString
+    const rows = await db.select().from(songs).orderBy(songs.title);
 
-  const total = countResult.length;
+    const filtered = rows.filter((s) => {
+      const title = normalizeString(s.title);
+      const artist = normalizeString(s.artist);
+      const path = normalizeString(s.path || "");
+      return title.includes(qn) || artist.includes(qn) || path.includes(qn);
+    });
+
+    const total = filtered.length;
+    const paginated = filtered.slice(offset, offset + limit);
+
+    return {
+      songs: paginated,
+      total,
+      pages: Math.ceil(total / limit),
+    };
+  }
+
+  // Sem query: comportamento paginado normal
+  const allSongs = await db.select().from(songs).limit(limit).offset(offset).orderBy(songs.title);
+  const [{ count }] = await db
+    .select({ count: songs.id })
+    .from(songs)
+    .execute()
+    .then((rows) => [{ count: rows.length }]);
 
   return {
     songs: allSongs,
-    total,
-    pages: Math.ceil(total / limit),
+    total: count,
+    pages: Math.ceil(count / limit),
   };
 }
 

@@ -22,13 +22,13 @@ export default function IcecastPlayer({ className = "" }: IcecastPlayerProps) {
   // Socket listener for song changes
   useEffect(() => {
     let timeoutId: NodeJS.Timeout | null = null;
-    
+
     const handleSongChanged = async (nextSong: { id: number; title: string; artist: string; cover?: string }) => {
       // Debounce: cancela chamadas anteriores se houver
       if (timeoutId) {
         clearTimeout(timeoutId);
       }
-      
+
       timeoutId = setTimeout(async () => {
         // Salvar dados no localStorage imediatamente
         localStorage.setItem(
@@ -120,7 +120,7 @@ export default function IcecastPlayer({ className = "" }: IcecastPlayerProps) {
         {/* Play/Pause */}
         <button
           onClick={() => (playing ? pause() : play())}
-          className="w-9 h-9 flex items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-md transition-all hover:shadow-lg active:scale-95 disabled:opacity-50"
+          className="w-9 h-9 flex items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white shadow-md transition-all hover:shadow-lg active:scale-95 disabled:opacity-50"
           aria-label={playing ? "Pause" : "Play"}
         >
           {playing ? <Pause className="w-4 h-4" fill="currentColor" /> : <Play className="w-4 h-4 ml-0.5" fill="currentColor" />}
@@ -134,7 +134,7 @@ export default function IcecastPlayer({ className = "" }: IcecastPlayerProps) {
               setTimeout(() => play(), 100);
             }
           }}
-          className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-700/50 hover:bg-slate-600/50 text-slate-300 hover:text-white transition-all active:scale-95"
+          className="w-8 h-8 flex items-center justify-center rounded-full bg-emerald-700/10 hover:bg-emerald-600/30 text-emerald-200 hover:text-white transition-all active:scale-95"
           aria-label="Reload"
         >
           <RotateCw className="w-3.5 h-3.5" />
@@ -142,7 +142,7 @@ export default function IcecastPlayer({ className = "" }: IcecastPlayerProps) {
 
         {/* Volume Controls */}
         <div className="hidden md:flex items-center gap-2 ml-1">
-          <button onClick={() => toggleMute()} className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-700/50 hover:bg-slate-600/50 text-slate-300 hover:text-white transition-all active:scale-95" aria-label={muted ? "Unmute" : "Mute"}>
+          <button onClick={() => toggleMute()} className="w-8 h-8 flex items-center justify-center rounded-full bg-emerald-700/10 hover:bg-emerald-600/30 text-emerald-200 hover:text-white transition-all active:scale-95" aria-label={muted ? "Unmute" : "Mute"}>
             {muted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
           </button>
 
@@ -161,9 +161,9 @@ export default function IcecastPlayer({ className = "" }: IcecastPlayerProps) {
                 toggleMute(true);
               }
             }}
-            className="w-20 h-1 bg-slate-700 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-blue-500 [&::-moz-range-thumb]:w-3 [&::-moz-range-thumb]:h-3 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-blue-500 [&::-moz-range-thumb]:border-0"
+            className="w-20 h-1 bg-slate-700 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-emerald-500 [&::-moz-range-thumb]:w-3 [&::-moz-range-thumb]:h-3 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-emerald-500 [&::-moz-range-thumb]:border-0"
             style={{
-              background: `linear-gradient(to right, rgb(59 130 246) 0%, rgb(59 130 246) ${volume}%, rgb(51 65 85) ${volume}%, rgb(51 65 85) 100%)`,
+              background: `linear-gradient(to right, rgb(16 185 129) 0%, rgb(16 185 129) ${volume}%, rgb(51 65 85) ${volume}%, rgb(51 65 85) 100%)`,
             }}
             aria-label="Volume"
           />

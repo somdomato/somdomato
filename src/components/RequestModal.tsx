@@ -30,30 +30,42 @@ export function RequestModal({ isOpen, onClose }: RequestModalProps) {
   const [loading, setLoading] = useState(false);
   const [requesting, setRequesting] = useState<number | null>(null);
 
-  const loadSongs = useCallback(async () => {
-    setLoading(true);
-    try {
-      const data = await searchSongs({ query: searchQuery, page, limit });
-      setSongs(data.songs);
-      setTotal(data.total);
-      setPages(data.pages);
-    } catch (error) {
-      toast.error("Erro ao carregar músicas");
-      console.error(error);
-    } finally {
-      setLoading(false);
-    }
-  }, [searchQuery, page, limit]);
+  const loadSongs = useCallback(
+    async (query: string, pageParam: number = 1) => {
+      setLoading(true);
+      try {
+        const data = await searchSongs({ query, page: pageParam, limit });
+        setSongs(data.songs);
+        setTotal(data.total);
+        setPages(data.pages);
+        setPage(pageParam);
+      } catch (error) {
+        toast.error("Erro ao carregar músicas");
+        console.error(error);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [limit],
+  );
 
   useEffect(() => {
     if (isOpen) {
-      loadSongs();
+      // Ao abrir o modal, limpar o campo de busca e carregar todas as músicas
+      setSearchQuery("");
+      setPage(1);
+      loadSongs("", 1);
     }
   }, [isOpen, loadSongs]);
 
   const handleSearch = () => {
     setPage(1);
-    loadSongs();
+    loadSongs(searchQuery, 1);
+  };
+
+  const changePage = (newPage: number) => {
+    setPage(newPage);
+    loadSongs(searchQuery, newPage);
   };
 
   const handleRequest = async (songId: number) => {
@@ -78,7 +90,7 @@ export function RequestModal({ isOpen, onClose }: RequestModalProps) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[9999] p-4 backdrop-blur-sm">
       <div className="bg-background-alt rounded-lg shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col border-2 border-primary/30">
         {/* Header */}
         <div className="flex justify-between items-center p-4 sm:p-6 border-b border-primary/30 bg-gradient-to-r from-background-alt to-background">
@@ -184,10 +196,10 @@ export function RequestModal({ isOpen, onClose }: RequestModalProps) {
               Página {page} de {pages}
             </div>
             <div className="flex gap-2">
-              <button onClick={() => setPage(Math.max(1, page - 1))} disabled={page === 1} className="px-3 sm:px-4 py-2 bg-background border border-primary/30 rounded-lg hover:bg-primary/10 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-xs sm:text-sm">
+              <button onClick={() => changePage(Math.max(1, page - 1))} disabled={page === 1} className="px-3 sm:px-4 py-2 bg-background border border-primary/30 rounded-lg hover:bg-primary/10 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-xs sm:text-sm">
                 Anterior
               </button>
-              <button onClick={() => setPage(Math.min(pages, page + 1))} disabled={page === pages} className="px-3 sm:px-4 py-2 bg-background border border-primary/30 rounded-lg hover:bg-primary/10 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-xs sm:text-sm">
+              <button onClick={() => changePage(Math.min(pages, page + 1))} disabled={page === pages} className="px-3 sm:px-4 py-2 bg-background border border-primary/30 rounded-lg hover:bg-primary/10 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-xs sm:text-sm">
                 Próxima
               </button>
             </div>
