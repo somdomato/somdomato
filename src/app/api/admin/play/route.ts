@@ -148,15 +148,13 @@ export async function POST(request: Request) {
         const uri = `annotate:title="${escapedTitle}",artist="${escapedArtist}":${escapedPath}`;
 
         // Usar telnet para controlar o Liquidsoap
-        const { exec } = require("child_process");
-        const util = require("util");
         const execPromise = util.promisify(exec);
 
-        console.log('Tentando tocar:', {
-  path: s.path,
-  title: s.title,
-  artist: s.artist
-});
+        console.log("Tentando tocar:", {
+          path: s.path,
+          title: s.title,
+          artist: s.artist,
+        });
 
         // Push da música na fila
         await execPromise(`echo 'request_queue.push ${uri}' | nc localhost 1234`);
