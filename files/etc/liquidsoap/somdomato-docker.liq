@@ -1,5 +1,3 @@
-#!/usr/bin/env liquidsoap
-
 # Permitir execução como root (necessário para Docker)
 # NOTE: Para que o comando "Tocar agora" / "Skip" funcione imediatamente,
 # você precisa expor um endpoint de controle em Liquidsoap que execute
@@ -45,33 +43,62 @@ def fetch_next_song() =
   
   # Adicionar à fila se o request foi criado com sucesso
   if req != null() then
-    request.push(req, queue)
+    queue.push(req)
   end
 end
 
 # Endpoint HTTP simples para controlar o Liquidsoap (skip)
 # Chama fetch_next_song() para forçar a adição da próxima música imediatamente.
 # Ex.: curl -X POST http://host.docker.internal:8080/skip
-server.register("/skip", fun () ->
+def skip_handler(_http_req) =
+  # Marca `_http_req` como usado para evitar warning de "unused variable"
+  ignore(_http_req)
   log("HTTP /skip recebido - buscando próxima música...")
   fetch_next_song()
-  "OK"
-end)
+  # Força término da request atual para que a próxima tocada seja a que acabamos de empurrar
+  current = request.all()
+  if current != [] then
+    log("Destruindo request atual para forçar skip")
+    request.destroy(~force=true, list.hd(current))
+  else
+    log("Nenhuma request atual encontrada para destruir")
+  end
+  http.response(
+    content_type="text/plain",
+    data="OK"
+  )
+end
+
+# Registra handler HTTP (compatível com builds sem `fun` anônimas)
+harbor.http.register.simple(port=8080, method="POST", "/skip", skip_handler)
 
 
 # Adicionar primeira música à fila ao iniciar
 fetch_next_song()
 
-# Hook para adicionar próxima música quando uma terminar
-def on_track_end(~elapsed, ~remaining, ~on_last) =
-  if remaining <= 5.0 then
-    log("Buscando próxima música...")
-    fetch_next_song()
+# Fonte dinâmica para buscar próxima música (compatível com esta build)
+def request_function() =
+  result = process.read.lines("curl -s http://host.docker.internal:3000/api/music")
+  json = list.hd(default="", result)
+  path = list.hd(default="", process.read.lines("echo '#{json}' | jq -r '.path'"))
+  title = list.hd(default="", process.read.lines("echo '#{json}' | jq -r '.title'"))
+  artist = list.hd(default="", process.read.lines("echo '#{json}' | jq -r '.artist'"))
+  uri = "annotate:title=\"#{title}\",artist=\"#{artist}\":#{path}"
+  req = request.create(uri)
+  log("Request criada: #{uri}")
+  if req != null() then
+    log("Request criada com sucesso, inserindo na fila")
+    queue.push(req)
+    log("Request empurrada para fila")
+  else
+    log("Falha ao criar request para #{uri}")
   end
 end
 
-autodj = queue
-autodj = on_end(delay=5.0, on_track_end, autodj)
+next_source = request.dynamic(id="next_track", request_function)
+
+# Prioridade: transmissão ao vivo > pedidos manuais > autodj automático
+autodj = fallback(track_sensitive=false, [live, queue, next_source])
 
 # Mapear metadados para sobrescrever os que vêm do arquivo
 autodj = map_metadata(fun (m) ->

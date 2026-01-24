@@ -27,7 +27,7 @@ export async function POST(request: Request) {
     // make sure file exists
     try {
       await fs.access(s.path);
-    } catch (err) {
+    } catch {
       return new Response(JSON.stringify({ error: "file not found on disk" }), { status: 400 });
     }
 
@@ -80,13 +80,31 @@ export async function POST(request: Request) {
       createdAt: s.createdAt,
     };
 
-    if ((global as any).io) (global as any).io.emit("song:changed", selectedSong);
+    if (global.io) global.io.emit("song:changed", selectedSong);
 
     // try to call liquidsoap control endpoint to skip immediately (optional)
-    const controlUrl = process.env.LIQUIDSOAP_CONTROL_URL;
+    // const controlUrl = process.env.LIQUIDSOAP_CONTROL_URL || "http://localhost:8080/skip";
+    // if (controlUrl) {
+    //   try {
+    //     await fetch(`${controlUrl}/skip`, { method: "POST" }).catch((e) => console.error("liquidsoap skip call failed", e));
+    //   } catch (err) {
+    //     console.error("Error calling liquidsoap control endpoint:", err);
+    //   }
+    // }
+
+    const controlUrl = process.env.LIQUIDSOAP_CONTROL_URL || "http://localhost:8080";
     if (controlUrl) {
       try {
-        await fetch(`${controlUrl}/skip`, { method: "POST" }).catch((e) => console.error("liquidsoap skip call failed", e));
+        // Envia os dados da música para o Liquidsoap
+        await fetch(`${controlUrl}/play`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            path: s.path,
+            title: s.title,
+            artist: s.artist,
+          }),
+        }).catch((e) => console.error("liquidsoap play call failed", e));
       } catch (err) {
         console.error("Error calling liquidsoap control endpoint:", err);
       }

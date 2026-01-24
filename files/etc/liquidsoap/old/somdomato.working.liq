@@ -24,43 +24,11 @@ end
 # Cria a fonte de música automática
 autodj = next()
 
-# Cria uma fila para músicas injetadas manualmente
-queue = request.queue(id="manual_queue")
-
 # Skip handler HTTP
 def skip_handler(_, _) =
   log("Skip recebido via HTTP")
   
-  # Pula a faixa atual
-  autodj.skip()
-  
-  print("HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n\r\nOK")
-end
-
-# Play handler - injeta música específica
-def play_handler(_, request) =
-  log("Play específico recebido via HTTP")
-  
-  # Extrai o body da requisição
-  data = request.data
-  
-  # Parse do JSON para pegar path, title, artist
-  # Assumindo que o body vem como JSON: {"path":"/path/to/song.mp3","title":"...","artist":"..."}
-  path = list.hd(default="", process.read.lines("echo '#{data}' | jq -r '.path'"))
-  title = list.hd(default="", process.read.lines("echo '#{data}' | jq -r '.title'"))
-  artist = list.hd(default="", process.read.lines("echo '#{data}' | jq -r '.artist'"))
-  
-  log("Injetando música: #{path}")
-  log("Título: #{title}, Artista: #{artist}")
-  
-  # Cria a requisição anotada
-  uri = "annotate:title=\"#{title}\",artist=\"#{artist}\":#{path}"
-  req = request.create(uri)
-  
-  # Adiciona na fila manual
-  queue.push(req)
-  
-  # Pula a música atual para tocar a injetada imediatamente
+  # Pula a faixa atual do autodj
   autodj.skip()
   
   print("HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n\r\nOK")
@@ -73,15 +41,8 @@ harbor.http.register(
   skip_handler
 )
 
-harbor.http.register(
-  port=8080,
-  method="POST",
-  "/play",
-  play_handler
-)
-
-# Prioridade: transmissão ao vivo > fila manual > autodj
-radio = fallback(track_sensitive=false, [live, queue, autodj])
+# Prioridade: transmissão ao vivo > autodj
+radio = fallback(track_sensitive=false, [live, autodj])
 
 # Garante que a fonte seja infallible
 radio = mksafe(radio)
