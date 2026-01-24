@@ -144,20 +144,26 @@ export async function POST(request: Request) {
         const escapedPath = s.path.replace(/"/g, '\\"');
         const escapedTitle = s.title.replace(/"/g, '\\"');
         const escapedArtist = s.artist.replace(/"/g, '\\"');
-        
+
         const uri = `annotate:title="${escapedTitle}",artist="${escapedArtist}":${escapedPath}`;
-        
+
         // Usar telnet para controlar o Liquidsoap
-        const { exec } = require('child_process');
-        const util = require('util');
+        const { exec } = require("child_process");
+        const util = require("util");
         const execPromise = util.promisify(exec);
-        
+
+        console.log('Tentando tocar:', {
+  path: s.path,
+  title: s.title,
+  artist: s.artist
+});
+
         // Push da música na fila
         await execPromise(`echo 'request_queue.push ${uri}' | nc localhost 1234`);
-        
+
         // Skip da música atual do output Icecast para forçar mudança
         await execPromise(`echo 'output.icecast.skip' | nc localhost 1234`);
-        
+
         console.log("Música injetada via telnet com sucesso");
       } catch (err) {
         console.error("Error calling liquidsoap telnet:", err);

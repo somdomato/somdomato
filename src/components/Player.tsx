@@ -134,14 +134,14 @@ export default function IcecastPlayer({ className = "" }: IcecastPlayerProps) {
   }, [setTitle, setArtist, setCover]);
 
   return (
-    <div className={`flex items-center max-w-md gap-3 bg-gradient-to-r from-background-alt to-[#2c3b26] rounded-md px-3 py-1.5 border-3 border-black/50 ${className}`}>
+    <div className={`flex items-center justify-between max-w-md gap-3 bg-gradient-to-r from-background-alt to-[#2c3b26] rounded-md px-2 py-1.5 border-3 border-black/50 ${className}`}>
       {/* Cover Image */}
       <div className="relative flex-shrink-0 w-6 h-6 sm:w-8 sm:h-8 rounded overflow-hidden border border-black/40">
         <Image src={cover} alt="Cover" className="w-full h-full object-cover" fill />
       </div>
 
       {/* Metadata */}
-      <div className="flex-1 min-w-0 hidden sm:block">
+      <div className="flex-1 min-w-0">
         <div className="text-sm/3 text-white truncate cursor-pointer" title={title}>
           {title}
         </div>

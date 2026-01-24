@@ -30,8 +30,8 @@ export const AudioProvider = ({ children }: { children: React.ReactNode }) => {
   // store volume as 0-100 to match UI controls
   const [volume, setVolumeState] = useState(70);
   const [muted, setMuted] = useState(false);
-  const [title, setTitle] = useState("");
-  const [artist, setArtist] = useState("");
+  const [title, setTitle] = useState("Rádio Som do Mato");
+  const [artist, setArtist] = useState("A mais sertaneja");
   const [cover, setCover] = useState("/images/logotipo.svg");
 
   const play = () => {
