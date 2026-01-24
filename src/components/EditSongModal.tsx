@@ -154,7 +154,13 @@ export function EditSongModal({ song, password, onClose, onSave }: EditSongModal
             <label htmlFor="coverUpload" className="block text-sm font-medium mb-2">
               Atualizar Capa Embutida (ID3)
             </label>
-            <input id="coverUpload" type="file" accept="image/*" onChange={handleCoverUpload} className="w-full px-4 py-2 bg-background border border-primary/30 rounded-md focus:outline-none focus:ring-2 focus:ring-primary file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-background hover:file:bg-primary/80" />
+            <input
+              id="coverUpload"
+              type="file"
+              accept="image/*"
+              onChange={handleCoverUpload}
+              className="w-full px-4 py-2 bg-background border border-primary/30 rounded-md focus:outline-none focus:ring-2 focus:ring-primary file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-background hover:file:bg-primary/80"
+            />
             <p className="text-xs text-gray-400 mt-1">A imagem será embutida no arquivo MP3 (máximo 2MB)</p>
             {formData.coverFile && (
               <div className="mt-2">

@@ -26,31 +26,31 @@ export async function getSongs(page = 1, limit = 10, password: string, query = "
   await verifyAuth(password);
 
   const offset = (page - 1) * limit;
-  
+
   // Se houver query de busca, normaliza e filtra
   if (query && query.trim() !== "") {
     const qn = normalizeString(query);
-    
+
     // Buscar todos e filtrar em JS usando normalizeString
     const rows = await db.select().from(songs).orderBy(asc(songs.title));
-    
+
     const filtered = rows.filter((s) => {
       const title = normalizeString(s.title);
       const artist = normalizeString(s.artist);
       const path = normalizeString(s.path || "");
       return title.includes(qn) || artist.includes(qn) || path.includes(qn);
     });
-    
+
     const total = filtered.length;
     const paginated = filtered.slice(offset, offset + limit);
-    
+
     return {
       songs: paginated,
       total,
       pages: Math.ceil(total / limit),
     };
   }
-  
+
   // Sem query: comportamento paginado normal
   const allSongs = await db.select().from(songs).limit(limit).offset(offset).orderBy(asc(songs.title));
 
@@ -114,22 +114,22 @@ export async function updateSong(
     if (data.title) tags.title = data.title;
     if (data.artist) tags.artist = data.artist;
     if (data.album) tags.album = data.album;
-    
+
     // Se foi fornecida uma capa em base64, adicionar à tag ID3
     if (data.coverFile) {
       try {
         // Converter base64 para buffer
         const base64Data = data.coverFile.replace(/^data:image\/\w+;base64,/, "");
         const imageBuffer = Buffer.from(base64Data, "base64");
-        
+
         tags.image = {
           mime: "image/jpeg",
           type: {
             id: 3,
-            name: "front cover"
+            name: "front cover",
           },
           description: "Cover",
-          imageBuffer: imageBuffer
+          imageBuffer: imageBuffer,
         };
       } catch (error) {
         console.error("Erro ao processar imagem da capa:", error);
