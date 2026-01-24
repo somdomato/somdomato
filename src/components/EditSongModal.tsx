@@ -4,11 +4,13 @@ import { useState } from "react";
 import { updateSong, type RotationType } from "@/actions/admin";
 import { X } from "lucide-react";
 import { toast } from "sonner";
+import Image from "next/image";
 
 interface Song {
   id: number;
   title: string;
   artist: string;
+  album?: string | null;
   path: string;
   cover: string | null;
   timeSlots: number | null;
@@ -27,8 +29,10 @@ export function EditSongModal({ song, password, onClose, onSave }: EditSongModal
     filename: song.path.split("/").pop() || "",
     title: song.title,
     artist: song.artist,
+    album: song.album || "",
     rotation: song.rotation || "normal",
     timeSlots: song.timeSlots || 15,
+    coverFile: "",
   });
   const [saving, setSaving] = useState(false);
 
@@ -43,8 +47,10 @@ export function EditSongModal({ song, password, onClose, onSave }: EditSongModal
           filename: formData.filename,
           title: formData.title,
           artist: formData.artist,
+          album: formData.album,
           rotation: formData.rotation as RotationType,
           timeSlots: formData.timeSlots,
+          coverFile: formData.coverFile || undefined,
         },
         password,
       );
@@ -66,6 +72,33 @@ export function EditSongModal({ song, password, onClose, onSave }: EditSongModal
     }));
   };
 
+  const handleCoverUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validar tipo de arquivo
+    if (!file.type.startsWith("image/")) {
+      toast.error("Apenas imagens são permitidas");
+      return;
+    }
+
+    // Validar tamanho (máximo 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error("A imagem deve ter no máximo 2MB");
+      return;
+    }
+
+    // Converter para base64
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setFormData((prev) => ({
+        ...prev,
+        coverFile: reader.result as string,
+      }));
+    };
+    reader.readAsDataURL(file);
+  };
+
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div className="bg-background-alt rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -81,7 +114,7 @@ export function EditSongModal({ song, password, onClose, onSave }: EditSongModal
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           {/* Capa */}
           <div className="flex justify-center">
-            <img src={song.cover || "/images/logotipo.svg"} alt={song.title} className="w-32 h-32 object-cover rounded-lg" />
+            <Image src={song.cover || "/images/logotipo.svg"} alt={song.title} width={128} height={128} className="w-32 h-32 object-cover rounded-lg" />
           </div>
 
           {/* Nome do Arquivo */}
@@ -106,6 +139,30 @@ export function EditSongModal({ song, password, onClose, onSave }: EditSongModal
               Artista (ID3)
             </label>
             <input id="artist" type="text" value={formData.artist} onChange={(e) => setFormData((prev) => ({ ...prev, artist: e.target.value }))} className="w-full px-4 py-2 bg-background border border-primary/30 rounded-md focus:outline-none focus:ring-2 focus:ring-primary" required />
+          </div>
+
+          {/* Álbum */}
+          <div>
+            <label htmlFor="album" className="block text-sm font-medium mb-2">
+              Álbum (ID3)
+            </label>
+            <input id="album" type="text" value={formData.album} onChange={(e) => setFormData((prev) => ({ ...prev, album: e.target.value }))} className="w-full px-4 py-2 bg-background border border-primary/30 rounded-md focus:outline-none focus:ring-2 focus:ring-primary" />
+          </div>
+
+          {/* Upload de Capa */}
+          <div>
+            <label htmlFor="coverUpload" className="block text-sm font-medium mb-2">
+              Atualizar Capa Embutida (ID3)
+            </label>
+            <input id="coverUpload" type="file" accept="image/*" onChange={handleCoverUpload} className="w-full px-4 py-2 bg-background border border-primary/30 rounded-md focus:outline-none focus:ring-2 focus:ring-primary file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-background hover:file:bg-primary/80" />
+            <p className="text-xs text-gray-400 mt-1">A imagem será embutida no arquivo MP3 (máximo 2MB)</p>
+            {formData.coverFile && (
+              <div className="mt-2">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={formData.coverFile} alt="Preview" className="w-32 h-32 object-cover rounded" />
+                <p className="text-xs text-green-400 mt-1">Nova capa selecionada</p>
+              </div>
+            )}
           </div>
 
           {/* Rotação */}

@@ -5,6 +5,7 @@ export const songs = sqliteTable("songs", {
   id: int().primaryKey({ autoIncrement: true }),
   title: text().notNull(),
   artist: text().notNull(),
+  album: text(), // Álbum da música
   path: text().notNull().unique(),
   cover: text().default("/images/logotipo.svg"), // Nova coluna para URL da capa
   timeSlots: int().default(15), // Sistema de bits: 0=nenhum, 1=madrugada, 2=manhã, 4=tarde, 8=noite, 15=todos

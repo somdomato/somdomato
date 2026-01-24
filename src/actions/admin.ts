@@ -7,6 +7,7 @@ import { eq, asc, desc } from "drizzle-orm";
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import NodeID3 from "node-id3";
+import { normalizeString } from "@/db/utils";
 
 // Tipos
 export type RotationType = "inativo" | "leve" | "normal" | "pesado";
@@ -21,10 +22,36 @@ async function verifyAuth(password: string) {
 
 // ===== ACTIONS DE MÚSICAS =====
 
-export async function getSongs(page = 1, limit = 10, password: string) {
+export async function getSongs(page = 1, limit = 10, password: string, query = "") {
   await verifyAuth(password);
 
   const offset = (page - 1) * limit;
+  
+  // Se houver query de busca, normaliza e filtra
+  if (query && query.trim() !== "") {
+    const qn = normalizeString(query);
+    
+    // Buscar todos e filtrar em JS usando normalizeString
+    const rows = await db.select().from(songs).orderBy(asc(songs.title));
+    
+    const filtered = rows.filter((s) => {
+      const title = normalizeString(s.title);
+      const artist = normalizeString(s.artist);
+      const path = normalizeString(s.path || "");
+      return title.includes(qn) || artist.includes(qn) || path.includes(qn);
+    });
+    
+    const total = filtered.length;
+    const paginated = filtered.slice(offset, offset + limit);
+    
+    return {
+      songs: paginated,
+      total,
+      pages: Math.ceil(total / limit),
+    };
+  }
+  
+  // Sem query: comportamento paginado normal
   const allSongs = await db.select().from(songs).limit(limit).offset(offset).orderBy(asc(songs.title));
 
   const [{ count }] = await db
@@ -46,8 +73,10 @@ export async function updateSong(
     filename?: string;
     title?: string;
     artist?: string;
+    album?: string;
     rotation?: RotationType;
     timeSlots?: number;
+    coverFile?: string; // Base64 da imagem da capa
   },
   password: string,
 ) {
@@ -80,10 +109,32 @@ export async function updateSong(
   }
 
   // Atualizar tags ID3 (usar o path atual, que pode ser o novo se foi renomeado)
-  if (data.title || data.artist) {
+  if (data.title || data.artist || data.album || data.coverFile) {
     const tags: NodeID3.Tags = {};
     if (data.title) tags.title = data.title;
     if (data.artist) tags.artist = data.artist;
+    if (data.album) tags.album = data.album;
+    
+    // Se foi fornecida uma capa em base64, adicionar à tag ID3
+    if (data.coverFile) {
+      try {
+        // Converter base64 para buffer
+        const base64Data = data.coverFile.replace(/^data:image\/\w+;base64,/, "");
+        const imageBuffer = Buffer.from(base64Data, "base64");
+        
+        tags.image = {
+          mime: "image/jpeg",
+          type: {
+            id: 3,
+            name: "front cover"
+          },
+          description: "Cover",
+          imageBuffer: imageBuffer
+        };
+      } catch (error) {
+        console.error("Erro ao processar imagem da capa:", error);
+      }
+    }
 
     const success = NodeID3.update(tags, currentPath);
     if (!success) {
@@ -98,6 +149,7 @@ export async function updateSong(
       ...(data.filename && { path: data.filename }),
       ...(data.title && { title: data.title }),
       ...(data.artist && { artist: data.artist }),
+      ...(data.album && { album: data.album }),
       ...(data.rotation && { rotation: data.rotation }),
       ...(data.timeSlots !== undefined && { timeSlots: data.timeSlots }),
     })

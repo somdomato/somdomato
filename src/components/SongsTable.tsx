@@ -3,13 +3,14 @@
 import { useState, useEffect, useCallback } from "react";
 import { getSongs, deleteSong } from "@/actions/admin";
 import { EditSongModal } from "@/components/EditSongModal";
-import { Pencil, Trash2 } from "lucide-react";
+import { Pencil, Trash2, Search } from "lucide-react";
 import { toast } from "sonner";
 
 interface Song {
   id: number;
   title: string;
   artist: string;
+  album?: string | null;
   path: string;
   cover: string | null;
   timeSlots: number | null;
@@ -31,11 +32,12 @@ export function SongsTable({ password }: SongsTableProps) {
   const [pages, setPages] = useState(0);
   const [loading, setLoading] = useState(true);
   const [editingSong, setEditingSong] = useState<Song | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const loadSongs = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await getSongs(page, limit, password);
+      const data = await getSongs(page, limit, password, searchQuery);
       setSongs(data.songs);
       setTotal(data.total);
       setPages(data.pages);
@@ -45,7 +47,7 @@ export function SongsTable({ password }: SongsTableProps) {
     } finally {
       setLoading(false);
     }
-  }, [page, limit, password]);
+  }, [page, limit, password, searchQuery]);
 
   useEffect(() => {
     loadSongs();
@@ -91,6 +93,23 @@ export function SongsTable({ password }: SongsTableProps) {
 
   return (
     <div className="space-y-4">
+      {/* Campo de Busca */}
+      <div className="relative">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+          <input
+            type="text"
+            placeholder="Buscar por música, artista ou arquivo..."
+            value={searchQuery}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              setPage(1);
+            }}
+            className="w-full pl-10 pr-4 py-2 bg-background border border-primary/30 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+          />
+        </div>
+      </div>
+
       {/* Controles */}
       <div className="flex justify-between items-center">
         <div className="flex items-center gap-2">
