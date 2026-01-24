@@ -6,6 +6,39 @@ import { Play, Pause, RotateCw, Volume2, VolumeX } from "lucide-react";
 import { useAudio } from "@/context/AudioContext";
 import { socket } from "@/lib/socket";
 import { toast } from "sonner";
+import { useAuth } from "@/components/AdminAuth";
+import { useCallback } from "react";
+
+function AdminSkipButton() {
+  const { isAuthenticated, password } = useAuth();
+  const handle = useCallback(async () => {
+    if (!isAuthenticated || !password) {
+      toast.error("Somente admins");
+      return;
+    }
+    try {
+      const res = await fetch("/api/admin/skip", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password }),
+      });
+      if (!res.ok) throw new Error("Falha ao enviar skip");
+      toast.success("Skip enviado");
+    } catch (err) {
+      toast.error("Erro ao enviar skip");
+      console.error(err);
+    }
+  }, [isAuthenticated, password]);
+
+  if (!isAuthenticated) return null;
+
+  return (
+    <button onClick={handle} title="Skip (admin)" className="w-8 h-8 flex items-center justify-center rounded-full bg-yellow-500 text-black hover:opacity-90 transition">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 4v16l12-8z"></path><line x1="6" y1="4" x2="6" y2="20"></line></svg>
+    </button>
+  );
+}
+
 
 interface IcecastPlayerProps {
   streamUrl?: string;
@@ -167,6 +200,9 @@ export default function IcecastPlayer({ className = "" }: IcecastPlayerProps) {
             }}
             aria-label="Volume"
           />
+
+          {/* Botão de Skip (admin) */}
+          <AdminSkipButton />
         </div>
       </div>
     </div>

@@ -31,7 +31,8 @@
       },
       "a11y": {
         "useButtonType": "off",
-        "useMediaCaption": "off"
+        "useMediaCaption": "off",
+        "noSvgWithoutTitle": "off"
       }
     },
     "domains": {

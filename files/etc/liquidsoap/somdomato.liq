@@ -1,5 +1,19 @@
 #!/usr/bin/env liquidsoap
 
+# NOTE: Para que o comando "Tocar agora" / "Skip" funcione imediatamente,
+# você precisa expor um endpoint de controle em Liquidsoap que execute
+# `fetch_next_song()` e pule a faixa atual. Exemplo (pseudo):
+#
+#   server.register("/skip", fun () ->
+#     log("Skip mágico recebido via HTTP: buscando próxima música...") ;
+#     fetch_next_song() ;
+#     # opcional: manipular fila/skip aqui
+#   end)
+#
+# Alternativamente, crie um pequeno serviço que conecte com o Liquidsoap via telnet/RPC
+# e exponha um endpoint HTTP que este Next.js chame (defina LIQUIDSOAP_CONTROL_URL).
+# Veja documentação do Liquidsoap para "server.register"/"http server"/"telnet" para detalhes.
+
 # Configuração do input ao vivo
 live = input.harbor("aovivo", port=8010, user="dj", password="hackme")
 
@@ -31,6 +45,16 @@ def fetch_next_song() =
     request.push(req, queue)
   end
 end
+
+# Endpoint HTTP simples para controlar o Liquidsoap (skip)
+# Chama fetch_next_song() para forçar a adição da próxima música imediatamente.
+# Ex.: curl -X POST http://localhost:8080/skip
+server.register("/skip", fun () ->
+  log("HTTP /skip recebido - buscando próxima música...")
+  fetch_next_song()
+  "OK"
+end)
+
 
 # Adicionar primeira música à fila ao iniciar
 fetch_next_song()
