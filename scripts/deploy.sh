@@ -22,5 +22,5 @@ sudo /usr/bin/systemctl stop $SERVICE
 pnpm run seed
 rm -rf "$PROJECT_DIR"
 mv "$TEMP_DIR" "$PROJECT_DIR"
-ln -sf /var/music/sdm "$PROJECT_DIR/public/music"
+#ln -sf /var/music/sdm "$PROJECT_DIR/public/music"
 sudo /usr/bin/systemctl start $SERVICE

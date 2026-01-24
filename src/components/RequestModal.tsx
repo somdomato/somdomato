@@ -64,8 +64,7 @@ export function RequestModal({ isOpen, onClose }: RequestModalProps) {
       // focus search input when modal opens
       setTimeout(() => searchInputRef.current?.focus(), 0);
 
-      const focusableSelectors =
-        'a[href], button:not([disabled]), textarea, input, select, [tabindex]:not([tabindex="-1"])';
+      const focusableSelectors = 'a[href], button:not([disabled]), textarea, input, select, [tabindex]:not([tabindex="-1"])';
 
       const handleKeyDown = (e: KeyboardEvent) => {
         if (e.key === "Escape") {
@@ -76,9 +75,7 @@ export function RequestModal({ isOpen, onClose }: RequestModalProps) {
         if (e.key === "Tab") {
           const container = modalRef.current;
           if (!container) return;
-          const focusables = Array.from(container.querySelectorAll<HTMLElement>(focusableSelectors)).filter(
-            (el) => !el.hasAttribute("disabled"),
-          );
+          const focusables = Array.from(container.querySelectorAll<HTMLElement>(focusableSelectors)).filter((el) => !el.hasAttribute("disabled"));
           if (focusables.length === 0) {
             e.preventDefault();
             return;
@@ -151,20 +148,15 @@ export function RequestModal({ isOpen, onClose }: RequestModalProps) {
   if (!isOpen) return null;
 
   return (
-    <div
-      ref={modalRef}
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="requestModalTitle"
-      aria-describedby="requestModalDescription"
-      className="fixed inset-0 bg-black/70 flex items-center justify-center z-[9999] p-4 backdrop-blur-sm"
-    >
+    <div ref={modalRef} role="dialog" aria-modal="true" aria-labelledby="requestModalTitle" aria-describedby="requestModalDescription" className="fixed inset-0 bg-black/70 flex items-center justify-center z-[9999] p-4 backdrop-blur-sm">
       <div className="bg-background-alt rounded-lg shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col border-2 border-primary/30">
         {/* Header */}
         <div className="flex justify-between items-center p-4 sm:p-6 border-b border-primary/30 bg-gradient-to-r from-background-alt to-background">
           <div className="flex items-center gap-3">
             <Music className="w-6 h-6 text-primary" />
-            <h2 id="requestModalTitle" className="text-xl sm:text-2xl font-bold text-primary">Pedir Música</h2>
+            <h2 id="requestModalTitle" className="text-xl sm:text-2xl font-bold text-primary">
+              Pedir Música
+            </h2>
           </div>
           <button aria-label="Fechar pedidos" onClick={onClose} className="text-gray-400 hover:text-white transition-colors p-2 hover:bg-background rounded-full">
             <X size={24} />
@@ -191,7 +183,9 @@ export function RequestModal({ isOpen, onClose }: RequestModalProps) {
               Buscar
             </button>
           </div>
-          <p id="requestModalDescription" className="text-xs text-gray-400 mt-2">{total > 0 ? `${total} música${total !== 1 ? "s" : ""} encontrada${total !== 1 ? "s" : ""}` : "Digite para buscar músicas"}</p>
+          <p id="requestModalDescription" className="text-xs text-gray-400 mt-2">
+            {total > 0 ? `${total} música${total !== 1 ? "s" : ""} encontrada${total !== 1 ? "s" : ""}` : "Digite para buscar músicas"}
+          </p>
         </div>
 
         {/* Table */}

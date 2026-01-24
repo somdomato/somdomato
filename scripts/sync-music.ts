@@ -9,13 +9,36 @@ const SUPPORTED_EXTENSIONS = [".mp3", ".flac", ".ogg", ".m4a", ".wav"];
 
 async function scanMusicDirectory(): Promise<Set<string>> {
   const musicFiles = new Set<string>();
+  const visited = new Set<string>(); // armazena paths reais já visitados para evitar loops
 
   async function scan(dir: string) {
+    let realDir: string;
+    try {
+      realDir = await fs.realpath(dir);
+    } catch (error) {
+      console.error(`Erro ao resolver realpath ${dir}:`, error);
+      return; // se não conseguimos resolver, não seguimos
+    }
+
+    if (visited.has(realDir)) return; // já visitado -> evita loop
+    visited.add(realDir);
+
     try {
       const entries = await fs.readdir(dir, { withFileTypes: true });
 
       for (const entry of entries) {
         const fullPath = path.join(dir, entry.name);
+
+        // Ignorar symlinks problemáticos que possam causar loops (avisar no log)
+        if (entry.isSymbolicLink()) {
+          try {
+            const targetReal = await fs.realpath(fullPath);
+            if (visited.has(targetReal)) continue; // evita seguir para local já visitado
+          } catch (err) {
+            console.warn(`Ignorando symlink problemático ${fullPath}:`, err);
+            continue;
+          }
+        }
 
         if (entry.isDirectory()) {
           await scan(fullPath);
