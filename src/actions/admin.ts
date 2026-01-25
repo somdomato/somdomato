@@ -22,7 +22,7 @@ async function verifyAuth(password: string) {
   if (password !== adminPassword) {
     throw new Error("Senha inválida");
   }
-} 
+}
 
 // ===== ACTIONS DE MÚSICAS =====
 

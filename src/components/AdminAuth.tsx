@@ -16,9 +16,9 @@ export function useAuth() {
 
   async function sha256Base64(str: string) {
     const enc = new TextEncoder().encode(str);
-    const hash = await crypto.subtle.digest('SHA-256', enc);
+    const hash = await crypto.subtle.digest("SHA-256", enc);
     const u8 = new Uint8Array(hash);
-    let binary = '';
+    let binary = "";
     for (let i = 0; i < u8.length; i++) binary += String.fromCharCode(u8[i]);
     return btoa(binary);
   }
@@ -30,12 +30,12 @@ export function useAuth() {
 
     try {
       const token = await sha256Base64(pwd);
-      const isProd = process.env.NODE_ENV === 'production';
+      const isProd = process.env.NODE_ENV === "production";
       let cookie = `adminAuth=${token}; path=/; max-age=${60 * 60 * 24};`;
-      if (isProd) cookie += ' Secure; SameSite=Strict;';
+      if (isProd) cookie += " Secure; SameSite=Strict;";
       document.cookie = cookie;
     } catch (err) {
-      console.error('Erro ao criar cookie de sessão do admin:', err);
+      console.error("Erro ao criar cookie de sessão do admin:", err);
     }
   };
 
@@ -44,7 +44,7 @@ export function useAuth() {
     setPassword(null);
     setIsAuthenticated(false);
     // clear cookie
-    document.cookie = 'adminAuth=; path=/; max-age=0';
+    document.cookie = "adminAuth=; path=/; max-age=0";
   };
 
   return { password, isAuthenticated, login, logout };
@@ -63,8 +63,8 @@ export function LoginForm({ onLogin }: { onLogin: (password: string) => Promise<
     try {
       await onLogin(password);
     } catch (err) {
-      console.error('Login error:', err);
-      setError('Falha ao autenticar');
+      console.error("Login error:", err);
+      setError("Falha ao autenticar");
     }
   };
 
