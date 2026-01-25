@@ -34,6 +34,10 @@ export async function POST(request: Request) {
     return new Response(JSON.stringify({ success: true, music: json }), { status: 200 });
   } catch (error) {
     console.error("/api/admin/skip error:", error);
-    return new Response(JSON.stringify({ error: error instanceof Error ? error.message : "failed" }), { status: 500 });
+    const message = error instanceof Error ? error.message : "failed";
+    if (message === "Senha inválida" || message === "Configuração de admin ausente") {
+      return new Response(JSON.stringify({ error: message }), { status: 401 });
+    }
+    return new Response(JSON.stringify({ error: message }), { status: 500 });
   }
 }

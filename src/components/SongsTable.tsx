@@ -187,7 +187,8 @@ export function SongsTable({ password }: SongsTableProps) {
                               headers: { "Content-Type": "application/json" },
                               body: JSON.stringify({ songId: song.id, password }),
                             });
-                            if (!res.ok) throw new Error("Falha ao pedir música");
+                            const data = await res.json();
+                            if (!res.ok) throw new Error(data?.error || "Falha ao pedir música");
                             toast.success("Pedido adicionado");
                           } catch (err) {
                             toast.error("Erro ao pedir música");
@@ -216,7 +217,8 @@ export function SongsTable({ password }: SongsTableProps) {
                               headers: { "Content-Type": "application/json" },
                               body: JSON.stringify({ songId: song.id, password }),
                             });
-                            if (!res.ok) throw new Error("Falha ao tocar agora");
+                            const data = await res.json();
+                            if (!res.ok) throw new Error(data?.error || "Falha ao tocar agora");
                             toast.success("Tocando agora (solicitado)");
                             // Opcional: atualizar UI/lista
                             loadSongs();

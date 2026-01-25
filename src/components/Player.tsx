@@ -22,10 +22,11 @@ function AdminSkipButton() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ password }),
       });
-      if (!res.ok) throw new Error("Falha ao enviar skip");
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || "Falha ao enviar skip");
       toast.success("Skip enviado");
     } catch (err) {
-      toast.error("Erro ao enviar skip");
+      toast.error(err instanceof Error ? err.message : "Erro ao enviar skip");
       console.error(err);
     }
   }, [isAuthenticated, password]);

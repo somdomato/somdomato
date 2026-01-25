@@ -15,10 +15,14 @@ export type RotationType = "inativo" | "leve" | "normal" | "pesado";
 // Verificação de autenticação
 async function verifyAuth(password: string) {
   const adminPassword = process.env.ADMIN_PASSWORD;
-  if (!adminPassword || password !== adminPassword) {
+  if (!adminPassword) {
+    console.error("ADMIN_PASSWORD não está configurada");
+    throw new Error("Configuração de admin ausente");
+  }
+  if (password !== adminPassword) {
     throw new Error("Senha inválida");
   }
-}
+} 
 
 // ===== ACTIONS DE MÚSICAS =====
 
