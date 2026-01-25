@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useState, useEffect, useCallback } from "react";
 import { getSongs, deleteSong } from "@/actions/admin";
 import { EditSongModal } from "@/components/EditSongModal";
@@ -160,7 +161,7 @@ export function SongsTable({ password }: SongsTableProps) {
               {songs.map((song) => (
                 <tr key={song.id} className="border-b border-primary/10 hover:bg-background/50 transition-colors">
                   <td className="px-4 py-3">
-                    <img src={song.cover || "/images/logotipo.svg"} alt={song.title} className="w-12 h-12 object-cover rounded" />
+                    <Image src={song.cover || "/images/logotipo.svg"} alt={song.title} width={48} height={48} className="object-cover rounded" />
                   </td>
                   <td className="px-4 py-3 text-sm max-w-xs truncate">{song.path.split("/").pop()}</td>
                   <td className="px-4 py-3 text-sm">{song.artist}</td>

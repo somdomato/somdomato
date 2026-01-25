@@ -140,27 +140,24 @@ export async function POST(request: Request) {
     const controlUrl = process.env.LIQUIDSOAP_CONTROL_URL || "http://localhost:8080";
     if (controlUrl) {
       try {
-        // Escapar aspas para o comando telnet
-        const escapedPath = s.path.replace(/"/g, '\\"');
+        // Escapar apenas aspas duplas
         const escapedTitle = s.title.replace(/"/g, '\\"');
         const escapedArtist = s.artist.replace(/"/g, '\\"');
+        const escapedPath = s.path.replace(/"/g, '\\"');
 
         const uri = `annotate:title="${escapedTitle}",artist="${escapedArtist}":${escapedPath}`;
 
         // Usar telnet para controlar o Liquidsoap
         const execPromise = util.promisify(exec);
 
-        console.log("Tentando tocar:", {
-          path: s.path,
-          title: s.title,
-          artist: s.artist,
-        });
+        // Apenas faz skip para forçar a troca - a request_queue já tem prioridade
+        await execPromise(`echo 'output.icecast.skip' | nc -w 2 localhost 1234`);
 
-        // Push da música na fila
-        await execPromise(`echo 'request_queue.push ${uri}' | nc localhost 1234`);
+        // Pequeno delay
+        await new Promise((resolve) => setTimeout(resolve, 100));
 
-        // Skip da música atual do output Icecast para forçar mudança
-        await execPromise(`echo 'output.icecast.skip' | nc localhost 1234`);
+        // Push da música na fila DEPOIS do skip
+        await execPromise(`echo 'request_queue.push ${uri}' | nc -w 2 localhost 1234`);
 
         console.log("Música injetada via telnet com sucesso");
       } catch (err) {

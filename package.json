@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "node --no-trace-warnings src/server.ts",
+    "dev": "node --no-deprecation --no-trace-warnings src/server.ts",
     "build": "next build",
     "start": "NODE_ENV=production node src/server.ts",
     "push": "drizzle-kit push",
