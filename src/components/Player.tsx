@@ -119,7 +119,7 @@ export default function IcecastPlayer({ className = "" }: IcecastPlayerProps) {
             setTitle(parsedData.title);
             setArtist(parsedData.artist);
             setCover(parsedData.cover || DEFAULT_COVER);
-            toast.success(`Tocando agora: ${parsedData.title} - ${parsedData.artist}`, { duration: 5000 });
+            //toast.success(`Tocando agora: ${parsedData.title} - ${parsedData.artist}`, { duration: 5000 });
             localStorage.removeItem("nextSong");
           }
         }
