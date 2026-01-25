@@ -103,9 +103,9 @@ export default function IcecastPlayer({ className = "" }: IcecastPlayerProps) {
           setArtist(finalArtist);
           setCover(finalCover);
 
-          if (finalTitle !== DEFAULT_TITLE && finalArtist !== DEFAULT_TITLE) {
-            toast.success(`Tocando agora: ${finalTitle} - ${finalArtist}`, { duration: 5000 });
-          }
+          // if (finalTitle !== DEFAULT_TITLE && finalArtist !== DEFAULT_TITLE) {
+          //   toast.success(`Tocando agora: ${finalTitle} - ${finalArtist}`, { duration: 5000 });
+          // }
 
           // Limpar dados após uso
           localStorage.removeItem("nextSong");

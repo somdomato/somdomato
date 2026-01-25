@@ -11,7 +11,7 @@ PROJECT_DIR=/var/www/$NAME
 cp -a "$PROJECT_DIR" "$TEMP_DIR"
 cd "$TEMP_DIR" || exit 1
 
-git clean -fxd -e .env -e public/covers
+git clean -fxd -e .env -e public/covers -e drizzle/somdomato.db
 cp .env .env.production 
 
 pnpm install
@@ -19,7 +19,7 @@ pnpm run push
 pnpm run build || exit 1
 
 sudo /usr/bin/systemctl stop $SERVICE
-pnpm run seed
+#pnpm run seed
 rm -rf "$PROJECT_DIR"
 mv "$TEMP_DIR" "$PROJECT_DIR"
 #ln -sf /var/music/sdm "$PROJECT_DIR/public/music"
