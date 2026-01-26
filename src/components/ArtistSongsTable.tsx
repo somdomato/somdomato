@@ -23,9 +23,11 @@ export default function ArtistSongsTable({ artist }: { artist: string }) {
   const [previewSongId, setPreviewSongId] = React.useState<number | null>(null);
 
   React.useEffect(() => {
-    if (!artist) return;
+    // artist may be empty string (meaning "Sem artista"). Only bail out on null/undefined.
+    if (artist === null || artist === undefined) return;
     setLoading(true);
-    fetch(`/api/artists/${encodeURIComponent(artist)}/songs`)
+    const fetchArtist = artist === "" ? "__EMPTY_ARTIST__" : artist;
+    fetch(`/api/artists/${encodeURIComponent(fetchArtist)}/songs`)
       .then((r) => r.json())
       .then((data) => setSongs(data.songs || []))
       .finally(() => setLoading(false));
@@ -236,7 +238,7 @@ export default function ArtistSongsTable({ artist }: { artist: string }) {
     }
   };
 
-  if (!artist) return null;
+  if (artist === null || artist === undefined) return null;
   if (loading) return <div>Carregando músicas...</div>;
   if (!songs || songs.length === 0) return <div>Nenhuma música encontrada para este artista.</div>;
 

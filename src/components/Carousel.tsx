@@ -42,12 +42,16 @@ export default function Carousel({ images, autoplay = false, interval = 5000, sh
   }, [autoplay, interval, isHovered, goToNext]);
 
   return (
-    <section aria-label="Carousel de imagens" className={`relative w-full overflow-hidden rounded-lg bg-gray-900 ${className}`} onMouseEnter={() => setIsHovered(true)} onMouseLeave={() => setIsHovered(false)}>
+    <section aria-label="Carousel de imagens" className={`relative w-full overflow-hidden bg-gray-900 ${className}`} onMouseEnter={() => setIsHovered(true)} onMouseLeave={() => setIsHovered(false)}>
       {/* Slides */}
-      <div className="relative aspect-video w-full">
+      <div className="relative w-full max-h-[650px] aspect-[4/3] sm:aspect-video">
         {images.map((image, index) => (
-          <div key={image.id} className={`absolute inset-0 transition-opacity duration-700 ease-in-out ${index === currentIndex ? "opacity-100" : "opacity-0"}`}>
-            <Image src={image.src} alt={image.alt} fill className="object-cover" priority={index === 0} />
+          <div key={image.id} className={`absolute inset-0 transition-opacity duration-700 ease-in-out ${index === currentIndex ? "opacity-100" : "opacity-0"} overflow-hidden`}>
+            {/* ensure image fills area and crops from top on smaller screens */}
+            <div className="absolute inset-0 w-full h-full">
+              <Image src={image.src} alt={image.alt} fill sizes="(max-width: 640px) 100vw, 50vw" className="object-cover object-top" priority={index === 0} />
+            </div>
+
             {image.title && (
               <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-6">
                 <h3 className="text-xl font-semibold text-white">{image.title}</h3>
@@ -60,10 +64,10 @@ export default function Carousel({ images, autoplay = false, interval = 5000, sh
       {/* Controles de navegação */}
       {showControls && images.length > 1 && (
         <>
-          <button onClick={goToPrevious} className="absolute left-4 top-1/2 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white transition-all hover:bg-black/70 focus:outline-none focus:ring-2 focus:ring-white" aria-label="Imagem anterior">
+          <button onClick={goToPrevious} className="absolute left-4 top-1/2 -translate-y-1/2 text-white transition-all focus:outline-none" aria-label="Imagem anterior">
             <ChevronLeft className="h-6 w-6" />
           </button>
-          <button onClick={goToNext} className="absolute right-4 top-1/2 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white transition-all hover:bg-black/70 focus:outline-none focus:ring-2 focus:ring-white" aria-label="Próxima imagem">
+          <button onClick={goToNext} className="absolute right-4 top-1/2 -translate-y-1/2 text-white transition-all focus:outline-none" aria-label="Próxima imagem">
             <ChevronRight className="h-6 w-6" />
           </button>
         </>

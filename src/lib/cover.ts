@@ -3,7 +3,6 @@ import { existsSync } from "node:fs";
 import * as path from "node:path";
 import * as NodeID3 from "node-id3";
 
-
 interface ID3Tags {
   title?: string;
   artist?: string;
@@ -68,18 +67,13 @@ export async function findCoverByArtist(artist: string, coversDir: string = "pub
       // Retorna arquivo de capa preferencialmente nomeado 'cover.*' ou o primeiro existente
       const files = await readdir(path.join(coversDir, dirent.name));
       if (files.length > 0) {
-        const coverFile =
-          files.find(f => /^cover\.[a-z0-9]+$/i.test(f)) ||
-          files.find(f => /^cover/i.test(f)) ||
-          files[0];
+        const coverFile = files.find((f) => /^cover\.[a-z0-9]+$/i.test(f)) || files.find((f) => /^cover/i.test(f)) || files[0];
         return path.join("/covers", dirent.name, coverFile).replace(/\\/g, "/");
       }
     }
   }
   return null;
 }
-
-
 
 /**
  * Extrai a capa de um arquivo MP3 e salva em disco organizando por artista
