@@ -41,12 +41,7 @@ export default async function HomeSections() {
       {/* client component will subscribe to socket events and update in realtime */}
       <script></script>
       {/* @ts-ignore Server Component -> Client Component props serialization */}
-      <HomeSectionsClient
-        initialLatest={serialLatest}
-        initialTop={serialTop}
-        initialUpcoming={serialUpcoming}
-        initialNextIfNoRequests={serialNext}
-      />
+      <HomeSectionsClient initialLatest={serialLatest} initialTop={serialTop} initialUpcoming={serialUpcoming} initialNextIfNoRequests={serialNext} />
     </React.Fragment>
   );
 }
