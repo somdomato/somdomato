@@ -12,22 +12,21 @@ import { normalizeString } from "@/db/utils";
 // Tipos
 export type RotationType = "inativo" | "leve" | "normal" | "pesado";
 
-// Verificação de autenticação
-async function verifyAuth(password: string) {
-  const adminPassword = process.env.ADMIN_PASSWORD;
-  if (!adminPassword) {
-    console.error("ADMIN_PASSWORD não está configurada");
-    throw new Error("Configuração de admin ausente");
-  }
-  if (password !== adminPassword) {
-    throw new Error("Senha inválida");
+// Verificação de autenticação via cookie
+async function verifyAuth() {
+  const { cookies } = await import("next/headers");
+  const cookieStore = await cookies();
+  const adminAuth = cookieStore.get("adminAuth");
+
+  if (!adminAuth || adminAuth.value !== process.env.ADMIN_PASSWORD) {
+    throw new Error("Não autorizado");
   }
 }
 
 // ===== ACTIONS DE MÚSICAS =====
 
-export async function getSongs(page = 1, limit = 10, password: string, query = "") {
-  await verifyAuth(password);
+export async function getSongs(page = 1, limit = 10, query = "") {
+  await verifyAuth();
 
   const offset = (page - 1) * limit;
 
@@ -58,16 +57,14 @@ export async function getSongs(page = 1, limit = 10, password: string, query = "
   // Sem query: comportamento paginado normal
   const allSongs = await db.select().from(songs).limit(limit).offset(offset).orderBy(asc(songs.title));
 
-  const [{ count }] = await db
-    .select({ count: songs.id })
-    .from(songs)
-    .execute()
-    .then((rows) => [{ count: rows.length }]);
+  // Contar total de músicas
+  const totalRows = await db.select().from(songs).all();
+  const total = totalRows.length;
 
   return {
     songs: allSongs,
-    total: count,
-    pages: Math.ceil(count / limit),
+    total,
+    pages: Math.ceil(total / limit),
   };
 }
 
@@ -82,9 +79,8 @@ export async function updateSong(
     timeSlots?: number;
     coverFile?: string; // Base64 da imagem da capa
   },
-  password: string,
 ) {
-  await verifyAuth(password);
+  await verifyAuth();
 
   const song = await db.select().from(songs).where(eq(songs.id, id)).get();
   if (!song) throw new Error("Música não encontrada");
@@ -180,8 +176,8 @@ export async function updateSong(
   return { success: true };
 }
 
-export async function deleteSong(id: number, password: string) {
-  await verifyAuth(password);
+export async function deleteSong(id: number) {
+  await verifyAuth();
 
   const song = await db.select().from(songs).where(eq(songs.id, id)).get();
   if (!song) throw new Error("Música não encontrada");
@@ -202,8 +198,8 @@ export async function deleteSong(id: number, password: string) {
 
 // ===== ACTIONS DE PEDIDOS =====
 
-export async function getRequests(page = 1, limit = 10, password: string) {
-  await verifyAuth(password);
+export async function getRequests(page = 1, limit = 10) {
+  await verifyAuth();
 
   const offset = (page - 1) * limit;
   const allRequests = await db
@@ -232,8 +228,8 @@ export async function getRequests(page = 1, limit = 10, password: string) {
   };
 }
 
-export async function addRequest(songId: number, password: string) {
-  await verifyAuth(password);
+export async function addRequest(songId: number) {
+  await verifyAuth();
 
   // Pegar a última ordem
   const lastRequest = await db.select().from(requests).orderBy(desc(requests.order)).limit(1).get();
@@ -249,8 +245,8 @@ export async function addRequest(songId: number, password: string) {
   return { success: true };
 }
 
-export async function deleteRequest(id: number, password: string) {
-  await verifyAuth(password);
+export async function deleteRequest(id: number) {
+  await verifyAuth();
 
   await db.delete(requests).where(eq(requests.id, id));
 
@@ -258,8 +254,8 @@ export async function deleteRequest(id: number, password: string) {
   return { success: true };
 }
 
-export async function reorderRequests(requestId: number, newOrder: number, password: string) {
-  await verifyAuth(password);
+export async function reorderRequests(requestId: number, newOrder: number) {
+  await verifyAuth();
 
   const request = await db.select().from(requests).where(eq(requests.id, requestId)).get();
 
@@ -285,8 +281,8 @@ export async function reorderRequests(requestId: number, newOrder: number, passw
   return { success: true };
 }
 
-export async function getAllSongsForSelect(password: string) {
-  await verifyAuth(password);
+export async function getAllSongsForSelect() {
+  await verifyAuth();
 
   return await db
     .select({

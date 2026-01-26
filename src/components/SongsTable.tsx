@@ -2,10 +2,21 @@
 
 import Image from "next/image";
 import { useState, useEffect, useCallback } from "react";
-import { getSongs, deleteSong } from "@/actions/admin";
 import { EditSongModal } from "@/components/EditSongModal";
 import { Pencil, Trash2, Search } from "lucide-react";
 import { toast } from "sonner";
+
+async function fetchSongs(page: number, limit: number, query = "") {
+  const res = await fetch(`/api/admin/songs?page=${page}&limit=${limit}&query=${encodeURIComponent(query)}`);
+  if (!res.ok) throw new Error("failed to fetch songs");
+  return res.json();
+}
+
+async function apiDeleteSong(id: number) {
+  const res = await fetch(`/api/admin/songs/${id}`, { method: "DELETE" });
+  if (!res.ok) throw new Error("failed to delete");
+  return res.json();
+}
 
 interface Song {
   id: number;
@@ -21,11 +32,7 @@ interface Song {
   likes: number | null;
 }
 
-interface SongsTableProps {
-  password: string;
-}
-
-export function SongsTable({ password }: SongsTableProps) {
+export function SongsTable() {
   const [songs, setSongs] = useState<Song[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -38,7 +45,7 @@ export function SongsTable({ password }: SongsTableProps) {
   const loadSongs = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await getSongs(page, limit, password, searchQuery);
+      const data = await fetchSongs(page, limit, searchQuery);
       setSongs(data.songs);
       setTotal(data.total);
       setPages(data.pages);
@@ -48,7 +55,7 @@ export function SongsTable({ password }: SongsTableProps) {
     } finally {
       setLoading(false);
     }
-  }, [page, limit, password, searchQuery]);
+  }, [page, limit, searchQuery]);
 
   useEffect(() => {
     loadSongs();
@@ -58,7 +65,7 @@ export function SongsTable({ password }: SongsTableProps) {
     if (!confirm(`Tem certeza que deseja deletar "${title}"?`)) return;
 
     try {
-      await deleteSong(id, password);
+      await apiDeleteSong(id);
       toast.success("Música deletada com sucesso!");
       loadSongs();
     } catch (error) {
@@ -174,18 +181,14 @@ export function SongsTable({ password }: SongsTableProps) {
                         <Pencil size={18} />
                       </button>
 
-                      {/* Pedir a música (admin-only UI - password do admin é passada via prop) */}
+                      {/* Pedir a música (admin-only UI) */}
                       <button
                         onClick={async () => {
-                          if (!password) {
-                            toast.error("Senha de admin necessária");
-                            return;
-                          }
                           try {
                             const res = await fetch("/api/admin/request", {
                               method: "POST",
                               headers: { "Content-Type": "application/json" },
-                              body: JSON.stringify({ songId: song.id, password }),
+                              body: JSON.stringify({ songId: song.id }),
                             });
                             const data = await res.json();
                             if (!res.ok) throw new Error(data?.error || "Falha ao pedir música");
@@ -207,20 +210,15 @@ export function SongsTable({ password }: SongsTableProps) {
                       {/* Tocar agora (força tocar imediatamente) */}
                       <button
                         onClick={async () => {
-                          if (!password) {
-                            toast.error("Senha de admin necessária");
-                            return;
-                          }
                           try {
                             const res = await fetch("/api/admin/play", {
                               method: "POST",
                               headers: { "Content-Type": "application/json" },
-                              body: JSON.stringify({ songId: song.id, password }),
+                              body: JSON.stringify({ songId: song.id }),
                             });
                             const data = await res.json();
                             if (!res.ok) throw new Error(data?.error || "Falha ao tocar agora");
                             toast.success("Tocando agora (solicitado)");
-                            // Opcional: atualizar UI/lista
                             loadSongs();
                           } catch (err) {
                             toast.error("Erro ao tocar agora");
@@ -266,7 +264,6 @@ export function SongsTable({ password }: SongsTableProps) {
       {editingSong && (
         <EditSongModal
           song={editingSong}
-          password={password}
           onClose={() => setEditingSong(null)}
           onSave={() => {
             setEditingSong(null);

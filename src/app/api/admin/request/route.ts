@@ -3,11 +3,12 @@ import { addRequest } from "@/actions/admin";
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { songId, password } = body;
+    const { songId } = body;
 
     if (!songId) return new Response(JSON.stringify({ error: "songId required" }), { status: 400 });
 
-    await addRequest(Number(songId), String(password || ""));
+    // addRequest uses server-side cookie-based auth (verifyAuth), so just forward songId
+    await addRequest(Number(songId));
 
     return new Response(JSON.stringify({ success: true }), { status: 200 });
   } catch (error) {

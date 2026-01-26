@@ -48,7 +48,7 @@ export default function AdminPage() {
 
       {/* Content */}
       <main className="container mx-auto px-4 py-8">
-        <SongsTable password={password} />
+        <SongsTable />
       </main>
     </div>
   );

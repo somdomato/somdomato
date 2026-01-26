@@ -19,12 +19,11 @@ interface Song {
 
 interface EditSongModalProps {
   song: Song;
-  password: string;
   onClose: () => void;
   onSave: () => void;
 }
 
-export function EditSongModal({ song, password, onClose, onSave }: EditSongModalProps) {
+export function EditSongModal({ song, onClose, onSave }: EditSongModalProps) {
   const [formData, setFormData] = useState({
     filename: song.path.split("/").pop() || "",
     title: song.title,
@@ -41,19 +40,15 @@ export function EditSongModal({ song, password, onClose, onSave }: EditSongModal
     setSaving(true);
 
     try {
-      await updateSong(
-        song.id,
-        {
-          filename: formData.filename,
-          title: formData.title,
-          artist: formData.artist,
-          album: formData.album,
-          rotation: formData.rotation as RotationType,
-          timeSlots: formData.timeSlots,
-          coverFile: formData.coverFile || undefined,
-        },
-        password,
-      );
+      await updateSong(song.id, {
+        filename: formData.filename,
+        title: formData.title,
+        artist: formData.artist,
+        album: formData.album,
+        rotation: formData.rotation as RotationType,
+        timeSlots: formData.timeSlots,
+        coverFile: formData.coverFile || undefined,
+      });
       toast.success("Música atualizada com sucesso!");
       onSave();
     } catch (error) {

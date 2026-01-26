@@ -2,10 +2,39 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useAuth, LoginForm } from "@/components/AdminAuth";
-import { getRequests, deleteRequest, addRequest, reorderRequests, getAllSongsForSelect } from "@/actions/admin";
 import { Music, LogOut, Trash2, Plus, ArrowUp, ArrowDown } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
+
+async function fetchRequests(page: number, limit: number) {
+  const res = await fetch(`/api/admin/requests?page=${page}&limit=${limit}`);
+  if (!res.ok) throw new Error("failed to fetch requests");
+  return res.json();
+}
+
+async function fetchDeleteRequest(id: number) {
+  const res = await fetch(`/api/admin/request/${id}`, { method: "DELETE" });
+  if (!res.ok) throw new Error("failed to delete request");
+  return res.json();
+}
+
+async function fetchAddRequest(songId: number) {
+  const res = await fetch(`/api/admin/request`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ songId }) });
+  if (!res.ok) throw new Error("failed to add request");
+  return res.json();
+}
+
+async function fetchReorder(requestId: number, newOrder: number) {
+  const res = await fetch(`/api/admin/reorder`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ requestId, newOrder }) });
+  if (!res.ok) throw new Error("failed to reorder");
+  return res.json();
+}
+
+async function fetchSongsForSelect() {
+  const res = await fetch(`/api/admin/songs/select`);
+  if (!res.ok) throw new Error("failed to fetch songs");
+  return res.json();
+}
 
 interface Request {
   id: number;
@@ -40,10 +69,9 @@ export default function RequestsPage() {
   const [adding, setAdding] = useState(false);
 
   const loadRequests = useCallback(async () => {
-    if (!password) return;
     setLoading(true);
     try {
-      const data = await getRequests(page, limit, password);
+      const data = await fetchRequests(page, limit);
       setRequests(data.requests);
       setTotal(data.total);
       setPages(data.pages);
@@ -53,29 +81,28 @@ export default function RequestsPage() {
     } finally {
       setLoading(false);
     }
-  }, [page, limit, password]);
+  }, [page, limit]);
 
   const loadSongs = useCallback(async () => {
-    if (!password) return;
     try {
-      const allSongs = await getAllSongsForSelect(password);
+      const allSongs = await fetchSongsForSelect();
       setSongs(allSongs);
     } catch (error) {
       console.error(error);
     }
-  }, [password]);
+  }, []);
 
   useEffect(() => {
-    if (isAuthenticated && password) {
+    if (isAuthenticated) {
       loadRequests();
     }
-  }, [isAuthenticated, password, loadRequests]);
+  }, [isAuthenticated, loadRequests]);
 
   useEffect(() => {
-    if (isAuthenticated && password && showAddModal) {
+    if (isAuthenticated && showAddModal) {
       loadSongs();
     }
-  }, [showAddModal, isAuthenticated, password, loadSongs]);
+  }, [showAddModal, isAuthenticated, loadSongs]);
 
   if (!isAuthenticated || !password) {
     return <LoginForm onLogin={login} />;
@@ -85,7 +112,7 @@ export default function RequestsPage() {
     if (!confirm("Tem certeza que deseja deletar este pedido?")) return;
 
     try {
-      await deleteRequest(id, password);
+      await fetchDeleteRequest(id);
       toast.success("Pedido deletado com sucesso!");
       loadRequests();
     } catch (error) {
@@ -102,7 +129,7 @@ export default function RequestsPage() {
 
     setAdding(true);
     try {
-      await addRequest(selectedSongId, password);
+      await fetchAddRequest(selectedSongId);
       toast.success("Pedido adicionado com sucesso!");
       setShowAddModal(false);
       setSelectedSongId(null);
@@ -127,7 +154,7 @@ export default function RequestsPage() {
     const targetRequest = requests[targetIndex];
 
     try {
-      await reorderRequests(requestId, targetRequest.order, password);
+      await fetchReorder(requestId, targetRequest.order);
       toast.success("Ordem atualizada!");
       loadRequests();
     } catch (error) {
