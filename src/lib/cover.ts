@@ -1,8 +1,8 @@
-import { readdir, writeFile, mkdir } from "node:fs/promises";
+import { readdir, writeFile, mkdir, unlink } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import * as path from "node:path";
 import * as NodeID3 from "node-id3";
-import * as crypto from "node:crypto";
+
 
 interface ID3Tags {
   title?: string;
@@ -40,10 +40,19 @@ function normalizeArtistName(name: string): string {
     .toLowerCase()
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "") // Remove acentos
-    .replace(/\s+e\s+|\s*&\s*|\s*\+\s*/g, " e ") // Unifica separadores
+    .replace(/[_\-.]+/g, " ") // Converte underscores, traços e pontos em espaço
+    .replace(/\s*&\s*|\s*\+\s*|\s*\/\s*/g, " e ") // Mapeia &, +, / para " e "
+    .replace(/\s+e\s+/g, " e ") // Normaliza espaçamento em torno de 'e'
     .replace(/\s+/g, " ") // Normaliza espaços
-    .replace(/[^a-z0-9 ]/g, "") // Remove caracteres especiais
+    .replace(/[^a-z0-9 ]/g, "") // Remove caracteres especiais remanescentes
     .trim();
+}
+
+/**
+ * Gera nome de diretório canônico para o artista (ex: 'henrique_e_juliano')
+ */
+function artistDirName(name: string): string {
+  return normalizeArtistName(name).replace(/\s+/g, "_");
 }
 
 /**
@@ -56,28 +65,21 @@ export async function findCoverByArtist(artist: string, coversDir: string = "pub
     if (!dirent.isDirectory()) continue;
     const candidate = normalizeArtistName(dirent.name);
     if (candidate === normalized) {
-      // Retorna o primeiro arquivo de capa encontrado
+      // Retorna arquivo de capa preferencialmente nomeado 'cover.*' ou o primeiro existente
       const files = await readdir(path.join(coversDir, dirent.name));
       if (files.length > 0) {
-        return path.join("/covers", dirent.name, files[0]).replace(/\\/g, "/");
+        const coverFile =
+          files.find(f => /^cover\.[a-z0-9]+$/i.test(f)) ||
+          files.find(f => /^cover/i.test(f)) ||
+          files[0];
+        return path.join("/covers", dirent.name, coverFile).replace(/\\/g, "/");
       }
     }
   }
   return null;
 }
 
-/**
- * Sanitiza um nome para ser usado como nome de arquivo/diretório
- * @param name - Nome a ser sanitizado
- * @returns string - Nome sanitizado
- */
-function sanitizeFileName(name: string): string {
-  return name
-    .replace(/[<>:"/\\|?*]/g, "") // Remove caracteres inválidos do Windows
-    .replace(/\s+/g, " ") // Normaliza espaços
-    .trim() // Remove espaços do início e fim
-    .substring(0, 255); // Limita o tamanho máximo
-}
+
 
 /**
  * Extrai a capa de um arquivo MP3 e salva em disco organizando por artista
@@ -101,22 +103,29 @@ export async function extractAndSaveCover(mp3FilePath: string, outputDir: string
       try {
         // Obter informações do artista
         const artist = tags.artist || "Unknown Artist";
-        const sanitizedArtist = sanitizeFileName(artist);
+        const dirName = artistDirName(artist);
 
         // Criar diretório do artista
-        const artistDir = path.join(outputDir, sanitizedArtist);
+        const artistDir = path.join(outputDir, dirName);
         if (!existsSync(artistDir)) {
           await mkdir(artistDir, { recursive: true });
         }
 
-        // Gerar nome único para a capa baseado no hash do arquivo
-        const hash = crypto.createHash("md5").update(mp3FilePath).digest("hex");
+        // Definir nome canônico da capa (cover.ext)
         const imageExtension = getImageExtension(tags.image.mime);
-        const coverFileName = `${hash}${imageExtension}`;
+        const coverFileName = `cover${imageExtension}`;
         const coverPath = path.join(artistDir, coverFileName);
 
-        // Salvar a imagem
+        // Salvar a imagem (sobrescreve se já existir)
         await writeFile(coverPath, tags.image.imageBuffer);
+
+        // Remover arquivos extras dentro da pasta do artista, mantendo apenas a capa canônica
+        const existingFiles = await readdir(artistDir);
+        for (const f of existingFiles) {
+          if (f !== coverFileName) {
+            await unlink(path.join(artistDir, f));
+          }
+        }
 
         // Retornar o caminho relativo para uso no frontend (sempre com barras normais)
         const relativePath = coverPath
