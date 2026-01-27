@@ -45,9 +45,9 @@ export default function HomeSectionsClient({ initialLatest, initialTop, initialU
             .sort((a, b) => b.count - a.count)
             .slice(0, 10);
         }
-        // if not found, add with count=1 and keep top 10
+        // if not found, add with count=1, then sort by count and keep top 10
         const added: TopEntry = { id: song.id, title: song.title, artist: song.artist, cover: song.cover || null, count: 1 };
-        return [added, ...prev].slice(0, 10);
+        return [added, ...prev].sort((a, b) => b.count - a.count).slice(0, 10);
       });
 
       // When a song changed, it's often because a request was consumed — refresh upcoming
@@ -66,19 +66,31 @@ export default function HomeSectionsClient({ initialLatest, initialTop, initialU
       setUpcoming((prev) => prev.filter((u) => u.reqId !== reqId));
     };
 
-    const onRequestAdded = (_req: unknown) => {
-      // If server emits this, refresh upcoming
+    const onRequestAdded = (req: { reqId?: number; id?: number; title?: string; artist?: string; cover?: string | null; requestedAt?: number | null } | unknown) => {
+      // If server emits a full payload, integrate it locally to avoid refetch
+      if (req && typeof req === "object" && req !== null && "reqId" in req) {
+        const r = req as { reqId: number; id: number; title: string; artist: string; cover?: string | null; requestedAt?: number | null };
+        setUpcoming((prev) => {
+          if (prev.some((p) => p.reqId === r.reqId)) return prev; // avoid duplicates
+          return [...prev, { reqId: r.reqId, id: r.id, title: r.title, artist: r.artist, cover: r.cover ?? null, requestedAt: r.requestedAt ?? Date.now() }].slice(-10);
+        });
+        return;
+      }
+
+      // fallback: refetch full list
       fetchUpcoming();
     };
 
     socket.on("song:changed", onSongChanged);
     socket.on("request:removed", onRequestRemoved);
     socket.on("request:added", onRequestAdded);
+    socket.on("requests:updated", fetchUpcoming);
 
     return () => {
       socket.off("song:changed", onSongChanged);
       socket.off("request:removed", onRequestRemoved);
       socket.off("request:added", onRequestAdded);
+      socket.off("requests:updated", fetchUpcoming);
     };
   }, [fetchUpcoming]);
 

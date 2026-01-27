@@ -241,6 +241,31 @@ export async function addRequest(songId: number) {
     order: newOrder,
   });
 
+  // Emitir evento request:added para atualizar clientes em tempo real (se aplicável)
+  try {
+    const created = await db
+      .select({
+        reqId: requests.id,
+        id: songs.id,
+        title: songs.title,
+        artist: songs.artist,
+        cover: songs.cover,
+        requestedAt: requests.createdAt,
+      })
+      .from(requests)
+      .innerJoin(songs, eq(requests.songId, songs.id))
+      .where(eq(requests.order, newOrder))
+      .limit(1)
+      .get();
+
+    const g = global as unknown as { io?: { emit: (event: string, payload?: unknown) => void } };
+    if (typeof global !== "undefined" && g.io && created) {
+      g.io.emit("request:added", created);
+    }
+  } catch (e) {
+    console.warn("Falha ao emitir request:added (admin)", e);
+  }
+
   revalidatePath("/admin/requests");
   return { success: true };
 }
@@ -249,6 +274,16 @@ export async function deleteRequest(id: number) {
   await verifyAuth();
 
   await db.delete(requests).where(eq(requests.id, id));
+
+  // Emitir evento para atualizar clientes em tempo real
+  try {
+    const g = global as unknown as { io?: { emit: (event: string, payload?: unknown) => void } };
+    if (typeof global !== "undefined" && g.io) {
+      g.io.emit("request:removed", { requestId: id });
+    }
+  } catch (e) {
+    console.warn("Falha ao emitir request:removed (admin)", e);
+  }
 
   revalidatePath("/admin/requests");
   return { success: true };
@@ -276,6 +311,16 @@ export async function reorderRequests(requestId: number, newOrder: number) {
 
   // Atualizar a ordem do pedido
   await db.update(requests).set({ order: newOrder }).where(eq(requests.id, requestId));
+
+  // Notificar clientes que a lista de pedidos mudou (refetch no cliente)
+  try {
+    const g = global as unknown as { io?: { emit: (event: string, payload?: unknown) => void } };
+    if (typeof global !== "undefined" && g.io) {
+      g.io.emit("requests:updated");
+    }
+  } catch (e) {
+    console.warn("Falha ao emitir requests:updated (admin)", e);
+  }
 
   revalidatePath("/admin/requests");
   return { success: true };

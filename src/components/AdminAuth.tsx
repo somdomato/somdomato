@@ -27,8 +27,14 @@ export function useAuth() {
         throw new Error("Senha inválida");
       }
 
-      // Criar cookie com a senha
-      document.cookie = `adminAuth=${pwd}; path=/; max-age=${60 * 60 * 24}; SameSite=Strict${process.env.NODE_ENV === "production" ? "; Secure" : ""}`;
+      // Criar cookie com a senha usando document.cookie (expires em 1 dia)
+      try {
+        const expires = new Date(Date.now() + 24 * 60 * 60 * 1000).toUTCString();
+        const secureFlag = process.env.NODE_ENV === "production" ? "; Secure" : "";
+        document.cookie = `adminAuth=${encodeURIComponent(pwd)}; path=/; expires=${expires}; SameSite=Strict${secureFlag}`;
+      } catch (e) {
+        console.warn("Falha ao definir cookie de adminAuth", e);
+      }
 
       sessionStorage.setItem("adminPassword", pwd);
       setPassword(pwd);
@@ -40,7 +46,8 @@ export function useAuth() {
 
   const logout = () => {
     sessionStorage.removeItem("adminPassword");
-    document.cookie = "adminAuth=; path=/; max-age=0";
+    // Remover cookie definindo expiry no passado
+    document.cookie = 'adminAuth=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Strict';
     setPassword(null);
     setIsAuthenticated(false);
   };

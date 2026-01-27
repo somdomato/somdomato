@@ -83,6 +83,33 @@ export async function requestSong(songId: number) {
       order: newOrder,
     });
 
+    // Buscar o pedido criado (join com songs) para emitir via socket
+    const created = await db
+      .select({
+        reqId: requests.id,
+        id: songs.id,
+        title: songs.title,
+        artist: songs.artist,
+        cover: songs.cover,
+        requestedAt: requests.createdAt,
+      })
+      .from(requests)
+      .innerJoin(songs, eq(requests.songId, songs.id))
+      .where(eq(requests.order, newOrder))
+      .limit(1)
+      .get();
+
+    // Emitir evento para clientes em tempo real (se disponível)
+    try {
+      const g = global as unknown as { io?: { emit: (event: string, payload?: unknown) => void } };
+      if (typeof global !== "undefined" && g.io && created) {
+        g.io.emit("request:added", created);
+      }
+    } catch (e) {
+      // não crítico — falhar ao emitir não deve quebrar a ação
+      console.warn("Falha ao emitir request:added", e);
+    }
+
     // Incrementar contador de requests da música
     await db
       .update(songs)
