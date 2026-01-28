@@ -22,13 +22,19 @@ export default function Carousel({ images, autoplay = false, interval = 5000, sh
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
 
-  const goToNext = useCallback(() => {
-    setCurrentIndex((prevIndex) => (prevIndex === images.length - 1 ? 0 : prevIndex + 1));
-  }, [images.length]);
-
   const goToPrevious = () => {
     setCurrentIndex((prevIndex) => (prevIndex === 0 ? images.length - 1 : prevIndex - 1));
   };
+
+  // const goToNext = () => {
+  //   setCurrentIndex((prevIndex) =>
+  //     prevIndex === images.length - 1 ? 0 : prevIndex + 1
+  //   );
+  // };
+
+  const goToNext = useCallback(() => {
+    setCurrentIndex((prevIndex) => (prevIndex === images.length - 1 ? 0 : prevIndex + 1));
+  }, [images.length]);
 
   const goToSlide = (index: number) => {
     setCurrentIndex(index);
@@ -42,46 +48,45 @@ export default function Carousel({ images, autoplay = false, interval = 5000, sh
   }, [autoplay, interval, isHovered, goToNext]);
 
   return (
-    <section aria-label="Carousel de imagens" className={`relative w-full overflow-hidden bg-background ${className}`} onMouseEnter={() => setIsHovered(true)} onMouseLeave={() => setIsHovered(false)}>
-      {/* Slides */}
-      <div className="relative w-full max-w-5xl mx-auto aspect-4/3 sm:aspect-video">
-        {images.map((image, index) => (
-          <div key={image.id} className={`absolute inset-0 transition-opacity duration-700 ease-in-out ${index === currentIndex ? "opacity-100" : "opacity-0"} overflow-hidden`}>
-            {/* ensure image fills area and crops from top on smaller screens */}
-            <div className="absolute inset-0 w-full h-full">
-              <Image src={image.src} alt={image.alt} fill sizes="(max-width: 640px) 100vw, 80vw" className="object-contain object-top" priority={index === 0} />
-            </div>
-
-            {image.title && (
-              // <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-6">
-              <div className="absolute bottom-0 left-0 right-0 p-6">
-                <h3 className="text-xl font-semibold text-white">{image.title}</h3>
-              </div>
-            )}
-          </div>
-        ))}
-      </div>
-
-      {/* Controles de navegação */}
-      {showControls && images.length > 1 && (
-        <>
-          <button onClick={goToPrevious} className="absolute left-4 top-1/2 -translate-y-1/2 text-white transition-all focus:outline-none" aria-label="Imagem anterior">
-            <ChevronLeft className="h-6 w-6" />
-          </button>
-          <button onClick={goToNext} className="absolute right-4 top-1/2 -translate-y-1/2 text-white transition-all focus:outline-none" aria-label="Próxima imagem">
-            <ChevronRight className="h-6 w-6" />
-          </button>
-        </>
-      )}
-
-      {/* Indicadores */}
-      {showIndicators && images.length > 1 && (
-        <div className="absolute bottom-4 left-1/2 flex -translate-x-1/2 gap-2">
+    <section aria-label="Carousel de imagens" className={`mx-auto w-full max-w-5xl ${className}`} onMouseEnter={() => setIsHovered(true)} onMouseLeave={() => setIsHovered(false)}>
+      <div className="relative overflow-hidden lg:rounded-xl">
+        {/* Imagens */}
+        <div className="relative aspect-[16/9] w-full">
           {images.map((image, index) => (
-            <button key={image.id} onClick={() => goToSlide(index)} className={`h-2 rounded-full transition-all ${index === currentIndex ? "w-8 bg-white" : "w-2 bg-white/50 hover:bg-white/75"}`} aria-label={`Ir para imagem ${index + 1}`} />
+            <div key={image.id} className={`absolute inset-0 transition-opacity duration-500 ${index === currentIndex ? "opacity-100" : "opacity-0"}`}>
+              <Image src={image.src} alt={image.alt} fill className="object-cover" priority={index === 0} />
+            </div>
           ))}
         </div>
-      )}
+
+        {/* Botões de navegação */}
+        {showControls && images.length > 1 && (
+          <>
+            <button onClick={goToPrevious} className="absolute left-4 top-1/2 -translate-y-1/2 rounded-full bg-black/80 p-3 backdrop-blur-sm transition-all hover:bg-white hover:text-black hover:scale-110" aria-label="Slide anterior">
+              {/* <svg className="h-6 w-6 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg> */}
+              <ChevronLeft className="h-6 w-6" />
+            </button>
+
+            <button onClick={goToNext} className="absolute right-4 top-1/2 -translate-y-1/2 rounded-full bg-black/80 p-3 backdrop-blur-sm transition-all hover:bg-white hover:text-black hover:scale-110" aria-label="Próximo slide">
+              {/* <svg className="h-6 w-6 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg> */}
+              <ChevronRight className="h-6 w-6" />
+            </button>
+          </>
+        )}
+
+        {/* Indicadores */}
+        {showIndicators && images.length > 1 && (
+          <div className="absolute bottom-4 left-1/2 flex -translate-x-1/2 gap-2">
+            {images.map((image, index) => (
+              <button key={image.id} onClick={() => goToSlide(index)} className={`h-2 rounded-full transition-all ${index === currentIndex ? "w-8 bg-white" : "w-2 bg-white/50 hover:bg-white/75"}`} aria-label={`Ir para slide ${index + 1}`} />
+            ))}
+          </div>
+        )}
+      </div>
     </section>
   );
 }

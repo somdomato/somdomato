@@ -95,112 +95,110 @@ export default function HomeSectionsClient({ initialLatest, initialTop, initialU
   }, [fetchUpcoming]);
 
   return (
-    <section className="mt-6 max-w-4xl mx-auto w-full px-2 md:px-0">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-background-alt border border-primary/20 rounded p-3">
-          <h3 className="font-semibold mb-3">Últimas</h3>
-          {latest.length === 0 ? (
-            <div className="text-muted text-sm">Nenhuma música tocada ainda.</div>
-          ) : (
-            <div className="overflow-hidden">
-              <table className="w-full text-sm table-fixed">
-                <colgroup>
-                  <col className="w-10" />
-                  <col />
-                </colgroup>
-                <tbody>
-                  {latest.map((s) => (
-                    <tr key={s.id} className="border-t">
-                      <td className="py-2 pr-3 align-top">
-                        <div className="w-9 h-9 relative rounded overflow-hidden">
-                          <Image src={s.cover || "/images/logotipo.svg"} width={36} height={36} alt={s.title} className="rounded" />
-                        </div>
-                      </td>
-                      <td className="py-2 min-w-0">
-                        <div className="font-medium truncate">{s.title}</div>
-                        <div className="text-xs text-muted truncate">{s.artist}</div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
+    <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="bg-background-alt border border-primary/20 rounded p-3">
+        <h3 className="font-semibold mb-3">Últimas</h3>
+        {latest.length === 0 ? (
+          <div className="text-muted text-sm">Nenhuma música tocada ainda.</div>
+        ) : (
+          <div className="overflow-hidden">
+            <table className="w-full text-sm table-fixed">
+              <colgroup>
+                <col className="w-10" />
+                <col />
+              </colgroup>
+              <tbody>
+                {latest.map((s) => (
+                  <tr key={s.id} className="border-t">
+                    <td className="py-2 pr-3 align-top">
+                      <div className="w-9 h-9 relative rounded overflow-hidden">
+                        <Image src={s.cover || "/images/logotipo.svg"} width={36} height={36} alt={s.title} className="rounded" />
+                      </div>
+                    </td>
+                    <td className="py-2 min-w-0">
+                      <div className="font-medium truncate">{s.title}</div>
+                      <div className="text-xs text-muted truncate">{s.artist}</div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
 
-        <div className="bg-background-alt border border-primary/20 rounded p-3">
-          <h3 className="font-semibold mb-3">TOP 10</h3>
-          {top.length === 0 ? (
-            <div className="text-muted text-sm">Sem dados de reprodução.</div>
-          ) : (
-            <div className="overflow-hidden">
-              <table className="w-full text-sm table-fixed">
-                <colgroup>
-                  <col className="w-10" />
-                  <col />
-                  <col className="w-14" />
-                </colgroup>
-                <tbody>
-                  {top.map((t) => (
-                    <tr key={t.id} className="border-t">
-                      <td className="py-2 pr-3 align-top">
-                        <div className="w-9 h-9 relative rounded overflow-hidden">
-                          <Image src={t.cover || "/images/logotipo.svg"} width={36} height={36} alt={t.title} className="rounded" />
-                        </div>
-                      </td>
-                      <td className="py-2 min-w-0">
-                        <div className="font-medium truncate">{t.title}</div>
-                        <div className="text-xs text-muted truncate">{t.artist}</div>
-                      </td>
-                      <td className="py-2 text-right text-xs text-muted pl-3">{t.count}x</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
+      <div className="bg-background-alt border border-primary/20 rounded p-3">
+        <h3 className="font-semibold mb-3">TOP 10</h3>
+        {top.length === 0 ? (
+          <div className="text-muted text-sm">Sem dados de reprodução.</div>
+        ) : (
+          <div className="overflow-hidden">
+            <table className="w-full text-sm table-fixed">
+              <colgroup>
+                <col className="w-10" />
+                <col />
+                <col className="w-14" />
+              </colgroup>
+              <tbody>
+                {top.map((t) => (
+                  <tr key={t.id} className="border-t">
+                    <td className="py-2 pr-3 align-top">
+                      <div className="w-9 h-9 relative rounded overflow-hidden">
+                        <Image src={t.cover || "/images/logotipo.svg"} width={36} height={36} alt={t.title} className="rounded" />
+                      </div>
+                    </td>
+                    <td className="py-2 min-w-0">
+                      <div className="font-medium truncate">{t.title}</div>
+                      <div className="text-xs text-muted truncate">{t.artist}</div>
+                    </td>
+                    <td className="py-2 text-right text-xs text-muted pl-3">{t.count}x</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
 
-        <div className="bg-background-alt border border-primary/20 rounded p-3">
-          <h3 className="font-semibold mb-3">Próximas</h3>
-          {upcoming.length === 0 ? (
-            nextIfNoRequests ? (
-              <div className="flex items-center gap-3">
-                <Image src={nextIfNoRequests.cover || "/images/logotipo.svg"} width={36} height={36} alt={nextIfNoRequests.title} className="rounded" />
-                <div className="flex-1 min-w-0">
-                  <div className="font-medium truncate">{nextIfNoRequests.title}</div>
-                  <div className="text-xs text-muted truncate">{nextIfNoRequests.artist} • selecionada pelo AutoDJ</div>
-                </div>
+      <div className="bg-background-alt border border-primary/20 rounded p-3">
+        <h3 className="font-semibold mb-3">Próximas</h3>
+        {upcoming.length === 0 ? (
+          nextIfNoRequests ? (
+            <div className="flex items-center gap-3">
+              <Image src={nextIfNoRequests.cover || "/images/logotipo.svg"} width={36} height={36} alt={nextIfNoRequests.title} className="rounded" />
+              <div className="flex-1 min-w-0">
+                <div className="font-medium truncate">{nextIfNoRequests.title}</div>
+                <div className="text-xs text-muted truncate">{nextIfNoRequests.artist} • selecionada pelo AutoDJ</div>
               </div>
-            ) : (
-              <div className="text-muted text-sm">Sem pedidos pendentes.</div>
-            )
-          ) : (
-            <div className="overflow-hidden">
-              <table className="w-full text-sm table-fixed">
-                <colgroup>
-                  <col className="w-10" />
-                  <col />
-                </colgroup>
-                <tbody>
-                  {upcoming.map((u) => (
-                    <tr key={u.reqId} className="border-t">
-                      <td className="py-2 pr-3 align-top">
-                        <div className="w-9 h-9 relative rounded overflow-hidden">
-                          <Image src={u.cover || "/images/logotipo.svg"} width={36} height={36} alt={u.title} className="rounded" />
-                        </div>
-                      </td>
-                      <td className="py-2 min-w-0">
-                        <div className="font-medium truncate">{u.title}</div>
-                        <div className="text-xs text-muted truncate">{u.artist}</div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
             </div>
-          )}
-        </div>
+          ) : (
+            <div className="text-muted text-sm">Sem pedidos pendentes.</div>
+          )
+        ) : (
+          <div className="overflow-hidden">
+            <table className="w-full text-sm table-fixed">
+              <colgroup>
+                <col className="w-10" />
+                <col />
+              </colgroup>
+              <tbody>
+                {upcoming.map((u) => (
+                  <tr key={u.reqId} className="border-t">
+                    <td className="py-2 pr-3 align-top">
+                      <div className="w-9 h-9 relative rounded overflow-hidden">
+                        <Image src={u.cover || "/images/logotipo.svg"} width={36} height={36} alt={u.title} className="rounded" />
+                      </div>
+                    </td>
+                    <td className="py-2 min-w-0">
+                      <div className="font-medium truncate">{u.title}</div>
+                      <div className="text-xs text-muted truncate">{u.artist}</div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </section>
   );

@@ -29,6 +29,10 @@ body {
   font-family: var(--font-nunito), Arial, Helvetica, sans-serif;
 }
 
+iframe {
+  @apply border-0 ring-0 w-full rounded-lg;
+}
+
 button {
   @apply cursor-pointer;
 }
