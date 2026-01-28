@@ -13,4 +13,4 @@ export default function SongBlock({ icon: Icon, title, children }: { icon?: Comp
       {children}
     </div>
   );
-} 
+}
