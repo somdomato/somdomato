@@ -47,7 +47,7 @@ export function useAuth() {
   const logout = () => {
     sessionStorage.removeItem("adminPassword");
     // Remover cookie definindo expiry no passado
-    document.cookie = 'adminAuth=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Strict';
+    document.cookie = "adminAuth=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Strict";
     setPassword(null);
     setIsAuthenticated(false);
   };

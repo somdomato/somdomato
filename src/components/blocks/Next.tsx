@@ -1,22 +1,23 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import Image from "next/image";
 import { socket } from "@/lib/socket";
+import SongBlock from "./SongBlock";
+import SongList from "./SongList";
+import { CircleArrowRight } from "lucide-react";
 
 type UpcomingEntry = { reqId: number; id: number; title: string; artist: string; cover: string | null; requestedAt?: number | null };
 
-export default function HomeSectionsClient({ initialUpcoming, initialNextIfNoRequests }: { initialUpcoming: UpcomingEntry[]; initialNextIfNoRequests: UpcomingEntry | null }) {
-  const [upcoming, setUpcoming] = useState<UpcomingEntry[]>(initialUpcoming);
+export default function Next({ data, initialNextIfNoRequests }: { data: UpcomingEntry[]; initialNextIfNoRequests: UpcomingEntry | null }) {
+  const [upcoming, setUpcoming] = useState<UpcomingEntry[]>(data);
   const [nextIfNoRequests] = useState<UpcomingEntry | null>(initialNextIfNoRequests);
 
-  // Helper to fetch upcoming from public API endpoint
   const fetchUpcoming = useCallback(async () => {
     try {
       const res = await fetch("/api/requests");
       if (!res.ok) return;
-      const data = await res.json();
-      setUpcoming(data.upcoming || []);
+      const json = await res.json();
+      setUpcoming(json.upcoming || []);
     } catch (err) {
       console.warn("fetchUpcoming failed:", err);
     }
@@ -24,28 +25,23 @@ export default function HomeSectionsClient({ initialUpcoming, initialNextIfNoReq
 
   useEffect(() => {
     const onRequestRemoved = (req: { requestId?: number; id?: number; reqId?: number }) => {
-      // req likely contains requestId as requestId
       const reqId = req?.requestId ?? req?.id ?? req?.reqId;
       if (reqId == null) {
-        // fallback: refetch
         fetchUpcoming();
         return;
       }
       setUpcoming((prev) => prev.filter((u) => u.reqId !== reqId));
     };
 
-    const onRequestAdded = (req: { reqId?: number; id?: number; title?: string; artist?: string; cover?: string | null; requestedAt?: number | null } | unknown) => {
-      // If server emits a full payload, integrate it locally to avoid refetch
-      if (req && typeof req === "object" && req !== null && "reqId" in req) {
-        const r = req as { reqId: number; id: number; title: string; artist: string; cover?: string | null; requestedAt?: number | null };
+    const onRequestAdded = (req: unknown) => {
+      if (req && typeof req === "object" && "reqId" in req) {
+        const r = req as UpcomingEntry;
         setUpcoming((prev) => {
-          if (prev.some((p) => p.reqId === r.reqId)) return prev; // avoid duplicates
-          return [...prev, { reqId: r.reqId, id: r.id, title: r.title, artist: r.artist, cover: r.cover ?? null, requestedAt: r.requestedAt ?? Date.now() }].slice(-10);
+          if (prev.some((p) => p.reqId === r.reqId)) return prev;
+          return [...prev, { ...r, cover: r.cover ?? null }].slice(-10);
         });
         return;
       }
-
-      // fallback: refetch full list
       fetchUpcoming();
     };
 
@@ -63,45 +59,16 @@ export default function HomeSectionsClient({ initialUpcoming, initialNextIfNoReq
   }, [fetchUpcoming]);
 
   return (
-    <div className="bg-background-alt border border-primary/20 rounded p-3">
-      <h3 className="font-semibold mb-3">Próximas</h3>
+    <SongBlock icon={CircleArrowRight} title="Próximas">
       {upcoming.length === 0 ? (
         nextIfNoRequests ? (
-          <div className="flex items-center gap-3">
-            <Image src={nextIfNoRequests.cover || "/images/logotipo.svg"} width={36} height={36} alt={nextIfNoRequests.title} className="rounded" />
-            <div className="flex-1 min-w-0">
-              <div className="font-medium truncate">{nextIfNoRequests.title}</div>
-              <div className="text-xs text-muted truncate">{nextIfNoRequests.artist} • selecionada pelo AutoDJ</div>
-            </div>
-          </div>
+          <SongList items={[{ id: nextIfNoRequests.reqId ?? "auto", title: nextIfNoRequests.title, artist: nextIfNoRequests.artist, cover: nextIfNoRequests.cover }]} />
         ) : (
           <div className="text-muted text-sm">Sem pedidos pendentes.</div>
         )
       ) : (
-        <div className="overflow-hidden">
-          <table className="w-full text-sm table-fixed">
-            <colgroup>
-              <col className="w-10" />
-              <col />
-            </colgroup>
-            <tbody>
-              {upcoming.map((u) => (
-                <tr key={u.reqId} className="border-t">
-                  <td className="py-2 pr-3 align-top">
-                    <div className="w-9 h-9 relative rounded overflow-hidden">
-                      <Image src={u.cover || "/images/logotipo.svg"} width={36} height={36} alt={u.title} className="rounded" />
-                    </div>
-                  </td>
-                  <td className="py-2 min-w-0">
-                    <div className="font-medium truncate">{u.title}</div>
-                    <div className="text-xs text-muted truncate">{u.artist}</div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <SongList items={upcoming} keyField="reqId" />
       )}
-    </div>
+    </SongBlock>
   );
 }
