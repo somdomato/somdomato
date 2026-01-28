@@ -5,7 +5,7 @@ import Player from "./Player";
 
 export default function Header() {
   return (
-    <header className="sticky top-0 z-50 border-b-2 border-black/50 p-1 md:flex md:items-center md:justify-between md:p-2 relative">
+    <header className="sticky top-0 z-50 border-b-2 border-black/50 p-1 md:flex md:items-center md:justify-between md:p-2 mb-4">
       {/* Background com fallback */}
       <div className="absolute inset-0 -z-20 bg-background bg-[url('/images/wood.jpg')] bg-repeat-x bg-top bg-contain" />
 

@@ -4,13 +4,10 @@ import { slides as images } from "@/config";
 
 export default function Home() {
   return (
-    <div className="w-full h-full flex flex-col items-center justify-center">
-      {/* <main className="flex-1 flex items-center justify-center min-h-0 w-full px-2 md:px-4">{children}</main> */}
-      {/* <Image src="/images/logo.svg" alt="Rádio Som do Mato" width={800} height={800} priority className="block mx-auto h-auto max-w-3xl object-contain" /> */}
-      <div className="w-full">
-        <Carousel images={images} autoplay={true} interval={5000} showIndicators={true} showControls={true} className="mx-auto" />
-      </div>
+    <div className="flex flex-col items-center justify-center h-full">
+      <Carousel images={images} autoplay={true} interval={5000} showIndicators={true} showControls={true} className="mx-auto" />
       <div className="w-full max-w-5xl mx-auto px-2">
+        <iframe className="w-full aspect-video mt-8 rounded-xl min-h-80" src="https://irc.somdomato.com" title="Playlist Sertaneja - Rádio Som do Mato" frameBorder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowFullScreen />
         <HomeSections />
       </div>
     </div>
