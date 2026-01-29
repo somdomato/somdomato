@@ -105,7 +105,7 @@ async function syncDatabase() {
           artist,
           path: filePath,
           timeSlots: 127, // Todos os horários por padrão (0b1111111)
-          cover: null,
+          cover: "/images/logotipo.svg", // usar capa padrão quando não houver uma disponível
         });
         addedCount++;
       } catch (error) {

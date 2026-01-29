@@ -1,0 +1,19 @@
+[Unit]
+Description=SSH Reverse Tunnel para VPS
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+# Unit deve ser instalada na máquina de desenvolvimento
+Type=simple
+User=lucas
+# ssh-keygen -t ed25519 -f ~/.ssh/vps_tunnel -N ""
+# ssh-copy-id -i ~/.ssh/vps_tunnel usuario@sua-vps.com
+# na vps: ssh -p 22000 lucas@localhost
+# rsync -avz -e 'ssh -p 22000' /var/music/sdm/ lucas@localhost:/home/lucas/music/sdm/ --delete
+ExecStart=/usr/bin/ssh -N -T -o "ServerAliveInterval=60" -o "ExitOnForwardFailure=yes" -o "ServerAliveCountMax=3" -i /home/lucas/.ssh/vps_tunnel -R 22000:localhost:22000 root@tyche
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

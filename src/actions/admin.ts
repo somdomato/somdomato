@@ -78,6 +78,7 @@ export async function updateSong(
     rotation?: RotationType;
     timeSlots?: number;
     coverFile?: string; // Base64 da imagem da capa
+    resetCover?: boolean; // Se true, reseta a capa para o padrão
   },
 ) {
   await verifyAuth();
@@ -166,7 +167,13 @@ export async function updateSong(
       const found = await findCoverByArtist(data.artist);
       if (found) {
         await db.update(songs).set({ cover: found }).where(eq(songs.id, id));
+      } else if (data.resetCover) {
+        // Resetar para a capa padrão quando solicitado
+        await db.update(songs).set({ cover: "/images/logotipo.svg" }).where(eq(songs.id, id));
       }
+    } else if (data.resetCover) {
+      // Se não foi possível extrair e nem buscou por artista, também resetar se solicitado
+      await db.update(songs).set({ cover: "/images/logotipo.svg" }).where(eq(songs.id, id));
     }
   } catch (error) {
     console.error("Erro ao processar capa da música:", error);

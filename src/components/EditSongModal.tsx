@@ -34,6 +34,7 @@ export function EditSongModal({ song, onClose, onSave }: EditSongModalProps) {
     coverFile: "",
   });
   const [saving, setSaving] = useState(false);
+  const [displayedCover, setDisplayedCover] = useState<string>(song.cover || "/images/logotipo.svg");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -90,8 +91,26 @@ export function EditSongModal({ song, onClose, onSave }: EditSongModalProps) {
         ...prev,
         coverFile: reader.result as string,
       }));
+      setDisplayedCover(reader.result as string);
     };
     reader.readAsDataURL(file);
+  };
+
+  const handleResetCover = async () => {
+    if (displayedCover === "/images/logotipo.svg") return;
+    setSaving(true);
+    try {
+      await updateSong(song.id, { resetCover: true });
+      setDisplayedCover("/images/logotipo.svg");
+      toast.success("Capa resetada para o padrão");
+      onSave();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Erro ao resetar capa";
+      toast.error(message);
+      console.error(err);
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -108,8 +127,11 @@ export function EditSongModal({ song, onClose, onSave }: EditSongModalProps) {
         {/* Form */}
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           {/* Capa */}
-          <div className="flex justify-center">
-            <Image src={song.cover || "/images/logotipo.svg"} alt={song.title} width={128} height={128} className="w-32 h-32 object-cover rounded-lg" />
+          <div className="flex flex-col items-center">
+            <Image src={displayedCover} alt={song.title} width={128} height={128} className="w-32 h-32 object-cover rounded-lg" />
+            <button type="button" onClick={handleResetCover} disabled={displayedCover === "/images/logotipo.svg" || saving} className="mt-2 px-3 py-1 bg-red-600 text-white rounded disabled:opacity-50">
+              Apagar capa
+            </button>
           </div>
 
           {/* Nome do Arquivo */}
@@ -159,8 +181,7 @@ export function EditSongModal({ song, onClose, onSave }: EditSongModalProps) {
             <p className="text-xs text-gray-400 mt-1">A imagem será embutida no arquivo MP3 (máximo 2MB)</p>
             {formData.coverFile && (
               <div className="mt-2">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={formData.coverFile} alt="Preview" className="w-32 h-32 object-cover rounded" />
+                <Image src={formData.coverFile} alt="Preview" width={128} height={128} className="w-32 h-32 object-cover rounded" />
                 <p className="text-xs text-green-400 mt-1">Nova capa selecionada</p>
               </div>
             )}
