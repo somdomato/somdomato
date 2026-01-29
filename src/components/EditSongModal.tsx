@@ -21,9 +21,10 @@ interface EditSongModalProps {
   song: Song;
   onClose: () => void;
   onSave: () => void;
+  onCoverReset?: () => void; // chamado quando a capa for resetada sem fechar o modal
 }
 
-export function EditSongModal({ song, onClose, onSave }: EditSongModalProps) {
+export function EditSongModal({ song, onClose, onSave, onCoverReset }: EditSongModalProps) {
   const [formData, setFormData] = useState({
     filename: song.path.split("/").pop() || "",
     title: song.title,
@@ -35,13 +36,14 @@ export function EditSongModal({ song, onClose, onSave }: EditSongModalProps) {
   });
   const [saving, setSaving] = useState(false);
   const [displayedCover, setDisplayedCover] = useState<string>(song.cover || "/images/logotipo.svg");
+  const [coverWasReset, setCoverWasReset] = useState(false); // marca que a capa foi resetada no modal
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
 
     try {
-      await updateSong(song.id, {
+      const res = await updateSong(song.id, {
         filename: formData.filename,
         title: formData.title,
         artist: formData.artist,
@@ -49,7 +51,14 @@ export function EditSongModal({ song, onClose, onSave }: EditSongModalProps) {
         rotation: formData.rotation as RotationType,
         timeSlots: formData.timeSlots,
         coverFile: formData.coverFile || undefined,
+        resetCover: coverWasReset,
       });
+
+      // Atualizar preview com valor retornado pelo servidor (garante sincronização)
+      const newCover = res?.song?.cover || "/images/logotipo.svg";
+      setDisplayedCover(newCover);
+      setCoverWasReset(false);
+
       toast.success("Música atualizada com sucesso!");
       onSave();
     } catch (error) {
@@ -92,6 +101,7 @@ export function EditSongModal({ song, onClose, onSave }: EditSongModalProps) {
         coverFile: reader.result as string,
       }));
       setDisplayedCover(reader.result as string);
+      setCoverWasReset(false);
     };
     reader.readAsDataURL(file);
   };
@@ -100,10 +110,13 @@ export function EditSongModal({ song, onClose, onSave }: EditSongModalProps) {
     if (displayedCover === "/images/logotipo.svg") return;
     setSaving(true);
     try {
-      await updateSong(song.id, { resetCover: true });
-      setDisplayedCover("/images/logotipo.svg");
+      const res = await updateSong(song.id, { resetCover: true });
+      const newCover = res?.song?.cover || "/images/logotipo.svg";
+      setDisplayedCover(newCover);
+      setCoverWasReset(true);
       toast.success("Capa resetada para o padrão");
-      onSave();
+      // não fechar o modal — apenas avisar que a capa foi resetada para permitir reload na tabela
+      onCoverReset?.();
     } catch (err) {
       const message = err instanceof Error ? err.message : "Erro ao resetar capa";
       toast.error(message);

@@ -269,6 +269,10 @@ export function SongsTable() {
             setEditingSong(null);
             loadSongs();
           }}
+          onCoverReset={() => {
+            // Atualiza a lista sem fechar o modal
+            loadSongs();
+          }}
         />
       )}
     </div>
