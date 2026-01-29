@@ -78,18 +78,32 @@ export async function GET(request: Request) {
         timeSlots: requestResult.timeSlots,
         createdAt: requestResult.createdAt,
       };
+
+      // Remover o pedido da fila e emitir evento de remoção
       await db.delete(requests).where(eq(requests.id, requestResult.requestId));
       if (global.io) global.io.emit("request:removed", requestResult);
+
+      // Verificar se o arquivo do pedido existe. Se não existir, remover a música do DB
+      // e forçar que a seleção aleatória seja executada (selectedSong = null)
+      const requestFileExists = await checkFileExists(requestResult.path);
+      if (!requestFileExists) {
+        await db.delete(songs).where(eq(songs.id, requestResult.id));
+        selectedSong = null;
+      }
     }
 
-    for (let attempt = 0; attempt < 100; attempt++) {
-      const randomIndex = Math.floor(Math.random() * filteredSongs.length);
-      selectedSong = filteredSongs[randomIndex];
+    // Se não temos uma música selecionada por pedido (ou o arquivo do pedido faltou),
+    // buscar por uma música aleatória válida
+    if (!selectedSong) {
+      for (let attempt = 0; attempt < 100; attempt++) {
+        const randomIndex = Math.floor(Math.random() * filteredSongs.length);
+        selectedSong = filteredSongs[randomIndex];
 
-      if (await checkFileExists(selectedSong.path)) {
-        break;
-      } else {
-        await db.delete(songs).where(eq(songs.id, selectedSong.id));
+        if (await checkFileExists(selectedSong.path)) {
+          break;
+        } else {
+          await db.delete(songs).where(eq(songs.id, selectedSong.id));
+        }
       }
     }
 
@@ -147,13 +161,15 @@ export async function GET(request: Request) {
         await db.update(songs).set({ cover: coverPath }).where(eq(songs.id, selectedSong.id));
         selectedSong.cover = coverPath;
       } else if (!coverPath && selectedSong.cover) {
-        // Se a capa referenciada no DB não existe mais, remover referência para evitar
-        // que o Next Image tente buscar um recurso inexistente e lance erro.
+        // A capa referenciada no DB não existe mais. **Não** gravar `null` no banco (isso
+        // causa quebras de imagem). Em vez disso, registrar um aviso e usar o fallback
+        // ao enviar ao frontend. Se quiser, podemos atualizar para o valor padrão explicitamente.
         try {
-          await db.update(songs).set({ cover: null }).where(eq(songs.id, selectedSong.id));
+          console.warn(`Capa referenciada para a música ${selectedSong.id} não existe: ${selectedSong.cover}`);
         } catch (e) {
-          console.error("Erro ao limpar campo cover no DB:", e);
+          console.error("Erro ao tratar capa ausente:", e);
         }
+        // Não atualizar o banco para null; o fallback será aplicado abaixo ao enviar ao frontend
         selectedSong.cover = null;
       }
     } catch (err) {
