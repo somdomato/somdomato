@@ -49,20 +49,46 @@ export default function ArtistSongsTable({ artist }: { artist: string }) {
   React.useEffect(() => {
     return () => {
       if (previewRef.current) {
-        previewRef.current.pause();
-        previewRef.current.src = "";
-        previewRef.current.remove();
+        try {
+          previewRef.current.pause();
+          previewRef.current.src = "";
+          previewRef.current.remove();
+        } catch (e) {
+          console.warn("Error cleaning up preview:", e);
+        }
         previewRef.current = null;
+      }
+      // Restore radio if component unmounts while preview is active
+      if (savedStateRef.current) {
+        audioCtx.setPreviewActive(false);
+        if (savedStateRef.current.wasPlaying) {
+          audioCtx.play();
+        }
+        if (!savedStateRef.current.wasMuted) {
+          audioCtx.toggleMute(false);
+        }
+        savedStateRef.current = null;
+      }
+    };
+  }, [audioCtx]);
+
+  // Stop preview and restore radio state
+  const stopPreviewAndRestoreRadio = React.useCallback(() => {
+    // Stop and cleanup preview audio
+    if (previewRef.current) {
       try {
-        previewRef.current.pause();
-        previewRef.current.removeEventListener("ended", stopPreviewAndRestoreRadio);
-        previewRef.current.removeEventListener("error", handlePreviewError);
-        previewRef.current.src = "";
-        previewRef.current.remove();
+        const audio = previewRef.current;
+        previewRef.current = null; // Clear ref first to prevent re-entry
+        
+        // Remove event listeners before cleanup
+        audio.removeEventListener("ended", stopPreviewAndRestoreRadio);
+        audio.pause();
+        audio.src = "";
+        audio.load();
+        audio.remove();
       } catch (e) {
         console.warn("Error cleaning up preview:", e);
       }
-      previewRef.current = null;
     }
     
     setPreviewSongId(null);
@@ -71,6 +97,8 @@ export default function ArtistSongsTable({ artist }: { artist: string }) {
     // Restore radio state
     if (savedStateRef.current) {
       const { wasPlaying, wasMuted } = savedStateRef.current;
+      
+      savedStateRef.current = null;
       
       // Restore mute state first
       if (!wasMuted && audioCtx.muted) {
@@ -81,82 +109,70 @@ export default function ArtistSongsTable({ artist }: { artist: string }) {
       if (wasPlaying && !audioCtx.playing) {
         setTimeout(() => audioCtx.play(), 100);
       }
-      
-      savedStateRef.current = null;
-    }
-  }, [audioCtx]);
-
-  // Error handler for preview
-  const handlePreviewError = React.useCallback((e: Event) => {
-    const target = e.target as HTMLAudioElement;
-    const error = target.error;
-    let errorMsg = "Erro desconhecido";
-    
-    if (error) {
-      switch (error.code) {
-        case error.MEDIA_ERR_ABORTED:
-          errorMsg = "Reprodução abortada";
-          break;
-        case error.MEDIA_ERR_NETWORK:
-          errorMsg = "Erro de rede ao carregar arquivo";
-          break;
-        case error.MEDIA_ERR_DECODE:
-          errorMsg = "Erro ao decodificar áudio";
-          break;
-        case error.MEDIA_ERR_SRC_NOT_SUPPORTED:
-          errorMsg = "Arquivo não disponível ou formato não suportado";
-          break;
-      }
-      console.error("Preview playback error:", errorMsg, error.message || "");
-    }
-    
-    toast.error(errorMsg);
-    stopPreviewAndRestoreRadio();
-  }, [stopPreviewAndRestoreRadioSongId(null);
-    audioCtx.setPreviewActive(false);
-
-    // Restore radio state
-    if (savedStateRef.current) {
-      const { wasPlaying, wasMuted } = savedStateRef.current;
-      
-      // Restore mute state
-      if (!wasMuted) {
-        audioCtx.toggleMute(false);
-      }
-      
-      // Resume playing if it was playing before
-      if (wasPlaying) {
-        audioCtx.play();
-      }
-      
-      savedStateRef.current = null;
     }
   }, [audioCtx]);
 
   const handlePlayPreview = async (song: Song) => {
-    // IfCreate audio element
+    // If same song is playing, stop it
+    if (previewSongId === song.id && previewRef.current) {
+      stopPreviewAndRestoreRadio();
+      return;
+    }
+
+    // If another preview is playing, stop it first
+    if (previewRef.current) {
+      stopPreviewAndRestoreRadio();
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+
+    // Save current radio state
+    savedStateRef.current = {
+      wasPlaying: audioCtx.playing,
+      volume: audioCtx.volume,
+      wasMuted: audioCtx.muted,
+    };
+
+    // Pause radio
+    if (audioCtx.playing) {
+      audioCtx.pause();
+    }
+    
+    // Mute radio
+    if (!audioCtx.muted) {
+      audioCtx.toggleMute(true);
+    }
+
+    // Mark preview as active
+    audioCtx.setPreviewActive(true);
+    setPreviewSongId(song.id);
+
+    const url = `/api/music/file/${song.id}`;
+
+    console.log(`[Preview] Starting playback for song ${song.id}: ${song.title}`);
+    console.log(`[Preview] URL: ${url}`);
+
+    try {
+      // Create audio element
       const audio = new Audio();
       audio.preload = "auto";
       audio.volume = audioCtx.volume / 100;
       
       previewRef.current = audio;
 
-      // Setup event listeners before setting src
-      audio.addEventListener("ended", stopPreviewAndRestoreRadio);
-      audio.addEventListener("error", handlePreviewError);
-
-      // Set source and load
-      audio.src = url;
-      await audio.play();
-      = audio;
-
       // Handle when preview ends naturally
-      audio.addEventListener("ended", () => {
-        stopPreviewAndRestoreRadio();
-      });
+      const onEnded = () => {
+        // Verify this is still the active preview
+        if (previewRef.current === audio) {
+          console.log(`[Preview] Song ${song.id} ended naturally`);
+          stopPreviewAndRestoreRadio();
+        }
+      };
 
-      // Handle errors with more detail
-      audio.addEventListener("error", (e) => {
+      // Handle errors
+      const onError = (e: Event) => {
+        // Verify this is still the active preview
+        if (previewRef.current !== audio) return;
+        
         const target = e.target as HTMLAudioElement;
         const error = target.error;
         let errorMsg = "Erro desconhecido";
@@ -164,29 +180,54 @@ export default function ArtistSongsTable({ artist }: { artist: string }) {
         if (error) {
           switch (error.code) {
             case error.MEDIA_ERR_ABORTED:
-              errorMsg = "Reprodução abortada";
-              break;
+              // Silently ignore aborted errors (user stopped)
+              console.log("Preview aborted by user");
+              return;
             case error.MEDIA_ERR_NETWORK:
-              errorMsg = "Erro de rede";
+              errorMsg = "Erro de rede ao carregar arquivo";
               break;
             case error.MEDIA_ERR_DECODE:
               errorMsg = "Erro ao decodificar áudio";
               break;
             case error.MEDIA_ERR_SRC_NOT_SUPPORTED:
-              errorMsg = "Formato não suportado";
+              errorMsg = "Arquivo não encontrado ou não suportado";
               break;
           }
-          console.error("Preview playback error:", errorMsg, error.message);
+          console.error("[Preview] Playback error:", errorMsg, error.message || "", error);
         }
         
-        toast.error(`Erro ao reproduzir: ${errorMsg}`);
+        toast.error(errorMsg);
         stopPreviewAndRestoreRadio();
+      };
+
+      audio.addEventListener("ended", onEnded);
+      audio.addEventListener("error", onError);
+      
+      // Add loadedmetadata listener to debug
+      audio.addEventListener("loadedmetadata", () => {
+        console.log(`[Preview] Metadata loaded, duration: ${audio.duration}s`);
       });
 
-      await audio.play();
-      toast.success(`Tocando: ${song.title}`);
+      // Set source and play
+      console.log(`[Preview] Setting src to: ${url}`);
+      audio.src = url;
+      
+      try {
+        console.log(`[Preview] Calling play()...`);
+        await audio.play();
+        console.log(`[Preview] Play successful!`);
+        toast.success(`Tocando: ${song.title}`);
+      } catch (playError: any) {
+        // Handle play interruption gracefully
+        if (playError.name === "AbortError") {
+          console.log("Play interrupted - this is normal when stopping quickly");
+          return;
+        }
+        console.error("[Preview] Play error:", playError);
+        throw playError;
+      }
     } catch (err) {
-      console.error("Preview error:", err);
+      console.error("[Preview] Setup error:", err);
       const errorMsg = err instanceof Error ? err.message : "Erro ao carregar música";
       toast.error(errorMsg);
       stopPreviewAndRestoreRadio();
