@@ -151,7 +151,7 @@ export function RequestModal({ isOpen, onClose }: RequestModalProps) {
     <div ref={modalRef} role="dialog" aria-modal="true" aria-labelledby="requestModalTitle" aria-describedby="requestModalDescription" className="fixed inset-0 bg-black/70 flex items-center justify-center z-[9999] p-4 backdrop-blur-sm">
       <div className="bg-background-alt rounded-lg shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col border-2 border-primary/30">
         {/* Header */}
-        <div className="flex justify-between items-center p-4 sm:p-6 border-b border-primary/30 bg-gradient-to-r from-background-alt to-background">
+        <div className="flex justify-between items-center p-4 sm:p-6 border-b border-primary/30 bg-linear-to-r from-background-alt to-background">
           <div className="flex items-center gap-3">
             <Music className="w-6 h-6 text-primary" />
             <h2 id="requestModalTitle" className="text-xl sm:text-2xl font-bold text-primary">
@@ -215,32 +215,32 @@ export function RequestModal({ isOpen, onClose }: RequestModalProps) {
                   {songs.map((song) => (
                     <tr key={song.id} className="border-b border-primary/10 hover:bg-background/50 transition-colors">
                       <td className="px-3 sm:px-4 py-3">
-                        <div className="w-10 h-10 sm:w-12 sm:h-12 relative rounded overflow-hidden shadow-md">
-                          <Image src={song.cover || "/images/logotipo.svg"} alt={song.title} fill sizes="48px" className="object-cover" />
+                        <div className="w-10 h-8 sm:w-12 sm:h-10 relative rounded overflow-hidden shadow-md">
+                          <Image src={song.cover || "/images/logotipo.svg"} alt={song.title} fill sizes="40px" className="object-cover" />
                         </div>
                       </td>
-                      <td className="px-3 sm:px-4 py-3">
-                        <div className="text-sm font-semibold text-white truncate max-w-[120px] sm:max-w-[200px]">{song.artist}</div>
-                        <div className="text-xs text-gray-400 truncate max-w-[120px] sm:max-w-[200px] sm:hidden">{song.title}</div>
+                      <td className="px-3 sm:px-3 py-2">
+                        <div className="text-sm font-semibold text-white truncate max-w-30 sm:max-w-50">{song.artist}</div>
+                        <div className="text-xs text-gray-400 truncate max-w-30 sm:max-w-50 sm:hidden">{song.title}</div>
                       </td>
-                      <td className="px-3 sm:px-4 py-3 hidden sm:table-cell">
-                        <div className="text-sm text-gray-300 truncate max-w-[250px]">{song.title}</div>
+                      <td className="px-3 sm:px-3 py-2 hidden sm:table-cell">
+                        <div className="text-sm text-gray-300 truncate max-w-62.5">{song.title}</div>
                       </td>
-                      <td className="px-3 sm:px-4 py-3">
+                      <td className="px-3 sm:px-3 py-2">
                         <div className="flex justify-center">
                           <button
                             onClick={() => handleRequest(song.id)}
                             disabled={requesting === song.id}
-                            className="px-3 sm:px-4 py-1.5 sm:py-2 bg-primary hover:bg-primary/80 text-background font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-xs sm:text-sm flex items-center gap-2"
+                            className="px-3 sm:px-3 py-1 sm:py-2 bg-primary hover:bg-primary/80 text-background font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-xs sm:text-sm flex items-center gap-2"
                           >
                             {requesting === song.id ? (
                               <>
-                                <Loader2 className="w-3 h-3 sm:w-4 sm:h-4 animate-spin" />
+                                <Loader2 className="w-3 h-2 sm:w-4 sm:h-3 animate-spin" />
                                 <span className="hidden sm:inline">Pedindo...</span>
                               </>
                             ) : (
                               <>
-                                <Music className="w-3 h-3 sm:w-4 sm:h-4" />
+                                <Music className="w-3 h-2 sm:w-4 sm:h-3" />
                                 <span>Pedir</span>
                               </>
                             )}

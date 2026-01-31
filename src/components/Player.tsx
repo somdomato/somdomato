@@ -53,7 +53,7 @@ const DEFAULT_TITLE = "Rádio Som do Mato";
 const DEFAULT_COVER = "/images/logotipo.svg";
 
 export default function IcecastPlayer({ className = "" }: IcecastPlayerProps) {
-  const { playing, play, pause, volume, setVolume, muted, toggleMute, title, artist, cover, setTitle, setArtist, setCover } = useAudio();
+  const { playing, play, pause, volume, setVolume, muted, toggleMute, title, artist, cover, setTitle, setArtist, setCover, previewActive } = useAudio();
 
   // Socket listener for song changes
   useEffect(() => {
@@ -135,7 +135,7 @@ export default function IcecastPlayer({ className = "" }: IcecastPlayerProps) {
   }, [setTitle, setArtist, setCover]);
 
   return (
-    <div className={`flex items-center justify-between max-w-md gap-3 bg-gradient-to-r from-background-alt to-[#2c3b26] rounded-md px-2 py-1.5 border-3 border-black/50 ${className}`}>
+    <div className={`flex items-center justify-between max-w-md gap-3 bg-gradient-to-r ${previewActive ? 'from-slate-700 to-slate-800' : 'from-background-alt to-[#2c3b26]'} rounded-md px-2 py-1.5 border-3 border-black/50 transition-colors duration-300 ${className}`}>
       {/* Cover Image */}
       <div className="relative flex-shrink-0 w-6 h-6 sm:w-8 sm:h-8 rounded overflow-hidden border border-black/40">
         <Image src={cover} alt="Cover" className="w-full h-full object-cover" fill />

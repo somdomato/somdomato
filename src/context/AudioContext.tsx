@@ -18,6 +18,9 @@ interface AudioContextType {
   muted: boolean;
   // optionally accept a value to force mute/unmute
   toggleMute: (muted?: boolean) => void;
+  // preview mode state
+  previewActive: boolean;
+  setPreviewActive: (active: boolean) => void;
   // register an event listener on the internal audio element; returns an unsubscribe function
 }
 
@@ -33,6 +36,7 @@ export const AudioProvider = ({ children }: { children: React.ReactNode }) => {
   const [title, setTitle] = useState("Rádio Som do Mato");
   const [artist, setArtist] = useState("A mais sertaneja");
   const [cover, setCover] = useState("/images/logotipo.svg");
+  const [previewActive, setPreviewActive] = useState(false);
 
   const play = () => {
     if (audioRef.current) {
@@ -87,6 +91,8 @@ export const AudioProvider = ({ children }: { children: React.ReactNode }) => {
         cover,
         setTitle,
         setArtist,
+        previewActive,
+        setPreviewActive,
         setCover,
       }}
     >
