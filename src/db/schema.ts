@@ -10,6 +10,8 @@ export const songs = sqliteTable("songs", {
   cover: text().default("/images/logotipo.svg"), // Nova coluna para URL da capa
   timeSlots: int().default(15), // Sistema de bits: 0=nenhum, 1=madrugada, 2=manhã, 4=tarde, 8=noite, 15=todos
   rotation: text().default("normal"), // inativo, leve, normal, pesado
+  genre: text().default("geral"), // geral, gaucha, modao, arrocha, romantico, forro
+  allowedInGeneral: int().default(0), // 0=não, 1=sim - permite música de outro gênero tocar no Geral
   createdAt: int({ mode: "timestamp" }).$defaultFn(() => new Date()),
   requests: int().default(0),
   likes: int().default(0),

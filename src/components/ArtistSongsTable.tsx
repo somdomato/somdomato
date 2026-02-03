@@ -19,7 +19,7 @@ export default function ArtistSongsTable({ artist }: { artist: string }) {
   const audioCtx = useAudio();
   const previewRef = React.useRef<HTMLAudioElement | null>(null);
   const [previewSongId, setPreviewSongId] = React.useState<number | null>(null);
-  
+
   // Store radio state before preview starts
   const savedStateRef = React.useRef<{
     wasPlaying: boolean;
@@ -79,7 +79,7 @@ export default function ArtistSongsTable({ artist }: { artist: string }) {
       try {
         const audio = previewRef.current;
         previewRef.current = null; // Clear ref first to prevent re-entry
-        
+
         // Remove event listeners before cleanup
         audio.removeEventListener("ended", stopPreviewAndRestoreRadio);
         audio.pause();
@@ -90,21 +90,21 @@ export default function ArtistSongsTable({ artist }: { artist: string }) {
         console.warn("Error cleaning up preview:", e);
       }
     }
-    
+
     setPreviewSongId(null);
     audioCtx.setPreviewActive(false);
 
     // Restore radio state
     if (savedStateRef.current) {
       const { wasPlaying, wasMuted } = savedStateRef.current;
-      
+
       savedStateRef.current = null;
-      
+
       // Restore mute state first
       if (!wasMuted && audioCtx.muted) {
         audioCtx.toggleMute(false);
       }
-      
+
       // Resume playing if it was playing before
       if (wasPlaying && !audioCtx.playing) {
         setTimeout(() => audioCtx.play(), 100);
@@ -122,7 +122,7 @@ export default function ArtistSongsTable({ artist }: { artist: string }) {
     // If another preview is playing, stop it first
     if (previewRef.current) {
       stopPreviewAndRestoreRadio();
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise((resolve) => setTimeout(resolve, 100));
     }
 
     // Save current radio state
@@ -136,7 +136,7 @@ export default function ArtistSongsTable({ artist }: { artist: string }) {
     if (audioCtx.playing) {
       audioCtx.pause();
     }
-    
+
     // Mute radio
     if (!audioCtx.muted) {
       audioCtx.toggleMute(true);
@@ -156,7 +156,7 @@ export default function ArtistSongsTable({ artist }: { artist: string }) {
       const audio = new Audio();
       audio.preload = "auto";
       audio.volume = audioCtx.volume / 100;
-      
+
       previewRef.current = audio;
 
       // Handle when preview ends naturally
@@ -172,11 +172,11 @@ export default function ArtistSongsTable({ artist }: { artist: string }) {
       const onError = (e: Event) => {
         // Verify this is still the active preview
         if (previewRef.current !== audio) return;
-        
+
         const target = e.target as HTMLAudioElement;
         const error = target.error;
         let errorMsg = "Erro desconhecido";
-        
+
         if (error) {
           switch (error.code) {
             case error.MEDIA_ERR_ABORTED:
@@ -195,14 +195,14 @@ export default function ArtistSongsTable({ artist }: { artist: string }) {
           }
           console.error("[Preview] Playback error:", errorMsg, error.message || "", error);
         }
-        
+
         toast.error(errorMsg);
         stopPreviewAndRestoreRadio();
       };
 
       audio.addEventListener("ended", onEnded);
       audio.addEventListener("error", onError);
-      
+
       // Add loadedmetadata listener to debug
       audio.addEventListener("loadedmetadata", () => {
         console.log(`[Preview] Metadata loaded, duration: ${audio.duration}s`);
@@ -211,15 +211,15 @@ export default function ArtistSongsTable({ artist }: { artist: string }) {
       // Set source and play
       console.log(`[Preview] Setting src to: ${url}`);
       audio.src = url;
-      
+
       try {
         console.log(`[Preview] Calling play()...`);
         await audio.play();
         console.log(`[Preview] Play successful!`);
         toast.success(`Tocando: ${song.title}`);
-      } catch (playError: any) {
+      } catch (playError: unknown) {
         // Handle play interruption gracefully
-        if (playError.name === "AbortError") {
+        if (playError instanceof Error && playError.name === "AbortError") {
           console.log("Play interrupted - this is normal when stopping quickly");
           return;
         }
@@ -252,7 +252,7 @@ export default function ArtistSongsTable({ artist }: { artist: string }) {
           {songs.map((s) => {
             const isPlaying = previewSongId === s.id;
             return (
-              <tr key={s.id} className={`border-t border-primary/10 hover:bg-surface/50 transition ${isPlaying ? 'bg-primary/10' : ''}`}>
+              <tr key={s.id} className={`border-t border-primary/10 hover:bg-surface/50 transition ${isPlaying ? "bg-primary/10" : ""}`}>
                 <td className="px-4 py-3">
                   <div className="w-12 h-12 relative rounded overflow-hidden">
                     <Image src={s.cover || "/images/logotipo.svg"} alt={s.title} fill sizes="48px" className="object-cover" />
@@ -263,15 +263,7 @@ export default function ArtistSongsTable({ artist }: { artist: string }) {
                   <div className="text-sm text-muted">{s.artist}</div>
                 </td>
                 <td className="px-4 py-3">
-                  <button 
-                    onClick={() => handlePlayPreview(s)} 
-                    aria-label={isPlaying ? `Parar ${s.title}` : `Tocar ${s.title}`}
-                    className={`inline-flex items-center gap-2 px-4 py-2 rounded transition ${
-                      isPlaying 
-                        ? 'bg-red-600 hover:bg-red-700 text-white' 
-                        : 'bg-primary hover:bg-primary/80 text-background'
-                    }`}
-                  >
+                  <button onClick={() => handlePlayPreview(s)} aria-label={isPlaying ? `Parar ${s.title}` : `Tocar ${s.title}`} className={`inline-flex items-center gap-2 px-4 py-2 rounded transition ${isPlaying ? "bg-red-600 hover:bg-red-700 text-white" : "bg-primary hover:bg-primary/80 text-background"}`}>
                     {isPlaying ? (
                       <>
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">

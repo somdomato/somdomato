@@ -31,15 +31,80 @@
         <charset>UTF-8</charset>
     </mount>
 
-    <listen-socket>
-        <port>8000</port>
-        <mount-name>/radio.mp3</mount-name>
+    <!-- Mount Geral - Aceita pedidos -->
+    <mount type="normal">
+        <mount-name>/geral</mount-name>
         <charset>UTF-8</charset>
-        <stream-name>Radio Som do Mato</stream-name>
-        <stream-description>A mais sertaneja</stream-description>
+        <stream-name>Som do Mato - Geral</stream-name>
+        <stream-description>Rádio geral com pedidos</stream-description>
         <stream-url>https://somdomato.com</stream-url>
         <genre>Sertanejo</genre>
         <bitrate>128</bitrate>
+        <public>1</public>
+    </mount>
+
+    <!-- Mount Gaúcha -->
+    <mount type="normal">
+        <mount-name>/gaucha</mount-name>
+        <charset>UTF-8</charset>
+        <stream-name>Som do Mato - Gaúcha</stream-name>
+        <stream-description>Sertanejo gaúcho</stream-description>
+        <stream-url>https://somdomato.com</stream-url>
+        <genre>Gaúcha</genre>
+        <bitrate>128</bitrate>
+        <public>1</public>
+    </mount>
+
+    <!-- Mount Modão -->
+    <mount type="normal">
+        <mount-name>/modao</mount-name>
+        <charset>UTF-8</charset>
+        <stream-name>Som do Mato - Modão</stream-name>
+        <stream-description>Modão tradicional</stream-description>
+        <stream-url>https://somdomato.com</stream-url>
+        <genre>Modão</genre>
+        <bitrate>128</bitrate>
+        <public>1</public>
+    </mount>
+
+    <!-- Mount Arrocha -->
+    <mount type="normal">
+        <mount-name>/arrocha</mount-name>
+        <charset>UTF-8</charset>
+        <stream-name>Som do Mato - Arrocha</stream-name>
+        <stream-description>Arrocha e romantic</stream-description>
+        <stream-url>https://somdomato.com</stream-url>
+        <genre>Arrocha</genre>
+        <bitrate>128</bitrate>
+        <public>1</public>
+    </mount>
+
+    <!-- Mount Romântico -->
+    <mount type="normal">
+        <mount-name>/romantico</mount-name>
+        <charset>UTF-8</charset>
+        <stream-name>Som do Mato - Romântico</stream-name>
+        <stream-description>Músicas românticas</stream-description>
+        <stream-url>https://somdomato.com</stream-url>
+        <genre>Romântico</genre>
+        <bitrate>128</bitrate>
+        <public>1</public>
+    </mount>
+
+    <!-- Mount Forró -->
+    <mount type="normal">
+        <mount-name>/forro</mount-name>
+        <charset>UTF-8</charset>
+        <stream-name>Som do Mato - Forró</stream-name>
+        <stream-description>Forró e derivados</stream-description>
+        <stream-url>https://somdomato.com</stream-url>
+        <genre>Forró</genre>
+        <bitrate>128</bitrate>
+        <public>1</public>
+    </mount>
+
+    <listen-socket>
+        <port>8000</port>
     </listen-socket>
 
     <!-- <listen-socket>

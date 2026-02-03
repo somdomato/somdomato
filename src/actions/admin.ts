@@ -11,6 +11,7 @@ import { normalizeString } from "@/db/utils";
 
 // Tipos
 export type RotationType = "inativo" | "leve" | "normal" | "pesado";
+export type Genre = "geral" | "gaucha" | "modao" | "arrocha" | "romantico" | "forro";
 
 // Verificação de autenticação via cookie
 async function verifyAuth() {
@@ -25,7 +26,7 @@ async function verifyAuth() {
 
 // ===== ACTIONS DE MÚSICAS =====
 
-export async function getSongs(page = 1, limit = 10, query = "") {
+export async function getSongs(page = 1, limit = 10, query = "", genre?: Genre) {
   await verifyAuth();
 
   const offset = (page - 1) * limit;
@@ -41,7 +42,9 @@ export async function getSongs(page = 1, limit = 10, query = "") {
       const title = normalizeString(s.title);
       const artist = normalizeString(s.artist);
       const path = normalizeString(s.path || "");
-      return title.includes(qn) || artist.includes(qn) || path.includes(qn);
+      const matchesQuery = title.includes(qn) || artist.includes(qn) || path.includes(qn);
+      const matchesGenre = !genre || s.genre === genre;
+      return matchesQuery && matchesGenre;
     });
 
     const total = filtered.length;
@@ -54,11 +57,21 @@ export async function getSongs(page = 1, limit = 10, query = "") {
     };
   }
 
-  // Sem query: comportamento paginado normal
-  const allSongs = await db.select().from(songs).limit(limit).offset(offset).orderBy(asc(songs.title));
+  // Sem query: comportamento paginado normal (com filtro de gênero opcional)
+  let query_builder = db.select().from(songs);
 
-  // Contar total de músicas
-  const totalRows = await db.select().from(songs).all();
+  if (genre) {
+    query_builder = query_builder.where(eq(songs.genre, genre)) as typeof query_builder;
+  }
+
+  const allSongs = await query_builder.limit(limit).offset(offset).orderBy(asc(songs.title));
+
+  // Contar total de músicas (com filtro de gênero)
+  let totalQuery = db.select().from(songs);
+  if (genre) {
+    totalQuery = totalQuery.where(eq(songs.genre, genre)) as typeof totalQuery;
+  }
+  const totalRows = await totalQuery.all();
   const total = totalRows.length;
 
   return {
@@ -77,6 +90,8 @@ export async function updateSong(
     album?: string;
     rotation?: RotationType;
     timeSlots?: number;
+    genre?: Genre;
+    allowedInGeneral?: boolean;
     coverFile?: string; // Base64 da imagem da capa
     resetCover?: boolean; // Se true, reseta a capa para o padrão
   },
@@ -151,6 +166,8 @@ export async function updateSong(
     ...(data.album && { album: data.album }),
     ...(data.rotation && { rotation: data.rotation }),
     ...(data.timeSlots !== undefined && { timeSlots: data.timeSlots }),
+    ...(data.genre && { genre: data.genre }),
+    ...(data.allowedInGeneral !== undefined && { allowedInGeneral: data.allowedInGeneral ? 1 : 0 }),
   };
 
   // Se solicitarem reset da capa, incluir no objeto de atualização para evitar set vazio

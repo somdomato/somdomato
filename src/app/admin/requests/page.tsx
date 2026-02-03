@@ -1,9 +1,10 @@
 "use client";
 
+import Link from "next/link";
+import Image from "next/image";
 import { useState, useEffect, useCallback } from "react";
 import { useAuth, LoginForm } from "@/components/AdminAuth";
 import { Music, LogOut, Trash2, Plus, ArrowUp, ArrowDown } from "lucide-react";
-import Link from "next/link";
 import { toast } from "sonner";
 
 async function fetchRequests(page: number, limit: number) {
@@ -257,7 +258,7 @@ export default function RequestsPage() {
                     <tr key={request.id} className="border-b border-primary/10 hover:bg-background/50 transition-colors">
                       <td className="px-4 py-3 text-sm font-semibold text-primary">#{request.order}</td>
                       <td className="px-4 py-3">
-                        <img src={request.song?.cover || "/images/logotipo.svg"} alt={request.song?.title || ""} className="w-12 h-12 object-cover rounded" />
+                        <Image src={request.song?.cover || "/images/logotipo.svg"} alt={request.song?.title || ""} width={48} height={48} className="object-cover rounded" />
                       </td>
                       <td className="px-4 py-3 text-sm">{request.song?.title}</td>
                       <td className="px-4 py-3 text-sm">{request.song?.artist}</td>

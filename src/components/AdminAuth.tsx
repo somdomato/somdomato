@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { setAuthCookie, deleteAuthCookie } from "@/actions/auth";
 
 export function useAuth() {
   const [password, setPassword] = useState<string | null>(null);
@@ -27,11 +28,9 @@ export function useAuth() {
         throw new Error("Senha inválida");
       }
 
-      // Criar cookie com a senha usando document.cookie (expires em 1 dia)
+      // Criar cookie usando Server Action
       try {
-        const expires = new Date(Date.now() + 24 * 60 * 60 * 1000).toUTCString();
-        const secureFlag = process.env.NODE_ENV === "production" ? "; Secure" : "";
-        document.cookie = `adminAuth=${encodeURIComponent(pwd)}; path=/; expires=${expires}; SameSite=Strict${secureFlag}`;
+        await setAuthCookie(pwd);
       } catch (e) {
         console.warn("Falha ao definir cookie de adminAuth", e);
       }
@@ -39,15 +38,19 @@ export function useAuth() {
       sessionStorage.setItem("adminPassword", pwd);
       setPassword(pwd);
       setIsAuthenticated(true);
-    } catch (error) {
+    } catch {
       throw new Error("Senha incorreta");
     }
   };
 
-  const logout = () => {
+  const logout = async () => {
     sessionStorage.removeItem("adminPassword");
-    // Remover cookie definindo expiry no passado
-    document.cookie = "adminAuth=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Strict";
+    // Remover cookie usando Server Action
+    try {
+      await deleteAuthCookie();
+    } catch (e) {
+      console.warn("Falha ao remover cookie de adminAuth", e);
+    }
     setPassword(null);
     setIsAuthenticated(false);
   };
@@ -72,7 +75,7 @@ export function LoginForm({ onLogin }: { onLogin: (password: string) => Promise<
 
     try {
       await onLogin(password);
-    } catch (err) {
+    } catch {
       setError("Senha incorreta");
     } finally {
       setLoading(false);

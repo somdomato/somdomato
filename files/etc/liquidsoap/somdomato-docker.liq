@@ -1,124 +1,217 @@
-# Permitir execução como root (necessário para Docker)
-# NOTE: Para que o comando "Tocar agora" / "Skip" funcione imediatamente,
-# você precisa expor um endpoint de controle em Liquidsoap que execute
-# `fetch_next_song()` e pule a faixa atual. Exemplo (pseudo):
-#
-#   server.register("/skip", fun () ->
-#     log("Skip mágico recebido via HTTP: buscando próxima música...") ;
-#     fetch_next_song() ;
-#     # opcional: manipular fila/skip aqui
-#   end)
-#
-# Alternativamente, crie um pequeno serviço que conecte com o Liquidsoap via telnet/RPC
-# e exponha um endpoint HTTP que este Next.js chame (defina LIQUIDSOAP_CONTROL_URL).
-# Veja documentação do Liquidsoap para "server.register"/"http server"/"telnet" para detalhes.
-
+# Permitir execucao como root (necessario para Docker)
 settings.init.allow_root := true
 
 # Configuração do input ao vivo
 live = input.harbor("aovivo", port=8010, user="dj", password="hackme")
 
-# Criar fila de requisições
-queue = request.queue(id="queue")
+# Função para buscar próxima música do Next.js para um gênero específico
+def next(genre) =
+  def request_function() =
+    # Chama a API do Next.js via host.docker.internal (acessa o host)
+    api_url = "http://host.docker.internal:3000/api/music?genre=#{genre}"
+    result = process.read.lines("curl -s '#{api_url}'")
+    json = list.hd(default="", result)
+    
+    # Extrair path, title e artist do JSON
+    path_raw = list.hd(default="", process.read.lines("echo '#{json}' | jq -r '.path'"))
+    title = list.hd(default="", process.read.lines("echo '#{json}' | jq -r '.title'"))
+    artist = list.hd(default="", process.read.lines("echo '#{json}' | jq -r '.artist'"))
+    
+    # Validar se recebemos dados válidos
+    if path_raw == "" or path_raw == "null" then
+      log("[#{genre}] Nenhuma música retornada pela API - aguardando 5s")
+      # Retornar null e aguardar antes de tentar novamente
+      null()
+    else
+      # Converter path do host para path do container
+      # No Docker, músicas estão em /var/music/sdm, mas API retorna /home/lucas/music/sdm
+      path = string.replace(pattern="/home/lucas/music/sdm", (fun (_) -> "/var/music/sdm"), path_raw)
+      
+      # Log para depuracao
+      log("[#{genre}] Path original: #{path_raw}")
+      log("[#{genre}] Path container: #{path}")
+      log("[#{genre}] Titulo: #{title}")
+      log("[#{genre}] Artista: #{artist}")
+      
+      # Criar request com metadados usando annotate: no URI
+      # IMPORTANTE: Não fazer URL encode - paths locais precisam estar sem encoding
+      uri = "annotate:title=\"#{title}\",artist=\"#{artist}\":#{path}"
+      req = request.create(uri)
+      
+      # Registrar sucesso/falha e retornar o request (ou null)
+      if req != null() then
+        log("[#{genre}] Request criada com sucesso")
+      else
+        log("[#{genre}] Falha ao criar request - arquivo pode não existir")
+      end
 
-# Função para buscar próxima música do Next.js
-def fetch_next_song() =
-  # Chama a API do Next.js via host.docker.internal (acessa o host)
-  result = process.read.lines("curl -s http://host.docker.internal:3000/api/music")
-  json = list.hd(default="", result)
-  
-  # Extrair path, title e artist do JSON
-  path = list.hd(default="", process.read.lines("echo '#{json}' | jq -r '.path'"))
-  title = list.hd(default="", process.read.lines("echo '#{json}' | jq -r '.title'"))
-  artist = list.hd(default="", process.read.lines("echo '#{json}' | jq -r '.artist'"))
-  
-  # Log para depuração
-  log("Próxima música: #{path}")
-  log("Título: #{title}")
-  log("Artista: #{artist}")
-  
-  # Criar request com metadados usando annotate: no URI
-  uri = "annotate:title=\"#{title}\",artist=\"#{artist}\":#{path}"
-  req = request.create(uri)
-  
-  # Adicionar à fila se o request foi criado com sucesso
-  if req != null() then
-    queue.push(req)
+      req
+    end
   end
+
+  # retry_delay: aguardar 5s entre tentativas se falhar
+  # timeout: aguardar até 60s por uma request válida
+  request.dynamic(id="next_#{genre}", retry_delay=5.0, timeout=60.0, request_function)
 end
 
-# Endpoint HTTP simples para controlar o Liquidsoap (skip)
-# Chama fetch_next_song() para forçar a adição da próxima música imediatamente.
-# Ex.: curl -X POST http://host.docker.internal:8080/skip
-def skip_handler(_http_req) =
-  # Marca `_http_req` como usado para evitar warning de "unused variable"
-  ignore(_http_req)
-  log("HTTP /skip recebido - buscando próxima música...")
-  fetch_next_song()
-  # Força término da request atual para que a próxima tocada seja a que acabamos de empurrar
-  current = request.all()
-  if current != [] then
-    log("Destruindo request atual para forçar skip")
-    request.destroy(~force=true, list.hd(current))
-  else
-    log("Nenhuma request atual encontrada para destruir")
-  end
-  http.response(
-    content_type="text/plain",
-    data="OK"
-  )
+# Criar AutoDJ para cada gênero
+autodj_geral = next("geral")
+autodj_gaucha = next("gaucha")
+autodj_modao = next("modao")
+autodj_arrocha = next("arrocha")
+autodj_romantico = next("romantico")
+autodj_forro = next("forro")
+
+# Cria uma fila para músicas injetadas manualmente (apenas para geral)
+queue = request.queue(id="manual_queue")
+
+# Skip handler HTTP (apenas para geral)
+def skip_handler(_, req) =
+  log("Skip recebido via HTTP")
+  
+  # Pula a faixa atual no geral
+  autodj_geral.skip()
+  
+  ignore(req.status_code(200))
+  ignore(req.content_type("text/plain"))
+  ignore(req.html("OK"))
 end
 
-# Registra handler HTTP (compatível com builds sem `fun` anônimas)
-harbor.http.register.simple(port=8080, method="POST", "/skip", skip_handler)
-
-
-# Adicionar primeira música à fila ao iniciar
-fetch_next_song()
-
-# Fonte dinâmica para buscar próxima música (compatível com esta build)
-def request_function() =
-  result = process.read.lines("curl -s http://host.docker.internal:3000/api/music")
-  json = list.hd(default="", result)
-  path = list.hd(default="", process.read.lines("echo '#{json}' | jq -r '.path'"))
-  title = list.hd(default="", process.read.lines("echo '#{json}' | jq -r '.title'"))
-  artist = list.hd(default="", process.read.lines("echo '#{json}' | jq -r '.artist'"))
-  uri = "annotate:title=\"#{title}\",artist=\"#{artist}\":#{path}"
-  req = request.create(uri)
-  log("Request criada: #{uri}")
-  if req != null() then
-    log("Request criada com sucesso, inserindo na fila")
-    queue.push(req)
-    log("Request empurrada para fila")
-  else
-    log("Falha ao criar request para #{uri}")
-  end
+# Play handler - injeta musica especifica (apenas para geral)
+def play_handler(_, req) =
+  log("Play especifico recebido via HTTP")
+  
+  # Extrai dados do request
+  body = req.data("")
+  
+  # Parse do JSON para pegar path, title, artist
+  path = list.hd(default="", process.read.lines("echo '#{body}' | jq -r '.path'"))
+  title = list.hd(default="", process.read.lines("echo '#{body}' | jq -r '.title'"))
+  artist = list.hd(default="", process.read.lines("echo '#{body}' | jq -r '.artist'"))
+  
+  log("Injetando musica: #{path}")
+  log("Titulo: #{title}, Artista: #{artist}")
+  
+  # Cria a requisicao anotada
+  uri_annotate = "annotate:title=\"#{title}\",artist=\"#{artist}\":#{path}"
+  request_obj = request.create(uri_annotate)
+  
+  # Adiciona na fila manual
+  queue.push(request_obj)
+  
+  # Pula a musica atual para tocar a injetada imediatamente
+  autodj_geral.skip()
+  
+  ignore(req.status_code(200))
+  ignore(req.content_type("text/plain"))
+  ignore(req.html("OK"))
 end
 
-next_source = request.dynamic(id="next_track", request_function)
+harbor.http.register(
+  port=8080,
+  method="POST",
+  "/skip",
+  skip_handler
+)
 
-# Prioridade: transmissão ao vivo > pedidos manuais > autodj automático
-autodj = fallback(track_sensitive=false, [live, queue, next_source])
+harbor.http.register(
+  port=8080,
+  method="POST",
+  "/play",
+  play_handler
+)
 
-# Mapear metadados para sobrescrever os que vêm do arquivo
-autodj = map_metadata(fun (m) ->
-  # Se não tiver title/artist anotado, deixa o que veio do arquivo
-  m
-, autodj)
+# Criar streams separados para cada gênero
+# Geral: aceita live, queue e autodj
+radio_geral = fallback(track_sensitive=false, [live, queue, autodj_geral])
 
-# Prioridade: transmissão ao vivo > autodj
-radio = fallback(track_sensitive=false, [live, autodj])
+# Outros: apenas autodj (sem live e sem queue)
+radio_gaucha = mksafe(autodj_gaucha)
+radio_modao = mksafe(autodj_modao)
+radio_arrocha = mksafe(autodj_arrocha)
+radio_romantico = mksafe(autodj_romantico)
+radio_forro = mksafe(autodj_forro)
 
-# Output para Icecast com metadados habilitados
+# Output para Icecast - Geral
 output.icecast(
   %mp3(bitrate=128, samplerate=44100, id3v2=true),
-  name = "Radio Som do Mato",
-  description = "A mais sertaneja!",
+  name = "Som do Mato - Geral",
+  description = "Rádio geral com pedidos",
   genre = "Sertanejo",
   url = "https://somdomato.com",
   host = "icecast",
   port = 8000,
   password = "hackme",
-  mount = "/geral.mp3",
+  mount = "/geral",
   encoding = "UTF-8",
-  mksafe(radio))
+  mksafe(radio_geral))
+
+# Output para Icecast - Gaúcha
+output.icecast(
+  %mp3(bitrate=128, samplerate=44100, id3v2=true),
+  name = "Som do Mato - Gaúcha",
+  description = "Sertanejo gaúcho",
+  genre = "Gaúcha",
+  url = "https://somdomato.com",
+  host = "icecast",
+  port = 8000,
+  password = "hackme",
+  mount = "/gaucha",
+  encoding = "UTF-8",
+  radio_gaucha)
+
+# Output para Icecast - Modão
+output.icecast(
+  %mp3(bitrate=128, samplerate=44100, id3v2=true),
+  name = "Som do Mato - Modão",
+  description = "Modão tradicional",
+  genre = "Modão",
+  url = "https://somdomato.com",
+  host = "icecast",
+  port = 8000,
+  password = "hackme",
+  mount = "/modao",
+  encoding = "UTF-8",
+  radio_modao)
+
+# Output para Icecast - Arrocha
+output.icecast(
+  %mp3(bitrate=128, samplerate=44100, id3v2=true),
+  name = "Som do Mato - Arrocha",
+  description = "Arrocha e romantic",
+  genre = "Arrocha",
+  url = "https://somdomato.com",
+  host = "icecast",
+  port = 8000,
+  password = "hackme",
+  mount = "/arrocha",
+  encoding = "UTF-8",
+  radio_arrocha)
+
+# Output para Icecast - Romântico
+output.icecast(
+  %mp3(bitrate=128, samplerate=44100, id3v2=true),
+  name = "Som do Mato - Romântico",
+  description = "Músicas românticas",
+  genre = "Romântico",
+  url = "https://somdomato.com",
+  host = "icecast",
+  port = 8000,
+  password = "hackme",
+  mount = "/romantico",
+  encoding = "UTF-8",
+  radio_romantico)
+
+# Output para Icecast - Forró
+output.icecast(
+  %mp3(bitrate=128, samplerate=44100, id3v2=true),
+  name = "Som do Mato - Forró",
+  description = "Forró e derivados",
+  genre = "Forró",
+  url = "https://somdomato.com",
+  host = "icecast",
+  port = 8000,
+  password = "hackme",
+  mount = "/forro",
+  encoding = "UTF-8",
+  radio_forro)

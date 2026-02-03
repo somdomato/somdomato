@@ -35,9 +35,9 @@ export async function GET(_request: Request, context: { params: { id: string } |
 
       // Convert Node.js ReadStream to Web ReadableStream for Response body
       const { Readable } = await import("node:stream");
-      const body = Readable.toWeb(stream as any);
+      const body = Readable.toWeb(stream);
 
-      return new Response(body as unknown as BodyInit, { status: 200, headers });
+      return new Response(body as BodyInit, { status: 200, headers });
     } catch (err) {
       console.error(`/api/music/file/${id} stream error:`, err);
       const message = err instanceof Error ? err.message : String(err);

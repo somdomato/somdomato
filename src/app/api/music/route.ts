@@ -21,18 +21,30 @@ export async function GET(request: Request) {
     const url = new URL(request.url);
     const notificationParam = url.searchParams.get("notify");
     const includeNotification = notificationParam === "true";
+    const genreParam = url.searchParams.get("genre") || "geral";
+    const genre = genreParam as "geral" | "gaucha" | "modao" | "arrocha" | "romantico" | "forro";
 
     // Obter dados de músicas bloqueadas usando o helper
     const blockedData = await getBlockedSongIds();
     const blockedSongIds = blockedData.songIds;
     const blockedArtists = blockedData.artists;
 
-    // Buscar músicas disponíveis no horário atual
+    // Buscar músicas disponíveis no horário atual e do gênero especificado
     const currentTimeSlot = getCurrentTimeSlot();
+
+    // Para o Geral: buscar músicas do gênero "geral" OU músicas com allowedInGeneral=1
+    // Para outros gêneros: buscar apenas do gênero específico
+    let genreCondition: ReturnType<typeof sql>;
+    if (genre === "geral") {
+      genreCondition = sql`(${songs.genre} = 'geral' OR ${songs.allowedInGeneral} = 1)`;
+    } else {
+      genreCondition = sql`${songs.genre} = ${genre}`;
+    }
+
     const availableSongs = await db
       .select()
       .from(songs)
-      .where(and(sql`(${songs.timeSlots} & ${currentTimeSlot}) > 0`, blockedSongIds.length > 0 ? sql`${songs.id} NOT IN (${blockedSongIds.join(",")})` : sql`1=1`));
+      .where(and(sql`(${songs.timeSlots} & ${currentTimeSlot}) > 0`, genreCondition, blockedSongIds.length > 0 ? sql`${songs.id} NOT IN (${blockedSongIds.join(",")})` : sql`1=1`));
 
     // Filtrar músicas de artistas que tocaram recentemente
     const filteredSongs = availableSongs.filter((song) => !blockedArtists.includes(song.artist));
@@ -51,22 +63,28 @@ export async function GET(request: Request) {
 
     let selectedSong: Song | null = null;
 
-    const [requestResult] = await db
-      .select({
-        id: songs.id,
-        title: songs.title,
-        artist: songs.artist,
-        path: songs.path,
-        cover: songs.cover,
-        timeSlots: songs.timeSlots,
-        createdAt: songs.createdAt,
-        requestId: requests.id,
-      })
-      .from(requests)
-      .orderBy(asc(requests.id))
-      .where(eq(requests.songId, songs.id))
-      .limit(1)
-      .innerJoin(songs, eq(songs.id, requests.songId));
+    // Apenas o gênero "geral" aceita pedidos
+    let requestResult = null;
+    if (genre === "geral") {
+      const results = await db
+        .select({
+          id: songs.id,
+          title: songs.title,
+          artist: songs.artist,
+          path: songs.path,
+          cover: songs.cover,
+          timeSlots: songs.timeSlots,
+          createdAt: songs.createdAt,
+          requestId: requests.id,
+        })
+        .from(requests)
+        .orderBy(asc(requests.id))
+        .where(eq(requests.songId, songs.id))
+        .limit(1)
+        .innerJoin(songs, eq(songs.id, requests.songId));
+
+      requestResult = results[0] || null;
+    }
 
     if (requestResult) {
       selectedSong = {
@@ -180,9 +198,10 @@ export async function GET(request: Request) {
     const safeCover = selectedSong.cover || "/images/logotipo.svg";
     selectedSong.cover = safeCover;
 
-    if (global.io) {
+    // Emitir evento apenas se for gênero "geral" (outros gêneros não têm listeners globais)
+    if (global.io && genre === "geral") {
       global.io.emit("song:changed", selectedSong);
-    } else {
+    } else if (!global.io) {
       console.warn("No socket.io server available: cannot emit song:changed event");
     }
 

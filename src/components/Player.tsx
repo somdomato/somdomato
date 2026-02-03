@@ -1,9 +1,10 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect } from "react";
-import { Play, Pause, RotateCw, Volume2, VolumeX } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Play, Pause, RotateCw, Volume2, VolumeX, Music2 } from "lucide-react";
 import { useAudio } from "@/context/AudioContext";
+import { useGenre, GENRES } from "@/context/GenreContext";
 import { socket } from "@/lib/socket";
 import { toast } from "sonner";
 import { useAuth } from "@/components/AdminAuth";
@@ -54,6 +55,8 @@ const DEFAULT_COVER = "/images/logotipo.svg";
 
 export default function IcecastPlayer({ className = "" }: IcecastPlayerProps) {
   const { playing, play, pause, volume, setVolume, muted, toggleMute, title, artist, cover, setTitle, setArtist, setCover, previewActive } = useAudio();
+  const { currentGenre, setGenre } = useGenre();
+  const [showGenreDropdown, setShowGenreDropdown] = useState(false);
 
   // Socket listener for song changes
   useEffect(() => {
@@ -135,10 +138,55 @@ export default function IcecastPlayer({ className = "" }: IcecastPlayerProps) {
   }, [setTitle, setArtist, setCover]);
 
   return (
-    <div className={`flex items-center justify-between max-w-md gap-3 bg-gradient-to-r ${previewActive ? 'from-slate-700 to-slate-800' : 'from-background-alt to-[#2c3b26]'} rounded-md px-2 py-1.5 border-3 border-black/50 transition-colors duration-300 ${className}`}>
-      {/* Cover Image */}
-      <div className="relative flex-shrink-0 w-6 h-6 sm:w-8 sm:h-8 rounded overflow-hidden border border-black/40">
-        <Image src={cover} alt="Cover" className="w-full h-full object-cover" fill />
+    <div className={`flex items-center justify-between max-w-md gap-3 bg-gradient-to-r ${previewActive ? "from-slate-700 to-slate-800" : "from-background-alt to-[#2c3b26]"} rounded-md px-2 py-1.5 border-3 border-black/50 transition-colors duration-300 ${className}`}>
+      {/* Cover Image with Genre Dropdown */}
+      <div className="relative flex-shrink-0">
+        <button
+          type="button"
+          className="relative w-6 h-6 sm:w-8 sm:h-8 rounded overflow-hidden border-2 border-primary/40 cursor-pointer hover:border-primary transition-colors group"
+          onClick={() => {
+            console.log("Clicou na capa, showGenreDropdown:", showGenreDropdown);
+            setShowGenreDropdown(!showGenreDropdown);
+          }}
+          aria-label="Selecionar gênero"
+          title="Clique para trocar gênero"
+        >
+          <Image src={cover} alt="Cover" className="w-full h-full object-cover" width={32} height={32} />
+          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center">
+            <Music2 size={12} className="opacity-0 group-hover:opacity-100 text-white transition-opacity" />
+          </div>
+        </button>
+
+        {/* Genre Dropdown */}
+        {showGenreDropdown && (
+          <>
+            <button type="button" className="fixed inset-0 z-[55]" onClick={() => setShowGenreDropdown(false)} onKeyDown={(e) => e.key === "Escape" && setShowGenreDropdown(false)} aria-label="Fechar seletor de gênero" />
+            <div className="absolute top-full left-0 mt-2 bg-background-alt border-2 border-primary/50 rounded-md shadow-2xl z-[60] min-w-[180px] overflow-hidden">
+              {GENRES.map((genre) => (
+                <button
+                  key={genre.value}
+                  type="button"
+                  onClick={() => {
+                    console.log("Selecionou gênero:", genre.label);
+                    setGenre(genre.value);
+                    setShowGenreDropdown(false);
+                    const baseUrl = process.env.NEXT_PUBLIC_RADIO_SOURCE || "https://radio.somdomato.com";
+                    const streamUrl = `${baseUrl}/${genre.mountpoint}`;
+                    if (playing) {
+                      pause();
+                      setTimeout(() => play(streamUrl), 100);
+                    }
+                    toast.success(`Gênero alterado para ${genre.label}`);
+                  }}
+                  className={`w-full px-4 py-2.5 text-left text-sm hover:bg-primary/20 transition-colors flex items-center gap-2 first:rounded-t-md last:rounded-b-md ${currentGenre === genre.value ? "bg-primary/10 text-primary font-semibold" : "text-white"}`}
+                >
+                  <Music2 size={14} />
+                  {genre.label}
+                </button>
+              ))}
+            </div>
+          </>
+        )}
       </div>
 
       {/* Metadata */}
@@ -155,7 +203,15 @@ export default function IcecastPlayer({ className = "" }: IcecastPlayerProps) {
       <div className="flex items-center gap-1.5 sm:gap-2">
         {/* Play/Pause */}
         <button
-          onClick={() => (playing ? pause() : play())}
+          onClick={() => {
+            if (playing) {
+              pause();
+            } else {
+              const baseUrl = process.env.NEXT_PUBLIC_RADIO_SOURCE || "https://radio.somdomato.com";
+              const streamUrl = `${baseUrl}/${GENRES.find((g) => g.value === currentGenre)?.mountpoint || "geral"}`;
+              play(streamUrl);
+            }
+          }}
           className="w-8 h-8 flex items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white shadow-md transition-all hover:shadow-lg active:scale-95 disabled:opacity-50"
           aria-label={playing ? "Pause" : "Play"}
         >
@@ -167,7 +223,9 @@ export default function IcecastPlayer({ className = "" }: IcecastPlayerProps) {
           onClick={() => {
             if (playing) {
               pause();
-              setTimeout(() => play(), 100);
+              const baseUrl = process.env.NEXT_PUBLIC_RADIO_SOURCE || "https://radio.somdomato.com";
+              const streamUrl = `${baseUrl}/${GENRES.find((g) => g.value === currentGenre)?.mountpoint || "geral"}`;
+              setTimeout(() => play(streamUrl), 100);
             }
           }}
           className="w-8 h-8 flex items-center justify-center rounded-full bg-emerald-700/10 hover:bg-emerald-600/30 text-emerald-200 hover:text-white transition-all active:scale-95"

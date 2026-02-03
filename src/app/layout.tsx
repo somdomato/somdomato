@@ -1,4 +1,5 @@
 import { AudioProvider } from "@/context/AudioContext";
+import { GenreProvider } from "@/context/GenreContext";
 import { Nunito } from "next/font/google";
 import { Toaster } from "sonner";
 import Header from "@/components/Header";
@@ -41,14 +42,16 @@ export default function RootLayout({
       </head>
       <body className={nunito.className}>
         <Toaster position="top-right" />
-        <AudioProvider>
-          <div className="flex flex-col min-h-screen relative">
-            <Header />
-            <main className="flex-1">{children}</main>
-            <Footer />
-            {modal}
-          </div>
-        </AudioProvider>
+        <GenreProvider>
+          <AudioProvider>
+            <div className="flex flex-col min-h-screen relative">
+              <Header />
+              <main className="flex-1">{children}</main>
+              <Footer />
+              {modal}
+            </div>
+          </AudioProvider>
+        </GenreProvider>
       </body>
     </html>
   );

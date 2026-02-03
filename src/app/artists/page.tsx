@@ -28,10 +28,7 @@ export default function ArtistsPage() {
         <section ref={songsRef} className="mt-8 scroll-mt-4">
           <div className="flex items-center justify-between mb-4 p-4 bg-primary/10 rounded-lg border border-primary/20">
             <h2 className="text-xl font-semibold">Músicas de {displaySelected}</h2>
-            <button 
-              className="text-sm px-4 py-2 bg-primary/20 hover:bg-primary/30 rounded transition" 
-              onClick={() => setSelected(null)}
-            >
+            <button className="text-sm px-4 py-2 bg-primary/20 hover:bg-primary/30 rounded transition" onClick={() => setSelected(null)}>
               Voltar
             </button>
           </div>

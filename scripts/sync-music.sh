@@ -1,4 +1,5 @@
 #!/bin/bash
+
 set -e
 
 # Aguardar 5 minutos antes de processar (caso ainda esteja transferindo)

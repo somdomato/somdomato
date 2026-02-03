@@ -25,7 +25,7 @@ services:
       - icecast
     volumes:
       - ../files/etc/liquidsoap/somdomato-docker.liq:/etc/liquidsoap/somdomato.liq:ro
-      - ${MUSIC_PATH:-/var/music/sdm}:/var/music/sdm:ro
+      - /home/lucas/music/sdm:/var/music/sdm:ro
     environment:
       - LIQUIDSOAP_LOG_LEVEL=info
     extra_hosts:

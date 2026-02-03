@@ -2,15 +2,19 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { socket } from "@/lib/socket";
+import { useGenre } from "@/context/GenreContext";
 import SongBlock from "./SongBlock";
 import SongList from "./SongList";
 import { CircleArrowRight } from "lucide-react";
+import { formatRelativeTime } from "@/lib/format";
 
 type UpcomingEntry = { reqId: number; id: number; title: string; artist: string; cover: string | null; requestedAt?: number | null };
 
 export default function Next({ data, initialNextIfNoRequests }: { data: UpcomingEntry[]; initialNextIfNoRequests: UpcomingEntry | null }) {
   const [upcoming, setUpcoming] = useState<UpcomingEntry[]>(data);
   const [nextIfNoRequests] = useState<UpcomingEntry | null>(initialNextIfNoRequests);
+  const [, setTick] = useState(0);
+  const { currentGenre } = useGenre();
 
   const fetchUpcoming = useCallback(async () => {
     try {
@@ -58,16 +62,33 @@ export default function Next({ data, initialNextIfNoRequests }: { data: Upcoming
     };
   }, [fetchUpcoming]);
 
+  // Atualizar tempos relativos a cada minuto
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setTick((t) => t + 1);
+    }, 60000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Mostrar apenas se estiver no gênero "geral" (outros não aceitam pedidos)
+  if (currentGenre !== "geral") {
+    return (
+      <SongBlock icon={CircleArrowRight} title="Próximas">
+        <div className="text-muted text-sm">Pedidos disponíveis apenas no gênero Geral.</div>
+      </SongBlock>
+    );
+  }
+
   return (
     <SongBlock icon={CircleArrowRight} title="Próximas">
       {upcoming.length === 0 ? (
         nextIfNoRequests ? (
-          <SongList items={[{ id: nextIfNoRequests.reqId ?? "auto", title: nextIfNoRequests.title, artist: nextIfNoRequests.artist, cover: nextIfNoRequests.cover }]} />
+          <SongList items={[{ id: nextIfNoRequests.reqId ?? "auto", title: nextIfNoRequests.title, artist: nextIfNoRequests.artist, cover: nextIfNoRequests.cover, requestedAt: nextIfNoRequests.requestedAt ?? null }]} renderRight={(item) => formatRelativeTime(item.requestedAt as number | null)} />
         ) : (
           <div className="text-muted text-sm">Sem pedidos pendentes.</div>
         )
       ) : (
-        <SongList items={upcoming} keyField="reqId" />
+        <SongList items={upcoming} keyField="reqId" renderRight={(item) => formatRelativeTime((item as UpcomingEntry).requestedAt)} />
       )}
     </SongBlock>
   );

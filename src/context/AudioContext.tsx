@@ -10,7 +10,7 @@ interface AudioContextType {
   setArtist: (artist: string) => void;
   setCover: (cover: string) => void;
   playing: boolean;
-  play: () => void;
+  play: (streamUrl?: string) => void;
   pause: () => void;
   // volume is 0-100 in the app
   volume: number;
@@ -27,9 +27,10 @@ interface AudioContextType {
 const AudioContext = createContext<AudioContextType | undefined>(undefined);
 
 export const AudioProvider = ({ children }: { children: React.ReactNode }) => {
-  const source = process.env.NEXT_PUBLIC_RADIO_SOURCE || "https://radio.somdomato.com/geral.mp3";
+  const defaultSource = process.env.NEXT_PUBLIC_RADIO_SOURCE || "https://radio.somdomato.com/geral";
   const audioRef = useRef<HTMLAudioElement>(null);
   const [playing, setPlaying] = useState(false);
+  const [currentSource, setCurrentSource] = useState(defaultSource);
   // store volume as 0-100 to match UI controls
   const [volume, setVolumeState] = useState(70);
   const [muted, setMuted] = useState(false);
@@ -38,8 +39,10 @@ export const AudioProvider = ({ children }: { children: React.ReactNode }) => {
   const [cover, setCover] = useState("/images/logotipo.svg");
   const [previewActive, setPreviewActive] = useState(false);
 
-  const play = () => {
+  const play = (streamUrl?: string) => {
     if (audioRef.current) {
+      const source = streamUrl || currentSource;
+      if (streamUrl) setCurrentSource(streamUrl);
       audioRef.current.src = `${source}?t=${Date.now() / 1000}`;
       audioRef.current.play();
       setPlaying(true);
@@ -50,7 +53,7 @@ export const AudioProvider = ({ children }: { children: React.ReactNode }) => {
     if (audioRef.current) {
       audioRef.current.pause();
       setPlaying(false);
-      audioRef.current.src = `${source}?t=${Date.now() / 1000}`;
+      audioRef.current.src = `${currentSource}?t=${Date.now() / 1000}`;
     }
   };
 
@@ -97,7 +100,7 @@ export const AudioProvider = ({ children }: { children: React.ReactNode }) => {
       }}
     >
       {children}
-      <audio ref={audioRef} src={source} />
+      <audio ref={audioRef} src={currentSource} />
     </AudioContext.Provider>
   );
 };

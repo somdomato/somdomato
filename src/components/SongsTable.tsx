@@ -6,8 +6,14 @@ import { EditSongModal } from "@/components/EditSongModal";
 import { Pencil, Trash2, Search } from "lucide-react";
 import { toast } from "sonner";
 
-async function fetchSongs(page: number, limit: number, query = "") {
-  const res = await fetch(`/api/admin/songs?page=${page}&limit=${limit}&query=${encodeURIComponent(query)}`);
+async function fetchSongs(page: number, limit: number, query = "", genre?: string) {
+  const params = new URLSearchParams({
+    page: page.toString(),
+    limit: limit.toString(),
+    query: query,
+  });
+  if (genre) params.set("genre", genre);
+  const res = await fetch(`/api/admin/songs?${params}`);
   if (!res.ok) throw new Error("failed to fetch songs");
   return res.json();
 }
@@ -27,6 +33,8 @@ interface Song {
   cover: string | null;
   timeSlots: number | null;
   rotation: string | null;
+  genre: string | null;
+  allowedInGeneral: number | null;
   createdAt: Date | null;
   requests: number | null;
   likes: number | null;
@@ -41,11 +49,12 @@ export function SongsTable() {
   const [loading, setLoading] = useState(true);
   const [editingSong, setEditingSong] = useState<Song | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [genreFilter, setGenreFilter] = useState<string>("");
 
   const loadSongs = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await fetchSongs(page, limit, searchQuery);
+      const data = await fetchSongs(page, limit, searchQuery, genreFilter || undefined);
       setSongs(data.songs);
       setTotal(data.total);
       setPages(data.pages);
@@ -55,7 +64,7 @@ export function SongsTable() {
     } finally {
       setLoading(false);
     }
-  }, [page, limit, searchQuery]);
+  }, [page, limit, searchQuery, genreFilter]);
 
   useEffect(() => {
     loadSongs();
@@ -101,8 +110,8 @@ export function SongsTable() {
 
   return (
     <div className="space-y-4">
-      {/* Campo de Busca */}
-      <div className="relative">
+      {/* Campo de Busca e Filtro de Gênero */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
           <input
@@ -115,6 +124,25 @@ export function SongsTable() {
             }}
             className="w-full pl-10 pr-4 py-2 bg-background border border-primary/30 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
           />
+        </div>
+
+        <div className="relative">
+          <select
+            value={genreFilter}
+            onChange={(e) => {
+              setGenreFilter(e.target.value);
+              setPage(1);
+            }}
+            className="w-full px-4 py-2 bg-background border border-primary/30 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+          >
+            <option value="">Todos os gêneros</option>
+            <option value="geral">Geral</option>
+            <option value="gaucha">Gaúcha</option>
+            <option value="modao">Modão</option>
+            <option value="arrocha">Arrocha</option>
+            <option value="romantico">Romântico</option>
+            <option value="forro">Forró</option>
+          </select>
         </div>
       </div>
 
@@ -159,6 +187,7 @@ export function SongsTable() {
                 <th className="px-4 py-3 text-left text-sm font-semibold">Arquivo</th>
                 <th className="px-4 py-3 text-left text-sm font-semibold">Artista</th>
                 <th className="px-4 py-3 text-left text-sm font-semibold">Título</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold">Gênero</th>
                 <th className="px-4 py-3 text-left text-sm font-semibold">Rotação</th>
                 <th className="px-4 py-3 text-left text-sm font-semibold">Horários</th>
                 <th className="px-4 py-3 text-center text-sm font-semibold">Ações</th>
@@ -173,6 +202,14 @@ export function SongsTable() {
                   <td className="px-4 py-3 text-sm max-w-xs truncate">{song.path.split("/").pop()}</td>
                   <td className="px-4 py-3 text-sm">{song.artist}</td>
                   <td className="px-4 py-3 text-sm">{song.title}</td>
+                  <td className="px-4 py-3 text-sm">
+                    <span className="px-2 py-1 rounded bg-primary/20 text-primary text-xs">{song.genre || "geral"}</span>
+                    {song.allowedInGeneral === 1 && song.genre !== "geral" && (
+                      <span className="ml-1 text-xs text-green-400" title="Permitida no Geral">
+                        ✓
+                      </span>
+                    )}
+                  </td>
                   <td className={`px-4 py-3 text-sm font-semibold ${getRotationColor(song.rotation)}`}>{song.rotation || "normal"}</td>
                   <td className="px-4 py-3 text-sm text-gray-400">{getTimeSlotsText(song.timeSlots)}</td>
                   <td className="px-4 py-3">

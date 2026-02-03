@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { updateSong, type RotationType } from "@/actions/admin";
+import { updateSong, type RotationType, type Genre } from "@/actions/admin";
 import { X } from "lucide-react";
 import { toast } from "sonner";
 import Image from "next/image";
@@ -15,6 +15,8 @@ interface Song {
   cover: string | null;
   timeSlots: number | null;
   rotation: string | null;
+  genre: string | null;
+  allowedInGeneral: number | null;
 }
 
 interface EditSongModalProps {
@@ -32,6 +34,8 @@ export function EditSongModal({ song, onClose, onSave, onCoverReset }: EditSongM
     album: song.album || "",
     rotation: song.rotation || "normal",
     timeSlots: song.timeSlots || 15,
+    genre: song.genre || "geral",
+    allowedInGeneral: song.allowedInGeneral === 1,
     coverFile: "",
   });
   const [saving, setSaving] = useState(false);
@@ -50,6 +54,8 @@ export function EditSongModal({ song, onClose, onSave, onCoverReset }: EditSongM
         album: formData.album,
         rotation: formData.rotation as RotationType,
         timeSlots: formData.timeSlots,
+        genre: formData.genre as Genre,
+        allowedInGeneral: formData.allowedInGeneral,
         coverFile: formData.coverFile || undefined,
         resetCover: coverWasReset,
       });
@@ -213,6 +219,33 @@ export function EditSongModal({ song, onClose, onSave, onCoverReset }: EditSongM
             </select>
             <p className="text-xs text-gray-400 mt-1">Define a frequência que a música toca na rotação automática</p>
           </div>
+
+          {/* Gênero */}
+          <div>
+            <label htmlFor="genre" className="block text-sm font-medium mb-2">
+              Gênero
+            </label>
+            <select id="genre" value={formData.genre} onChange={(e) => setFormData((prev) => ({ ...prev, genre: e.target.value }))} className="w-full px-4 py-2 bg-background border border-primary/30 rounded-md focus:outline-none focus:ring-2 focus:ring-primary">
+              <option value="geral">Geral</option>
+              <option value="gaucha">Gaúcha</option>
+              <option value="modao">Modão</option>
+              <option value="arrocha">Arrocha</option>
+              <option value="romantico">Romântico</option>
+              <option value="forro">Forró</option>
+            </select>
+            <p className="text-xs text-gray-400 mt-1">Define em qual mountpoint a música será tocada</p>
+          </div>
+
+          {/* Permitida no Geral */}
+          {formData.genre !== "geral" && (
+            <div>
+              <label className="flex items-center gap-2 p-3 bg-background rounded cursor-pointer hover:bg-background/80 transition-colors">
+                <input type="checkbox" checked={formData.allowedInGeneral} onChange={(e) => setFormData((prev) => ({ ...prev, allowedInGeneral: e.target.checked }))} className="w-4 h-4 accent-primary" />
+                <span className="text-sm">Permitir tocar no Geral</span>
+              </label>
+              <p className="text-xs text-gray-400 mt-1">Se marcado, esta música também pode ser tocada no mountpoint Geral</p>
+            </div>
+          )}
 
           {/* Time Slots */}
           <div>
