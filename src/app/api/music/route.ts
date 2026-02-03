@@ -105,6 +105,9 @@ export async function GET(request: Request) {
       // e forçar que a seleção aleatória seja executada (selectedSong = null)
       const requestFileExists = await checkFileExists(requestResult.path);
       if (!requestFileExists) {
+        // Deletar dependências primeiro para evitar erro de foreign key
+        await db.delete(history).where(eq(history.songId, requestResult.id));
+        await db.delete(requests).where(eq(requests.songId, requestResult.id));
         await db.delete(songs).where(eq(songs.id, requestResult.id));
         selectedSong = null;
       }
@@ -120,6 +123,9 @@ export async function GET(request: Request) {
         if (await checkFileExists(selectedSong.path)) {
           break;
         } else {
+          // Deletar dependências primeiro para evitar erro de foreign key
+          await db.delete(history).where(eq(history.songId, selectedSong.id));
+          await db.delete(requests).where(eq(requests.songId, selectedSong.id));
           await db.delete(songs).where(eq(songs.id, selectedSong.id));
         }
       }
