@@ -8,7 +8,7 @@ live = input.harbor("aovivo", port=8010, user="dj", password="hackme")
 def next(genre) =
   def request_function() =
     # Chama a API do Next.js via host.docker.internal (acessa o host) passando o gênero
-    result = process.read.lines("curl -s http://host.docker.internal:3000/api/music?genre=#{genre}")
+    result = process.read.lines("curl -s http://localhost:3000/api/music?genre=#{genre}")
     json = list.hd(default="", result)
     
     # Extrair path, title e artist do JSON
@@ -134,7 +134,7 @@ output.icecast(
   description = "A mais sertaneja - Geral",
   genre = "Sertanejo",
   url = "https://somdomato.com",
-  host = "icecast",
+  host = "localhost",
   port = 8000,
   password = "hackme",
   mount = "/geral",
@@ -148,7 +148,7 @@ output.icecast(
   description = "A mais sertaneja - Gaúcha",
   genre = "Sertanejo Gaúcho",
   url = "https://somdomato.com",
-  host = "icecast",
+  host = "localhost",
   port = 8000,
   password = "hackme",
   mount = "/gaucha",
@@ -162,7 +162,7 @@ output.icecast(
   description = "A mais sertaneja - Modão",
   genre = "Modão",
   url = "https://somdomato.com",
-  host = "icecast",
+  host = "localhost",
   port = 8000,
   password = "hackme",
   mount = "/modao",
@@ -176,7 +176,7 @@ output.icecast(
   description = "A mais sertaneja - Arrocha",
   genre = "Arrocha",
   url = "https://somdomato.com",
-  host = "icecast",
+  host = "localhost",
   port = 8000,
   password = "hackme",
   mount = "/arrocha",
@@ -190,7 +190,7 @@ output.icecast(
   description = "A mais sertaneja - Romântico",
   genre = "Romântico",
   url = "https://somdomato.com",
-  host = "icecast",
+  host = "localhost",
   port = 8000,
   password = "hackme",
   mount = "/romantico",
@@ -204,7 +204,7 @@ output.icecast(
   description = "A mais sertaneja - Forró",
   genre = "Forró",
   url = "https://somdomato.com",
-  host = "icecast",
+  host = "localhost",
   port = 8000,
   password = "hackme",
   mount = "/forro",
