@@ -125,11 +125,25 @@ export async function updateSong(
   }
 
   // Atualizar tags ID3 (usar o path atual, que pode ser o novo se foi renomeado)
-  if (data.title || data.artist || data.album || data.coverFile) {
+  if (data.title || data.artist || data.album || data.genre || data.coverFile) {
     const tags: NodeID3.Tags = {};
     if (data.title) tags.title = data.title;
     if (data.artist) tags.artist = data.artist;
     if (data.album) tags.album = data.album;
+    
+    // Sincronizar gênero com ID3 tags
+    // Importante: "geral" no banco deve ser "Sertanejo" no ID3
+    if (data.genre) {
+      const genreToId3: Record<Genre, string> = {
+        geral: "Sertanejo",
+        gaucha: "Sertanejo Gaúcho",
+        modao: "Modão",
+        arrocha: "Arrocha",
+        romantico: "Romântico",
+        forro: "Forró"
+      };
+      tags.genre = genreToId3[data.genre];
+    }
 
     // Se foi fornecida uma capa em base64, adicionar à tag ID3
     if (data.coverFile) {

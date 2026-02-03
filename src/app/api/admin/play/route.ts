@@ -80,9 +80,16 @@ export async function POST(request: Request) {
       cover: s.cover || null,
       timeSlots: s.timeSlots,
       createdAt: s.createdAt,
+      genre: s.genre,
     };
 
-    if (global.io) global.io.emit("song:changed", selectedSong);
+    if (global.io) global.io.emit("song:changed", {
+      id: selectedSong.id,
+      title: selectedSong.title,
+      artist: selectedSong.artist,
+      cover: selectedSong.cover,
+      genre: selectedSong.genre || "geral",
+    });
 
     // try to call liquidsoap control endpoint to skip immediately (optional)
     // const controlUrl = process.env.LIQUIDSOAP_CONTROL_URL || "http://localhost:8080/skip";

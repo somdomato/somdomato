@@ -76,6 +76,7 @@ export async function GET(request: Request) {
           timeSlots: songs.timeSlots,
           createdAt: songs.createdAt,
           requestId: requests.id,
+          genre: songs.genre,
         })
         .from(requests)
         .orderBy(asc(requests.id))
@@ -204,10 +205,21 @@ export async function GET(request: Request) {
     const safeCover = selectedSong.cover || "/images/logotipo.svg";
     selectedSong.cover = safeCover;
 
-    // Emitir evento apenas se for gênero "geral" (outros gêneros não têm listeners globais)
-    if (global.io && genre === "geral") {
-      global.io.emit("song:changed", selectedSong);
-    } else if (!global.io) {
+    // Construir payload consistente (incluir gênero explicitamente)
+    const songGenre = ((selectedSong as { genre?: string })?.genre) || genre || "geral";
+
+    const payload = {
+      id: selectedSong.id,
+      title: selectedSong.title,
+      artist: selectedSong.artist,
+      cover: safeCover,
+      genre: songGenre,
+    };
+
+    // Emitir evento para todos os gêneros (clientes filtram por gênero localmente)
+    if (global.io) {
+      global.io.emit("song:changed", payload);
+    } else {
       console.warn("No socket.io server available: cannot emit song:changed event");
     }
 

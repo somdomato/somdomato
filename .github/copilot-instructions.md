@@ -73,9 +73,11 @@ O sistema suporta 6 mountpoints diferentes:
 #### 3. Blocos da Interface
 
 **"Últimas" (Last.tsx)**
-- Fonte: tabela `history` (últimas 10)
+- Fonte: tabela `history` (últimas 10 por gênero)
 - Exibe: Capa, Música, Artista, **Tempo relativo** (ex: "há 5min")
 - Atualiza via Socket.io evento `song:changed`
+- **Filtro por gênero**: Mostra apenas músicas do gênero selecionado
+- API: `GET /api/songs/last?genre=<genero>`
 
 **"Top 10" (Top.tsx)**
 - Fonte: agregação de `history` por `songId`
@@ -84,10 +86,13 @@ O sistema suporta 6 mountpoints diferentes:
 - Atualiza via Socket.io evento `song:changed`
 
 **"Próximas" (Next.tsx)**
-- Fonte: tabela `requests` (ordenada por createdAt ASC)
-- Mostra até 10 pedidos ou próxima do AutoDJ se vazia
+- Para **Geral**: mostra pedidos ou próxima do AutoDJ se vazia
+- Para **outros gêneros**: mostra apenas próxima do AutoDJ (sem pedidos)
+- Fonte: tabela `requests` para Geral, API para próxima do AutoDJ
 - Exibe: Capa, Música, Artista, **Tempo na fila** (ex: "há 2min")
 - Atualiza via Socket.io eventos `request:added`, `request:removed`, `song:changed`
+- **Filtro por gênero**: Respeita gênero selecionado no player
+- API: `GET /api/songs/next?genre=<genero>`
 
 ## Estrutura de Dados
 
@@ -127,6 +132,56 @@ history {
 - `request:added` - Pedido criado (payload: { reqId, id, title, artist, cover, requestedAt })
 - `request:removed` - Pedido removido (payload: { requestId })
 - `requests:updated` - Forçar refresh completo da fila
+
+## Sincronização de Gêneros
+
+### Mapeamento ID3 ↔ Banco de Dados
+
+**IMPORTANTE**: O sistema mantém sincronização entre tags ID3 dos arquivos MP3 e o banco de dados.
+
+| ID3 Tag | Banco de Dados |
+|---------|----------------|
+| **Sertanejo** | **geral** |
+| Sertanejo Gaúcho | gaucha |
+| Modão | modao |
+| Arrocha | arrocha |
+| Romântico | romantico |
+| Forró | forro |
+
+**Regra Crítica**: Gênero "Sertanejo" nas tags ID3 é **sempre** traduzido para "geral" no banco de dados.
+
+### Script de Sincronização (sync-music.ts)
+
+Ao executar `pnpm tsx scripts/sync-music.ts`:
+
+1. Escaneia `/var/music/sdm` procurando arquivos de música
+2. Lê tags ID3 de arquivos MP3
+3. Para músicas **sem gênero ID3** ou com **gênero inválido**:
+   - Preenche "Sertanejo" nas tags ID3 do arquivo
+   - Salva como "geral" no banco de dados
+4. Converte gêneros válidos usando o mapeamento acima
+5. Atualiza automaticamente tags ID3 quando necessário
+
+### Sincronização no Admin (actions/admin.ts)
+
+Ao editar uma música via `updateSong()`:
+
+- **Banco → ID3**: Gênero do banco é convertido para tag ID3
+  - "geral" → "Sertanejo"
+  - "gaucha" → "Sertanejo Gaúcho"
+  - etc.
+- Tags ID3 são atualizadas automaticamente no arquivo MP3
+- Mudanças refletem imediatamente no banco e no arquivo físico
+
+**Exemplo de Fluxo**:
+```typescript
+// Usuário seleciona "Geral" no admin
+// → Salvo no banco: genre = "geral"
+// → Salvo no ID3: genre = "Sertanejo"
+
+// Script sync-music.ts encontra MP3 com ID3 = "Sertanejo"
+// → Salvo no banco: genre = "geral"
+```
 
 ## Convenções de Código
 

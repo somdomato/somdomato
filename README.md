@@ -159,6 +159,52 @@ O sistema suporta 6 mountpoints diferentes, cada um com sua própria seleção d
 - **history**: Histórico de reprodução (id, songId, createdAt)
 - **likes**: Curtidas dos usuários (id, songId, userIp, createdAt)
 
+### Sincronização de Gêneros
+
+O sistema mantém sincronização entre 3 camadas:
+
+1. **Tags ID3 dos arquivos MP3**
+2. **Banco de dados** (campo `genre` na tabela `songs`)
+3. **Interface administrativa**
+
+#### Mapeamento de Gêneros
+
+**IMPORTANTE**: O gênero "Sertanejo" nas tags ID3 é automaticamente convertido para "geral" no banco de dados.
+
+| ID3 Tag | Banco de Dados |
+|---------|----------------|
+| Sertanejo | geral |
+| Sertanejo Gaúcho | gaucha |
+| Modão | modao |
+| Arrocha | arrocha |
+| Romântico | romantico |
+| Forró | forro |
+
+#### Comportamento do Script de Sincronização
+
+O script `scripts/sync-music.ts`:
+- Escaneia o diretório `/var/music/sdm` 
+- Lê tags ID3 de arquivos MP3
+- Para músicas **sem gênero** ou com **gênero inválido**:
+  - Preenche automaticamente com "Sertanejo" nas tags ID3
+  - Salva como "geral" no banco de dados
+- Converte gêneros ID3 para formato do banco usando o mapeamento acima
+- Atualiza tags ID3 quando necessário
+
+#### Sincronização via Admin
+
+Ao editar uma música pela interface administrativa:
+- Gênero selecionado é salvo no banco de dados
+- Tags ID3 do arquivo MP3 são atualizadas automaticamente
+- Conversão DB → ID3: "geral" vira "Sertanejo", outros mantêm nome formatado
+
+Exemplo:
+```typescript
+// Ao salvar gênero "geral" no admin:
+// → Banco: genre = "geral"
+// → ID3: genre = "Sertanejo"
+```
+
 ### Endpoints Principais
 
 - `GET /api/music?genre=<genero>` - Retorna próxima música a tocar para o gênero especificado (usado pelo Liquidsoap)

@@ -6,7 +6,7 @@
 
 import { db } from "@/db";
 import { songs } from "@/db/schema";
-import { and, ne } from "drizzle-orm";
+import { and, ne, eq, sql } from "drizzle-orm";
 
 export type RotationType = "inativo" | "leve" | "normal" | "pesado";
 
@@ -43,13 +43,48 @@ export function canPlayAtCurrentTime(timeSlots: number | null): boolean {
  * Seleciona uma música aleatória baseada no sistema de rotação
  * Músicas com peso maior têm mais chance de serem selecionadas
  */
-export async function selectRandomSong(excludeSongId?: number) {
+export async function selectRandomSong(excludeSongId?: number, genre?: string) {
   // Buscar todas as músicas que não são inativas
-  const allSongs = await db
+  let queryBuilder = db
     .select()
-    .from(songs)
-    .where(excludeSongId ? and(ne(songs.rotation, "inativo"), ne(songs.id, excludeSongId)) : ne(songs.rotation, "inativo"))
-    .all();
+    .from(songs);
+  
+  // Adicionar filtro de gênero
+  if (genre) {
+    if (genre === "geral") {
+      // Para geral: músicas do gênero "geral" OU com allowedInGeneral=1
+      queryBuilder = queryBuilder.where(
+        excludeSongId 
+          ? and(
+              ne(songs.rotation, "inativo"), 
+              ne(songs.id, excludeSongId),
+              // @ts-expect-error - condição SQL dinâmica
+              sql`(${songs.genre} = 'geral' OR ${songs.allowedInGeneral} = 1)`
+            )
+          : and(
+              ne(songs.rotation, "inativo"),
+              // @ts-expect-error - condição SQL dinâmica
+              sql`(${songs.genre} = 'geral' OR ${songs.allowedInGeneral} = 1)`
+            )
+      ) as typeof queryBuilder;
+    } else {
+      // Para outros gêneros: apenas músicas do gênero específico
+      queryBuilder = queryBuilder.where(
+        excludeSongId 
+          ? and(ne(songs.rotation, "inativo"), ne(songs.id, excludeSongId), eq(songs.genre, genre))
+          : and(ne(songs.rotation, "inativo"), eq(songs.genre, genre))
+      ) as typeof queryBuilder;
+    }
+  } else {
+    // Sem filtro de gênero (comportamento original)
+    queryBuilder = queryBuilder.where(
+      excludeSongId 
+        ? and(ne(songs.rotation, "inativo"), ne(songs.id, excludeSongId)) 
+        : ne(songs.rotation, "inativo")
+    ) as typeof queryBuilder;
+  }
+  
+  const allSongs = await queryBuilder.all();
 
   // Filtrar músicas que podem tocar no horário atual
   const availableSongs = allSongs.filter((song) => canPlayAtCurrentTime(song.timeSlots));
@@ -79,10 +114,10 @@ export async function selectRandomSong(excludeSongId?: number) {
 /**
  * Exemplo de uso em um sistema de播放
  */
-export async function getNextSongToPlay(currentSongId?: number) {
-  // Primeiro verificar se há pedidos na fila
+export async function getNextSongToPlay(currentSongId?: number, genre?: string) {
+  // Primeiro verificar se há pedidos na fila (apenas para gênero "geral")
   // (implementar lógica de pedidos aqui)
 
   // Se não há pedidos, selecionar baseado na rotação
-  return await selectRandomSong(currentSongId);
+  return await selectRandomSong(currentSongId, genre);
 }

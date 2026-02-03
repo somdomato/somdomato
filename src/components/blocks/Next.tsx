@@ -12,20 +12,26 @@ type UpcomingEntry = { reqId: number; id: number; title: string; artist: string;
 
 export default function Next({ data, initialNextIfNoRequests }: { data: UpcomingEntry[]; initialNextIfNoRequests: UpcomingEntry | null }) {
   const [upcoming, setUpcoming] = useState<UpcomingEntry[]>(data);
-  const [nextIfNoRequests] = useState<UpcomingEntry | null>(initialNextIfNoRequests);
+  const [nextIfNoRequests, setNextIfNoRequests] = useState<UpcomingEntry | null>(initialNextIfNoRequests);
   const [, setTick] = useState(0);
   const { currentGenre } = useGenre();
 
   const fetchUpcoming = useCallback(async () => {
     try {
-      const res = await fetch("/api/requests");
+      const res = await fetch(`/api/songs/next?genre=${currentGenre}`);
       if (!res.ok) return;
       const json = await res.json();
       setUpcoming(json.upcoming || []);
+      setNextIfNoRequests(json.nextIfNoRequests || null);
     } catch (err) {
       console.warn("fetchUpcoming failed:", err);
     }
-  }, []);
+  }, [currentGenre]);
+
+  // Recarregar quando o gênero mudar
+  useEffect(() => {
+    fetchUpcoming();
+  }, [fetchUpcoming]);
 
   useEffect(() => {
     const onRequestRemoved = (req: { requestId?: number; id?: number; reqId?: number }) => {
@@ -38,6 +44,9 @@ export default function Next({ data, initialNextIfNoRequests }: { data: Upcoming
     };
 
     const onRequestAdded = (req: unknown) => {
+      // Pedidos só são relevantes para o gênero "geral"
+      if (currentGenre !== "geral") return;
+      
       if (req && typeof req === "object" && "reqId" in req) {
         const r = req as UpcomingEntry;
         setUpcoming((prev) => {
@@ -49,18 +58,23 @@ export default function Next({ data, initialNextIfNoRequests }: { data: Upcoming
       fetchUpcoming();
     };
 
-    socket.on("song:changed", fetchUpcoming);
+    const onSongChanged = () => {
+      // Atualizar próxima música do AutoDJ
+      fetchUpcoming();
+    };
+
+    socket.on("song:changed", onSongChanged);
     socket.on("request:removed", onRequestRemoved);
     socket.on("request:added", onRequestAdded);
     socket.on("requests:updated", fetchUpcoming);
 
     return () => {
-      socket.off("song:changed", fetchUpcoming);
+      socket.off("song:changed", onSongChanged);
       socket.off("request:removed", onRequestRemoved);
       socket.off("request:added", onRequestAdded);
       socket.off("requests:updated", fetchUpcoming);
     };
-  }, [fetchUpcoming]);
+  }, [fetchUpcoming, currentGenre]);
 
   // Atualizar tempos relativos a cada minuto
   useEffect(() => {
@@ -70,11 +84,24 @@ export default function Next({ data, initialNextIfNoRequests }: { data: Upcoming
     return () => clearInterval(interval);
   }, []);
 
-  // Mostrar apenas se estiver no gênero "geral" (outros não aceitam pedidos)
+  // Para gênero "geral": mostrar pedidos ou próxima do AutoDJ
+  // Para outros gêneros: mostrar apenas próxima do AutoDJ
   if (currentGenre !== "geral") {
     return (
       <SongBlock icon={CircleArrowRight} title="Próximas">
-        <div className="text-muted text-sm">Pedidos disponíveis apenas no gênero Geral.</div>
+        {nextIfNoRequests ? (
+          <SongList 
+            items={[{ 
+              id: nextIfNoRequests.id, 
+              title: nextIfNoRequests.title, 
+              artist: nextIfNoRequests.artist, 
+              cover: nextIfNoRequests.cover 
+            }]} 
+            renderRight={() => "Próxima (AutoDJ)"} 
+          />
+        ) : (
+          <div className="text-muted text-sm">Calculando próxima música...</div>
+        )}
       </SongBlock>
     );
   }
