@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "cross-env NODE_ENV=development node --no-deprecation --no-trace-warnings src/server.ts",
+    "dev": "cross-env NODE_ENV=development node --no-warnings src/server.ts",
     "build": "next build",
     "start": "cross-env NODE_ENV=production node src/server.ts",
     "push": "drizzle-kit push",
