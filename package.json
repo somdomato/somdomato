@@ -11,7 +11,9 @@
     "seed": "tsx src/db/seed.ts",
     "lint": "biome check",
     "format": "biome format --write",
-    "check": "tsc --noEmit"
+    "check": "tsc --noEmit",
+    "test": "vitest",
+    "test:watch": "vitest --watch"
   },
   "dependencies": {
     "@libsql/client": "^0.17.0",
@@ -38,7 +40,8 @@
     "drizzle-kit": "^0.31.8",
     "tailwindcss": "^4",
     "tsx": "^4.21.0",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^1.6.1"
   },
   "packageManager": "pnpm@10.28.2"
 }

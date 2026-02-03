@@ -9,18 +9,57 @@ const MUSIC_DIR = "/var/music/sdm";
 const SUPPORTED_EXTENSIONS = [".mp3", ".flac", ".ogg", ".m4a", ".wav"];
 
 // Gêneros válidos do sistema
-const VALID_GENRES = ["Sertanejo", "Sertanejo Gaúcho", "Modão", "Arrocha", "Romântico", "Forró"];
+export const VALID_GENRES = ["Sertanejo", "Sertanejo Gaúcho", "Modão", "Arrocha", "Romântico", "Forró"];
 
 // Mapeamento de gêneros ID3 para banco de dados
 // IMPORTANTE: "Sertanejo" no ID3 vira "geral" no banco
-const GENRE_ID3_TO_DB: Record<string, string> = {
-  "Sertanejo": "geral",
+export const GENRE_ID3_TO_DB: Record<string, string> = {
+  Sertanejo: "geral",
   "Sertanejo Gaúcho": "gaucha",
-  "Modão": "modao",
-  "Arrocha": "arrocha",
-  "Romântico": "romantico",
-  "Forró": "forro"
+  Modão: "modao",
+  Arrocha: "arrocha",
+  Romântico: "romantico",
+  Forró: "forro",
 };
+
+/**
+ * Lê tags ID3 de forma assíncrona
+ */
+export function readID3Tags(filePath: string): Promise<NodeID3.Tags | null> {
+  return new Promise((resolve) => {
+    // Apenas MP3 suporta ID3 tags completas
+    if (!filePath.toLowerCase().endsWith(".mp3")) {
+      resolve(null);
+      return;
+    }
+
+    NodeID3.read(filePath, (err: Error | null, tags: NodeID3.Tags) => {
+      if (err) {
+        console.warn(`Erro ao ler ID3 tags de ${filePath}:`, err.message);
+        resolve(null);
+        return;
+      }
+      resolve(tags || null);
+    });
+  });
+}
+
+/**
+ * Atualiza tags ID3 de um arquivo MP3
+ */
+export function updateID3Tags(filePath: string, tags: NodeID3.Tags): boolean {
+  if (!filePath.toLowerCase().endsWith(".mp3")) {
+    return false;
+  }
+
+  try {
+    const success = NodeID3.update(tags, filePath);
+    return success === true;
+  } catch (err) {
+    console.error(`Erro ao atualizar ID3 tags de ${filePath}:`, err);
+    return false;
+  }
+}
 
 async function scanMusicDirectory(): Promise<Set<string>> {
   const musicFiles = new Set<string>();
@@ -73,45 +112,6 @@ async function scanMusicDirectory(): Promise<Set<string>> {
   return musicFiles;
 }
 
-/**
- * Lê tags ID3 de forma assíncrona
- */
-function readID3Tags(filePath: string): Promise<NodeID3.Tags | null> {
-  return new Promise((resolve) => {
-    // Apenas MP3 suporta ID3 tags completas
-    if (!filePath.toLowerCase().endsWith('.mp3')) {
-      resolve(null);
-      return;
-    }
-    
-    NodeID3.read(filePath, (err: Error | null, tags: NodeID3.Tags) => {
-      if (err) {
-        console.warn(`Erro ao ler ID3 tags de ${filePath}:`, err.message);
-        resolve(null);
-        return;
-      }
-      resolve(tags || null);
-    });
-  });
-}
-
-/**
- * Atualiza tags ID3 de um arquivo MP3
- */
-function updateID3Tags(filePath: string, tags: NodeID3.Tags): boolean {
-  if (!filePath.toLowerCase().endsWith('.mp3')) {
-    return false;
-  }
-  
-  try {
-    const success = NodeID3.update(tags, filePath);
-    return success === true;
-  } catch (err) {
-    console.error(`Erro ao atualizar ID3 tags de ${filePath}:`, err);
-    return false;
-  }
-}
-
 async function syncDatabase() {
   console.log("Escaneando diretório de músicas...");
   const filesOnDisk = await scanMusicDirectory();
@@ -144,17 +144,17 @@ async function syncDatabase() {
 
       // Ler tags ID3 se for MP3
       const id3Tags = await readID3Tags(filePath);
-      
+
       // Extrair informações do ID3 ou do nome do arquivo
       let title = id3Tags?.title || "";
       let artist = id3Tags?.artist || "Desconhecido";
       let genre = id3Tags?.genre || "";
-      
+
       // Se não tem informações no ID3, extrair do nome do arquivo
       if (!title) {
         const fileName = path.basename(filePath, path.extname(filePath));
         title = fileName;
-        
+
         // Tentar separar artista - título
         if (fileName.includes(" - ")) {
           const parts = fileName.split(" - ");
@@ -162,11 +162,11 @@ async function syncDatabase() {
           title = parts.slice(1).join(" - ").trim();
         }
       }
-      
+
       // Verificar e corrigir gênero no ID3
       let genreForDb = "geral"; // padrão
       let needsID3Update = false;
-      
+
       if (typeof genre === "string") {
         // Verificar se o gênero é válido
         if (VALID_GENRES.includes(genre)) {
@@ -186,15 +186,15 @@ async function syncDatabase() {
         genreForDb = "geral";
         needsID3Update = true;
       }
-      
+
       // Atualizar ID3 se necessário (apenas MP3)
-      if (needsID3Update && filePath.toLowerCase().endsWith('.mp3')) {
+      if (needsID3Update && filePath.toLowerCase().endsWith(".mp3")) {
         const tagsToUpdate: NodeID3.Tags = {
           title: title,
           artist: artist,
-          genre: genre
+          genre: genre,
         };
-        
+
         if (updateID3Tags(filePath, tagsToUpdate)) {
           console.log(`  → Tags ID3 atualizadas com sucesso`);
           id3UpdatedCount++;
@@ -233,4 +233,3 @@ syncDatabase()
     console.error("Erro durante sincronização:", error);
     process.exit(1);
   });
-

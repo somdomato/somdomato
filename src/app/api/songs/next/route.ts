@@ -4,7 +4,7 @@ export async function GET(request: Request) {
   try {
     const url = new URL(request.url);
     const genre = url.searchParams.get("genre") || undefined;
-    
+
     const data = await nextSongs(genre);
     return Response.json(data);
   } catch (err) {

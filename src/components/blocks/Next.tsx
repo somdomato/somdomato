@@ -46,7 +46,7 @@ export default function Next({ data, initialNextIfNoRequests }: { data: Upcoming
     const onRequestAdded = (req: unknown) => {
       // Pedidos só são relevantes para o gênero "geral"
       if (currentGenre !== "geral") return;
-      
+
       if (req && typeof req === "object" && "reqId" in req) {
         const r = req as UpcomingEntry;
         setUpcoming((prev) => {
@@ -90,14 +90,16 @@ export default function Next({ data, initialNextIfNoRequests }: { data: Upcoming
     return (
       <SongBlock icon={CircleArrowRight} title="Próximas">
         {nextIfNoRequests ? (
-          <SongList 
-            items={[{ 
-              id: nextIfNoRequests.id, 
-              title: nextIfNoRequests.title, 
-              artist: nextIfNoRequests.artist, 
-              cover: nextIfNoRequests.cover 
-            }]} 
-            renderRight={() => "Próxima (AutoDJ)"} 
+          <SongList
+            items={[
+              {
+                id: nextIfNoRequests.id,
+                title: nextIfNoRequests.title,
+                artist: nextIfNoRequests.artist,
+                cover: nextIfNoRequests.cover,
+              },
+            ]}
+            renderRight={() => "Próxima (AutoDJ)"}
           />
         ) : (
           <div className="text-muted text-sm">Calculando próxima música...</div>

@@ -206,7 +206,7 @@ export async function GET(request: Request) {
     selectedSong.cover = safeCover;
 
     // Construir payload consistente (incluir gênero explicitamente)
-    const songGenre = ((selectedSong as { genre?: string })?.genre) || genre || "geral";
+    const songGenre = (selectedSong as { genre?: string })?.genre || genre || "geral";
 
     const payload = {
       id: selectedSong.id,

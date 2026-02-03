@@ -57,6 +57,18 @@ docker-compose down
 
 Ver documentação completa em [README-docker.md](./README-docker.md)
 
+## Testes
+
+Para rodar os testes unitários (Vitest):
+
+```bash
+# Instalar dependências (se necessário)
+pnpm install
+
+# Rodar todos os testes
+pnpm test
+```
+
 ## Arquitetura
 
 - **Next.js**: Frontend e API para gerenciamento de músicas

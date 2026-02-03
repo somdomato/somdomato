@@ -28,7 +28,7 @@ export default function Last({ data }: { data: LatestEntry[] }) {
         console.warn("Erro ao buscar últimas músicas:", err);
       }
     };
-    
+
     fetchLatest();
   }, [currentGenre]);
 
@@ -38,7 +38,7 @@ export default function Last({ data }: { data: LatestEntry[] }) {
       if (currentGenre !== "geral" && song.genre !== currentGenre) {
         return;
       }
-      
+
       const now = Date.now();
       const entry: LatestEntry = { id: song.id, title: song.title, artist: song.artist, cover: song.cover || null, playedAt: now };
 

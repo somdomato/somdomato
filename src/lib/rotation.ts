@@ -45,45 +45,35 @@ export function canPlayAtCurrentTime(timeSlots: number | null): boolean {
  */
 export async function selectRandomSong(excludeSongId?: number, genre?: string) {
   // Buscar todas as músicas que não são inativas
-  let queryBuilder = db
-    .select()
-    .from(songs);
-  
+  let queryBuilder = db.select().from(songs);
+
   // Adicionar filtro de gênero
   if (genre) {
     if (genre === "geral") {
       // Para geral: músicas do gênero "geral" OU com allowedInGeneral=1
       queryBuilder = queryBuilder.where(
-        excludeSongId 
+        excludeSongId
           ? and(
-              ne(songs.rotation, "inativo"), 
+              ne(songs.rotation, "inativo"),
               ne(songs.id, excludeSongId),
-              // @ts-expect-error - condição SQL dinâmica
-              sql`(${songs.genre} = 'geral' OR ${songs.allowedInGeneral} = 1)`
+              // condição SQL dinâmica: incluir músicas com genre='geral' OU allowedInGeneral=1
+              sql`(${songs.genre} = 'geral' OR ${songs.allowedInGeneral} = 1)`,
             )
           : and(
               ne(songs.rotation, "inativo"),
-              // @ts-expect-error - condição SQL dinâmica
-              sql`(${songs.genre} = 'geral' OR ${songs.allowedInGeneral} = 1)`
-            )
+              // condição SQL dinâmica: incluir músicas com genre='geral' OU allowedInGeneral=1
+              sql`(${songs.genre} = 'geral' OR ${songs.allowedInGeneral} = 1)`,
+            ),
       ) as typeof queryBuilder;
     } else {
       // Para outros gêneros: apenas músicas do gênero específico
-      queryBuilder = queryBuilder.where(
-        excludeSongId 
-          ? and(ne(songs.rotation, "inativo"), ne(songs.id, excludeSongId), eq(songs.genre, genre))
-          : and(ne(songs.rotation, "inativo"), eq(songs.genre, genre))
-      ) as typeof queryBuilder;
+      queryBuilder = queryBuilder.where(excludeSongId ? and(ne(songs.rotation, "inativo"), ne(songs.id, excludeSongId), eq(songs.genre, genre)) : and(ne(songs.rotation, "inativo"), eq(songs.genre, genre))) as typeof queryBuilder;
     }
   } else {
     // Sem filtro de gênero (comportamento original)
-    queryBuilder = queryBuilder.where(
-      excludeSongId 
-        ? and(ne(songs.rotation, "inativo"), ne(songs.id, excludeSongId)) 
-        : ne(songs.rotation, "inativo")
-    ) as typeof queryBuilder;
+    queryBuilder = queryBuilder.where(excludeSongId ? and(ne(songs.rotation, "inativo"), ne(songs.id, excludeSongId)) : ne(songs.rotation, "inativo")) as typeof queryBuilder;
   }
-  
+
   const allSongs = await queryBuilder.all();
 
   // Filtrar músicas que podem tocar no horário atual

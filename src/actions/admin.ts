@@ -130,7 +130,7 @@ export async function updateSong(
     if (data.title) tags.title = data.title;
     if (data.artist) tags.artist = data.artist;
     if (data.album) tags.album = data.album;
-    
+
     // Sincronizar gênero com ID3 tags
     // Importante: "geral" no banco deve ser "Sertanejo" no ID3
     if (data.genre) {
@@ -140,7 +140,7 @@ export async function updateSong(
         modao: "Modão",
         arrocha: "Arrocha",
         romantico: "Romântico",
-        forro: "Forró"
+        forro: "Forró",
       };
       tags.genre = genreToId3[data.genre];
     }
