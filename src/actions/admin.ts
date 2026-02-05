@@ -11,7 +11,13 @@ import { normalizeString } from "@/db/utils";
 
 // Tipos
 export type RotationType = "inativo" | "leve" | "normal" | "pesado";
-export type Genre = "geral" | "gaucha" | "modao" | "arrocha" | "romantico" | "forro";
+export type Genre =
+  | "geral"
+  | "gaucha"
+  | "modao"
+  | "arrocha"
+  | "romantico"
+  | "forro";
 
 // Verificação de autenticação via cookie
 async function verifyAuth() {
@@ -26,7 +32,12 @@ async function verifyAuth() {
 
 // ===== ACTIONS DE MÚSICAS =====
 
-export async function getSongs(page = 1, limit = 10, query = "", genre?: Genre) {
+export async function getSongs(
+  page = 1,
+  limit = 10,
+  query = "",
+  genre?: Genre,
+) {
   await verifyAuth();
 
   const offset = (page - 1) * limit;
@@ -42,7 +53,8 @@ export async function getSongs(page = 1, limit = 10, query = "", genre?: Genre) 
       const title = normalizeString(s.title);
       const artist = normalizeString(s.artist);
       const path = normalizeString(s.path || "");
-      const matchesQuery = title.includes(qn) || artist.includes(qn) || path.includes(qn);
+      const matchesQuery =
+        title.includes(qn) || artist.includes(qn) || path.includes(qn);
       const matchesGenre = !genre || s.genre === genre;
       return matchesQuery && matchesGenre;
     });
@@ -61,10 +73,15 @@ export async function getSongs(page = 1, limit = 10, query = "", genre?: Genre) 
   let query_builder = db.select().from(songs);
 
   if (genre) {
-    query_builder = query_builder.where(eq(songs.genre, genre)) as typeof query_builder;
+    query_builder = query_builder.where(
+      eq(songs.genre, genre),
+    ) as typeof query_builder;
   }
 
-  const allSongs = await query_builder.limit(limit).offset(offset).orderBy(asc(songs.title));
+  const allSongs = await query_builder
+    .limit(limit)
+    .offset(offset)
+    .orderBy(asc(songs.title));
 
   // Contar total de músicas (com filtro de gênero)
   let totalQuery = db.select().from(songs);
@@ -117,7 +134,9 @@ export async function updateSong(
       data.filename = newPath; // Atualizar caminho no banco
     } catch (error) {
       console.error("Erro ao renomear arquivo:", error);
-      throw new Error(`Erro ao renomear arquivo: ${error instanceof Error ? error.message : "desconhecido"}`);
+      throw new Error(
+        `Erro ao renomear arquivo: ${error instanceof Error ? error.message : "desconhecido"}`,
+      );
     }
   } else {
     // Se não está renomeando, não atualizar o path no banco
@@ -149,7 +168,10 @@ export async function updateSong(
     if (data.coverFile) {
       try {
         // Converter base64 para buffer
-        const base64Data = data.coverFile.replace(/^data:image\/\w+;base64,/, "");
+        const base64Data = data.coverFile.replace(
+          /^data:image\/\w+;base64,/,
+          "",
+        );
         const imageBuffer = Buffer.from(base64Data, "base64");
 
         tags.image = {
@@ -181,7 +203,9 @@ export async function updateSong(
     ...(data.rotation && { rotation: data.rotation }),
     ...(data.timeSlots !== undefined && { timeSlots: data.timeSlots }),
     ...(data.genre && { genre: data.genre }),
-    ...(data.allowedInGeneral !== undefined && { allowedInGeneral: data.allowedInGeneral ? 1 : 0 }),
+    ...(data.allowedInGeneral !== undefined && {
+      allowedInGeneral: data.allowedInGeneral ? 1 : 0,
+    }),
   };
 
   // Se solicitarem reset da capa, incluir no objeto de atualização para evitar set vazio
@@ -198,7 +222,10 @@ export async function updateSong(
     // Se solicitarem reset da capa, não executamos extração/busca para evitar sobrescrever o valor padrão
     if (data.resetCover) {
       // Garantir que o DB contenha a capa padrão
-      await db.update(songs).set({ cover: "/images/logotipo.svg" }).where(eq(songs.id, id));
+      await db
+        .update(songs)
+        .set({ cover: "/images/logotipo.svg" })
+        .where(eq(songs.id, id));
       console.log(`Capa resetada para padrão na música ${id}`);
 
       // Remover imagem embutida no ID3 (se existir) e regravar tags básicas
@@ -219,10 +246,13 @@ export async function updateSong(
               const tagsToWrite: NodeID3.Tags = {};
               tagsToWrite.title = (data.title as string) ?? song.title;
               tagsToWrite.artist = (data.artist as string) ?? song.artist;
-              if ((data.album as string) ?? song.album) tagsToWrite.album = (data.album as string) ?? (song.album as string);
+              if ((data.album as string) ?? song.album)
+                tagsToWrite.album =
+                  (data.album as string) ?? (song.album as string);
 
               const success = NodeID3.update(tagsToWrite, currentPath);
-              if (!success) console.error("Falha ao regravar tags ID3 sem a imagem");
+              if (!success)
+                console.error("Falha ao regravar tags ID3 sem a imagem");
             } catch (e) {
               console.error("Erro ao remover imagem ID3:", e);
             }
@@ -234,11 +264,16 @@ export async function updateSong(
         console.error("Erro no processo de remoção de imagem ID3:", e);
       }
     } else {
-      const { extractAndSaveCover, findCoverByArtist } = await import("@/lib/cover");
+      const { extractAndSaveCover, findCoverByArtist } = await import(
+        "@/lib/cover"
+      );
       // currentPath aponta para o caminho atual do arquivo (pode ter sido renomeado)
       const coverPath = await extractAndSaveCover(currentPath);
       if (coverPath) {
-        await db.update(songs).set({ cover: coverPath }).where(eq(songs.id, id));
+        await db
+          .update(songs)
+          .set({ cover: coverPath })
+          .where(eq(songs.id, id));
       } else if (data.artist) {
         const found = await findCoverByArtist(data.artist);
         if (found) {
@@ -313,7 +348,12 @@ export async function addRequest(songId: number) {
   await verifyAuth();
 
   // Pegar a última ordem
-  const lastRequest = await db.select().from(requests).orderBy(desc(requests.order)).limit(1).get();
+  const lastRequest = await db
+    .select()
+    .from(requests)
+    .orderBy(desc(requests.order))
+    .limit(1)
+    .get();
 
   const newOrder = lastRequest ? lastRequest.order + 1 : 1;
 
@@ -339,7 +379,9 @@ export async function addRequest(songId: number) {
       .limit(1)
       .get();
 
-    const g = global as unknown as { io?: { emit: (event: string, payload?: unknown) => void } };
+    const g = global as unknown as {
+      io?: { emit: (event: string, payload?: unknown) => void };
+    };
     if (typeof global !== "undefined" && g.io && created) {
       g.io.emit("request:added", created);
     }
@@ -358,7 +400,9 @@ export async function deleteRequest(id: number) {
 
   // Emitir evento para atualizar clientes em tempo real
   try {
-    const g = global as unknown as { io?: { emit: (event: string, payload?: unknown) => void } };
+    const g = global as unknown as {
+      io?: { emit: (event: string, payload?: unknown) => void };
+    };
     if (typeof global !== "undefined" && g.io) {
       g.io.emit("request:removed", { requestId: id });
     }
@@ -373,7 +417,11 @@ export async function deleteRequest(id: number) {
 export async function reorderRequests(requestId: number, newOrder: number) {
   await verifyAuth();
 
-  const request = await db.select().from(requests).where(eq(requests.id, requestId)).get();
+  const request = await db
+    .select()
+    .from(requests)
+    .where(eq(requests.id, requestId))
+    .get();
   if (!request) throw new Error("Pedido não encontrado");
 
   const oldOrder = request.order;
@@ -383,18 +431,29 @@ export async function reorderRequests(requestId: number, newOrder: number) {
   // Ajustar outras ordens
   if (newOrder > oldOrder) {
     // Movendo para baixo
-    await db.update(requests).set({ order: oldOrder }).where(eq(requests.order, newOrder));
+    await db
+      .update(requests)
+      .set({ order: oldOrder })
+      .where(eq(requests.order, newOrder));
   } else {
     // Movendo para cima
-    await db.update(requests).set({ order: oldOrder }).where(eq(requests.order, newOrder));
+    await db
+      .update(requests)
+      .set({ order: oldOrder })
+      .where(eq(requests.order, newOrder));
   }
 
   // Atualizar a ordem do pedido
-  await db.update(requests).set({ order: newOrder }).where(eq(requests.id, requestId));
+  await db
+    .update(requests)
+    .set({ order: newOrder })
+    .where(eq(requests.id, requestId));
 
   // Notificar clientes que a lista de pedidos mudou (refetch no cliente)
   try {
-    const g = global as unknown as { io?: { emit: (event: string, payload?: unknown) => void } };
+    const g = global as unknown as {
+      io?: { emit: (event: string, payload?: unknown) => void };
+    };
     if (typeof global !== "undefined" && g.io) {
       g.io.emit("requests:updated");
     }

@@ -22,7 +22,10 @@ declare module "vitest" {
 
   export const vi: {
     fn<T extends (...args: unknown[]) => unknown>(impl?: T): T;
-    spyOn(obj: object, method: string): { mockImplementation(fn: (...args: unknown[]) => unknown): void };
+    spyOn(
+      obj: object,
+      method: string,
+    ): { mockImplementation(fn: (...args: unknown[]) => unknown): void };
     mock(modulePath: string, factory?: () => unknown): void;
     clearAllMocks(): void;
     resetAllMocks(): void;

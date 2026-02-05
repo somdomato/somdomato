@@ -6,7 +6,12 @@ import { EditSongModal } from "@/components/EditSongModal";
 import { Pencil, Trash2, Search } from "lucide-react";
 import { toast } from "sonner";
 
-async function fetchSongs(page: number, limit: number, query = "", genre?: string) {
+async function fetchSongs(
+  page: number,
+  limit: number,
+  query = "",
+  genre?: string,
+) {
   const params = new URLSearchParams({
     page: page.toString(),
     limit: limit.toString(),
@@ -54,7 +59,12 @@ export function SongsTable() {
   const loadSongs = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await fetchSongs(page, limit, searchQuery, genreFilter || undefined);
+      const data = await fetchSongs(
+        page,
+        limit,
+        searchQuery,
+        genreFilter || undefined,
+      );
       setSongs(data.songs);
       setTotal(data.total);
       setPages(data.pages);
@@ -113,7 +123,10 @@ export function SongsTable() {
       {/* Campo de Busca e Filtro de Gênero */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+          <Search
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+            size={20}
+          />
           <input
             type="text"
             placeholder="Buscar por música, artista ou arquivo..."
@@ -183,38 +196,80 @@ export function SongsTable() {
           <table className="w-full">
             <thead>
               <tr className="border-b border-primary/30">
-                <th className="px-4 py-3 text-left text-sm font-semibold">Capa</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold">Arquivo</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold">Artista</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold">Título</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold">Gênero</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold">Rotação</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold">Horários</th>
-                <th className="px-4 py-3 text-center text-sm font-semibold">Ações</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold">
+                  Capa
+                </th>
+                <th className="px-4 py-3 text-left text-sm font-semibold">
+                  Arquivo
+                </th>
+                <th className="px-4 py-3 text-left text-sm font-semibold">
+                  Artista
+                </th>
+                <th className="px-4 py-3 text-left text-sm font-semibold">
+                  Título
+                </th>
+                <th className="px-4 py-3 text-left text-sm font-semibold">
+                  Gênero
+                </th>
+                <th className="px-4 py-3 text-left text-sm font-semibold">
+                  Rotação
+                </th>
+                <th className="px-4 py-3 text-left text-sm font-semibold">
+                  Horários
+                </th>
+                <th className="px-4 py-3 text-center text-sm font-semibold">
+                  Ações
+                </th>
               </tr>
             </thead>
             <tbody>
               {songs.map((song) => (
-                <tr key={song.id} className="border-b border-primary/10 hover:bg-background/50 transition-colors">
+                <tr
+                  key={song.id}
+                  className="border-b border-primary/10 hover:bg-background/50 transition-colors"
+                >
                   <td className="px-4 py-3">
-                    <Image src={song.cover || "/images/logotipo.svg"} alt={song.title} width={48} height={48} className="object-cover rounded" />
+                    <Image
+                      src={song.cover || "/images/logotipo.svg"}
+                      alt={song.title}
+                      width={48}
+                      height={48}
+                      className="object-cover rounded"
+                    />
                   </td>
-                  <td className="px-4 py-3 text-sm max-w-xs truncate">{song.path.split("/").pop()}</td>
+                  <td className="px-4 py-3 text-sm max-w-xs truncate">
+                    {song.path.split("/").pop()}
+                  </td>
                   <td className="px-4 py-3 text-sm">{song.artist}</td>
                   <td className="px-4 py-3 text-sm">{song.title}</td>
                   <td className="px-4 py-3 text-sm">
-                    <span className="px-2 py-1 rounded bg-primary/20 text-primary text-xs">{song.genre || "geral"}</span>
+                    <span className="px-2 py-1 rounded bg-primary/20 text-primary text-xs">
+                      {song.genre || "geral"}
+                    </span>
                     {song.allowedInGeneral === 1 && song.genre !== "geral" && (
-                      <span className="ml-1 text-xs text-green-400" title="Permitida no Geral">
+                      <span
+                        className="ml-1 text-xs text-green-400"
+                        title="Permitida no Geral"
+                      >
                         ✓
                       </span>
                     )}
                   </td>
-                  <td className={`px-4 py-3 text-sm font-semibold ${getRotationColor(song.rotation)}`}>{song.rotation || "normal"}</td>
-                  <td className="px-4 py-3 text-sm text-gray-400">{getTimeSlotsText(song.timeSlots)}</td>
+                  <td
+                    className={`px-4 py-3 text-sm font-semibold ${getRotationColor(song.rotation)}`}
+                  >
+                    {song.rotation || "normal"}
+                  </td>
+                  <td className="px-4 py-3 text-sm text-gray-400">
+                    {getTimeSlotsText(song.timeSlots)}
+                  </td>
                   <td className="px-4 py-3">
                     <div className="flex justify-center gap-2">
-                      <button onClick={() => setEditingSong(song)} className="p-2 text-blue-400 hover:text-blue-300 transition-colors" title="Editar">
+                      <button
+                        onClick={() => setEditingSong(song)}
+                        className="p-2 text-blue-400 hover:text-blue-300 transition-colors"
+                        title="Editar"
+                      >
                         <Pencil size={18} />
                       </button>
 
@@ -228,7 +283,10 @@ export function SongsTable() {
                               body: JSON.stringify({ songId: song.id }),
                             });
                             const data = await res.json();
-                            if (!res.ok) throw new Error(data?.error || "Falha ao pedir música");
+                            if (!res.ok)
+                              throw new Error(
+                                data?.error || "Falha ao pedir música",
+                              );
                             toast.success("Pedido adicionado");
                           } catch (err) {
                             toast.error("Erro ao pedir música");
@@ -238,7 +296,17 @@ export function SongsTable() {
                         className="p-2 text-emerald-400 hover:text-emerald-300 transition-colors"
                         title="Pedir"
                       >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="18"
+                          height="18"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
                           <path d="M12 5v14"></path>
                           <path d="M5 12h14"></path>
                         </svg>
@@ -254,7 +322,10 @@ export function SongsTable() {
                               body: JSON.stringify({ songId: song.id }),
                             });
                             const data = await res.json();
-                            if (!res.ok) throw new Error(data?.error || "Falha ao tocar agora");
+                            if (!res.ok)
+                              throw new Error(
+                                data?.error || "Falha ao tocar agora",
+                              );
                             toast.success("Tocando agora (solicitado)");
                             loadSongs();
                           } catch (err) {
@@ -265,12 +336,26 @@ export function SongsTable() {
                         className="p-2 text-yellow-400 hover:text-yellow-300 transition-colors"
                         title="Tocar agora"
                       >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="18"
+                          height="18"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
                           <polygon points="5 3 19 12 5 21 5 3"></polygon>
                         </svg>
                       </button>
 
-                      <button onClick={() => handleDelete(song.id, song.title)} className="p-2 text-red-400 hover:text-red-300 transition-colors" title="Deletar">
+                      <button
+                        onClick={() => handleDelete(song.id, song.title)}
+                        className="p-2 text-red-400 hover:text-red-300 transition-colors"
+                        title="Deletar"
+                      >
                         <Trash2 size={18} />
                       </button>
                     </div>
@@ -288,10 +373,18 @@ export function SongsTable() {
           Página {page} de {pages}
         </div>
         <div className="flex gap-2">
-          <button onClick={() => setPage(Math.max(1, page - 1))} disabled={page === 1} className="px-4 py-2 bg-background border border-primary/30 rounded-md hover:bg-primary/10 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+          <button
+            onClick={() => setPage(Math.max(1, page - 1))}
+            disabled={page === 1}
+            className="px-4 py-2 bg-background border border-primary/30 rounded-md hover:bg-primary/10 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
             Anterior
           </button>
-          <button onClick={() => setPage(Math.min(pages, page + 1))} disabled={page === pages} className="px-4 py-2 bg-background border border-primary/30 rounded-md hover:bg-primary/10 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+          <button
+            onClick={() => setPage(Math.min(pages, page + 1))}
+            disabled={page === pages}
+            className="px-4 py-2 bg-background border border-primary/30 rounded-md hover:bg-primary/10 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
             Próxima
           </button>
         </div>

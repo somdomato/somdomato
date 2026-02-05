@@ -10,6 +10,9 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ error: "Senha incorreta" }, { status: 401 });
   } catch {
-    return NextResponse.json({ error: "Erro ao validar senha" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Erro ao validar senha" },
+      { status: 500 },
+    );
   }
 }

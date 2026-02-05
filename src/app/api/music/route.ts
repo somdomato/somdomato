@@ -22,7 +22,13 @@ export async function GET(request: Request) {
     const notificationParam = url.searchParams.get("notify");
     const includeNotification = notificationParam === "true";
     const genreParam = url.searchParams.get("genre") || "geral";
-    const genre = genreParam as "geral" | "gaucha" | "modao" | "arrocha" | "romantico" | "forro";
+    const genre = genreParam as
+      | "geral"
+      | "gaucha"
+      | "modao"
+      | "arrocha"
+      | "romantico"
+      | "forro";
 
     // Obter dados de músicas bloqueadas usando o helper - FILTRADO POR GÊNERO
     const blockedData = await getBlockedSongIds(genre);
@@ -44,17 +50,29 @@ export async function GET(request: Request) {
     const availableSongs = await db
       .select()
       .from(songs)
-      .where(and(sql`(${songs.timeSlots} & ${currentTimeSlot}) > 0`, genreCondition, blockedSongIds.length > 0 ? sql`${songs.id} NOT IN (${blockedSongIds.join(",")})` : sql`1=1`));
+      .where(
+        and(
+          sql`(${songs.timeSlots} & ${currentTimeSlot}) > 0`,
+          genreCondition,
+          blockedSongIds.length > 0
+            ? sql`${songs.id} NOT IN (${blockedSongIds.join(",")})`
+            : sql`1=1`,
+        ),
+      );
 
     // Filtrar músicas de artistas que tocaram recentemente
-    const filteredSongs = availableSongs.filter((song) => !blockedArtists.includes(song.artist));
+    const filteredSongs = availableSongs.filter(
+      (song) => !blockedArtists.includes(song.artist),
+    );
 
     // FALLBACK: Se não houver músicas do gênero específico, buscar do "geral"
     let finalFilteredSongs = filteredSongs;
     let usedGenre = genre;
 
     if (filteredSongs.length === 0 && genre !== "geral") {
-      console.log(`[${genre}] Nenhuma música disponível, fazendo fallback para 'geral'`);
+      console.log(
+        `[${genre}] Nenhuma música disponível, fazendo fallback para 'geral'`,
+      );
 
       // Buscar proteções do geral
       const generalBlockedData = await getBlockedSongIds("geral");
@@ -65,9 +83,19 @@ export async function GET(request: Request) {
       const generalSongs = await db
         .select()
         .from(songs)
-        .where(and(sql`(${songs.timeSlots} & ${currentTimeSlot}) > 0`, sql`(${songs.genre} = 'geral' OR ${songs.allowedInGeneral} = 1)`, generalBlockedSongIds.length > 0 ? sql`${songs.id} NOT IN (${generalBlockedSongIds.join(",")})` : sql`1=1`));
+        .where(
+          and(
+            sql`(${songs.timeSlots} & ${currentTimeSlot}) > 0`,
+            sql`(${songs.genre} = 'geral' OR ${songs.allowedInGeneral} = 1)`,
+            generalBlockedSongIds.length > 0
+              ? sql`${songs.id} NOT IN (${generalBlockedSongIds.join(",")})`
+              : sql`1=1`,
+          ),
+        );
 
-      finalFilteredSongs = generalSongs.filter((song) => !generalBlockedArtists.includes(song.artist));
+      finalFilteredSongs = generalSongs.filter(
+        (song) => !generalBlockedArtists.includes(song.artist),
+      );
       usedGenre = "geral"; // Salvar no histórico como "geral" pois é fallback
     }
 
@@ -76,7 +104,8 @@ export async function GET(request: Request) {
         ? {
             type: "warning" as const,
             title: "Nenhuma música disponível",
-            message: "Todas as músicas permitidas para este horário foram tocadas recentemente.",
+            message:
+              "Todas as músicas permitidas para este horário foram tocadas recentemente.",
           }
         : null;
 
@@ -140,7 +169,9 @@ export async function GET(request: Request) {
     // buscar por uma música aleatória válida
     if (!selectedSong) {
       for (let attempt = 0; attempt < 100; attempt++) {
-        const randomIndex = Math.floor(Math.random() * finalFilteredSongs.length);
+        const randomIndex = Math.floor(
+          Math.random() * finalFilteredSongs.length,
+        );
         selectedSong = finalFilteredSongs[randomIndex];
 
         if (await checkFileExists(selectedSong.path)) {
@@ -165,17 +196,26 @@ export async function GET(request: Request) {
       });
     }
 
-    await db.insert(history).values({ songId: selectedSong.id, genre: usedGenre }).returning();
+    await db
+      .insert(history)
+      .values({ songId: selectedSong.id, genre: usedGenre })
+      .returning();
 
     // Garantir que haja um caminho de capa no banco antes de emitir (melhor esforço)
     try {
-      const { extractAndSaveCover, findCoverByArtist } = await import("@/lib/cover");
+      const { extractAndSaveCover, findCoverByArtist } = await import(
+        "@/lib/cover"
+      );
 
       let coverPath: string | null = selectedSong.cover ?? null;
 
       // Se já houver cover salvo, verificar se o arquivo físico existe. Se não existir, forçar nova busca.
       if (coverPath) {
-        const coverFsPath = path.join(process.cwd(), "public", coverPath.replace(/^\/+/, ""));
+        const coverFsPath = path.join(
+          process.cwd(),
+          "public",
+          coverPath.replace(/^\/+/, ""),
+        );
         try {
           await fs.access(coverFsPath);
         } catch {
@@ -205,14 +245,19 @@ export async function GET(request: Request) {
 
       // Atualizar DB se encontramos um caminho válido
       if (coverPath && coverPath !== selectedSong.cover) {
-        await db.update(songs).set({ cover: coverPath }).where(eq(songs.id, selectedSong.id));
+        await db
+          .update(songs)
+          .set({ cover: coverPath })
+          .where(eq(songs.id, selectedSong.id));
         selectedSong.cover = coverPath;
       } else if (!coverPath && selectedSong.cover) {
         // A capa referenciada no DB não existe mais. **Não** gravar `null` no banco (isso
         // causa quebras de imagem). Em vez disso, registrar um aviso e usar o fallback
         // ao enviar ao frontend. Se quiser, podemos atualizar para o valor padrão explicitamente.
         try {
-          console.warn(`Capa referenciada para a música ${selectedSong.id} não existe: ${selectedSong.cover}`);
+          console.warn(
+            `Capa referenciada para a música ${selectedSong.id} não existe: ${selectedSong.cover}`,
+          );
         } catch (e) {
           console.error("Erro ao tratar capa ausente:", e);
         }
@@ -228,7 +273,8 @@ export async function GET(request: Request) {
     selectedSong.cover = safeCover;
 
     // Construir payload consistente (incluir gênero explicitamente)
-    const songGenre = (selectedSong as { genre?: string })?.genre || genre || "geral";
+    const songGenre =
+      (selectedSong as { genre?: string })?.genre || genre || "geral";
 
     const payload = {
       id: selectedSong.id,
@@ -242,7 +288,9 @@ export async function GET(request: Request) {
     if (global.io) {
       global.io.emit("song:changed", payload);
     } else {
-      console.warn("No socket.io server available: cannot emit song:changed event");
+      console.warn(
+        "No socket.io server available: cannot emit song:changed event",
+      );
     }
 
     return Response.json({ ...selectedSong });
@@ -261,6 +309,9 @@ export async function GET(request: Request) {
         }
       : null;
 
-    return Response.json({ error: "Falha ao buscar música", notification }, { status: 500 });
+    return Response.json(
+      { error: "Falha ao buscar música", notification },
+      { status: 500 },
+    );
   }
 }

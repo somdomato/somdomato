@@ -76,10 +76,16 @@ export function canPlayAtCurrentTime(timeSlots: number): boolean {
 
 // Função para obter o nome do horário
 export function getTimeSlotName(timeSlots: number): string {
-  return TIME_SLOT_COMBINATIONS[timeSlots as keyof typeof TIME_SLOT_COMBINATIONS] || "Desconhecido";
+  return (
+    TIME_SLOT_COMBINATIONS[timeSlots as keyof typeof TIME_SLOT_COMBINATIONS] ||
+    "Desconhecido"
+  );
 }
 
 // Função para obter o label curto
 export function getTimeSlotShortLabel(timeSlots: number): string {
-  return TIME_SLOT_SHORT_LABELS[timeSlots as keyof typeof TIME_SLOT_SHORT_LABELS] || "?";
+  return (
+    TIME_SLOT_SHORT_LABELS[timeSlots as keyof typeof TIME_SLOT_SHORT_LABELS] ||
+    "?"
+  );
 }

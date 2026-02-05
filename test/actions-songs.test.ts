@@ -9,8 +9,22 @@ vi.mock("@/db", async () => ({
           orderBy: () => ({
             limit: () =>
               Promise.resolve([
-                { id: 1, title: "A", artist: "X", cover: null, playedAt: Date.now(), genre: "gaucha" },
-                { id: 2, title: "B", artist: "Y", cover: null, playedAt: Date.now(), genre: "geral" },
+                {
+                  id: 1,
+                  title: "A",
+                  artist: "X",
+                  cover: null,
+                  playedAt: Date.now(),
+                  genre: "gaucha",
+                },
+                {
+                  id: 2,
+                  title: "B",
+                  artist: "Y",
+                  cover: null,
+                  playedAt: Date.now(),
+                  genre: "geral",
+                },
               ]),
           }),
         }),
@@ -24,7 +38,13 @@ vi.mock("@/db", async () => ({
 }));
 
 vi.mock("@/lib/rotation", async () => ({
-  getNextSongToPlay: async () => ({ id: 99, title: "Auto", artist: "DJ", cover: null, createdAt: Date.now() }),
+  getNextSongToPlay: async () => ({
+    id: 99,
+    title: "Auto",
+    artist: "DJ",
+    cover: null,
+    createdAt: Date.now(),
+  }),
 }));
 
 import { lastSongs, nextSongs } from "@/actions/songs";

@@ -43,7 +43,8 @@ export async function upsertSongFromFile(filePath: string) {
   const resolved = path.resolve(filePath);
   // check if file is one of expected extensions
   const ext = parse(resolved).ext.toLowerCase();
-  if (![".mp3", ".flac", ".wav", ".m4a", ".ogg"].includes(ext)) return { skipped: true, reason: "unsupported-ext" };
+  if (![".mp3", ".flac", ".wav", ".m4a", ".ogg"].includes(ext))
+    return { skipped: true, reason: "unsupported-ext" };
 
   // Read tags
   const tags = await readTags(resolved);
@@ -69,11 +70,18 @@ export async function upsertSongFromFile(filePath: string) {
   const title = tagTitle ? tagTitle : detectedTitleFromFilename || filename;
 
   // Decide whether we will create a new row or update an existing one
-  const [existing] = await db.select().from(songs).where(eq(songs.path, resolved)).limit(1);
+  const [existing] = await db
+    .select()
+    .from(songs)
+    .where(eq(songs.path, resolved))
+    .limit(1);
   const isExisting = Boolean(existing);
 
   // Insert or update
-  await db.insert(songs).values({ title, artist, path: resolved, cover }).onConflictDoUpdate({ target: songs.path, set: { title, artist, cover } });
+  await db
+    .insert(songs)
+    .values({ title, artist, path: resolved, cover })
+    .onConflictDoUpdate({ target: songs.path, set: { title, artist, cover } });
 
   return {
     skipped: false,

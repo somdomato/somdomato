@@ -3,7 +3,9 @@
  * @param timestamp - Timestamp em milissegundos ou objeto Date
  * @returns String formatada em português com tempo relativo
  */
-export function formatRelativeTime(timestamp: number | Date | null | undefined): string {
+export function formatRelativeTime(
+  timestamp: number | Date | null | undefined,
+): string {
   if (!timestamp) return "agora";
 
   const now = Date.now();

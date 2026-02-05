@@ -8,7 +8,8 @@ import { exec } from "node:child_process";
 
 async function verifyAdmin(password?: string) {
   const adminPassword = process.env.ADMIN_PASSWORD;
-  if (!adminPassword || password !== adminPassword) throw new Error("Senha inválida");
+  if (!adminPassword || password !== adminPassword)
+    throw new Error("Senha inválida");
 }
 
 export async function POST(request: Request) {
@@ -24,13 +25,18 @@ export async function POST(request: Request) {
       .where(eq(songs.id, Number(songId)))
       .limit(1)
       .get();
-    if (!s) return new Response(JSON.stringify({ error: "song not found" }), { status: 404 });
+    if (!s)
+      return new Response(JSON.stringify({ error: "song not found" }), {
+        status: 404,
+      });
 
     // make sure file exists
     try {
       await fs.access(s.path);
     } catch {
-      return new Response(JSON.stringify({ error: "file not found on disk" }), { status: 400 });
+      return new Response(JSON.stringify({ error: "file not found on disk" }), {
+        status: 400,
+      });
     }
 
     // insert into history
@@ -65,7 +71,10 @@ export async function POST(request: Request) {
       }
 
       if (coverPath && coverPath !== s.cover) {
-        await db.update(songs).set({ cover: coverPath }).where(eq(songs.id, s.id));
+        await db
+          .update(songs)
+          .set({ cover: coverPath })
+          .where(eq(songs.id, s.id));
       }
     } catch (err) {
       console.error("Erro ao garantir capa:", err);
@@ -204,7 +213,8 @@ export async function POST(request: Request) {
     //   }
     // }
 
-    const controlUrl = process.env.LIQUIDSOAP_CONTROL_URL || "http://localhost:8080";
+    const controlUrl =
+      process.env.LIQUIDSOAP_CONTROL_URL || "http://localhost:8080";
     if (controlUrl) {
       try {
         // Escapar apenas aspas duplas
@@ -228,11 +238,16 @@ export async function POST(request: Request) {
       }
     }
 
-    return new Response(JSON.stringify({ success: true, song: selectedSong }), { status: 200 });
+    return new Response(JSON.stringify({ success: true, song: selectedSong }), {
+      status: 200,
+    });
   } catch (error) {
     console.error("/api/admin/play error:", error);
     const message = error instanceof Error ? error.message : "failed";
-    if (message === "Senha inválida" || message === "Configuração de admin ausente") {
+    if (
+      message === "Senha inválida" ||
+      message === "Configuração de admin ausente"
+    ) {
       return new Response(JSON.stringify({ error: message }), { status: 401 });
     }
     return new Response(JSON.stringify({ error: message }), { status: 500 });

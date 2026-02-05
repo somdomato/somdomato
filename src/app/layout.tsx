@@ -38,10 +38,15 @@ export default function RootLayout({
     <html lang="en">
       <head>
         <meta name="viewport" content="width=device-width,initial-scale=1" />
-        <link rel="icon" href="/images/logotipo.svg" sizes="any" type="image/svg+xml" />
+        <link
+          rel="icon"
+          href="/images/logotipo.svg"
+          sizes="any"
+          type="image/svg+xml"
+        />
       </head>
       <body className={nunito.className}>
-        <Toaster position="top-right" />
+        <Toaster position="bottom-right" />
         <GenreProvider>
           <AudioProvider>
             <div className="flex flex-col min-h-screen relative">

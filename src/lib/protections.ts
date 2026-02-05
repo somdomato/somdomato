@@ -9,9 +9,15 @@ export interface RepetitionCheckResult {
   message?: string;
 }
 
-export async function checkMusicRepetition(songId: number): Promise<RepetitionCheckResult> {
+export async function checkMusicRepetition(
+  songId: number,
+): Promise<RepetitionCheckResult> {
   // Verificar se a música existe
-  const [song] = await db.select().from(songs).where(eq(songs.id, songId)).limit(1);
+  const [song] = await db
+    .select()
+    .from(songs)
+    .where(eq(songs.id, songId))
+    .limit(1);
 
   if (!song) {
     return {
@@ -22,7 +28,11 @@ export async function checkMusicRepetition(songId: number): Promise<RepetitionCh
   }
 
   // 1. Verificar se a música está nas últimas 100 do histórico
-  const lastSongs = await db.select({ songId: history.songId }).from(history).orderBy(desc(history.id)).limit(LAST_SONGS_HISTORY_LIMIT);
+  const lastSongs = await db
+    .select({ songId: history.songId })
+    .from(history)
+    .orderBy(desc(history.id))
+    .limit(LAST_SONGS_HISTORY_LIMIT);
   const lastSongIds = lastSongs.map((h) => h.songId);
 
   if (lastSongIds.includes(songId)) {
@@ -34,7 +44,11 @@ export async function checkMusicRepetition(songId: number): Promise<RepetitionCh
   }
 
   // 2. Verificar se a música já está nos pedidos pendentes
-  const existingRequest = await db.select().from(requests).where(eq(requests.songId, songId)).limit(1);
+  const existingRequest = await db
+    .select()
+    .from(requests)
+    .where(eq(requests.songId, songId))
+    .limit(1);
   if (existingRequest.length > 0) {
     return {
       isRepeated: true,
@@ -61,7 +75,10 @@ export async function checkMusicRepetition(songId: number): Promise<RepetitionCh
     .from(requests)
     .innerJoin(songs, eq(requests.songId, songs.id));
 
-  const recentArtists = [...recentHistory.map((h) => h.artist), ...pendingArtists.map((p) => p.artist)];
+  const recentArtists = [
+    ...recentHistory.map((h) => h.artist),
+    ...pendingArtists.map((p) => p.artist),
+  ];
   if (recentArtists.includes(song.artist)) {
     return {
       isRepeated: true,
@@ -82,12 +99,19 @@ export async function getBlockedSongIds(genre: string = "geral"): Promise<{
   artists: string[];
 }> {
   // Histórico das últimas N músicas DESTE GÊNERO
-  const lastSongs = await db.select({ songId: history.songId }).from(history).where(eq(history.genre, genre)).orderBy(desc(history.id)).limit(LAST_SONGS_HISTORY_LIMIT);
+  const lastSongs = await db
+    .select({ songId: history.songId })
+    .from(history)
+    .where(eq(history.genre, genre))
+    .orderBy(desc(history.id))
+    .limit(LAST_SONGS_HISTORY_LIMIT);
 
   // Requests pendentes (apenas para geral)
   let pendingRequests: { songId: number }[] = [];
   if (genre === "geral") {
-    pendingRequests = await db.select({ songId: requests.songId }).from(requests);
+    pendingRequests = await db
+      .select({ songId: requests.songId })
+      .from(requests);
   }
 
   // Artistas das últimas 10 músicas do histórico DESTE GÊNERO
@@ -113,7 +137,13 @@ export async function getBlockedSongIds(genre: string = "geral"): Promise<{
   }
 
   return {
-    songIds: [...lastSongs.map((h) => h.songId), ...pendingRequests.map((r) => r.songId)],
-    artists: [...recentHistory.map((h) => h.artist), ...pendingArtists.map((p) => p.artist)],
+    songIds: [
+      ...lastSongs.map((h) => h.songId),
+      ...pendingRequests.map((r) => r.songId),
+    ],
+    artists: [
+      ...recentHistory.map((h) => h.artist),
+      ...pendingArtists.map((p) => p.artist),
+    ],
   };
 }

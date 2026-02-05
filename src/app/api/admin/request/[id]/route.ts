@@ -1,8 +1,13 @@
 import { deleteRequest } from "@/actions/admin";
 
-export async function DELETE(_request: Request, context: { params: { id: string } | Promise<{ id: string }> }) {
+export async function DELETE(
+  _request: Request,
+  context: { params: { id: string } | Promise<{ id: string }> },
+) {
   try {
-    const p = await (context.params as Promise<{ id: string }> | { id: string });
+    const p = await (context.params as
+      | Promise<{ id: string }>
+      | { id: string });
     const id = Number(p.id);
 
     await deleteRequest(id);
@@ -10,6 +15,8 @@ export async function DELETE(_request: Request, context: { params: { id: string 
   } catch (err) {
     console.error(`/api/admin/request/[id] error:`, err);
     const message = err instanceof Error ? err.message : String(err);
-    return new Response(JSON.stringify({ error: "internal", message }), { status: 500 });
+    return new Response(JSON.stringify({ error: "internal", message }), {
+      status: 500,
+    });
   }
 }

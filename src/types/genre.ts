@@ -1,4 +1,10 @@
-export type Genre = "geral" | "gaucha" | "modao" | "arrocha" | "romantico" | "forro";
+export type Genre =
+  | "geral"
+  | "gaucha"
+  | "modao"
+  | "arrocha"
+  | "romantico"
+  | "forro";
 
 export const GENRES: { value: Genre; label: string }[] = [
   { value: "geral", label: "Geral" },

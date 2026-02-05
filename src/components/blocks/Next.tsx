@@ -8,11 +8,25 @@ import SongList from "./SongList";
 import { CircleArrowRight } from "lucide-react";
 import { formatRelativeTime } from "@/lib/format";
 
-type UpcomingEntry = { reqId: number; id: number; title: string; artist: string; cover: string | null; requestedAt?: number | null };
+type UpcomingEntry = {
+  reqId: number;
+  id: number;
+  title: string;
+  artist: string;
+  cover: string | null;
+  requestedAt?: number | null;
+};
 
-export default function Next({ data, initialNextIfNoRequests }: { data: UpcomingEntry[]; initialNextIfNoRequests: UpcomingEntry | null }) {
+export default function Next({
+  data,
+  initialNextIfNoRequests,
+}: {
+  data: UpcomingEntry[];
+  initialNextIfNoRequests: UpcomingEntry | null;
+}) {
   const [upcoming, setUpcoming] = useState<UpcomingEntry[]>(data);
-  const [nextIfNoRequests, setNextIfNoRequests] = useState<UpcomingEntry | null>(initialNextIfNoRequests);
+  const [nextIfNoRequests, setNextIfNoRequests] =
+    useState<UpcomingEntry | null>(initialNextIfNoRequests);
   const [, setTick] = useState(0);
   const { currentGenre } = useGenre();
 
@@ -34,7 +48,11 @@ export default function Next({ data, initialNextIfNoRequests }: { data: Upcoming
   }, [fetchUpcoming]);
 
   useEffect(() => {
-    const onRequestRemoved = (req: { requestId?: number; id?: number; reqId?: number }) => {
+    const onRequestRemoved = (req: {
+      requestId?: number;
+      id?: number;
+      reqId?: number;
+    }) => {
       const reqId = req?.requestId ?? req?.id ?? req?.reqId;
       if (reqId == null) {
         fetchUpcoming();
@@ -112,12 +130,31 @@ export default function Next({ data, initialNextIfNoRequests }: { data: Upcoming
     <SongBlock icon={CircleArrowRight} title="Próximas">
       {upcoming.length === 0 ? (
         nextIfNoRequests ? (
-          <SongList items={[{ id: nextIfNoRequests.reqId ?? "auto", title: nextIfNoRequests.title, artist: nextIfNoRequests.artist, cover: nextIfNoRequests.cover, requestedAt: nextIfNoRequests.requestedAt ?? null }]} renderRight={(item) => formatRelativeTime(item.requestedAt as number | null)} />
+          <SongList
+            items={[
+              {
+                id: nextIfNoRequests.reqId ?? "auto",
+                title: nextIfNoRequests.title,
+                artist: nextIfNoRequests.artist,
+                cover: nextIfNoRequests.cover,
+                requestedAt: nextIfNoRequests.requestedAt ?? null,
+              },
+            ]}
+            renderRight={(item) =>
+              formatRelativeTime(item.requestedAt as number | null)
+            }
+          />
         ) : (
           <div className="text-muted text-sm">Sem pedidos pendentes.</div>
         )
       ) : (
-        <SongList items={upcoming} keyField="reqId" renderRight={(item) => formatRelativeTime((item as UpcomingEntry).requestedAt)} />
+        <SongList
+          items={upcoming}
+          keyField="reqId"
+          renderRight={(item) =>
+            formatRelativeTime((item as UpcomingEntry).requestedAt)
+          }
+        />
       )}
     </SongBlock>
   );

@@ -148,7 +148,9 @@ export default function ArtistSongsTable({ artist }: { artist: string }) {
 
     const url = `/api/music/file/${song.id}`;
 
-    console.log(`[Preview] Starting playback for song ${song.id}: ${song.title}`);
+    console.log(
+      `[Preview] Starting playback for song ${song.id}: ${song.title}`,
+    );
     console.log(`[Preview] URL: ${url}`);
 
     try {
@@ -193,7 +195,12 @@ export default function ArtistSongsTable({ artist }: { artist: string }) {
               errorMsg = "Arquivo não encontrado ou não suportado";
               break;
           }
-          console.error("[Preview] Playback error:", errorMsg, error.message || "", error);
+          console.error(
+            "[Preview] Playback error:",
+            errorMsg,
+            error.message || "",
+            error,
+          );
         }
 
         toast.error(errorMsg);
@@ -220,7 +227,9 @@ export default function ArtistSongsTable({ artist }: { artist: string }) {
       } catch (playError: unknown) {
         // Handle play interruption gracefully
         if (playError instanceof Error && playError.name === "AbortError") {
-          console.log("Play interrupted - this is normal when stopping quickly");
+          console.log(
+            "Play interrupted - this is normal when stopping quickly",
+          );
           return;
         }
         console.error("[Preview] Play error:", playError);
@@ -228,15 +237,22 @@ export default function ArtistSongsTable({ artist }: { artist: string }) {
       }
     } catch (err) {
       console.error("[Preview] Setup error:", err);
-      const errorMsg = err instanceof Error ? err.message : "Erro ao carregar música";
+      const errorMsg =
+        err instanceof Error ? err.message : "Erro ao carregar música";
       toast.error(errorMsg);
       stopPreviewAndRestoreRadio();
     }
   };
 
   if (artist === null || artist === undefined) return null;
-  if (loading) return <div className="text-center py-8">Carregando músicas...</div>;
-  if (!songs || songs.length === 0) return <div className="text-center py-8">Nenhuma música encontrada para este artista.</div>;
+  if (loading)
+    return <div className="text-center py-8">Carregando músicas...</div>;
+  if (!songs || songs.length === 0)
+    return (
+      <div className="text-center py-8">
+        Nenhuma música encontrada para este artista.
+      </div>
+    );
 
   return (
     <div className="overflow-auto">
@@ -252,10 +268,19 @@ export default function ArtistSongsTable({ artist }: { artist: string }) {
           {songs.map((s) => {
             const isPlaying = previewSongId === s.id;
             return (
-              <tr key={s.id} className={`border-t border-primary/10 hover:bg-surface/50 transition ${isPlaying ? "bg-primary/10" : ""}`}>
+              <tr
+                key={s.id}
+                className={`border-t border-primary/10 hover:bg-surface/50 transition ${isPlaying ? "bg-primary/10" : ""}`}
+              >
                 <td className="px-4 py-3">
                   <div className="w-12 h-12 relative rounded overflow-hidden">
-                    <Image src={s.cover || "/images/logotipo.svg"} alt={s.title} fill sizes="48px" className="object-cover" />
+                    <Image
+                      src={s.cover || "/images/logotipo.svg"}
+                      alt={s.title}
+                      fill
+                      sizes="48px"
+                      className="object-cover"
+                    />
                   </div>
                 </td>
                 <td className="px-4 py-3">
@@ -263,17 +288,35 @@ export default function ArtistSongsTable({ artist }: { artist: string }) {
                   <div className="text-sm text-muted">{s.artist}</div>
                 </td>
                 <td className="px-4 py-3">
-                  <button onClick={() => handlePlayPreview(s)} aria-label={isPlaying ? `Parar ${s.title}` : `Tocar ${s.title}`} className={`inline-flex items-center gap-2 px-4 py-2 rounded transition ${isPlaying ? "bg-red-600 hover:bg-red-700 text-white" : "bg-primary hover:bg-primary/80 text-background"}`}>
+                  <button
+                    onClick={() => handlePlayPreview(s)}
+                    aria-label={
+                      isPlaying ? `Parar ${s.title}` : `Tocar ${s.title}`
+                    }
+                    className={`inline-flex items-center gap-2 px-4 py-2 rounded transition ${isPlaying ? "bg-red-600 hover:bg-red-700 text-white" : "bg-primary hover:bg-primary/80 text-background"}`}
+                  >
                     {isPlaying ? (
                       <>
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="16"
+                          height="16"
+                          fill="currentColor"
+                          viewBox="0 0 16 16"
+                        >
                           <path d="M5 3.5h6v9H5z" />
                         </svg>
                         <span className="text-sm">Parar</span>
                       </>
                     ) : (
                       <>
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="16"
+                          height="16"
+                          fill="currentColor"
+                          viewBox="0 0 16 16"
+                        >
                           <path d="M10.804 8 5 11.618V4.382L10.804 8z" />
                         </svg>
                         <span className="text-sm">Tocar</span>

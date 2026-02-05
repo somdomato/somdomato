@@ -27,7 +27,8 @@ interface AudioContextType {
 const AudioContext = createContext<AudioContextType | undefined>(undefined);
 
 export const AudioProvider = ({ children }: { children: React.ReactNode }) => {
-  const defaultSource = process.env.NEXT_PUBLIC_RADIO_SOURCE || "https://radio.somdomato.com/geral";
+  const defaultSource =
+    process.env.NEXT_PUBLIC_RADIO_SOURCE || "https://radio.somdomato.com/geral";
   const audioRef = useRef<HTMLAudioElement>(null);
   const [playing, setPlaying] = useState(false);
   const [currentSource, setCurrentSource] = useState(defaultSource);

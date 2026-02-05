@@ -31,5 +31,11 @@ export type HistoryWithSongs = {
   song: Song;
 };
 
-export type SongEntry = { id: number; title: string; artist: string; cover: string | null; count: number };
+export type SongEntry = {
+  id: number;
+  title: string;
+  artist: string;
+  cover: string | null;
+  count: number;
+};
 export type TopEntry = SongEntry;

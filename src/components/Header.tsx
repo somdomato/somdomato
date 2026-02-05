@@ -12,9 +12,20 @@ export default function Header() {
       {/* Overlay escuro */}
       <div className="absolute inset-0 -z-10 bg-background/90" />
 
-      <Link href="/" className="flex items-center gap-2 font-bold sm:text-xl md:text-2xl logo">
-        <Image src="/images/logotipo.svg" alt="Rádio Som do Mato" width={40} height={40} className="shrink-0" />
-        <span className="hidden shrink-0 md:inline-block">Rádio Som do Mato</span>
+      <Link
+        href="/"
+        className="flex items-center gap-2 font-bold sm:text-xl md:text-2xl logo"
+      >
+        <Image
+          src="/images/logotipo.svg"
+          alt="Rádio Som do Mato"
+          width={40}
+          height={40}
+          className="shrink-0"
+        />
+        <span className="hidden shrink-0 md:inline-block">
+          Rádio Som do Mato
+        </span>
         <span className="inline-block shrink-0 md:hidden">SDM</span>
       </Link>
       <div className="mt-2 gap-2 space-y-0 md:mt-0 md:flex md:items-center md:space-y-2">

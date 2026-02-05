@@ -27,7 +27,10 @@ describe("sync-music id3 helpers", () => {
     await fs.writeFile(filePath, Buffer.alloc(1024));
 
     // write initial tags via node-id3 directly
-    const ok = NodeID3.update({ title: "t", artist: "a", genre: "Sertanejo" }, filePath);
+    const ok = NodeID3.update(
+      { title: "t", artist: "a", genre: "Sertanejo" },
+      filePath,
+    );
     expect(ok).toBeTruthy();
 
     const tags = await readID3Tags(filePath);

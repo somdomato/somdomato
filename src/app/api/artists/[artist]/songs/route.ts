@@ -2,21 +2,45 @@ import { db } from "@/db";
 import { songs } from "@/db/schema";
 import { eq } from "drizzle-orm";
 
-export async function GET(_request: Request, context: { params: { artist: string } | Promise<{ artist: string }> }) {
+export async function GET(
+  _request: Request,
+  context: { params: { artist: string } | Promise<{ artist: string }> },
+) {
   try {
-    const p = await (context.params as Promise<{ artist: string }> | { artist: string });
+    const p = await (context.params as
+      | Promise<{ artist: string }>
+      | { artist: string });
     const artistParam = decodeURIComponent(p.artist);
     // Map special token to empty artist value
     const searchArtist = artistParam === "__EMPTY_ARTIST__" ? "" : artistParam;
 
     // Try exact match first
-    let rows = await db.select({ id: songs.id, title: songs.title, artist: songs.artist, cover: songs.cover, path: songs.path, createdAt: songs.createdAt }).from(songs).where(eq(songs.artist, searchArtist));
+    let rows = await db
+      .select({
+        id: songs.id,
+        title: songs.title,
+        artist: songs.artist,
+        cover: songs.cover,
+        path: songs.path,
+        createdAt: songs.createdAt,
+      })
+      .from(songs)
+      .where(eq(songs.artist, searchArtist));
 
     // Fallback: if nothing matched, attempt a normalized comparison (trim/lower/remove diacritics)
     if (!rows || rows.length === 0) {
       try {
         const { normalizeString } = await import("@/db/utils");
-        const all = await db.select({ id: songs.id, title: songs.title, artist: songs.artist, cover: songs.cover, path: songs.path, createdAt: songs.createdAt }).from(songs);
+        const all = await db
+          .select({
+            id: songs.id,
+            title: songs.title,
+            artist: songs.artist,
+            cover: songs.cover,
+            path: songs.path,
+            createdAt: songs.createdAt,
+          })
+          .from(songs);
         const normalizedParam = normalizeString(searchArtist);
         rows = all.filter((r) => normalizeString(r.artist) === normalizedParam);
       } catch (e) {

@@ -67,17 +67,31 @@ export async function selectRandomSong(excludeSongId?: number, genre?: string) {
       ) as typeof queryBuilder;
     } else {
       // Para outros gêneros: apenas músicas do gênero específico
-      queryBuilder = queryBuilder.where(excludeSongId ? and(ne(songs.rotation, "inativo"), ne(songs.id, excludeSongId), eq(songs.genre, genre)) : and(ne(songs.rotation, "inativo"), eq(songs.genre, genre))) as typeof queryBuilder;
+      queryBuilder = queryBuilder.where(
+        excludeSongId
+          ? and(
+              ne(songs.rotation, "inativo"),
+              ne(songs.id, excludeSongId),
+              eq(songs.genre, genre),
+            )
+          : and(ne(songs.rotation, "inativo"), eq(songs.genre, genre)),
+      ) as typeof queryBuilder;
     }
   } else {
     // Sem filtro de gênero (comportamento original)
-    queryBuilder = queryBuilder.where(excludeSongId ? and(ne(songs.rotation, "inativo"), ne(songs.id, excludeSongId)) : ne(songs.rotation, "inativo")) as typeof queryBuilder;
+    queryBuilder = queryBuilder.where(
+      excludeSongId
+        ? and(ne(songs.rotation, "inativo"), ne(songs.id, excludeSongId))
+        : ne(songs.rotation, "inativo"),
+    ) as typeof queryBuilder;
   }
 
   const allSongs = await queryBuilder.all();
 
   // Filtrar músicas que podem tocar no horário atual
-  const availableSongs = allSongs.filter((song) => canPlayAtCurrentTime(song.timeSlots));
+  const availableSongs = allSongs.filter((song) =>
+    canPlayAtCurrentTime(song.timeSlots),
+  );
 
   if (availableSongs.length === 0) {
     return null;
@@ -104,7 +118,10 @@ export async function selectRandomSong(excludeSongId?: number, genre?: string) {
 /**
  * Exemplo de uso em um sistema de播放
  */
-export async function getNextSongToPlay(currentSongId?: number, genre?: string) {
+export async function getNextSongToPlay(
+  currentSongId?: number,
+  genre?: string,
+) {
   // Primeiro verificar se há pedidos na fila (apenas para gênero "geral")
   // (implementar lógica de pedidos aqui)
 

@@ -14,7 +14,11 @@ interface SearchSongsParams {
 
 import { normalizeString } from "@/db/utils";
 
-export async function searchSongs({ query = "", page = 1, limit = 10 }: SearchSongsParams) {
+export async function searchSongs({
+  query = "",
+  page = 1,
+  limit = 10,
+}: SearchSongsParams) {
   const offset = (page - 1) * limit;
 
   // Se houver query de busca, normaliza e filtra sem acentos/caixa
@@ -42,7 +46,12 @@ export async function searchSongs({ query = "", page = 1, limit = 10 }: SearchSo
   }
 
   // Sem query: comportamento paginado normal
-  const allSongs = await db.select().from(songs).limit(limit).offset(offset).orderBy(songs.title);
+  const allSongs = await db
+    .select()
+    .from(songs)
+    .limit(limit)
+    .offset(offset)
+    .orderBy(songs.title);
   const [{ count }] = await db
     .select({ count: songs.id })
     .from(songs)
@@ -59,7 +68,11 @@ export async function searchSongs({ query = "", page = 1, limit = 10 }: SearchSo
 export async function requestSong(songId: number) {
   try {
     // Verificar se a música existe
-    const song = await db.select().from(songs).where(eq(songs.id, songId)).get();
+    const song = await db
+      .select()
+      .from(songs)
+      .where(eq(songs.id, songId))
+      .get();
 
     if (!song) {
       return { success: false, message: "Música não encontrada" };
@@ -69,11 +82,19 @@ export async function requestSong(songId: number) {
     const check = await checkMusicRepetition(songId);
 
     if (check.isRepeated) {
-      return { success: false, message: check.message || "Esta música não pode ser pedida agora" };
+      return {
+        success: false,
+        message: check.message || "Esta música não pode ser pedida agora",
+      };
     }
 
     // Pegar a última ordem
-    const lastRequest = await db.select().from(requests).orderBy(desc(requests.order)).limit(1).get();
+    const lastRequest = await db
+      .select()
+      .from(requests)
+      .orderBy(desc(requests.order))
+      .limit(1)
+      .get();
 
     const newOrder = lastRequest ? lastRequest.order + 1 : 1;
 
@@ -101,7 +122,9 @@ export async function requestSong(songId: number) {
 
     // Emitir evento para clientes em tempo real (se disponível)
     try {
-      const g = global as unknown as { io?: { emit: (event: string, payload?: unknown) => void } };
+      const g = global as unknown as {
+        io?: { emit: (event: string, payload?: unknown) => void };
+      };
       if (typeof global !== "undefined" && g.io && created) {
         g.io.emit("request:added", created);
       }

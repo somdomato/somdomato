@@ -1,8 +1,20 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect, type ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  type ReactNode,
+} from "react";
 
-export type Genre = "geral" | "gaucha" | "modao" | "arrocha" | "romantico" | "forro";
+export type Genre =
+  | "geral"
+  | "gaucha"
+  | "modao"
+  | "arrocha"
+  | "romantico"
+  | "forro";
 
 export const GENRES: { value: Genre; label: string; mountpoint: string }[] = [
   { value: "geral", label: "Geral", mountpoint: "geral" },
@@ -38,12 +50,18 @@ export function GenreProvider({ children }: { children: ReactNode }) {
   };
 
   const getStreamUrl = () => {
-    const baseUrl = process.env.NEXT_PUBLIC_RADIO_SOURCE || "https://radio.somdomato.com";
-    const mountpoint = GENRES.find((g) => g.value === currentGenre)?.mountpoint || "geral";
+    const baseUrl =
+      process.env.NEXT_PUBLIC_RADIO_SOURCE || "https://radio.somdomato.com";
+    const mountpoint =
+      GENRES.find((g) => g.value === currentGenre)?.mountpoint || "geral";
     return `${baseUrl}/${mountpoint}`;
   };
 
-  return <GenreContext.Provider value={{ currentGenre, setGenre, getStreamUrl }}>{children}</GenreContext.Provider>;
+  return (
+    <GenreContext.Provider value={{ currentGenre, setGenre, getStreamUrl }}>
+      {children}
+    </GenreContext.Provider>
+  );
 }
 
 export function useGenre() {

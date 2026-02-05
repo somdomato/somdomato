@@ -9,7 +9,14 @@ const MUSIC_DIR = "/var/music/sdm";
 const SUPPORTED_EXTENSIONS = [".mp3", ".flac", ".ogg", ".m4a", ".wav"];
 
 // Gêneros válidos do sistema
-export const VALID_GENRES = ["Sertanejo", "Sertanejo Gaúcho", "Modão", "Arrocha", "Romântico", "Forró"];
+export const VALID_GENRES = [
+  "Sertanejo",
+  "Sertanejo Gaúcho",
+  "Modão",
+  "Arrocha",
+  "Romântico",
+  "Forró",
+];
 
 // Mapeamento de gêneros ID3 para banco de dados
 // IMPORTANTE: "Sertanejo" no ID3 vira "geral" no banco
@@ -182,7 +189,9 @@ async function syncDatabase() {
           genreForDb = GENRE_ID3_TO_DB[genre] || "geral";
         } else {
           // Gênero inválido ou vazio: preencher com "Sertanejo"
-          console.log(`  → Gênero ID3 inválido ou vazio (${genre || "vazio"}), preenchendo com "Sertanejo"`);
+          console.log(
+            `  → Gênero ID3 inválido ou vazio (${genre || "vazio"}), preenchendo com "Sertanejo"`,
+          );
           genre = "Sertanejo";
           genreForDb = "geral";
           needsID3Update = true;

@@ -35,8 +35,22 @@ function AdminSkipButton() {
   if (!isAuthenticated) return null;
 
   return (
-    <button onClick={handle} title="Skip (admin)" className="w-8 h-8 flex items-center justify-center rounded-full bg-yellow-500 text-black hover:opacity-90 transition">
-      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <button
+      onClick={handle}
+      title="Skip (admin)"
+      className="w-8 h-8 flex items-center justify-center rounded-full bg-yellow-500 text-black hover:opacity-90 transition"
+    >
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="16"
+        height="16"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
         <path d="M6 4v16l12-8z"></path>
         <line x1="6" y1="4" x2="6" y2="20"></line>
       </svg>
@@ -54,15 +68,35 @@ const DEFAULT_TITLE = "Rádio Som do Mato";
 const DEFAULT_COVER = "/images/logotipo.svg";
 
 export default function IcecastPlayer({ className = "" }: IcecastPlayerProps) {
-  const { playing, play, pause, volume, setVolume, muted, toggleMute, title, artist, cover, setTitle, setArtist, setCover } = useAudio();
+  const {
+    playing,
+    play,
+    pause,
+    volume,
+    setVolume,
+    muted,
+    toggleMute,
+    title,
+    artist,
+    cover,
+    setTitle,
+    setArtist,
+    setCover,
+  } = useAudio();
   const { currentGenre, setGenre } = useGenre();
   const [showGenreDropdown, setShowGenreDropdown] = useState(false);
 
-  const currentGenreLabel = GENRES.find((g) => g.value === currentGenre)?.label || "Geral";
+  const currentGenreLabel =
+    GENRES.find((g) => g.value === currentGenre)?.label || "Geral";
 
   // Simplificar: usar apenas Socket.io para metadados
   useEffect(() => {
-    const handleSongChanged = (nextSong: { id: number; title: string; artist: string; cover?: string }) => {
+    const handleSongChanged = (nextSong: {
+      id: number;
+      title: string;
+      artist: string;
+      cover?: string;
+    }) => {
       setTitle(nextSong.title || DEFAULT_TITLE);
       setArtist(nextSong.artist || "A mais sertaneja");
       setCover(nextSong.cover || DEFAULT_COVER);
@@ -75,10 +109,18 @@ export default function IcecastPlayer({ className = "" }: IcecastPlayerProps) {
   }, [setTitle, setArtist, setCover]);
 
   return (
-    <div className={`flex items-center justify-between gap-3 max-w-2xl bg-gradient-to-r from-background-alt to-[#2c3b26] rounded-lg px-3 py-2 border-2 border-black/50 ${className}`}>
+    <div
+      className={`flex items-center justify-between gap-3 max-w-2xl bg-gradient-to-r from-background-alt to-[#2c3b26] rounded-lg px-3 py-2 border-2 border-black/50 ${className}`}
+    >
       {/* Cover Image */}
       <div className="flex-shrink-0">
-        <Image src={cover} alt="Cover" className="w-12 h-12 sm:w-14 sm:h-14 rounded border-2 border-primary/40 object-cover" width={56} height={56} />
+        <Image
+          src={cover}
+          alt="Cover"
+          className="w-12 h-12 sm:w-14 sm:h-14 rounded border-2 border-primary/40 object-cover"
+          width={56}
+          height={56}
+        />
       </div>
 
       {/* Metadata */}
@@ -99,17 +141,37 @@ export default function IcecastPlayer({ className = "" }: IcecastPlayerProps) {
           className="flex items-center gap-2 px-3 py-2 rounded-lg bg-primary/20 hover:bg-primary/30 border border-primary/40 transition-all group"
           title="Trocar estação"
         >
-          <Radio size={16} className="text-primary group-hover:scale-110 transition-transform" />
-          <span className="hidden sm:inline text-sm font-medium text-white">{currentGenreLabel}</span>
-          <svg className="w-4 h-4 text-primary transition-transform group-hover:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          <Radio
+            size={16}
+            className="text-primary group-hover:scale-110 transition-transform"
+          />
+          <span className="hidden sm:inline text-sm font-medium text-white">
+            {currentGenreLabel}
+          </span>
+          <svg
+            className="w-4 h-4 text-primary transition-transform group-hover:rotate-180"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M19 9l-7 7-7-7"
+            />
           </svg>
         </button>
 
         {/* Dropdown */}
         {showGenreDropdown && (
           <>
-            <button type="button" className="fixed inset-0 z-40" onClick={() => setShowGenreDropdown(false)} aria-label="Fechar" />
+            <button
+              type="button"
+              className="fixed inset-0 z-40"
+              onClick={() => setShowGenreDropdown(false)}
+              aria-label="Fechar"
+            />
             <div className="absolute right-0 top-full mt-2 bg-background-alt border-2 border-primary/50 rounded-lg shadow-2xl z-50 min-w-[200px] overflow-hidden">
               {GENRES.map((genre) => (
                 <button
@@ -118,7 +180,9 @@ export default function IcecastPlayer({ className = "" }: IcecastPlayerProps) {
                   onClick={() => {
                     setGenre(genre.value);
                     setShowGenreDropdown(false);
-                    const baseUrl = process.env.NEXT_PUBLIC_RADIO_SOURCE || "https://radio.somdomato.com";
+                    const baseUrl =
+                      process.env.NEXT_PUBLIC_RADIO_SOURCE ||
+                      "https://radio.somdomato.com";
                     const streamUrl = `${baseUrl}/${genre.mountpoint}`;
                     if (playing) {
                       pause();
@@ -143,7 +207,9 @@ export default function IcecastPlayer({ className = "" }: IcecastPlayerProps) {
         <button
           type="button"
           onClick={() => {
-            const baseUrl = process.env.NEXT_PUBLIC_RADIO_SOURCE || "https://radio.somdomato.com";
+            const baseUrl =
+              process.env.NEXT_PUBLIC_RADIO_SOURCE ||
+              "https://radio.somdomato.com";
             const streamUrl = `${baseUrl}/${GENRES.find((g) => g.value === currentGenre)?.mountpoint}`;
             if (playing) {
               pause();
@@ -154,14 +220,20 @@ export default function IcecastPlayer({ className = "" }: IcecastPlayerProps) {
           className="w-10 h-10 flex items-center justify-center rounded-full bg-primary text-white hover:bg-primary/90 transition"
           aria-label={playing ? "Pausar" : "Reproduzir"}
         >
-          {playing ? <Pause size={20} /> : <Play size={20} className="ml-0.5" />}
+          {playing ? (
+            <Pause size={20} />
+          ) : (
+            <Play size={20} className="ml-0.5" />
+          )}
         </button>
 
         {/* Reload Stream */}
         <button
           type="button"
           onClick={() => {
-            const baseUrl = process.env.NEXT_PUBLIC_RADIO_SOURCE || "https://radio.somdomato.com";
+            const baseUrl =
+              process.env.NEXT_PUBLIC_RADIO_SOURCE ||
+              "https://radio.somdomato.com";
             const streamUrl = `${baseUrl}/${GENRES.find((g) => g.value === currentGenre)?.mountpoint}`;
             if (playing) {
               pause();

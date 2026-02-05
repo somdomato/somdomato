@@ -1,6 +1,7 @@
 async function verifyAdmin(password?: string) {
   const adminPassword = process.env.ADMIN_PASSWORD;
-  if (!adminPassword || password !== adminPassword) throw new Error("Senha inválida");
+  if (!adminPassword || password !== adminPassword)
+    throw new Error("Senha inválida");
 }
 
 export async function POST(request: Request) {
@@ -16,7 +17,9 @@ export async function POST(request: Request) {
     if (!res.ok) {
       const text = await res.text();
       console.error("/api/music returned error:", text);
-      return new Response(JSON.stringify({ error: "failed to select next" }), { status: 500 });
+      return new Response(JSON.stringify({ error: "failed to select next" }), {
+        status: 500,
+      });
     }
 
     const json = await res.json();
@@ -25,17 +28,24 @@ export async function POST(request: Request) {
     const controlUrl = process.env.LIQUIDSOAP_CONTROL_URL;
     if (controlUrl) {
       try {
-        await fetch(`${controlUrl}/skip`, { method: "POST" }).catch((e) => console.error("liquidsoap skip call failed", e));
+        await fetch(`${controlUrl}/skip`, { method: "POST" }).catch((e) =>
+          console.error("liquidsoap skip call failed", e),
+        );
       } catch (err) {
         console.error("Error calling liquidsoap control endpoint:", err);
       }
     }
 
-    return new Response(JSON.stringify({ success: true, music: json }), { status: 200 });
+    return new Response(JSON.stringify({ success: true, music: json }), {
+      status: 200,
+    });
   } catch (error) {
     console.error("/api/admin/skip error:", error);
     const message = error instanceof Error ? error.message : "failed";
-    if (message === "Senha inválida" || message === "Configuração de admin ausente") {
+    if (
+      message === "Senha inválida" ||
+      message === "Configuração de admin ausente"
+    ) {
       return new Response(JSON.stringify({ error: message }), { status: 401 });
     }
     return new Response(JSON.stringify({ error: message }), { status: 500 });

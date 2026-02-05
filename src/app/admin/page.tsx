@@ -19,10 +19,16 @@ export default function AdminPage() {
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
           <h1 className="text-2xl font-bold text-primary">Admin Dashboard</h1>
           <div className="flex items-center gap-4">
-            <Link href="/" className="text-sm hover:text-primary transition-colors">
+            <Link
+              href="/"
+              className="text-sm hover:text-primary transition-colors"
+            >
               Ver Site
             </Link>
-            <button onClick={logout} className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 rounded-md transition-colors">
+            <button
+              onClick={logout}
+              className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 rounded-md transition-colors"
+            >
               <LogOut size={18} />
               Sair
             </button>
@@ -38,7 +44,10 @@ export default function AdminPage() {
               <Music size={20} />
               Músicas
             </div>
-            <Link href="/admin/requests" className="flex items-center gap-2 px-6 py-3 border-b-2 border-transparent text-gray-400 hover:text-white transition-colors">
+            <Link
+              href="/admin/requests"
+              className="flex items-center gap-2 px-6 py-3 border-b-2 border-transparent text-gray-400 hover:text-white transition-colors"
+            >
               <ListOrdered size={20} />
               Pedidos
             </Link>

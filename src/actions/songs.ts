@@ -5,7 +5,13 @@ import { songs, requests, history } from "@/db/schema";
 import { eq, desc, asc } from "drizzle-orm";
 import { getNextSongToPlay } from "@/lib/rotation";
 
-type TopEntry = { id: number; title: string; artist: string; cover: string | null; count: number };
+type TopEntry = {
+  id: number;
+  title: string;
+  artist: string;
+  cover: string | null;
+  count: number;
+};
 
 export async function lastSongs(genre?: string) {
   // Últimas 10 músicas do gênero especificado
@@ -41,20 +47,41 @@ export async function lastSongs(genre?: string) {
 
 export async function topSongs() {
   // Top 10 (agregação em memória a partir do histórico)
-  const allHistory = await db.select({ id: songs.id, title: songs.title, artist: songs.artist, cover: songs.cover }).from(history).innerJoin(songs, eq(history.songId, songs.id));
+  const allHistory = await db
+    .select({
+      id: songs.id,
+      title: songs.title,
+      artist: songs.artist,
+      cover: songs.cover,
+    })
+    .from(history)
+    .innerJoin(songs, eq(history.songId, songs.id));
 
   const map = new Map<number, TopEntry>();
   for (const row of allHistory) {
     const entry = map.get(row.id);
     if (entry) entry.count += 1;
-    else map.set(row.id, { id: row.id, title: row.title, artist: row.artist, cover: row.cover || null, count: 1 });
+    else
+      map.set(row.id, {
+        id: row.id,
+        title: row.title,
+        artist: row.artist,
+        cover: row.cover || null,
+        count: 1,
+      });
   }
 
   const top = Array.from(map.values())
     .sort((a, b) => b.count - a.count)
     .slice(0, 10);
 
-  return top.map((t) => ({ id: t.id, title: t.title, artist: t.artist, cover: t.cover || null, count: t.count }));
+  return top.map((t) => ({
+    id: t.id,
+    title: t.title,
+    artist: t.artist,
+    cover: t.cover || null,
+    count: t.count,
+  }));
 }
 export async function nextSongs(genre?: string) {
   // Apenas o gênero "geral" aceita pedidos
@@ -85,7 +112,8 @@ export async function nextSongs(genre?: string) {
   }
 
   // Se não há pedidos (ou não é geral), pegar próxima do AutoDJ do gênero especificado
-  const nextIfNoRequests = upcoming.length === 0 ? await getNextSongToPlay(undefined, genre) : null;
+  const nextIfNoRequests =
+    upcoming.length === 0 ? await getNextSongToPlay(undefined, genre) : null;
 
   const serialUpcoming = upcoming.map((u) => ({
     reqId: u.reqId,
@@ -103,7 +131,9 @@ export async function nextSongs(genre?: string) {
         title: nextIfNoRequests.title,
         artist: nextIfNoRequests.artist,
         cover: nextIfNoRequests.cover || null,
-        requestedAt: nextIfNoRequests.createdAt ? Number(nextIfNoRequests.createdAt) : null,
+        requestedAt: nextIfNoRequests.createdAt
+          ? Number(nextIfNoRequests.createdAt)
+          : null,
       }
     : null;
 

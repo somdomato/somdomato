@@ -57,7 +57,10 @@ function artistDirName(name: string): string {
 /**
  * Busca capa pelo nome do artista, considerando variações comuns
  */
-export async function findCoverByArtist(artist: string, coversDir: string = "public/covers"): Promise<string | null> {
+export async function findCoverByArtist(
+  artist: string,
+  coversDir: string = "public/covers",
+): Promise<string | null> {
   const normalized = normalizeArtistName(artist);
   const dirs = await readdir(coversDir, { withFileTypes: true });
   for (const dirent of dirs) {
@@ -67,7 +70,10 @@ export async function findCoverByArtist(artist: string, coversDir: string = "pub
       // Retorna arquivo de capa preferencialmente nomeado 'cover.*' ou o primeiro existente
       const files = await readdir(path.join(coversDir, dirent.name));
       if (files.length > 0) {
-        const coverFile = files.find((f) => /^cover\.[a-z0-9]+$/i.test(f)) || files.find((f) => /^cover/i.test(f)) || files[0];
+        const coverFile =
+          files.find((f) => /^cover\.[a-z0-9]+$/i.test(f)) ||
+          files.find((f) => /^cover/i.test(f)) ||
+          files[0];
         return path.join("/covers", dirent.name, coverFile).replace(/\\/g, "/");
       }
     }
@@ -81,7 +87,10 @@ export async function findCoverByArtist(artist: string, coversDir: string = "pub
  * @param outputDir - Diretório base onde salvar as capas (padrão: public/covers)
  * @returns Promise<string | null> - Retorna o caminho da capa salva ou null se não houver capa
  */
-export async function extractAndSaveCover(mp3FilePath: string, outputDir: string = "public/covers"): Promise<string | null> {
+export async function extractAndSaveCover(
+  mp3FilePath: string,
+  outputDir: string = "public/covers",
+): Promise<string | null> {
   return new Promise((resolve, reject) => {
     NodeID3.read(mp3FilePath, async (err: Error | null, tags: ID3Tags) => {
       if (err) {
@@ -138,7 +147,9 @@ export async function extractAndSaveCover(mp3FilePath: string, outputDir: string
  * @param mp3FilePath - Caminho para o arquivo MP3
  * @returns Promise<ImageData | null> - Retorna os dados da imagem ou null
  */
-export async function extractCoverData(mp3FilePath: string): Promise<ImageData | null> {
+export async function extractCoverData(
+  mp3FilePath: string,
+): Promise<ImageData | null> {
   return new Promise((resolve, reject) => {
     NodeID3.read(mp3FilePath, (err: Error | null, tags: ID3Tags) => {
       if (err) {
@@ -167,7 +178,10 @@ export async function extractCoverData(mp3FilePath: string): Promise<ImageData |
  * @returns Promise<CoverResult[]> - Array com resultados
  */
 
-export async function extractMultipleCovers(mp3FilePaths: string[], outputDir: string = "public/covers"): Promise<CoverResult[]> {
+export async function extractMultipleCovers(
+  mp3FilePaths: string[],
+  outputDir: string = "public/covers",
+): Promise<CoverResult[]> {
   const results: CoverResult[] = [];
 
   for (const filePath of mp3FilePaths) {

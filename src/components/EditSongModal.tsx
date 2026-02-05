@@ -26,7 +26,12 @@ interface EditSongModalProps {
   onCoverReset?: () => void; // chamado quando a capa for resetada sem fechar o modal
 }
 
-export function EditSongModal({ song, onClose, onSave, onCoverReset }: EditSongModalProps) {
+export function EditSongModal({
+  song,
+  onClose,
+  onSave,
+  onCoverReset,
+}: EditSongModalProps) {
   const [formData, setFormData] = useState({
     filename: song.path.split("/").pop() || "",
     title: song.title,
@@ -39,7 +44,9 @@ export function EditSongModal({ song, onClose, onSave, onCoverReset }: EditSongM
     coverFile: "",
   });
   const [saving, setSaving] = useState(false);
-  const [displayedCover, setDisplayedCover] = useState<string>(song.cover || "/images/logotipo.svg");
+  const [displayedCover, setDisplayedCover] = useState<string>(
+    song.cover || "/images/logotipo.svg",
+  );
   const [coverWasReset, setCoverWasReset] = useState(false); // marca que a capa foi resetada no modal
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -68,7 +75,8 @@ export function EditSongModal({ song, onClose, onSave, onCoverReset }: EditSongM
       toast.success("Música atualizada com sucesso!");
       onSave();
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Erro ao atualizar música";
+      const message =
+        error instanceof Error ? error.message : "Erro ao atualizar música";
       toast.error(message);
       console.error(error);
     } finally {
@@ -124,7 +132,8 @@ export function EditSongModal({ song, onClose, onSave, onCoverReset }: EditSongM
       // não fechar o modal — apenas avisar que a capa foi resetada para permitir reload na tabela
       onCoverReset?.();
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Erro ao resetar capa";
+      const message =
+        err instanceof Error ? err.message : "Erro ao resetar capa";
       toast.error(message);
       console.error(err);
     } finally {
@@ -138,7 +147,10 @@ export function EditSongModal({ song, onClose, onSave, onCoverReset }: EditSongM
         {/* Header */}
         <div className="flex justify-between items-center p-6 border-b border-primary/30">
           <h2 className="text-xl font-bold text-primary">Editar Música</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors">
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-white transition-colors"
+          >
             <X size={24} />
           </button>
         </div>
@@ -147,18 +159,40 @@ export function EditSongModal({ song, onClose, onSave, onCoverReset }: EditSongM
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           {/* Capa */}
           <div className="flex flex-col items-center">
-            <Image src={displayedCover} alt={song.title} width={128} height={128} className="w-32 h-32 object-cover rounded-lg" />
-            <button type="button" onClick={handleResetCover} disabled={displayedCover === "/images/logotipo.svg" || saving} className="mt-2 px-3 py-1 bg-red-600 text-white rounded disabled:opacity-50">
+            <Image
+              src={displayedCover}
+              alt={song.title}
+              width={128}
+              height={128}
+              className="w-32 h-32 object-cover rounded-lg"
+            />
+            <button
+              type="button"
+              onClick={handleResetCover}
+              disabled={displayedCover === "/images/logotipo.svg" || saving}
+              className="mt-2 px-3 py-1 bg-red-600 text-white rounded disabled:opacity-50"
+            >
               Apagar capa
             </button>
           </div>
 
           {/* Nome do Arquivo */}
           <div>
-            <label htmlFor="filename" className="block text-sm font-medium mb-2">
+            <label
+              htmlFor="filename"
+              className="block text-sm font-medium mb-2"
+            >
               Nome do Arquivo
             </label>
-            <input id="filename" type="text" value={formData.filename} onChange={(e) => setFormData((prev) => ({ ...prev, filename: e.target.value }))} className="w-full px-4 py-2 bg-background border border-primary/30 rounded-md focus:outline-none focus:ring-2 focus:ring-primary" />
+            <input
+              id="filename"
+              type="text"
+              value={formData.filename}
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, filename: e.target.value }))
+              }
+              className="w-full px-4 py-2 bg-background border border-primary/30 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+            />
           </div>
 
           {/* Título */}
@@ -166,7 +200,16 @@ export function EditSongModal({ song, onClose, onSave, onCoverReset }: EditSongM
             <label htmlFor="title" className="block text-sm font-medium mb-2">
               Título (ID3)
             </label>
-            <input id="title" type="text" value={formData.title} onChange={(e) => setFormData((prev) => ({ ...prev, title: e.target.value }))} className="w-full px-4 py-2 bg-background border border-primary/30 rounded-md focus:outline-none focus:ring-2 focus:ring-primary" required />
+            <input
+              id="title"
+              type="text"
+              value={formData.title}
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, title: e.target.value }))
+              }
+              className="w-full px-4 py-2 bg-background border border-primary/30 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+              required
+            />
           </div>
 
           {/* Artista */}
@@ -174,7 +217,16 @@ export function EditSongModal({ song, onClose, onSave, onCoverReset }: EditSongM
             <label htmlFor="artist" className="block text-sm font-medium mb-2">
               Artista (ID3)
             </label>
-            <input id="artist" type="text" value={formData.artist} onChange={(e) => setFormData((prev) => ({ ...prev, artist: e.target.value }))} className="w-full px-4 py-2 bg-background border border-primary/30 rounded-md focus:outline-none focus:ring-2 focus:ring-primary" required />
+            <input
+              id="artist"
+              type="text"
+              value={formData.artist}
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, artist: e.target.value }))
+              }
+              className="w-full px-4 py-2 bg-background border border-primary/30 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+              required
+            />
           </div>
 
           {/* Álbum */}
@@ -182,12 +234,23 @@ export function EditSongModal({ song, onClose, onSave, onCoverReset }: EditSongM
             <label htmlFor="album" className="block text-sm font-medium mb-2">
               Álbum (ID3)
             </label>
-            <input id="album" type="text" value={formData.album} onChange={(e) => setFormData((prev) => ({ ...prev, album: e.target.value }))} className="w-full px-4 py-2 bg-background border border-primary/30 rounded-md focus:outline-none focus:ring-2 focus:ring-primary" />
+            <input
+              id="album"
+              type="text"
+              value={formData.album}
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, album: e.target.value }))
+              }
+              className="w-full px-4 py-2 bg-background border border-primary/30 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+            />
           </div>
 
           {/* Upload de Capa */}
           <div>
-            <label htmlFor="coverUpload" className="block text-sm font-medium mb-2">
+            <label
+              htmlFor="coverUpload"
+              className="block text-sm font-medium mb-2"
+            >
               Atualizar Capa Embutida (ID3)
             </label>
             <input
@@ -197,27 +260,51 @@ export function EditSongModal({ song, onClose, onSave, onCoverReset }: EditSongM
               onChange={handleCoverUpload}
               className="w-full px-4 py-2 bg-background border border-primary/30 rounded-md focus:outline-none focus:ring-2 focus:ring-primary file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-background hover:file:bg-primary/80"
             />
-            <p className="text-xs text-gray-400 mt-1">A imagem será embutida no arquivo MP3 (máximo 2MB)</p>
+            <p className="text-xs text-gray-400 mt-1">
+              A imagem será embutida no arquivo MP3 (máximo 2MB)
+            </p>
             {formData.coverFile && (
               <div className="mt-2">
-                <Image src={formData.coverFile} alt="Preview" width={128} height={128} className="w-32 h-32 object-cover rounded" />
-                <p className="text-xs text-green-400 mt-1">Nova capa selecionada</p>
+                <Image
+                  src={formData.coverFile}
+                  alt="Preview"
+                  width={128}
+                  height={128}
+                  className="w-32 h-32 object-cover rounded"
+                />
+                <p className="text-xs text-green-400 mt-1">
+                  Nova capa selecionada
+                </p>
               </div>
             )}
           </div>
 
           {/* Rotação */}
           <div>
-            <label htmlFor="rotation" className="block text-sm font-medium mb-2">
+            <label
+              htmlFor="rotation"
+              className="block text-sm font-medium mb-2"
+            >
               Rotação
             </label>
-            <select id="rotation" value={formData.rotation} onChange={(e) => setFormData((prev) => ({ ...prev, rotation: e.target.value }))} className="w-full px-4 py-2 bg-background border border-primary/30 rounded-md focus:outline-none focus:ring-2 focus:ring-primary">
-              <option value="inativo">Inativo (não toca automaticamente)</option>
+            <select
+              id="rotation"
+              value={formData.rotation}
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, rotation: e.target.value }))
+              }
+              className="w-full px-4 py-2 bg-background border border-primary/30 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+            >
+              <option value="inativo">
+                Inativo (não toca automaticamente)
+              </option>
               <option value="leve">Leve (toca menos)</option>
               <option value="normal">Normal</option>
               <option value="pesado">Pesado (toca mais)</option>
             </select>
-            <p className="text-xs text-gray-400 mt-1">Define a frequência que a música toca na rotação automática</p>
+            <p className="text-xs text-gray-400 mt-1">
+              Define a frequência que a música toca na rotação automática
+            </p>
           </div>
 
           {/* Gênero */}
@@ -225,7 +312,14 @@ export function EditSongModal({ song, onClose, onSave, onCoverReset }: EditSongM
             <label htmlFor="genre" className="block text-sm font-medium mb-2">
               Gênero
             </label>
-            <select id="genre" value={formData.genre} onChange={(e) => setFormData((prev) => ({ ...prev, genre: e.target.value }))} className="w-full px-4 py-2 bg-background border border-primary/30 rounded-md focus:outline-none focus:ring-2 focus:ring-primary">
+            <select
+              id="genre"
+              value={formData.genre}
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, genre: e.target.value }))
+              }
+              className="w-full px-4 py-2 bg-background border border-primary/30 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+            >
               <option value="geral">Geral</option>
               <option value="gaucha">Gaúcha</option>
               <option value="modao">Modão</option>
@@ -233,23 +327,41 @@ export function EditSongModal({ song, onClose, onSave, onCoverReset }: EditSongM
               <option value="romantico">Romântico</option>
               <option value="forro">Forró</option>
             </select>
-            <p className="text-xs text-gray-400 mt-1">Define em qual mountpoint a música será tocada</p>
+            <p className="text-xs text-gray-400 mt-1">
+              Define em qual mountpoint a música será tocada
+            </p>
           </div>
 
           {/* Permitida no Geral */}
           {formData.genre !== "geral" && (
             <div>
               <label className="flex items-center gap-2 p-3 bg-background rounded cursor-pointer hover:bg-background/80 transition-colors">
-                <input type="checkbox" checked={formData.allowedInGeneral} onChange={(e) => setFormData((prev) => ({ ...prev, allowedInGeneral: e.target.checked }))} className="w-4 h-4 accent-primary" />
+                <input
+                  type="checkbox"
+                  checked={formData.allowedInGeneral}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      allowedInGeneral: e.target.checked,
+                    }))
+                  }
+                  className="w-4 h-4 accent-primary"
+                />
                 <span className="text-sm">Permitir tocar no Geral</span>
               </label>
-              <p className="text-xs text-gray-400 mt-1">Se marcado, esta música também pode ser tocada no mountpoint Geral</p>
+              <p className="text-xs text-gray-400 mt-1">
+                Se marcado, esta música também pode ser tocada no mountpoint
+                Geral
+              </p>
             </div>
           )}
 
           {/* Time Slots */}
           <div>
-            <label htmlFor="timeSlots" className="block text-sm font-medium mb-2">
+            <label
+              htmlFor="timeSlots"
+              className="block text-sm font-medium mb-2"
+            >
               Horários Permitidos
             </label>
             <div className="grid grid-cols-2 gap-2">
@@ -259,8 +371,16 @@ export function EditSongModal({ song, onClose, onSave, onCoverReset }: EditSongM
                 { bit: 4, label: "Tarde (12:00 - 18:00)" },
                 { bit: 8, label: "Noite (18:00 - 00:00)" },
               ].map(({ bit, label }) => (
-                <label key={bit} className="flex items-center gap-2 p-2 bg-background rounded cursor-pointer hover:bg-background/80 transition-colors">
-                  <input type="checkbox" checked={(formData.timeSlots & bit) !== 0} onChange={() => toggleTimeSlot(bit)} className="w-4 h-4 accent-primary" />
+                <label
+                  key={bit}
+                  className="flex items-center gap-2 p-2 bg-background rounded cursor-pointer hover:bg-background/80 transition-colors"
+                >
+                  <input
+                    type="checkbox"
+                    checked={(formData.timeSlots & bit) !== 0}
+                    onChange={() => toggleTimeSlot(bit)}
+                    className="w-4 h-4 accent-primary"
+                  />
                   <span className="text-sm">{label}</span>
                 </label>
               ))}
@@ -269,10 +389,18 @@ export function EditSongModal({ song, onClose, onSave, onCoverReset }: EditSongM
 
           {/* Botões */}
           <div className="flex gap-3 pt-4">
-            <button type="button" onClick={onClose} className="flex-1 px-4 py-2 bg-background border border-primary/30 rounded-md hover:bg-background/80 transition-colors">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 px-4 py-2 bg-background border border-primary/30 rounded-md hover:bg-background/80 transition-colors"
+            >
               Cancelar
             </button>
-            <button type="submit" disabled={saving} className="flex-1 px-4 py-2 bg-primary hover:bg-primary/80 text-background font-semibold rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+            <button
+              type="submit"
+              disabled={saving}
+              className="flex-1 px-4 py-2 bg-primary hover:bg-primary/80 text-background font-semibold rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
               {saving ? "Salvando..." : "Salvar"}
             </button>
           </div>

@@ -20,13 +20,21 @@ async function fetchDeleteRequest(id: number) {
 }
 
 async function fetchAddRequest(songId: number) {
-  const res = await fetch(`/api/admin/request`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ songId }) });
+  const res = await fetch(`/api/admin/request`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ songId }),
+  });
   if (!res.ok) throw new Error("failed to add request");
   return res.json();
 }
 
 async function fetchReorder(requestId: number, newOrder: number) {
-  const res = await fetch(`/api/admin/reorder`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ requestId, newOrder }) });
+  const res = await fetch(`/api/admin/reorder`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ requestId, newOrder }),
+  });
   if (!res.ok) throw new Error("failed to reorder");
   return res.json();
 }
@@ -148,7 +156,8 @@ export default function RequestsPage() {
     if (!currentRequest) return;
 
     const currentIndex = requests.findIndex((r) => r.id === requestId);
-    const targetIndex = direction === "up" ? currentIndex - 1 : currentIndex + 1;
+    const targetIndex =
+      direction === "up" ? currentIndex - 1 : currentIndex + 1;
 
     if (targetIndex < 0 || targetIndex >= requests.length) return;
 
@@ -171,10 +180,16 @@ export default function RequestsPage() {
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
           <h1 className="text-2xl font-bold text-primary">Admin Dashboard</h1>
           <div className="flex items-center gap-4">
-            <Link href="/" className="text-sm hover:text-primary transition-colors">
+            <Link
+              href="/"
+              className="text-sm hover:text-primary transition-colors"
+            >
               Ver Site
             </Link>
-            <button onClick={logout} className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 rounded-md transition-colors">
+            <button
+              onClick={logout}
+              className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 rounded-md transition-colors"
+            >
               <LogOut size={18} />
               Sair
             </button>
@@ -186,7 +201,10 @@ export default function RequestsPage() {
       <div className="bg-background-alt border-b border-primary/30">
         <div className="container mx-auto px-4">
           <div className="flex gap-2">
-            <Link href="/admin" className="flex items-center gap-2 px-6 py-3 border-b-2 border-transparent text-gray-400 hover:text-white transition-colors">
+            <Link
+              href="/admin"
+              className="flex items-center gap-2 px-6 py-3 border-b-2 border-transparent text-gray-400 hover:text-white transition-colors"
+            >
               <Music size={20} />
               Músicas
             </Link>
@@ -227,9 +245,13 @@ export default function RequestsPage() {
 
             <div className="flex items-center gap-4">
               <div className="text-sm">
-                Total: <span className="font-bold text-primary">{total}</span> pedidos
+                Total: <span className="font-bold text-primary">{total}</span>{" "}
+                pedidos
               </div>
-              <button onClick={() => setShowAddModal(true)} className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary/80 text-background font-semibold rounded-md transition-colors">
+              <button
+                onClick={() => setShowAddModal(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary/80 text-background font-semibold rounded-md transition-colors"
+              >
                 <Plus size={18} />
                 Adicionar Pedido
               </button>
@@ -241,36 +263,77 @@ export default function RequestsPage() {
             {loading ? (
               <div className="p-8 text-center">Carregando...</div>
             ) : requests.length === 0 ? (
-              <div className="p-8 text-center text-gray-400">Nenhum pedido na fila</div>
+              <div className="p-8 text-center text-gray-400">
+                Nenhum pedido na fila
+              </div>
             ) : (
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-primary/30">
-                    <th className="px-4 py-3 text-left text-sm font-semibold">Ordem</th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold">Capa</th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold">Música</th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold">Artista</th>
-                    <th className="px-4 py-3 text-center text-sm font-semibold">Ações</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold">
+                      Ordem
+                    </th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold">
+                      Capa
+                    </th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold">
+                      Música
+                    </th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold">
+                      Artista
+                    </th>
+                    <th className="px-4 py-3 text-center text-sm font-semibold">
+                      Ações
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
                   {requests.map((request, index) => (
-                    <tr key={request.id} className="border-b border-primary/10 hover:bg-background/50 transition-colors">
-                      <td className="px-4 py-3 text-sm font-semibold text-primary">#{request.order}</td>
-                      <td className="px-4 py-3">
-                        <Image src={request.song?.cover || "/images/logotipo.svg"} alt={request.song?.title || ""} width={48} height={48} className="object-cover rounded" />
+                    <tr
+                      key={request.id}
+                      className="border-b border-primary/10 hover:bg-background/50 transition-colors"
+                    >
+                      <td className="px-4 py-3 text-sm font-semibold text-primary">
+                        #{request.order}
                       </td>
-                      <td className="px-4 py-3 text-sm">{request.song?.title}</td>
-                      <td className="px-4 py-3 text-sm">{request.song?.artist}</td>
+                      <td className="px-4 py-3">
+                        <Image
+                          src={request.song?.cover || "/images/logotipo.svg"}
+                          alt={request.song?.title || ""}
+                          width={48}
+                          height={48}
+                          className="object-cover rounded"
+                        />
+                      </td>
+                      <td className="px-4 py-3 text-sm">
+                        {request.song?.title}
+                      </td>
+                      <td className="px-4 py-3 text-sm">
+                        {request.song?.artist}
+                      </td>
                       <td className="px-4 py-3">
                         <div className="flex justify-center gap-2">
-                          <button onClick={() => handleReorder(request.id, "up")} disabled={index === 0} className="p-2 text-blue-400 hover:text-blue-300 transition-colors disabled:opacity-30 disabled:cursor-not-allowed" title="Mover para cima">
+                          <button
+                            onClick={() => handleReorder(request.id, "up")}
+                            disabled={index === 0}
+                            className="p-2 text-blue-400 hover:text-blue-300 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                            title="Mover para cima"
+                          >
                             <ArrowUp size={18} />
                           </button>
-                          <button onClick={() => handleReorder(request.id, "down")} disabled={index === requests.length - 1} className="p-2 text-blue-400 hover:text-blue-300 transition-colors disabled:opacity-30 disabled:cursor-not-allowed" title="Mover para baixo">
+                          <button
+                            onClick={() => handleReorder(request.id, "down")}
+                            disabled={index === requests.length - 1}
+                            className="p-2 text-blue-400 hover:text-blue-300 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                            title="Mover para baixo"
+                          >
                             <ArrowDown size={18} />
                           </button>
-                          <button onClick={() => handleDelete(request.id)} className="p-2 text-red-400 hover:text-red-300 transition-colors" title="Deletar">
+                          <button
+                            onClick={() => handleDelete(request.id)}
+                            className="p-2 text-red-400 hover:text-red-300 transition-colors"
+                            title="Deletar"
+                          >
                             <Trash2 size={18} />
                           </button>
                         </div>
@@ -288,10 +351,18 @@ export default function RequestsPage() {
               Página {page} de {pages}
             </div>
             <div className="flex gap-2">
-              <button onClick={() => setPage(Math.max(1, page - 1))} disabled={page === 1} className="px-4 py-2 bg-background border border-primary/30 rounded-md hover:bg-primary/10 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+              <button
+                onClick={() => setPage(Math.max(1, page - 1))}
+                disabled={page === 1}
+                className="px-4 py-2 bg-background border border-primary/30 rounded-md hover:bg-primary/10 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
                 Anterior
               </button>
-              <button onClick={() => setPage(Math.min(pages, page + 1))} disabled={page === pages} className="px-4 py-2 bg-background border border-primary/30 rounded-md hover:bg-primary/10 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+              <button
+                onClick={() => setPage(Math.min(pages, page + 1))}
+                disabled={page === pages}
+                className="px-4 py-2 bg-background border border-primary/30 rounded-md hover:bg-primary/10 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
                 Próxima
               </button>
             </div>
@@ -304,7 +375,9 @@ export default function RequestsPage() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-background-alt rounded-lg shadow-xl w-full max-w-md">
             <div className="flex justify-between items-center p-6 border-b border-primary/30">
-              <h2 className="text-xl font-bold text-primary">Adicionar Pedido</h2>
+              <h2 className="text-xl font-bold text-primary">
+                Adicionar Pedido
+              </h2>
               <button
                 onClick={() => {
                   setShowAddModal(false);
@@ -317,10 +390,18 @@ export default function RequestsPage() {
             </div>
             <div className="p-6 space-y-4">
               <div>
-                <label htmlFor="song" className="block text-sm font-medium mb-2">
+                <label
+                  htmlFor="song"
+                  className="block text-sm font-medium mb-2"
+                >
                   Selecione a Música
                 </label>
-                <select id="song" value={selectedSongId || ""} onChange={(e) => setSelectedSongId(Number(e.target.value))} className="w-full px-4 py-2 bg-background border border-primary/30 rounded-md focus:outline-none focus:ring-2 focus:ring-primary">
+                <select
+                  id="song"
+                  value={selectedSongId || ""}
+                  onChange={(e) => setSelectedSongId(Number(e.target.value))}
+                  className="w-full px-4 py-2 bg-background border border-primary/30 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                >
                   <option value="">Escolha uma música...</option>
                   {songs.map((song) => (
                     <option key={song.id} value={song.id}>
@@ -339,7 +420,11 @@ export default function RequestsPage() {
                 >
                   Cancelar
                 </button>
-                <button onClick={handleAdd} disabled={adding || !selectedSongId} className="flex-1 px-4 py-2 bg-primary hover:bg-primary/80 text-background font-semibold rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                <button
+                  onClick={handleAdd}
+                  disabled={adding || !selectedSongId}
+                  className="flex-1 px-4 py-2 bg-primary hover:bg-primary/80 text-background font-semibold rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
                   {adding ? "Adicionando..." : "Adicionar"}
                 </button>
               </div>
