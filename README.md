@@ -4,6 +4,18 @@
 
 [![Deploy](https://github.com/somdomato/somdomato/actions/workflows/deploy.yml/badge.svg)](https://github.com/somdomato/somdomato/actions/workflows/deploy.yml)
 
+## 🚀 Deploy em Produção
+
+Para fazer deploy completo do sistema de rádio (Icecast + Liquidsoap + Nginx):
+
+```bash
+# No servidor de produção
+cd /var/www/somdomato
+sudo ./scripts/deploy-radio.sh
+```
+
+**Documentação completa:** [docs/DEPLOY-RADIO.md](docs/DEPLOY-RADIO.md)
+
 ## Desenvolvimento
 
 ### Requisitos
