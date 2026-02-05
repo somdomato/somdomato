@@ -179,15 +179,13 @@ export default function IcecastPlayer({ className = "" }: IcecastPlayerProps) {
                   type="button"
                   onClick={() => {
                     setGenre(genre.value);
-                    setShowGenreDropdown(false);
                     const baseUrl =
                       process.env.NEXT_PUBLIC_RADIO_SOURCE ||
                       "https://radio.somdomato.com";
                     const streamUrl = `${baseUrl}/${genre.mountpoint}`;
-                    if (playing) {
-                      pause();
-                      setTimeout(() => play(streamUrl), 100);
-                    }
+                    // Fechar dropdown e iniciar stream
+                    setShowGenreDropdown(false);
+                    play(streamUrl);
                     toast.success(`Estação: ${genre.label}`);
                   }}
                   className={`w-full px-4 py-3 text-left text-sm hover:bg-primary/20 transition-colors flex items-center gap-3 ${currentGenre === genre.value ? "bg-primary/10 text-primary font-semibold" : "text-white"}`}
@@ -261,8 +259,9 @@ export default function IcecastPlayer({ className = "" }: IcecastPlayerProps) {
           type="range"
           min="0"
           max="100"
-          value={muted ? 0 : volume * 100}
-          onChange={(e) => setVolume(Number.parseInt(e.target.value, 10) / 100)}
+          value={muted ? 0 : volume}
+          onChange={(e) => setVolume(Number.parseInt(e.target.value, 10))}
+          style={{ "--value": `${muted ? 0 : volume}%` } as React.CSSProperties}
           className="w-16 sm:w-20 accent-primary"
           aria-label="Volume"
         />

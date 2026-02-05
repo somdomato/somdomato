@@ -77,6 +77,7 @@ export default function Carousel({
                 src={image.src}
                 alt={image.alt}
                 fill
+                sizes="(max-width: 1024px) 100vw, 1024px"
                 className="object-cover"
                 priority={index === 0}
               />

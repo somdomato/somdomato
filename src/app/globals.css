@@ -65,3 +65,58 @@ button {
   font-size: 16px;
   -webkit-text-size-adjust: 100%;
 }
+
+/* Esconder controles nativos do audio element */
+audio {
+  display: none;
+}
+
+/* Estilizar track e thumb do input range para volume */
+input[type="range"] {
+  appearance: none;
+  background: transparent;
+  cursor: pointer;
+  height: 4px;
+}
+
+input[type="range"]::-webkit-slider-runnable-track {
+  appearance: none;
+  height: 4px;
+  border-radius: 2px;
+  background: linear-gradient(to right, 
+    var(--primary) 0%, 
+    var(--primary) var(--value, 50%), 
+    rgba(255, 255, 255, 0.2) var(--value, 50%), 
+    rgba(255, 255, 255, 0.2) 100%);
+}
+
+input[type="range"]::-moz-range-track {
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+input[type="range"]::-moz-range-progress {
+  height: 4px;
+  border-radius: 2px;
+  background: var(--primary);
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--primary);
+  cursor: pointer;
+  margin-top: -4px;
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--primary);
+  cursor: pointer;
+  border: none;
+}

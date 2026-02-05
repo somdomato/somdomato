@@ -33,7 +33,7 @@ export const AudioProvider = ({ children }: { children: React.ReactNode }) => {
   const [playing, setPlaying] = useState(false);
   const [currentSource, setCurrentSource] = useState(defaultSource);
   // store volume as 0-100 to match UI controls
-  const [volume, setVolumeState] = useState(70);
+  const [volume, setVolumeState] = useState(100);
   const [muted, setMuted] = useState(false);
   const [title, setTitle] = useState("Rádio Som do Mato");
   const [artist, setArtist] = useState("A mais sertaneja");
@@ -43,18 +43,24 @@ export const AudioProvider = ({ children }: { children: React.ReactNode }) => {
   const play = async (streamUrl?: string) => {
     if (audioRef.current) {
       const source = streamUrl || currentSource;
-      if (streamUrl) setCurrentSource(streamUrl);
+      if (streamUrl) {
+        setCurrentSource(streamUrl);
+        // Pausar stream anterior antes de trocar
+        audioRef.current.pause();
+      }
       audioRef.current.src = `${source}?t=${Date.now() / 1000}`;
+      audioRef.current.load(); // Forçar carregamento do novo src
       try {
         await audioRef.current.play();
         setPlaying(true);
       } catch (error) {
-        // Ignorar DOMException ao abortar stream (comportamento esperado)
+        // Ignorar DOMException ao abortar stream (comportamento esperado ao trocar gêneros)
         if (error instanceof DOMException && error.name === "AbortError") {
-          console.debug("Stream aborted (expected when changing genres)");
-        } else {
-          console.error("Error playing audio:", error);
+          // Silenciosamente ignorar - comportamento normal
+          return;
         }
+        console.error("Error playing audio:", error);
+        setPlaying(false);
       }
     }
   };
@@ -63,7 +69,6 @@ export const AudioProvider = ({ children }: { children: React.ReactNode }) => {
     if (audioRef.current) {
       audioRef.current.pause();
       setPlaying(false);
-      audioRef.current.src = `${currentSource}?t=${Date.now() / 1000}`;
     }
   };
 
