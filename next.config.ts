@@ -10,12 +10,8 @@ const nextConfig: NextConfig = {
     return [
       {
         source: "/:path*",
-        headers: [
-          {
-            key: "Permissions-Policy",
-            value: "",
-          },
-        ],
+        // No Permissions-Policy header: setting an empty value caused structured header parse errors in browsers
+        headers: [],
       },
     ];
   },

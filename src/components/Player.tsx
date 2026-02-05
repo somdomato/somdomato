@@ -110,10 +110,10 @@ export default function IcecastPlayer({ className = "" }: IcecastPlayerProps) {
 
   return (
     <div
-      className={`flex items-center justify-between gap-3 max-w-2xl bg-gradient-to-r from-background-alt to-[#2c3b26] rounded-lg px-3 py-2 border-2 border-black/50 ${className}`}
+      className={`flex items-center justify-between gap-3 max-w-2xl bg-linear-to-r from-background-alt to-[#2c3b26] rounded-lg px-3 py-2 border-2 border-black/50 ${className}`}
     >
       {/* Cover Image */}
-      <div className="flex-shrink-0">
+      <div className="shrink-0">
         <Image
           src={cover}
           alt="Cover"
@@ -172,7 +172,7 @@ export default function IcecastPlayer({ className = "" }: IcecastPlayerProps) {
               onClick={() => setShowGenreDropdown(false)}
               aria-label="Fechar"
             />
-            <div className="absolute right-0 top-full mt-2 bg-background-alt border-2 border-primary/50 rounded-lg shadow-2xl z-50 min-w-[200px] overflow-hidden">
+            <div className="absolute right-0 top-full mt-2 bg-background-alt border-2 border-primary/50 rounded-lg shadow-2xl z-50 min-w-50 overflow-hidden">
               {GENRES.map((genre) => (
                 <button
                   key={genre.value}
