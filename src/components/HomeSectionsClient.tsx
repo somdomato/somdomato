@@ -64,14 +64,14 @@ export default function HomeSectionsClient({
       title: string;
       artist: string;
       cover?: string | null;
+      playedAt?: number;
     }) => {
-      const now = Date.now();
       const entry: LatestEntry = {
         id: song.id,
         title: song.title,
         artist: song.artist,
         cover: song.cover || null,
-        playedAt: now,
+        playedAt: song.playedAt || Date.now(),
       };
 
       setLatest((prev) => {

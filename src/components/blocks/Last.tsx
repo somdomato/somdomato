@@ -45,19 +45,19 @@ export default function Last({ data }: { data: LatestEntry[] }) {
       artist: string;
       cover?: string | null;
       genre?: string;
+      playedAt?: number;
     }) => {
       // Apenas atualizar se for do gênero atual
       if (currentGenre !== "geral" && song.genre !== currentGenre) {
         return;
       }
 
-      const now = Date.now();
       const entry: LatestEntry = {
         id: song.id,
         title: song.title,
         artist: song.artist,
         cover: song.cover || null,
-        playedAt: now,
+        playedAt: song.playedAt || Date.now(),
       };
 
       setLatest((prev) => {

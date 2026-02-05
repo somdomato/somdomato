@@ -40,13 +40,22 @@ export const AudioProvider = ({ children }: { children: React.ReactNode }) => {
   const [cover, setCover] = useState("/images/logotipo.svg");
   const [previewActive, setPreviewActive] = useState(false);
 
-  const play = (streamUrl?: string) => {
+  const play = async (streamUrl?: string) => {
     if (audioRef.current) {
       const source = streamUrl || currentSource;
       if (streamUrl) setCurrentSource(streamUrl);
       audioRef.current.src = `${source}?t=${Date.now() / 1000}`;
-      audioRef.current.play();
-      setPlaying(true);
+      try {
+        await audioRef.current.play();
+        setPlaying(true);
+      } catch (error) {
+        // Ignorar DOMException ao abortar stream (comportamento esperado)
+        if (error instanceof DOMException && error.name === "AbortError") {
+          console.debug("Stream aborted (expected when changing genres)");
+        } else {
+          console.error("Error playing audio:", error);
+        }
+      }
     }
   };
 

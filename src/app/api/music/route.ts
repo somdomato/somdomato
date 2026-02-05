@@ -282,6 +282,7 @@ export async function GET(request: Request) {
       artist: selectedSong.artist,
       cover: safeCover,
       genre: songGenre,
+      playedAt: Date.now(),
     };
 
     // Emitir evento para todos os gêneros (clientes filtram por gênero localmente)
