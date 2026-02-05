@@ -1,4 +1,4 @@
-export const LAST_SONGS_HISTORY_LIMIT = 10;
+export const LAST_SONGS_HISTORY_LIMIT = 50;
 
 export const slides = [
   {

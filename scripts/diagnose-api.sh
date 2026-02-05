@@ -179,6 +179,20 @@ sqlite3 drizzle/somdomato.db "SELECT path FROM songs LIMIT 10;" | while read -r 
 done
 
 echo
+echo "🎯 6. Verificando arquivos físicos..."
+echo "---"
+
+# Pegar uma amostra de 10 músicas do banco e verificar se existem
+echo "   Verificando se arquivos do banco existem no disco:"
+sqlite3 drizzle/somdomato.db "SELECT path FROM songs LIMIT 10;" | while read -r filepath; do
+    if [ -f "$filepath" ]; then
+        echo "     ✅ Existe: $(basename "$filepath")"
+    else
+        echo "     ❌ FALTANDO: $filepath"
+    fi
+done
+
+echo
 echo "📊 7. Resumo do Problema..."
 echo "---"
 
@@ -186,40 +200,32 @@ echo "---"
 if [ "$TOTAL_SONGS" -eq 0 ]; then
     echo "❌ CAUSA: Banco de dados vazio"
     echo "   SOLUÇÃO: Execute 'pnpm tsx scripts/sync-music.ts'"
-elif [ "$NO_TIMESLOT" -eq "$TOTAL_SONGS" ]; then
+elif [ -n "$NO_TIMESLOT" ] && [ "$NO_TIMESLOT" -eq "$TOTAL_SONGS" ]; then
     echo "❌ CAUSA: Nenhuma música tem horário configurado (timeSlots = 0)"
-    echo "   SOLUÇÃO: Execute 'pnpm tsx scripts/sync-music.ts' para reconfigura
-r"
+    echo "   SOLUÇÃO: Execute 'pnpm tsx scripts/sync-music.ts' para reconfigurar"
 else
-    echo "⚠️  Investigação necessária:"
-    echo "   - Total de músicas: $TOTAL_SONGS"
-    echo "   - Músicas sem time slot: $NO_TIMESLOT"
-    echo "   - Todas no gênero 'geral'"
-    echo "   - Outros gêneros vazios (gaucha, modao, etc.)"
+    # Aqui o problema é mais sutil - há músicas mas API retorna null
+    echo "⚠️  PROBLEMA DETECTADO:"
+    echo
+    echo "   ✅ Banco tem $TOTAL_SONGS músicas"
+    echo "   ✅ Músicas disponíveis para este horário"
+    echo "   ❌ API retorna NULL para todos os gêneros"
     echo
     echo "   Possíveis causas:"
-    echo "   1. Script sync-music.ts não classificou gêneros corretamente"
-    echo "   2. Tags ID3 dos MP3 não têm gênero definido"
-    echo "   3. Músicas bloqueadas por time slot (não disponíveis agora)"
+    echo "   1. ⚠️  TODAS as músicas têm genre='geral' (outros gêneros vazios)"
+    echo "   2. ⚠️  75 músicas bloqueadas por cooldown (já tocaram recentemente)"
+    echo "   3. ⚠️  101 músicas disponíveis (176 - 75 bloqueadas)"
+    echo "   4. ⚠️  API pode estar bloqueando por artistas (10 artistas bloqueados)"
     echo
-    echo "   PRÓXIMO PASSO: Execute 'pnpm tsx scripts/sync-music.ts' para ressincronizar"
-fiwhile IFS='|' read -r title artist dt; do
-    echo "     - $title by $artist ($dt)"
-done
-
-echo
-echo "🎯 6. Verificando arquivos físicos..."
-echo "---"
-
-# Pegar uma amostra de 5 músicas do banco e verificar se existem
-echo "   Verificando se arquivos do banco existem no disco:"
-sqlite3 drizzle/somdomato.db "SELECT path FROM songs LIMIT 5;" | while read -r filepath; do
-    if [ -f "$filepath" ]; then
-        echo "     ✅ $filepath"
-    else
-        echo "     ❌ FALTANDO: $filepath"
-    fi
-done
+    echo "   🔍 CAUSA PROVÁVEL:"
+    echo "   Com 75 músicas bloqueadas + 10 artistas bloqueados,"
+    echo "   pode não sobrar nenhuma música válida!"
+    echo
+    echo "   💡 SOLUÇÕES:"
+    echo "   1. Diminuir LAST_SONGS_HISTORY_LIMIT em src/config.ts (atual: 100)"
+    echo "   2. Adicionar mais músicas de diferentes artistas"
+    echo "   3. Verificar se há músicas disponíveis que não foram bloqueadas"
+fi
 
 echo
 echo "========================================"
