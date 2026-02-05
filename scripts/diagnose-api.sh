@@ -116,61 +116,94 @@ echo
 
 # Verificar quantas músicas estão disponíveis neste horário
 echo "   Músicas disponíveis neste horário por gênero:"
-sqlite3 drizzle/somdomato.db << EOF | while IFS='|' read -r genre count; do
+
+# Calcular o bit do time slot
+if [ "$CURRENT_HOUR" -ge 0 ] && [ "$CURRENT_HOUR" -lt 6 ]; then
+    TIMEBIT=1
+elif [ "$CURRENT_HOUR" -ge 6 ] && [ "$CURRENT_HOUR" -lt 12 ]; then
+    TIMEBIT=2
+elif [ "$CURRENT_HOUR" -ge 12 ] && [ "$CURRENT_HOUR" -lt 18 ]; then
+    TIMEBIT=4
+else
+    TIMEBIT=8
+fi
+
+# Consulta simplificada
+sqlite3 drizzle/somdomato.db "
+SELECT genre, COUNT(*) 
+FROM songs 
+WHERE (timeSlots & $TIMEBIT) > 0 
+GROUP BY genre;
+" | while IFS='|' read -r genre count; do
     echo "     - $genre: $count"
 done
-SELECT 
-    CASE 
-        WHEN genre = 'geral' THEN 'geral + allowedInGeneral'
-        ELSE genre
-    END as genre_group,
-    COUNT(*) as count
-FROM songs
-WHERE (
-    CASE 
-        WHEN $CURRENT_HOUR >= 0 AND $CURRENT_HOUR < 6 THEN (timeSlots & 1) > 0
-        WHEN $CURRENT_HOUR >= 6 AND $CURRENT_HOUR < 12 THEN (timeSlots & 2) > 0
-        WHEN $CURRENT_HOUR >= 12 AND $CURRENT_HOUR < 18 THEN (timeSlots & 4) > 0
-        ELSE (timeSlots & 8) > 0
-    END
-)
-AND (
-    CASE 
-        WHEN genre = 'geral' THEN 1
-        ELSE genre != 'geral'
-    END
-)
-GROUP BY genre_group
-UNION
-SELECT 
-    'allowedInGeneral (não-geral)',
-    COUNT(*) as count
-FROM songs
-WHERE allowedInGeneral = 1
-AND genre != 'geral'
-AND (
-    CASE 
-        WHEN $CURRENT_HOUR >= 0 AND $CURRENT_HOUR < 6 THEN (timeSlots & 1) > 0
-        WHEN $CURRENT_HOUR >= 6 AND $CURRENT_HOUR < 12 THEN (timeSlots & 2) > 0
-        WHEN $CURRENT_HOUR >= 12 AND $CURRENT_HOUR < 18 THEN (timeSlots & 4) > 0
-        ELSE (timeSlots & 8) > 0
-    END
-);
-EOF
+
+# Verificar se há músicas SEM time slot configurado
+NO_TIMESLOT=$(sqlite3 drizzle/somdomato.db "SELECT COUNT(*) FROM songs WHERE timeSlots = 0 OR timeSlots IS NULL;")
+if [ "$NO_TIMESLOT" -gt 0 ]; then
+    echo "     ⚠️  Músicas sem time slot: $NO_TIMESLOT (nunca tocarão!)"
+fi
 
 echo
 echo "🚫 5. Verificando proteções/bloqueios..."
 echo "---"
 
-# Últimas 10 músicas do histórico
-echo "   Últimas 10 músicas tocadas:"
+# Verificar quantas músicas estão no histórico (bloqueadas por cooldown)
+HISTORY_COUNT=$(sqlite3 drizzle/somdomato.db "SELECT COUNT(DISTINCT songId) FROM (SELECT songId FROM history ORDER BY id DESC LIMIT 100);")
+echo "   Músicas bloqueadas por histórico (últimas 100): $HISTORY_COUNT"
+
+# Verificar artistas bloqueados (últimas 10 músicas)
+echo "   Artistas das últimas 10 músicas (bloqueados):"
 sqlite3 drizzle/somdomato.db "
-    SELECT s.title, s.artist, datetime(h.createdAt, 'localtime') 
+    SELECT DISTINCT s.artist
     FROM history h 
     JOIN songs s ON h.songId = s.id 
     ORDER BY h.id DESC 
     LIMIT 10;
-" | while IFS='|' read -r title artist dt; do
+" | while read -r artist; do
+    echo "     - $artist"
+done
+
+echo
+echo "   Últimas 5 músicas tocadas:"
+MISSING=0
+FOUND=0
+sqlite3 drizzle/somdomato.db "SELECT path FROM songs LIMIT 10;" | while read -r filepath; do
+    if [ -f "$filepath" ]; then
+        echo "     ✅ Existe: $(basename "$filepath")"
+        FOUND=$((FOUND + 1))
+    else
+        echo "     ❌ FALTANDO: $filepath"
+        MISSING=$((MISSING + 1))
+    fi
+done
+
+echo
+echo "📊 7. Resumo do Problema..."
+echo "---"
+
+# Descobrir a causa raiz
+if [ "$TOTAL_SONGS" -eq 0 ]; then
+    echo "❌ CAUSA: Banco de dados vazio"
+    echo "   SOLUÇÃO: Execute 'pnpm tsx scripts/sync-music.ts'"
+elif [ "$NO_TIMESLOT" -eq "$TOTAL_SONGS" ]; then
+    echo "❌ CAUSA: Nenhuma música tem horário configurado (timeSlots = 0)"
+    echo "   SOLUÇÃO: Execute 'pnpm tsx scripts/sync-music.ts' para reconfigura
+r"
+else
+    echo "⚠️  Investigação necessária:"
+    echo "   - Total de músicas: $TOTAL_SONGS"
+    echo "   - Músicas sem time slot: $NO_TIMESLOT"
+    echo "   - Todas no gênero 'geral'"
+    echo "   - Outros gêneros vazios (gaucha, modao, etc.)"
+    echo
+    echo "   Possíveis causas:"
+    echo "   1. Script sync-music.ts não classificou gêneros corretamente"
+    echo "   2. Tags ID3 dos MP3 não têm gênero definido"
+    echo "   3. Músicas bloqueadas por time slot (não disponíveis agora)"
+    echo
+    echo "   PRÓXIMO PASSO: Execute 'pnpm tsx scripts/sync-music.ts' para ressincronizar"
+fiwhile IFS='|' read -r title artist dt; do
     echo "     - $title by $artist ($dt)"
 done
 
