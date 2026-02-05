@@ -52,27 +52,21 @@ export async function GET(request: Request) {
     // FALLBACK: Se não houver músicas do gênero específico, buscar do "geral"
     let finalFilteredSongs = filteredSongs;
     let usedGenre = genre;
-    
+
     if (filteredSongs.length === 0 && genre !== "geral") {
       console.log(`[${genre}] Nenhuma música disponível, fazendo fallback para 'geral'`);
-      
+
       // Buscar proteções do geral
       const generalBlockedData = await getBlockedSongIds("geral");
       const generalBlockedSongIds = generalBlockedData.songIds;
       const generalBlockedArtists = generalBlockedData.artists;
-      
+
       // Buscar músicas do geral
       const generalSongs = await db
         .select()
         .from(songs)
-        .where(
-          and(
-            sql`(${songs.timeSlots} & ${currentTimeSlot}) > 0`,
-            sql`(${songs.genre} = 'geral' OR ${songs.allowedInGeneral} = 1)`,
-            generalBlockedSongIds.length > 0 ? sql`${songs.id} NOT IN (${generalBlockedSongIds.join(",")})` : sql`1=1`
-          )
-        );
-      
+        .where(and(sql`(${songs.timeSlots} & ${currentTimeSlot}) > 0`, sql`(${songs.genre} = 'geral' OR ${songs.allowedInGeneral} = 1)`, generalBlockedSongIds.length > 0 ? sql`${songs.id} NOT IN (${generalBlockedSongIds.join(",")})` : sql`1=1`));
+
       finalFilteredSongs = generalSongs.filter((song) => !generalBlockedArtists.includes(song.artist));
       usedGenre = "geral"; // Salvar no histórico como "geral" pois é fallback
     }

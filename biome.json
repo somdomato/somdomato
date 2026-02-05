@@ -9,13 +9,7 @@
     "ignoreUnknown": true,
     "includes": ["**", "!node_modules", "!.next", "!dist", "!build"]
   },
-  "javascript": {
-    "formatter": {
-      "lineWidth": 320
-    }
-  },
   "formatter": {
-    "enabled": true,
     "indentStyle": "space",
     "indentWidth": 2
   },
