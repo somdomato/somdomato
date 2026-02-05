@@ -82,12 +82,7 @@ export async function getBlockedSongIds(genre: string = "geral"): Promise<{
   artists: string[];
 }> {
   // Histórico das últimas N músicas DESTE GÊNERO
-  const lastSongs = await db
-    .select({ songId: history.songId })
-    .from(history)
-    .where(eq(history.genre, genre))
-    .orderBy(desc(history.id))
-    .limit(LAST_SONGS_HISTORY_LIMIT);
+  const lastSongs = await db.select({ songId: history.songId }).from(history).where(eq(history.genre, genre)).orderBy(desc(history.id)).limit(LAST_SONGS_HISTORY_LIMIT);
 
   // Requests pendentes (apenas para geral)
   let pendingRequests: { songId: number }[] = [];

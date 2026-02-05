@@ -49,7 +49,35 @@ export async function GET(request: Request) {
     // Filtrar músicas de artistas que tocaram recentemente
     const filteredSongs = availableSongs.filter((song) => !blockedArtists.includes(song.artist));
 
-    if (filteredSongs.length === 0) {
+    // FALLBACK: Se não houver músicas do gênero específico, buscar do "geral"
+    let finalFilteredSongs = filteredSongs;
+    let usedGenre = genre;
+    
+    if (filteredSongs.length === 0 && genre !== "geral") {
+      console.log(`[${genre}] Nenhuma música disponível, fazendo fallback para 'geral'`);
+      
+      // Buscar proteções do geral
+      const generalBlockedData = await getBlockedSongIds("geral");
+      const generalBlockedSongIds = generalBlockedData.songIds;
+      const generalBlockedArtists = generalBlockedData.artists;
+      
+      // Buscar músicas do geral
+      const generalSongs = await db
+        .select()
+        .from(songs)
+        .where(
+          and(
+            sql`(${songs.timeSlots} & ${currentTimeSlot}) > 0`,
+            sql`(${songs.genre} = 'geral' OR ${songs.allowedInGeneral} = 1)`,
+            generalBlockedSongIds.length > 0 ? sql`${songs.id} NOT IN (${generalBlockedSongIds.join(",")})` : sql`1=1`
+          )
+        );
+      
+      finalFilteredSongs = generalSongs.filter((song) => !generalBlockedArtists.includes(song.artist));
+      usedGenre = "geral"; // Salvar no histórico como "geral" pois é fallback
+    }
+
+    if (finalFilteredSongs.length === 0) {
       const notification = includeNotification
         ? {
             type: "warning" as const,
@@ -118,8 +146,8 @@ export async function GET(request: Request) {
     // buscar por uma música aleatória válida
     if (!selectedSong) {
       for (let attempt = 0; attempt < 100; attempt++) {
-        const randomIndex = Math.floor(Math.random() * filteredSongs.length);
-        selectedSong = filteredSongs[randomIndex];
+        const randomIndex = Math.floor(Math.random() * finalFilteredSongs.length);
+        selectedSong = finalFilteredSongs[randomIndex];
 
         if (await checkFileExists(selectedSong.path)) {
           break;
@@ -143,7 +171,7 @@ export async function GET(request: Request) {
       });
     }
 
-    await db.insert(history).values({ songId: selectedSong.id, genre: genre }).returning();
+    await db.insert(history).values({ songId: selectedSong.id, genre: usedGenre }).returning();
 
     // Garantir que haja um caminho de capa no banco antes de emitir (melhor esforço)
     try {
