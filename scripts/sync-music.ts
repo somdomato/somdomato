@@ -126,7 +126,7 @@ async function syncDatabase() {
   for (const song of songsInDb) {
     if (!filesOnDisk.has(song.path)) {
       console.log(`Removendo música inexistente: ${song.path}`);
-      
+
       // Deletar dependências primeiro para evitar erro de foreign key
       try {
         await db.delete(history).where(eq(history.songId, song.id));

@@ -24,8 +24,8 @@ export async function GET(request: Request) {
     const genreParam = url.searchParams.get("genre") || "geral";
     const genre = genreParam as "geral" | "gaucha" | "modao" | "arrocha" | "romantico" | "forro";
 
-    // Obter dados de músicas bloqueadas usando o helper
-    const blockedData = await getBlockedSongIds();
+    // Obter dados de músicas bloqueadas usando o helper - FILTRADO POR GÊNERO
+    const blockedData = await getBlockedSongIds(genre);
     const blockedSongIds = blockedData.songIds;
     const blockedArtists = blockedData.artists;
 
@@ -143,7 +143,7 @@ export async function GET(request: Request) {
       });
     }
 
-    await db.insert(history).values({ songId: selectedSong.id }).returning();
+    await db.insert(history).values({ songId: selectedSong.id, genre: genre }).returning();
 
     // Garantir que haja um caminho de capa no banco antes de emitir (melhor esforço)
     try {

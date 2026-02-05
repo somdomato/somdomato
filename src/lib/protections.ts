@@ -75,34 +75,47 @@ export async function checkMusicRepetition(songId: number): Promise<RepetitionCh
 
 /**
  * Obtém IDs de músicas que devem ser bloqueadas (histórico + requests pendentes)
+ * Filtra por gênero para que cada mountpoint tenha seu próprio cooldown
  */
-export async function getBlockedSongIds(): Promise<{
+export async function getBlockedSongIds(genre: string = "geral"): Promise<{
   songIds: number[];
   artists: string[];
 }> {
-  // Histórico das últimas 100 músicas
-  const lastSongs = await db.select({ songId: history.songId }).from(history).orderBy(desc(history.id)).limit(LAST_SONGS_HISTORY_LIMIT);
+  // Histórico das últimas N músicas DESTE GÊNERO
+  const lastSongs = await db
+    .select({ songId: history.songId })
+    .from(history)
+    .where(eq(history.genre, genre))
+    .orderBy(desc(history.id))
+    .limit(LAST_SONGS_HISTORY_LIMIT);
 
-  // Requests pendentes
-  const pendingRequests = await db.select({ songId: requests.songId }).from(requests);
+  // Requests pendentes (apenas para geral)
+  let pendingRequests: { songId: number }[] = [];
+  if (genre === "geral") {
+    pendingRequests = await db.select({ songId: requests.songId }).from(requests);
+  }
 
-  // Artistas das últimas 10 músicas do histórico
+  // Artistas das últimas 10 músicas do histórico DESTE GÊNERO
   const recentHistory = await db
     .select({
       artist: songs.artist,
     })
     .from(history)
     .innerJoin(songs, eq(history.songId, songs.id))
+    .where(eq(history.genre, genre))
     .orderBy(desc(history.id))
     .limit(10);
 
-  // Artistas dos requests pendentes
-  const pendingArtists = await db
-    .select({
-      artist: songs.artist,
-    })
-    .from(requests)
-    .innerJoin(songs, eq(requests.songId, songs.id));
+  // Artistas dos requests pendentes (apenas para geral)
+  let pendingArtists: { artist: string }[] = [];
+  if (genre === "geral") {
+    pendingArtists = await db
+      .select({
+        artist: songs.artist,
+      })
+      .from(requests)
+      .innerJoin(songs, eq(requests.songId, songs.id));
+  }
 
   return {
     songIds: [...lastSongs.map((h) => h.songId), ...pendingRequests.map((r) => r.songId)],

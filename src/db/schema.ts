@@ -31,6 +31,7 @@ export const history = sqliteTable("history", {
   songId: int()
     .notNull()
     .references(() => songs.id),
+  genre: text().notNull().default("geral"), // Gênero do mountpoint onde tocou
   createdAt: int({ mode: "timestamp" }).$defaultFn(() => new Date()),
 });
 
