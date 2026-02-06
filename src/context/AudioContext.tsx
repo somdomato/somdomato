@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useRef, useState } from "react";
+import { buildStreamUrl, DEFAULT_MOUNTPOINT } from "@/lib/radio";
 
 interface AudioContextType {
   title: string;
@@ -27,8 +28,10 @@ interface AudioContextType {
 const AudioContext = createContext<AudioContextType | undefined>(undefined);
 
 export const AudioProvider = ({ children }: { children: React.ReactNode }) => {
-  const defaultSource =
-    process.env.NEXT_PUBLIC_RADIO_SOURCE || "https://radio.somdomato.com/geral";
+  const defaultSource = buildStreamUrl(
+    DEFAULT_MOUNTPOINT,
+    process.env.NEXT_PUBLIC_RADIO_SOURCE,
+  );
   const audioRef = useRef<HTMLAudioElement>(null);
   const [playing, setPlaying] = useState(false);
   const [currentSource, setCurrentSource] = useState(defaultSource);

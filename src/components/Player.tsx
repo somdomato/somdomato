@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { Play, Pause, RotateCw, Volume2, VolumeX, Radio } from "lucide-react";
 import { useAudio } from "@/context/AudioContext";
 import { useGenre, GENRES } from "@/context/GenreContext";
+import { buildStreamUrl } from "@/lib/radio";
 import { socket } from "@/lib/socket";
 import { toast } from "sonner";
 import { useAuth } from "@/components/AdminAuth";
@@ -83,7 +84,7 @@ export default function IcecastPlayer({ className = "" }: IcecastPlayerProps) {
     setArtist,
     setCover,
   } = useAudio();
-  const { currentGenre, setGenre } = useGenre();
+  const { currentGenre, setGenre, getStreamUrl } = useGenre();
   const [showGenreDropdown, setShowGenreDropdown] = useState(false);
 
   const currentGenreLabel =
@@ -179,10 +180,10 @@ export default function IcecastPlayer({ className = "" }: IcecastPlayerProps) {
                   type="button"
                   onClick={() => {
                     setGenre(genre.value);
-                    const baseUrl =
-                      process.env.NEXT_PUBLIC_RADIO_SOURCE ||
-                      "https://radio.somdomato.com";
-                    const streamUrl = `${baseUrl}/${genre.mountpoint}`;
+                    const streamUrl = buildStreamUrl(
+                      genre.mountpoint,
+                      process.env.NEXT_PUBLIC_RADIO_SOURCE,
+                    );
                     // Fechar dropdown e iniciar stream
                     setShowGenreDropdown(false);
                     play(streamUrl);
@@ -205,10 +206,7 @@ export default function IcecastPlayer({ className = "" }: IcecastPlayerProps) {
         <button
           type="button"
           onClick={() => {
-            const baseUrl =
-              process.env.NEXT_PUBLIC_RADIO_SOURCE ||
-              "https://radio.somdomato.com";
-            const streamUrl = `${baseUrl}/${GENRES.find((g) => g.value === currentGenre)?.mountpoint}`;
+            const streamUrl = getStreamUrl();
             if (playing) {
               pause();
             } else {
@@ -229,10 +227,7 @@ export default function IcecastPlayer({ className = "" }: IcecastPlayerProps) {
         <button
           type="button"
           onClick={() => {
-            const baseUrl =
-              process.env.NEXT_PUBLIC_RADIO_SOURCE ||
-              "https://radio.somdomato.com";
-            const streamUrl = `${baseUrl}/${GENRES.find((g) => g.value === currentGenre)?.mountpoint}`;
+            const streamUrl = getStreamUrl();
             if (playing) {
               pause();
               setTimeout(() => play(streamUrl), 100);

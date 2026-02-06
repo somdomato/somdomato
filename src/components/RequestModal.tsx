@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { searchSongs, requestSong } from "@/actions/requests";
 import { useGenre } from "@/context/GenreContext";
 import { useAudio } from "@/context/AudioContext";
+import { buildStreamUrl } from "@/lib/radio";
 import { GenreWarningModal } from "@/components/GenreWarningModal";
 import Image from "next/image";
 import { X, Search, Music, Loader2 } from "lucide-react";
@@ -182,7 +183,10 @@ export function RequestModal({ isOpen, onClose }: RequestModalProps) {
             setGenre("geral");
             if (playing) {
               await performRequest(pendingSongId);
-              const streamUrl = "https://radio.somdomato.com/geral";
+              const streamUrl = buildStreamUrl(
+                "geral",
+                process.env.NEXT_PUBLIC_RADIO_SOURCE,
+              );
               setTimeout(() => play(streamUrl), 100);
             } else {
               await performRequest(pendingSongId);

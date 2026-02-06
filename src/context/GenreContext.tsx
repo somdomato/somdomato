@@ -7,6 +7,7 @@ import {
   useEffect,
   type ReactNode,
 } from "react";
+import { buildStreamUrl } from "@/lib/radio";
 
 export type Genre =
   | "geral"
@@ -50,11 +51,9 @@ export function GenreProvider({ children }: { children: ReactNode }) {
   };
 
   const getStreamUrl = () => {
-    const baseUrl =
-      process.env.NEXT_PUBLIC_RADIO_SOURCE || "https://radio.somdomato.com";
     const mountpoint =
       GENRES.find((g) => g.value === currentGenre)?.mountpoint || "geral";
-    return `${baseUrl}/${mountpoint}`;
+    return buildStreamUrl(mountpoint, process.env.NEXT_PUBLIC_RADIO_SOURCE);
   };
 
   return (
