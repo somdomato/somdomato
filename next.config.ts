@@ -6,15 +6,6 @@ const nextConfig: NextConfig = {
       bodySizeLimit: "4mb",
     },
   },
-  async headers() {
-    return [
-      {
-        source: "/:path*",
-        // No Permissions-Policy header: setting an empty value caused structured header parse errors in browsers
-        headers: [],
-      },
-    ];
-  },
 };
 
 export default nextConfig;
