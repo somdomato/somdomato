@@ -7,7 +7,13 @@ import {
   useEffect,
   type ReactNode,
 } from "react";
-import { RADIO_CONFIG, GENRES, DEFAULT_GENRE, buildStreamUrl, type Genre } from "@/config";
+import {
+  RADIO_CONFIG,
+  GENRES,
+  DEFAULT_GENRE,
+  buildStreamUrl,
+  type Genre,
+} from "@/config";
 
 interface GenreContextType {
   currentGenre: Genre;
