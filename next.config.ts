@@ -6,6 +6,13 @@ const nextConfig: NextConfig = {
       bodySizeLimit: "4mb",
     },
   },
+  images: {
+    remotePatterns: [
+      {
+        hostname: "cdn.somdomato.com",
+      },
+    ],
+  },
 };
 
 export default nextConfig;

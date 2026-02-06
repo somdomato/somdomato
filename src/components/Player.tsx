@@ -178,60 +178,60 @@ export default function Player({ className = "" }: { className?: string }) {
 
       {/* Station Selector */}
       {RADIO_CONFIG.multipleMounts && (
-      <div className="relative">
-        <button
-          type="button"
-          onClick={() => setShowGenreDropdown(!showGenreDropdown)}
-          className="flex items-center gap-2 px-3 py-2 rounded-lg bg-primary/20 hover:bg-primary/30 border border-primary/40 transition-all group"
-          title="Trocar estação"
-        >
-          <Radio
-            size={16}
-            className="text-primary group-hover:scale-110 transition-transform"
-          />
-          <span className="hidden sm:inline text-sm font-medium text-white">
-            {currentGenreLabel}
-          </span>
-          <svg
-            className="w-4 h-4 text-primary transition-transform group-hover:rotate-180"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
+        <div className="relative">
+          <button
+            type="button"
+            onClick={() => setShowGenreDropdown(!showGenreDropdown)}
+            className="flex items-center gap-2 px-3 py-2 rounded-lg bg-primary/20 hover:bg-primary/30 border border-primary/40 transition-all group"
+            title="Trocar estação"
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M19 9l-7 7-7-7"
+            <Radio
+              size={16}
+              className="text-primary group-hover:scale-110 transition-transform"
             />
-          </svg>
-        </button>
+            <span className="hidden sm:inline text-sm font-medium text-white">
+              {currentGenreLabel}
+            </span>
+            <svg
+              className="w-4 h-4 text-primary transition-transform group-hover:rotate-180"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M19 9l-7 7-7-7"
+              />
+            </svg>
+          </button>
 
-        {/* Dropdown */}
-        {showGenreDropdown && (
-          <>
-            <button
-              type="button"
-              className="fixed inset-0 z-40"
-              onClick={() => setShowGenreDropdown(false)}
-              aria-label="Fechar"
-            />
-            <div className="absolute right-0 top-full mt-2 bg-background-alt border-2 border-primary/50 rounded-lg shadow-2xl z-50 min-w-50 overflow-hidden">
-              {GENRES.map((genre) => (
-                <button
-                  key={genre.value}
-                  type="button"
-                  onClick={() => handleGenreChange(genre)}
-                  className={`w-full px-4 py-3 text-left text-sm hover:bg-primary/20 transition-colors flex items-center gap-3 ${currentGenre === genre.value ? "bg-primary/10 text-primary font-semibold" : "text-white"}`}
-                >
-                  <Radio size={16} />
-                  <span>{genre.label}</span>
-                </button>
-              ))}
-            </div>
-          </>
-        )}
-      </div>
+          {/* Dropdown */}
+          {showGenreDropdown && (
+            <>
+              <button
+                type="button"
+                className="fixed inset-0 z-40"
+                onClick={() => setShowGenreDropdown(false)}
+                aria-label="Fechar"
+              />
+              <div className="absolute right-0 top-full mt-2 bg-background-alt border-2 border-primary/50 rounded-lg shadow-2xl z-50 min-w-50 overflow-hidden">
+                {GENRES.map((genre) => (
+                  <button
+                    key={genre.value}
+                    type="button"
+                    onClick={() => handleGenreChange(genre)}
+                    className={`w-full px-4 py-3 text-left text-sm hover:bg-primary/20 transition-colors flex items-center gap-3 ${currentGenre === genre.value ? "bg-primary/10 text-primary font-semibold" : "text-white"}`}
+                  >
+                    <Radio size={16} />
+                    <span>{genre.label}</span>
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
       )}
 
       {/* Controls */}
