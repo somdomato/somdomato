@@ -107,15 +107,17 @@ def play_handler(_, req) =
   ignore(req.html("OK"))
 end
 
+# Harbor HTTP em porta 8081 (desenvolvimento Docker)
+# Em produção, o arquivo somdomato.liq usa porta 8080
 harbor.http.register(
-  port=8080,
+  port=8081,
   method="POST",
   "/skip",
   skip_handler
 )
 
 harbor.http.register(
-  port=8080,
+  port=8081,
   method="POST",
   "/play",
   play_handler

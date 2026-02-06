@@ -1,4 +1,19 @@
 services:
+  nginx:
+    image: nginx:alpine
+    container_name: somdomato-nginx
+    ports:
+      - "8080:80"
+    volumes:
+      - ./nginx.dev.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - icecast
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - radio-network
+    restart: unless-stopped
+
   icecast:
     image: moul/icecast
     container_name: somdomato-icecast
@@ -21,6 +36,8 @@ services:
       context: .
       dockerfile: Dockerfile.liquidsoap
     container_name: somdomato-liquidsoap
+    ports:
+      - "8081:8081"  # Porta de controle Harbor HTTP
     depends_on:
       - icecast
     volumes:

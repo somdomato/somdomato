@@ -16,58 +16,83 @@ sudo ./scripts/deploy-radio.sh
 
 **Documentação completa:** [docs/DEPLOY-RADIO.md](docs/DEPLOY-RADIO.md)
 
-## Desenvolvimento
+## 🎵 Desenvolvimento
 
-### Requisitos
+### 📋 Requisitos
 
 - Node.js 18+
 - pnpm
-- Docker e Docker Compose (para testar o sistema de rádio localmente)
+- Docker e Docker Compose
 
-### Setup Local
+### ⚡ Setup Rápido
 
 ```bash
-# Instalar dependências
+# 1. Instalar dependências
 pnpm install
 
-# Iniciar aplicação Next.js
-pnpm dev
-```
+# 2. Configurar ambiente
+cp .env.local.example .env.local
+# Ajuste MUSIC_PATH no .env.local para apontar para sua biblioteca de músicas
 
-### Testando o Sistema de Rádio com Docker
+# 3. Iniciar ambiente completo (Nginx + Icecast + Liquidsoap)
+./scripts/dev.sh
 
-Para testar o Icecast + Liquidsoap localmente:
-
-```bash
-# 1. Configurar caminho das músicas
-echo "MUSIC_PATH=/home/lucas/music/sdm" > .env.local
-
-# 2. Garantir que Next.js está rodando
+# 4. Em outro terminal, iniciar Next.js
 pnpm dev
 
-# 3. Iniciar Icecast e Liquidsoap
-docker-compose up -d
-
-# 4. Ver logs
-docker-compose logs -f
+# 5. Acessar aplicação
+# http://localhost:3000
 ```
 
 **Acessar:**
-- Stream de áudio Geral: http://localhost:8000/geral
-- Stream de áudio Gaúcha: http://localhost:8000/gaucha
-- Stream de áudio Modão: http://localhost:8000/modao
-- Stream de áudio Arrocha: http://localhost:8000/arrocha
-- Stream de áudio Romântico: http://localhost:8000/romantico
-- Stream de áudio Forró: http://localhost:8000/forro
-- Admin Icecast: http://localhost:8000/admin/ (usuário: `admin`, senha: `hackme`)
-- Status Icecast: http://localhost:8000/status.xsl
+- Aplicação: http://localhost:3000
+- Nginx (proxy): http://localhost:8080
+- Admin Icecast: http://localhost:8080/admin (usuário: `admin`, senha: `hackme`)
 
 **Para parar:**
 ```bash
-docker-compose down
+cd docker && docker-compose down
 ```
 
-Ver documentação completa em [README-docker.md](./README-docker.md)
+### 📚 Documentação
+
+- **[QUICKSTART.md](QUICKSTART.md)** - Guia de início rápido
+- **[DESENVOLVIMENTO.md](docs/DESENVOLVIMENTO.md)** - Guia detalhado de desenvolvimento
+- **[CHANGELOG.md](CHANGELOG.md)** - Mudanças recentes e simplificações
+
+### 🏗️ Arquitetura Simplificada
+
+```
+┌─────────────┐
+│  Navegador  │ :3000
+└──────┬──────┘
+       │
+┌──────▼──────┐
+│   Next.js   │ → Player, API, Socket.io
+└──────┬──────┘
+       │
+┌──────▼──────┐
+│    Nginx    │ :8080 → Proxy Reverso
+└──────┬──────┘
+       │
+┌──────▼──────┐
+│   Icecast   │ :8000 → 6 Streams
+└──────▲──────┘
+       │
+┌──────┴──────┐
+│ Liquidsoap  │ → AutoDJ + Pedidos
+└─────────────┘
+```
+
+### 🎯 Mudanças Recentes (v2.0)
+
+✅ **Configurações centralizadas** em `src/config.ts`  
+✅ **Player simplificado** com busca de metadados por gênero  
+✅ **Nginx container** para desenvolvimento  
+✅ **API de metadados** filtrada por mountpoint  
+✅ **Troca de gênero** inicia playback automaticamente  
+
+Ver [CHANGELOG.md](CHANGELOG.md) para detalhes.
 
 ## Testes
 

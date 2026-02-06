@@ -7,24 +7,7 @@ import {
   useEffect,
   type ReactNode,
 } from "react";
-import { buildStreamUrl } from "@/lib/radio";
-
-export type Genre =
-  | "geral"
-  | "gaucha"
-  | "modao"
-  | "arrocha"
-  | "romantico"
-  | "forro";
-
-export const GENRES: { value: Genre; label: string; mountpoint: string }[] = [
-  { value: "geral", label: "Geral", mountpoint: "geral" },
-  { value: "gaucha", label: "Gaúcha", mountpoint: "gaucha" },
-  { value: "modao", label: "Modão", mountpoint: "modao" },
-  { value: "arrocha", label: "Arrocha", mountpoint: "arrocha" },
-  { value: "romantico", label: "Romântico", mountpoint: "romantico" },
-  { value: "forro", label: "Forró", mountpoint: "forro" },
-];
+import { GENRES, DEFAULT_GENRE, buildStreamUrl, type Genre } from "@/config";
 
 interface GenreContextType {
   currentGenre: Genre;
@@ -35,7 +18,7 @@ interface GenreContextType {
 const GenreContext = createContext<GenreContextType | undefined>(undefined);
 
 export function GenreProvider({ children }: { children: ReactNode }) {
-  const [currentGenre, setCurrentGenre] = useState<Genre>("geral");
+  const [currentGenre, setCurrentGenre] = useState<Genre>(DEFAULT_GENRE);
 
   // Carregar gênero salvo do localStorage
   useEffect(() => {
@@ -52,8 +35,8 @@ export function GenreProvider({ children }: { children: ReactNode }) {
 
   const getStreamUrl = () => {
     const mountpoint =
-      GENRES.find((g) => g.value === currentGenre)?.mountpoint || "geral";
-    return buildStreamUrl(mountpoint, process.env.NEXT_PUBLIC_RADIO_SOURCE);
+      GENRES.find((g) => g.value === currentGenre)?.mountpoint || DEFAULT_GENRE;
+    return buildStreamUrl(mountpoint);
   };
 
   return (
@@ -70,3 +53,5 @@ export function useGenre() {
   }
   return context;
 }
+
+export { GENRES, type Genre };

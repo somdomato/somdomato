@@ -1,68 +1,68 @@
 "use client";
 
 import { createContext, useContext, useEffect, useRef, useState } from "react";
-import { buildStreamUrl, DEFAULT_MOUNTPOINT } from "@/lib/radio";
+import { buildStreamUrl, DEFAULT_SONG, DEFAULT_GENRE } from "@/config";
 
 interface AudioContextType {
   title: string;
   artist: string;
   cover: string;
-  setTitle: (title: string) => void;
-  setArtist: (artist: string) => void;
-  setCover: (cover: string) => void;
+  setSong: (song: { title: string; artist: string; cover: string }) => void;
   playing: boolean;
-  play: (streamUrl?: string) => void;
+  play: (streamUrl?: string) => Promise<void>;
   pause: () => void;
-  // volume is 0-100 in the app
   volume: number;
   setVolume: (volume: number) => void;
   muted: boolean;
-  // optionally accept a value to force mute/unmute
   toggleMute: (muted?: boolean) => void;
-  // preview mode state
-  previewActive: boolean;
-  setPreviewActive: (active: boolean) => void;
-  // register an event listener on the internal audio element; returns an unsubscribe function
 }
 
 const AudioContext = createContext<AudioContextType | undefined>(undefined);
 
 export const AudioProvider = ({ children }: { children: React.ReactNode }) => {
-  const defaultSource = buildStreamUrl(
-    DEFAULT_MOUNTPOINT,
-    process.env.NEXT_PUBLIC_RADIO_SOURCE,
-  );
   const audioRef = useRef<HTMLAudioElement>(null);
   const [playing, setPlaying] = useState(false);
-  const [currentSource, setCurrentSource] = useState(defaultSource);
-  // store volume as 0-100 to match UI controls
+  const [currentSource, setCurrentSource] = useState(
+    buildStreamUrl(DEFAULT_GENRE)
+  );
   const [volume, setVolumeState] = useState(100);
   const [muted, setMuted] = useState(false);
-  const [title, setTitle] = useState("Rádio Som do Mato");
-  const [artist, setArtist] = useState("A mais sertaneja");
-  const [cover, setCover] = useState("/images/logotipo.svg");
-  const [previewActive, setPreviewActive] = useState(false);
+  const [title, setTitle] = useState<string>(DEFAULT_SONG.title);
+  const [artist, setArtist] = useState<string>(DEFAULT_SONG.artist);
+  const [cover, setCover] = useState<string>(DEFAULT_SONG.cover);
+
+  const setSong = (song: { title: string; artist: string; cover: string }) => {
+    setTitle(song.title);
+    setArtist(song.artist);
+    setCover(song.cover);
+  };
 
   const play = async (streamUrl?: string) => {
-    if (audioRef.current) {
+    if (!audioRef.current) return;
+
+    try {
       const source = streamUrl || currentSource;
       const srcWithTs = `${source}?t=${Date.now()}`;
-      try {
-        audioRef.current.src = srcWithTs;
-        // garantir que volume/mute estejam sincronizados antes de tocar
-        audioRef.current.volume = volume / 100;
-        audioRef.current.muted = muted;
-        await audioRef.current.play();
-        setPlaying(true);
-        // atualizar fonte atual somente se trocar explicitamente
-        if (streamUrl) setCurrentSource(streamUrl);
-      } catch (error) {
-        if (error instanceof DOMException && error.name === "AbortError") {
-          return;
-        }
-        console.error("Error playing audio:", error);
-        setPlaying(false);
+
+      // Pausar antes de trocar source
+      audioRef.current.pause();
+      audioRef.current.src = srcWithTs;
+      audioRef.current.volume = volume / 100;
+      audioRef.current.muted = muted;
+
+      await audioRef.current.play();
+      setPlaying(true);
+
+      // Atualizar fonte atual se trocar explicitamente
+      if (streamUrl) {
+        setCurrentSource(streamUrl);
       }
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") {
+        return;
+      }
+      console.error("Erro ao reproduzir áudio:", error);
+      setPlaying(false);
     }
   };
 
@@ -73,21 +73,20 @@ export const AudioProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  function toggleMute(force?: boolean) {
+  const toggleMute = (force?: boolean) => {
     const next = typeof force === "boolean" ? force : !muted;
     setMuted(next);
     if (audioRef.current) {
       audioRef.current.muted = next;
     }
-  }
+  };
 
   const setVolume = (v: number) => {
-    // clamp to 0-100
     const clamped = Math.max(0, Math.min(100, Math.round(v)));
     setVolumeState(clamped);
   };
 
-  // Sync volume and muted state to audio element
+  // Sincronizar volume com elemento de áudio
   useEffect(() => {
     if (audioRef.current) {
       audioRef.current.volume = volume / 100;
@@ -108,15 +107,11 @@ export const AudioProvider = ({ children }: { children: React.ReactNode }) => {
         title,
         artist,
         cover,
-        setTitle,
-        setArtist,
-        previewActive,
-        setPreviewActive,
-        setCover,
+        setSong,
       }}
     >
       {children}
-      <audio ref={audioRef} src={currentSource} />
+      <audio ref={audioRef} />
     </AudioContext.Provider>
   );
 };

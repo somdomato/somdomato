@@ -1,15 +1,13 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Play, Pause, RotateCw, Volume2, VolumeX, Radio } from "lucide-react";
 import { useAudio } from "@/context/AudioContext";
 import { useGenre, GENRES } from "@/context/GenreContext";
-import { buildStreamUrl } from "@/lib/radio";
-import { socket } from "@/lib/socket";
+import { buildStreamUrl, RADIO_CONFIG } from "@/config";
 import { toast } from "sonner";
 import { useAuth } from "@/components/AdminAuth";
-import { useCallback } from "react";
 
 function AdminSkipButton() {
   const { isAuthenticated, password } = useAuth();
@@ -59,55 +57,80 @@ function AdminSkipButton() {
   );
 }
 
-interface IcecastPlayerProps {
-  streamUrl?: string;
-  coverImage?: string;
-  className?: string;
-}
-
-const DEFAULT_TITLE = "Rádio Som do Mato";
-const DEFAULT_COVER = "/images/logotipo.svg";
-
-export default function IcecastPlayer({ className = "" }: IcecastPlayerProps) {
-  const {
-    playing,
-    play,
-    pause,
-    volume,
-    setVolume,
-    muted,
-    toggleMute,
-    title,
-    artist,
-    cover,
-    setTitle,
-    setArtist,
-    setCover,
-  } = useAudio();
+export default function Player({ className = "" }: { className?: string }) {
+  const { playing, play, pause, volume, setVolume, muted, toggleMute, title, artist, cover, setSong } = useAudio();
   const { currentGenre, setGenre, getStreamUrl } = useGenre();
   const [showGenreDropdown, setShowGenreDropdown] = useState(false);
 
-  const currentGenreLabel =
-    GENRES.find((g) => g.value === currentGenre)?.label || "Geral";
+  const currentGenreLabel = GENRES.find((g) => g.value === currentGenre)?.label || "Geral";
 
-  // Simplificar: usar apenas Socket.io para metadados
+  // Buscar metadados do gênero atual
+  const fetchMetadata = useCallback(async () => {
+    try {
+      const response = await fetch(`/api/metadata?genre=${currentGenre}`);
+      if (response.ok) {
+        const data = await response.json();
+        if (data.song) {
+          setSong(data.song);
+        }
+      }
+    } catch (error) {
+      console.error("Erro ao buscar metadados:", error);
+    }
+  }, [currentGenre, setSong]);
+
+  // Buscar metadados na inicialização e ao trocar de gênero
   useEffect(() => {
-    const handleSongChanged = (nextSong: {
-      id: number;
-      title: string;
-      artist: string;
-      cover?: string;
-    }) => {
-      setTitle(nextSong.title || DEFAULT_TITLE);
-      setArtist(nextSong.artist || "A mais sertaneja");
-      setCover(nextSong.cover || DEFAULT_COVER);
-    };
+    fetchMetadata();
+    
+    // Poll de metadados a cada 10 segundos
+    const interval = setInterval(fetchMetadata, RADIO_CONFIG.metadataRefreshInterval);
+    
+    return () => clearInterval(interval);
+  }, [fetchMetadata]);
 
-    socket.on("song:changed", handleSongChanged);
-    return () => {
-      socket.off("song:changed", handleSongChanged);
-    };
-  }, [setTitle, setArtist, setCover]);
+  const handleGenreChange = useCallback(async (newGenre: typeof GENRES[number]) => {
+    setGenre(newGenre.value);
+    setShowGenreDropdown(false);
+    
+    const streamUrl = buildStreamUrl(newGenre.mountpoint);
+    
+    // Iniciar playback imediatamente
+    await play(streamUrl);
+    
+    // Buscar metadados do novo gênero
+    try {
+      const response = await fetch(`/api/metadata?genre=${newGenre.value}`);
+      if (response.ok) {
+        const data = await response.json();
+        if (data.song) {
+          setSong(data.song);
+        }
+      }
+    } catch (error) {
+      console.error("Erro ao buscar metadados:", error);
+    }
+    
+    toast.success(`Estação: ${newGenre.label}`);
+  }, [setGenre, play, setSong]);
+
+  const handlePlayPause = useCallback(() => {
+    if (playing) {
+      pause();
+    } else {
+      const streamUrl = getStreamUrl();
+      play(streamUrl);
+    }
+  }, [playing, pause, play, getStreamUrl]);
+
+  const handleReload = useCallback(() => {
+    if (playing) {
+      const streamUrl = getStreamUrl();
+      pause();
+      setTimeout(() => play(streamUrl), 100);
+      toast.success("Stream recarregada");
+    }
+  }, [playing, pause, play, getStreamUrl]);
 
   return (
     <div
@@ -134,7 +157,7 @@ export default function IcecastPlayer({ className = "" }: IcecastPlayerProps) {
         </div>
       </div>
 
-      {/* Station Selector - VISÍVEL E CLARO */}
+      {/* Station Selector */}
       <div className="relative">
         <button
           type="button"
@@ -178,17 +201,7 @@ export default function IcecastPlayer({ className = "" }: IcecastPlayerProps) {
                 <button
                   key={genre.value}
                   type="button"
-                  onClick={() => {
-                    setGenre(genre.value);
-                    const streamUrl = buildStreamUrl(
-                      genre.mountpoint,
-                      process.env.NEXT_PUBLIC_RADIO_SOURCE,
-                    );
-                    // Fechar dropdown e iniciar stream
-                    setShowGenreDropdown(false);
-                    play(streamUrl);
-                    toast.success(`Estação: ${genre.label}`);
-                  }}
+                  onClick={() => handleGenreChange(genre)}
                   className={`w-full px-4 py-3 text-left text-sm hover:bg-primary/20 transition-colors flex items-center gap-3 ${currentGenre === genre.value ? "bg-primary/10 text-primary font-semibold" : "text-white"}`}
                 >
                   <Radio size={16} />
@@ -205,14 +218,7 @@ export default function IcecastPlayer({ className = "" }: IcecastPlayerProps) {
         {/* Play/Pause */}
         <button
           type="button"
-          onClick={() => {
-            const streamUrl = getStreamUrl();
-            if (playing) {
-              pause();
-            } else {
-              play(streamUrl);
-            }
-          }}
+          onClick={handlePlayPause}
           className="w-10 h-10 flex items-center justify-center rounded-full bg-primary text-white hover:bg-primary/90 transition"
           aria-label={playing ? "Pausar" : "Reproduzir"}
         >
@@ -226,14 +232,7 @@ export default function IcecastPlayer({ className = "" }: IcecastPlayerProps) {
         {/* Reload Stream */}
         <button
           type="button"
-          onClick={() => {
-            const streamUrl = getStreamUrl();
-            if (playing) {
-              pause();
-              setTimeout(() => play(streamUrl), 100);
-              toast.success("Stream recarregada");
-            }
-          }}
+          onClick={handleReload}
           disabled={!playing}
           className="w-8 h-8 flex items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition disabled:opacity-30 disabled:cursor-not-allowed"
           aria-label="Recarregar stream"
