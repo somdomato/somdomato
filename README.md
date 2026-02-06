@@ -31,8 +31,9 @@ sudo ./scripts/deploy-radio.sh
 pnpm install
 
 # 2. Configurar ambiente
-cp .env.local.example .env.local
-# Ajuste MUSIC_PATH no .env.local para apontar para sua biblioteca de músicas
+cp .env.example .env
+# O arquivo .env já vem configurado para desenvolvimento
+# Ajuste MUSIC_PATH se necessário
 
 # 3. Iniciar ambiente completo (Nginx + Icecast + Liquidsoap)
 ./scripts/dev.sh

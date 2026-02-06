@@ -17,7 +17,7 @@
 - Icecast direto: `http://localhost:8000/geral` (opcional)
 - Liquidsoap skip: `http://localhost:8081/skip`
 
-**Variáveis .env.local**:
+**Variáveis .env**:
 ```env
 NEXT_PUBLIC_RADIO_SOURCE=http://localhost:8080
 NEXT_PUBLIC_RADIO_METADATA=http://localhost:8080/json

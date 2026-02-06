@@ -12,13 +12,13 @@ pnpm install
 
 ### 2. Configure o Ambiente
 
-Copie `.env.local` e ajuste se necessário:
+O arquivo `.env` já vem configurado para desenvolvimento.
+Ajuste apenas o caminho das músicas se necessário:
 
 ```bash
-cp .env.local.example .env.local
+# Editar .env e ajustar MUSIC_PATH
+nano .env
 ```
-
-As configurações padrão já estão otimizadas para desenvolvimento.
 
 ### 3. Inicie o Ambiente
 
@@ -117,12 +117,11 @@ cd docker && docker-compose up -d --build
 
 ## Variáveis de Ambiente
 
-### Desenvolvimento (`.env.local`)
+### Desenvolvimento (`.env`)
 
 ```env
 NEXT_PUBLIC_RADIO_SOURCE=http://localhost:8080
 NEXT_PUBLIC_RADIO_METADATA=http://localhost:8080/json
-NEXT_PUBLIC_SOCKET_PATH=/socket.io
 LIQUIDSOAP_CONTROL_URL=http://localhost:8081  # ⚠️ Porta 8081 em dev!
 ```
 
@@ -131,7 +130,6 @@ LIQUIDSOAP_CONTROL_URL=http://localhost:8081  # ⚠️ Porta 8081 em dev!
 ```env
 NEXT_PUBLIC_RADIO_SOURCE=https://radio.somdomato.com
 NEXT_PUBLIC_RADIO_METADATA=https://radio.somdomato.com/json
-NEXT_PUBLIC_SOCKET_PATH=/socket.io
 LIQUIDSOAP_CONTROL_URL=http://localhost:8080  # ✅ Porta 8080 em prod!
 ```
 

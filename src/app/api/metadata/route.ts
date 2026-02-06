@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
     if (!isValidGenre(genre)) {
       return NextResponse.json(
         { error: "Gênero inválido", song: DEFAULT_SONG },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
     if (!genreInfo) {
       return NextResponse.json(
         { error: "Gênero não encontrado", song: DEFAULT_SONG },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -71,9 +71,7 @@ export async function GET(request: NextRequest) {
 
     // Encontrar a source correspondente ao mountpoint
     const targetMountpoint = `/${genreInfo.mountpoint}`;
-    const source = sources.find((s) =>
-      s.listenurl?.endsWith(targetMountpoint)
-    );
+    const source = sources.find((s) => s.listenurl?.endsWith(targetMountpoint));
 
     if (!source) {
       console.warn(`Mountpoint ${targetMountpoint} não encontrado no Icecast`);
@@ -118,7 +116,7 @@ export async function GET(request: NextRequest) {
     console.error("Erro ao buscar metadados:", error);
     return NextResponse.json(
       { error: "Erro interno", song: DEFAULT_SONG },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

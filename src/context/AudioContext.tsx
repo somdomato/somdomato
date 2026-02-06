@@ -23,7 +23,7 @@ export const AudioProvider = ({ children }: { children: React.ReactNode }) => {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [playing, setPlaying] = useState(false);
   const [currentSource, setCurrentSource] = useState(
-    buildStreamUrl(DEFAULT_GENRE)
+    buildStreamUrl(DEFAULT_GENRE),
   );
   const [volume, setVolumeState] = useState(100);
   const [muted, setMuted] = useState(false);

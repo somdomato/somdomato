@@ -5,13 +5,10 @@
 export const RADIO_CONFIG = {
   // Base URL da rádio (Icecast)
   baseUrl: process.env.NEXT_PUBLIC_RADIO_SOURCE || "http://localhost:8000",
-  
+
   // URL da API de metadados JSON do Icecast
   metadataUrl: process.env.NEXT_PUBLIC_RADIO_METADATA || "https://radio.somdomato.com/json",
-  
-  // Socket.io path (para ambiente com proxy Nginx)
-  socketPath: process.env.NEXT_PUBLIC_SOCKET_PATH || "/socket.io",
-  
+
   // Intervalo de atualização de metadados (ms)
   metadataRefreshInterval: 10000, // 10 segundos
 } as const;
@@ -26,7 +23,6 @@ export const GENRES = [
 ] as const;
 
 export type Genre = (typeof GENRES)[number]["value"];
-
 export const DEFAULT_GENRE: Genre = "geral";
 
 export const DEFAULT_SONG = {

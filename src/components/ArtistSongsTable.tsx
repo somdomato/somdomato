@@ -60,7 +60,6 @@ export default function ArtistSongsTable({ artist }: { artist: string }) {
       }
       // Restore radio if component unmounts while preview is active
       if (savedStateRef.current) {
-        audioCtx.setPreviewActive(false);
         if (savedStateRef.current.wasPlaying) {
           audioCtx.play();
         }
@@ -92,7 +91,6 @@ export default function ArtistSongsTable({ artist }: { artist: string }) {
     }
 
     setPreviewSongId(null);
-    audioCtx.setPreviewActive(false);
 
     // Restore radio state
     if (savedStateRef.current) {
@@ -142,8 +140,6 @@ export default function ArtistSongsTable({ artist }: { artist: string }) {
       audioCtx.toggleMute(true);
     }
 
-    // Mark preview as active
-    audioCtx.setPreviewActive(true);
     setPreviewSongId(song.id);
 
     const url = `/api/music/file/${song.id}`;

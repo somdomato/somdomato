@@ -5,7 +5,10 @@ services:
     ports:
       - "8080:80"
     volumes:
-      - ./nginx.dev.conf:/etc/nginx/conf.d/default.conf:ro
+      - type: bind
+        source: ./nginx.dev.conf
+        target: /etc/nginx/conf.d/default.conf
+        read_only: true
     depends_on:
       - icecast
     extra_hosts:
@@ -26,7 +29,10 @@ services:
       - ICECAST_RELAY_PASSWORD=hackme
       - ICECAST_HOSTNAME=localhost
     volumes:
-      - ../files/etc/icecast/somdomato.xml:/etc/icecast2/icecast.xml:ro
+      - type: bind
+        source: ../files/etc/icecast/somdomato.xml
+        target: /etc/icecast2/icecast.xml
+        read_only: true
     restart: unless-stopped
     networks:
       - radio-network
@@ -41,8 +47,14 @@ services:
     depends_on:
       - icecast
     volumes:
-      - ../files/etc/liquidsoap/somdomato-docker.liq:/etc/liquidsoap/somdomato.liq:ro
-      - /home/lucas/music/sdm:/var/music/sdm:ro
+      - type: bind
+        source: ../files/etc/liquidsoap/somdomato-docker.liq
+        target: /etc/liquidsoap/somdomato.liq
+        read_only: true
+      - type: bind
+        source: /home/lucas/music/sdm
+        target: /var/music/sdm
+        read_only: true
     environment:
       - LIQUIDSOAP_LOG_LEVEL=info
     extra_hosts:
@@ -53,4 +65,5 @@ services:
 
 networks:
   radio-network:
+    name: somdomato-radio-network
     driver: bridge

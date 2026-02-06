@@ -6,21 +6,21 @@ Este setup Docker permite testar o sistema de rádio localmente.
 
 1. Docker e Docker Compose instalados
 2. Next.js rodando em `localhost:3000`
-3. Músicas na pasta definida em `.env.local`
+3. Músicas na pasta definida em `.env`
 
 ## Configuração
 
-### 1. Criar arquivo .env.local
+### 1. Configurar MUSIC_PATH
 
 ```bash
-# Ajuste o caminho para onde suas músicas estão
-echo "MUSIC_PATH=/home/lucas/music/sdm" > .env.local
+# Edite o arquivo .env e ajuste o caminho
+nano .env
+# Ajuste: MUSIC_PATH=/home/lucas/music/sdm
 ```
 
 ### 2. Ajustar permissões (se necessário)
 
 ```bash
-chmod 644 .env.local
 chmod +x files/etc/liquidsoap/somdomato-docker.liq
 ```
 
@@ -71,7 +71,7 @@ docker-compose restart liquidsoap
 ```
 ├── docker-compose.yml          # Orquestração dos containers
 ├── Dockerfile.liquidsoap        # Image do Liquidsoap
-├── .env.local                   # Variáveis locais
+├── .env                         # Variáveis de ambiente
 ├── files/
 │   ├── etc/
 │   │   ├── icecast/
@@ -98,8 +98,9 @@ curl http://localhost:3000/api/music
 
 ### Músicas não encontradas
 
-Verifique o caminho no `.env.local`:
+Verifique o caminho no `.env`:
 ```bash
+cat .env | grep MUSIC_PATH
 ls -la /home/lucas/music/sdm
 ```
 

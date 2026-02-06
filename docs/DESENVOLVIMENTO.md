@@ -60,12 +60,11 @@ docker-compose down     # Parar
 
 ### 2. Variáveis de Ambiente
 
-Arquivo `.env.local` (desenvolvimento):
+Arquivo `.env` (desenvolvimento):
 
 ```env
 NEXT_PUBLIC_RADIO_SOURCE=http://localhost:8080
 NEXT_PUBLIC_RADIO_METADATA=http://localhost:8080/json
-NEXT_PUBLIC_SOCKET_PATH=/socket.io
 LIQUIDSOAP_CONTROL_URL=http://localhost:8081  # ⚠️ Porta 8081 (dev)
 ```
 
@@ -145,7 +144,7 @@ curl http://localhost:8080/json | jq
 │   └── context/
 │       ├── AudioContext.tsx    # ⭐ Estado do player
 │       └── GenreContext.tsx    # ⭐ Estado do gênero
-├── .env.local                  # ⭐ Config desenvolvimento
+├── .env                        # ⭐ Config desenvolvimento
 └── .env.production             # Config produção
 ```
 

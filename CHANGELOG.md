@@ -24,7 +24,7 @@
 docker/nginx.dev.conf          # Proxy reverso Nginx para desenvolvimento
 src/app/api/metadata/route.ts  # API de metadados filtrados por gênero
 scripts/dev.sh                 # Script para iniciar ambiente completo
-.env.local.example             # Template de configuração
+.env                           # Config de desenvolvimento
 docs/DESENVOLVIMENTO.md        # Guia detalhado de desenvolvimento
 QUICKSTART.md                  # Guia rápido de início
 ```
@@ -39,11 +39,10 @@ QUICKSTART.md                  # Guia rápido de início
 - `DEFAULT_SONG`: Fallback de metadados
 - `buildStreamUrl()`: Helper para construir URLs
 
-**.env.local** - Variáveis de desenvolvimento:
+**.env** - Variáveis de desenvolvimento:
 ```env
 NEXT_PUBLIC_RADIO_SOURCE=http://localhost:8080
 NEXT_PUBLIC_RADIO_METADATA=http://localhost:8080/json
-NEXT_PUBLIC_SOCKET_PATH=/socket.io
 ```
 
 ### Contextos Simplificados

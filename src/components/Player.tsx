@@ -58,11 +58,24 @@ function AdminSkipButton() {
 }
 
 export default function Player({ className = "" }: { className?: string }) {
-  const { playing, play, pause, volume, setVolume, muted, toggleMute, title, artist, cover, setSong } = useAudio();
+  const {
+    playing,
+    play,
+    pause,
+    volume,
+    setVolume,
+    muted,
+    toggleMute,
+    title,
+    artist,
+    cover,
+    setSong,
+  } = useAudio();
   const { currentGenre, setGenre, getStreamUrl } = useGenre();
   const [showGenreDropdown, setShowGenreDropdown] = useState(false);
 
-  const currentGenreLabel = GENRES.find((g) => g.value === currentGenre)?.label || "Geral";
+  const currentGenreLabel =
+    GENRES.find((g) => g.value === currentGenre)?.label || "Geral";
 
   // Buscar metadados do gênero atual
   const fetchMetadata = useCallback(async () => {
@@ -82,37 +95,43 @@ export default function Player({ className = "" }: { className?: string }) {
   // Buscar metadados na inicialização e ao trocar de gênero
   useEffect(() => {
     fetchMetadata();
-    
+
     // Poll de metadados a cada 10 segundos
-    const interval = setInterval(fetchMetadata, RADIO_CONFIG.metadataRefreshInterval);
-    
+    const interval = setInterval(
+      fetchMetadata,
+      RADIO_CONFIG.metadataRefreshInterval,
+    );
+
     return () => clearInterval(interval);
   }, [fetchMetadata]);
 
-  const handleGenreChange = useCallback(async (newGenre: typeof GENRES[number]) => {
-    setGenre(newGenre.value);
-    setShowGenreDropdown(false);
-    
-    const streamUrl = buildStreamUrl(newGenre.mountpoint);
-    
-    // Iniciar playback imediatamente
-    await play(streamUrl);
-    
-    // Buscar metadados do novo gênero
-    try {
-      const response = await fetch(`/api/metadata?genre=${newGenre.value}`);
-      if (response.ok) {
-        const data = await response.json();
-        if (data.song) {
-          setSong(data.song);
+  const handleGenreChange = useCallback(
+    async (newGenre: (typeof GENRES)[number]) => {
+      setGenre(newGenre.value);
+      setShowGenreDropdown(false);
+
+      const streamUrl = buildStreamUrl(newGenre.mountpoint);
+
+      // Iniciar playback imediatamente
+      await play(streamUrl);
+
+      // Buscar metadados do novo gênero
+      try {
+        const response = await fetch(`/api/metadata?genre=${newGenre.value}`);
+        if (response.ok) {
+          const data = await response.json();
+          if (data.song) {
+            setSong(data.song);
+          }
         }
+      } catch (error) {
+        console.error("Erro ao buscar metadados:", error);
       }
-    } catch (error) {
-      console.error("Erro ao buscar metadados:", error);
-    }
-    
-    toast.success(`Estação: ${newGenre.label}`);
-  }, [setGenre, play, setSong]);
+
+      toast.success(`Estação: ${newGenre.label}`);
+    },
+    [setGenre, play, setSong],
+  );
 
   const handlePlayPause = useCallback(() => {
     if (playing) {

@@ -2,7 +2,7 @@
 
 ## Configuração
 
-1. Adicione a senha de administrador no arquivo `.env.local`:
+1. Adicione a senha de administrador no arquivo `.env`:
 
 ```env
 ADMIN_PASSWORD=sua_senha_aqui
