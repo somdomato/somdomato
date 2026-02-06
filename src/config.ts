@@ -40,32 +40,38 @@ export const DEFAULT_SONG = {
 // APP CONFIGURATION
 // =============================================================================
 
-export const LAST_SONGS_HISTORY_LIMIT = 50;
+export const LAST_SONGS_HISTORY_LIMIT = 20;
 
 export const slides = [
   {
     id: 1,
-    src: "/images/slides/ys.webp",
+    src: "https://cdn.somdomato.com/images/slides/ys.webp",
     alt: "Yasmin Sensação",
     title: "Yasmin Sensação",
   },
   {
     id: 2,
-    src: "/images/slides/jem.webp",
+    src: "https://cdn.somdomato.com/images/slides/jem.webp",
     alt: "Jorge & Mateus",
     title: "Jorge & Mateus",
   },
   {
     id: 3,
-    src: "/images/slides/hej.webp",
+    src: "https://cdn.somdomato.com/images/slides/hej.webp",
     alt: "Henrique & Juliano",
     title: "Henrique & Juliano",
   },
   {
     id: 4,
-    src: "/images/slides/mek.webp",
+    src: "https://cdn.somdomato.com/images/slides/mek.webp",
     alt: "Matheus & Kauan",
     title: "Matheus & Kauan",
+  },
+  {
+    id: 5,
+    src: "https://cdn.somdomato.com/images/slides/par.webp",
+    alt: "Paraná",
+    title: "Paraná",
   },
 ];
 

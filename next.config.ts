@@ -7,11 +7,7 @@ const nextConfig: NextConfig = {
     },
   },
   images: {
-    remotePatterns: [
-      {
-        hostname: "cdn.somdomato.com",
-      },
-    ],
+    remotePatterns: [new URL("https://cdn.somdomato.com/**")],
   },
 };
 
