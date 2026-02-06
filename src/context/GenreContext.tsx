@@ -7,7 +7,7 @@ import {
   useEffect,
   type ReactNode,
 } from "react";
-import { GENRES, DEFAULT_GENRE, buildStreamUrl, type Genre } from "@/config";
+import { RADIO_CONFIG, GENRES, DEFAULT_GENRE, buildStreamUrl, type Genre } from "@/config";
 
 interface GenreContextType {
   currentGenre: Genre;
@@ -24,13 +24,22 @@ export function GenreProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const saved = localStorage.getItem("selectedGenre");
     if (saved && GENRES.find((g) => g.value === saved)) {
-      setCurrentGenre(saved as Genre);
+      if (RADIO_CONFIG.multipleMounts) {
+        setCurrentGenre(saved as Genre);
+      } else {
+        setCurrentGenre(DEFAULT_GENRE);
+      }
     }
   }, []);
 
   const setGenre = (genre: Genre) => {
-    setCurrentGenre(genre);
-    localStorage.setItem("selectedGenre", genre);
+    if (RADIO_CONFIG.multipleMounts) {
+      setCurrentGenre(genre);
+      localStorage.setItem("selectedGenre", genre);
+    } else {
+      setCurrentGenre(DEFAULT_GENRE);
+      localStorage.setItem("selectedGenre", DEFAULT_GENRE);
+    }
   };
 
   const getStreamUrl = () => {
