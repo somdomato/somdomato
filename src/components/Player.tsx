@@ -177,6 +177,7 @@ export default function Player({ className = "" }: { className?: string }) {
       </div>
 
       {/* Station Selector */}
+      {RADIO_CONFIG.multipleMounts && (
       <div className="relative">
         <button
           type="button"
@@ -231,6 +232,7 @@ export default function Player({ className = "" }: { className?: string }) {
           </>
         )}
       </div>
+      )}
 
       {/* Controls */}
       <div className="flex items-center gap-2">

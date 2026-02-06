@@ -7,10 +7,15 @@ export const RADIO_CONFIG = {
   baseUrl: process.env.NEXT_PUBLIC_RADIO_SOURCE || "http://localhost:8000",
 
   // URL da API de metadados JSON do Icecast
-  metadataUrl: process.env.NEXT_PUBLIC_RADIO_METADATA || "https://radio.somdomato.com/json",
+  metadataUrl:
+    process.env.NEXT_PUBLIC_RADIO_METADATA ||
+    "https://radio.somdomato.com/json",
 
   // Intervalo de atualização de metadados (ms)
   metadataRefreshInterval: 10000, // 10 segundos
+
+  // Habilitar seleção de múltiplos gêneros (mountpoints)
+  multipleMounts: Boolean(process.env.NEXT_PUBLIC_MULTIPLE_MOUNTS) || false,
 } as const;
 
 export const GENRES = [
