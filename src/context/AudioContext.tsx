@@ -46,20 +46,18 @@ export const AudioProvider = ({ children }: { children: React.ReactNode }) => {
   const play = async (streamUrl?: string) => {
     if (audioRef.current) {
       const source = streamUrl || currentSource;
-      if (streamUrl) {
-        setCurrentSource(streamUrl);
-        // Pausar stream anterior antes de trocar
-        audioRef.current.pause();
-      }
-      audioRef.current.src = `${source}?t=${Date.now() / 1000}`;
-      audioRef.current.load(); // Forçar carregamento do novo src
+      const srcWithTs = `${source}?t=${Date.now()}`;
       try {
+        audioRef.current.src = srcWithTs;
+        // garantir que volume/mute estejam sincronizados antes de tocar
+        audioRef.current.volume = volume / 100;
+        audioRef.current.muted = muted;
         await audioRef.current.play();
         setPlaying(true);
+        // atualizar fonte atual somente se trocar explicitamente
+        if (streamUrl) setCurrentSource(streamUrl);
       } catch (error) {
-        // Ignorar DOMException ao abortar stream (comportamento esperado ao trocar gêneros)
         if (error instanceof DOMException && error.name === "AbortError") {
-          // Silenciosamente ignorar - comportamento normal
           return;
         }
         console.error("Error playing audio:", error);
