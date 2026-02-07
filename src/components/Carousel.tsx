@@ -23,7 +23,7 @@ export default function Carousel({
   autoplay = false,
   interval = 5000,
   showIndicators = true,
-  showControls = true,
+  showControls = false,
   className = "",
 }: CarouselProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -61,11 +61,11 @@ export default function Carousel({
   return (
     <section
       aria-label="Carousel de imagens"
-      className={`mx-auto w-full max-w-5xl ${className}`}
+      className={`mx-auto w-full ${className}`}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      <div className="relative overflow-hidden lg:rounded-xl">
+      <div className="relative overflow-hidden md:rounded">
         {/* Imagens */}
         <div className="relative aspect-[16/9] w-full">
           {images.map((image, index) => (
