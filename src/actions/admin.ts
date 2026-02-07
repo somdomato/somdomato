@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
-import { songs, requests } from "@/db/schema";
+import { songs, requests, history, likes } from "@/db/schema";
 import { eq, asc, desc } from "drizzle-orm";
 import { promises as fs } from "node:fs";
 import path from "node:path";
@@ -304,6 +304,11 @@ export async function deleteSong(id: number) {
   } catch (error) {
     console.error("Erro ao deletar arquivo:", error);
   }
+
+  // Deletar registros relacionados antes de deletar a música (devido às foreign keys)
+  await db.delete(requests).where(eq(requests.songId, id));
+  await db.delete(history).where(eq(history.songId, id));
+  await db.delete(likes).where(eq(likes.songId, id));
 
   // Deletar do banco
   await db.delete(songs).where(eq(songs.id, id));
