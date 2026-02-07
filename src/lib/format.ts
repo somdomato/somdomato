@@ -10,7 +10,7 @@ export function formatRelativeTime(
 
   const now = Date.now();
   let time: number;
-  
+
   if (typeof timestamp === "number") {
     time = timestamp;
   } else if (typeof timestamp === "string") {
@@ -18,7 +18,7 @@ export function formatRelativeTime(
   } else {
     time = timestamp.getTime();
   }
-  
+
   const diffMs = now - time;
   const diffSec = Math.floor(diffMs / 1000);
   const diffMin = Math.floor(diffSec / 60);

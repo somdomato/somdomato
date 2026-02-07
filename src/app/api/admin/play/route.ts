@@ -90,6 +90,7 @@ export async function POST(request: Request) {
       timeSlots: s.timeSlots,
       createdAt: s.createdAt,
       genre: s.genre,
+      allowedInGeneral: s.allowedInGeneral,
     };
 
     if (global.io)
@@ -99,6 +100,8 @@ export async function POST(request: Request) {
         artist: selectedSong.artist,
         cover: selectedSong.cover,
         genre: selectedSong.genre || "geral",
+        allowedInGeneral: selectedSong.allowedInGeneral || 0,
+        playedAt: Date.now(),
       });
 
     // try to call liquidsoap control endpoint to skip immediately (optional)

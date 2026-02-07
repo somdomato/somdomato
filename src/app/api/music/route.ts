@@ -128,6 +128,7 @@ export async function GET(request: Request) {
           createdAt: songs.createdAt,
           requestId: requests.id,
           genre: songs.genre,
+          allowedInGeneral: songs.allowedInGeneral,
         })
         .from(requests)
         .orderBy(asc(requests.id))
@@ -147,7 +148,9 @@ export async function GET(request: Request) {
         cover: requestResult.cover,
         timeSlots: requestResult.timeSlots,
         createdAt: requestResult.createdAt,
-      };
+        genre: requestResult.genre,
+        allowedInGeneral: requestResult.allowedInGeneral,
+      } as Song & { genre: string; allowedInGeneral: number };
 
       // Remover o pedido da fila e emitir evento de remoção
       await db.delete(requests).where(eq(requests.id, requestResult.requestId));
@@ -272,9 +275,13 @@ export async function GET(request: Request) {
     const safeCover = selectedSong.cover || "/images/logotipo.svg";
     selectedSong.cover = safeCover;
 
-    // Construir payload consistente (incluir gênero explicitamente)
-    const songGenre =
-      (selectedSong as { genre?: string })?.genre || genre || "geral";
+    // Construir payload consistente (incluir gênero e allowedInGeneral)
+    const songWithGenre = selectedSong as Song & {
+      genre?: string;
+      allowedInGeneral?: number;
+    };
+    const songGenre = songWithGenre.genre || genre || "geral";
+    const allowedInGeneral = songWithGenre.allowedInGeneral || 0;
 
     const payload = {
       id: selectedSong.id,
@@ -282,6 +289,7 @@ export async function GET(request: Request) {
       artist: selectedSong.artist,
       cover: safeCover,
       genre: songGenre,
+      allowedInGeneral: allowedInGeneral,
       playedAt: Date.now(),
     };
 

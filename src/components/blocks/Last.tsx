@@ -45,10 +45,21 @@ export default function Last({ data }: { data: LatestEntry[] }) {
       artist: string;
       cover?: string | null;
       genre?: string;
+      allowedInGeneral?: number;
       playedAt?: number;
     }) => {
-      // Apenas atualizar se for do gênero atual
-      if (currentGenre !== "geral" && song.genre !== currentGenre) {
+      // Filtrar por gênero:
+      // - Se estou em "geral": aceitar músicas com genre='geral' OU allowedInGeneral=1
+      // - Se estou em outro gênero: aceitar apenas músicas daquele gênero
+      let shouldInclude = false;
+      
+      if (currentGenre === "geral") {
+        shouldInclude = song.genre === "geral" || song.allowedInGeneral === 1;
+      } else {
+        shouldInclude = song.genre === currentGenre;
+      }
+
+      if (!shouldInclude) {
         return;
       }
 

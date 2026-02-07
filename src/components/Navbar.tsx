@@ -50,14 +50,14 @@ export default function Navbar() {
 
       {/* Menu Mobile - Dropdown */}
       {isOpen && (
-        <nav 
-          className="md:hidden absolute left-0 right-0 top-full border-b-2 border-black/50 py-2 shadow-xl z-50 menu-mobile-enter overflow-hidden"
+        <nav
+          className="md:hidden absolute left-0 right-0 top-full border-y-2 border-black/50 py-2 shadow-xl z-50 menu-mobile-enter overflow-hidden"
           style={{
             background: `linear-gradient(rgba(44, 37, 37, 0.9), rgba(44, 37, 37, 0.9)), url('/images/wood.jpg')`,
-            backgroundSize: 'contain',
-            backgroundRepeat: 'repeat-x',
-            backgroundPosition: 'top',
-            backgroundAttachment: 'fixed'
+            backgroundSize: "contain",
+            backgroundRepeat: "repeat-x",
+            backgroundPosition: "top",
+            backgroundAttachment: "fixed",
           }}
         >
           <div className="flex flex-col gap-1 px-4 relative">
@@ -66,7 +66,7 @@ export default function Navbar() {
                 key={href}
                 href={href}
                 onClick={() => setIsOpen(false)}
-                className="flex items-center gap-3 font-semibold py-3 px-4 rounded-lg hover:bg-white/10 transition-colors"
+                className="flex items-center gap-2 font-semibold py-2 px-4 rounded-lg hover:bg-white/10 transition-colors"
               >
                 <Icon size={20} />
                 <span>{label}</span>

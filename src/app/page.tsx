@@ -7,10 +7,11 @@ import { lastSongs, nextSongs, topSongs } from "@/actions/songs";
 import { slides as images } from "@/config";
 
 export default async function Home() {
-  const last = (await lastSongs()) ?? [];
+  // Buscar músicas do gênero "geral" por padrão (SSR)
+  const last = (await lastSongs("geral")) ?? [];
   const top = (await topSongs()) ?? [];
   const { upcoming: next = [], nextIfNoRequests = null } =
-    (await nextSongs()) ?? {};
+    (await nextSongs("geral")) ?? {};
 
   return (
     <div className="flex flex-col items-center justify-center h-full w-full max-w-5xl mx-auto">

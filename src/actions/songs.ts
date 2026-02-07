@@ -14,7 +14,9 @@ type TopEntry = {
 };
 
 export async function lastSongs(genre?: string) {
-  // Últimas 10 músicas do gênero especificado
+  // Últimas 10 músicas do gênero especificado (padrão: "geral")
+  const selectedGenre = genre || "geral";
+
   const query = db
     .select({
       id: songs.id,
@@ -23,6 +25,7 @@ export async function lastSongs(genre?: string) {
       cover: songs.cover,
       playedAt: history.createdAt,
       genre: songs.genre,
+      allowedInGeneral: songs.allowedInGeneral,
     })
     .from(history)
     .innerJoin(songs, eq(history.songId, songs.id))
@@ -30,10 +33,16 @@ export async function lastSongs(genre?: string) {
 
   const latest = await query.limit(100); // Pegar mais para filtrar
 
-  // Filtrar por gênero se especificado
+  // Filtrar por gênero
   let filtered = latest;
-  if (genre && genre !== "geral") {
-    filtered = latest.filter((s) => s.genre === genre);
+  if (selectedGenre === "geral") {
+    // Geral: incluir músicas com genre='geral' OU allowedInGeneral=1
+    filtered = latest.filter(
+      (s) => s.genre === "geral" || s.allowedInGeneral === 1,
+    );
+  } else {
+    // Outros gêneros: incluir apenas músicas do gênero específico
+    filtered = latest.filter((s) => s.genre === selectedGenre);
   }
 
   return filtered.slice(0, 10).map((s) => ({
