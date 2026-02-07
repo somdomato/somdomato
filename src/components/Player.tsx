@@ -265,7 +265,7 @@ export default function Player({ className = "" }: { className?: string }) {
         <button
           type="button"
           onClick={() => toggleMute()}
-          className="w-8 h-8 flex items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition"
+          className="hidden md:flex w-8 h-8 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition"
           aria-label={muted ? "Ativar som" : "Silenciar"}
         >
           {muted ? <VolumeX size={16} /> : <Volume2 size={16} />}
@@ -277,7 +277,7 @@ export default function Player({ className = "" }: { className?: string }) {
           value={muted ? 0 : volume}
           onChange={(e) => setVolume(Number.parseInt(e.target.value, 10))}
           style={{ "--value": `${muted ? 0 : volume}%` } as React.CSSProperties}
-          className="w-16 sm:w-20 accent-primary"
+          className="hidden md:block w-16 sm:w-20 accent-primary"
           aria-label="Volume"
         />
 

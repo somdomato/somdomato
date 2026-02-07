@@ -383,7 +383,12 @@ export async function addRequest(songId: number) {
       io?: { emit: (event: string, payload?: unknown) => void };
     };
     if (typeof global !== "undefined" && g.io && created) {
-      g.io.emit("request:added", created);
+      // Converter requestedAt para número para evitar problemas de serialização
+      const payload = {
+        ...created,
+        requestedAt: created.requestedAt ? Number(created.requestedAt) : null,
+      };
+      g.io.emit("request:added", payload);
     }
   } catch (e) {
     console.warn("Falha ao emitir request:added (admin)", e);

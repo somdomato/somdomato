@@ -16,6 +16,34 @@ sudo ./scripts/deploy-radio.sh
 
 **Documentação completa:** [docs/DEPLOY-RADIO.md](docs/DEPLOY-RADIO.md)
 
+### ⚙️ Configuração de Produção
+
+#### Chave de Criptografia (NEXT_SERVER_ACTIONS_ENCRYPTION_KEY)
+
+O Next.js 15+ requer uma chave de criptografia para Server Actions em produção. Esta chave é gerada **automaticamente** pelo `scripts/deploy.sh` se não existir.
+
+Para gerar ou atualizar manualmente:
+
+```bash
+# Gerar e mostrar a chave
+./scripts/generate-encryption-key.sh
+
+# Gerar e atualizar automaticamente o .env
+./scripts/generate-encryption-key.sh --update-env
+```
+
+A chave deve ter 64 caracteres hexadecimais (32 bytes). Também pode ser gerada com:
+```bash
+openssl rand -hex 32
+```
+
+**Importante:** 
+- A mesma chave deve ser usada em todos os deploys para evitar erro "Failed to find Server Action"
+- Não compartilhe esta chave publicamente
+- Se a chave for alterada, será necessário fazer novo build
+
+**Documentação completa:** [docs/DEPLOY-RADIO.md](docs/DEPLOY-RADIO.md)
+
 ## 🎵 Desenvolvimento
 
 ### 📋 Requisitos

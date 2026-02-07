@@ -1,15 +1,24 @@
 /**
  * Formata um timestamp em tempo relativo (ex: "há 5 minutos", "há 2 horas")
- * @param timestamp - Timestamp em milissegundos ou objeto Date
+ * @param timestamp - Timestamp em milissegundos, objeto Date ou string ISO
  * @returns String formatada em português com tempo relativo
  */
 export function formatRelativeTime(
-  timestamp: number | Date | null | undefined,
+  timestamp: number | Date | string | null | undefined,
 ): string {
   if (!timestamp) return "agora";
 
   const now = Date.now();
-  const time = typeof timestamp === "number" ? timestamp : timestamp.getTime();
+  let time: number;
+  
+  if (typeof timestamp === "number") {
+    time = timestamp;
+  } else if (typeof timestamp === "string") {
+    time = new Date(timestamp).getTime();
+  } else {
+    time = timestamp.getTime();
+  }
+  
   const diffMs = now - time;
   const diffSec = Math.floor(diffMs / 1000);
   const diffMin = Math.floor(diffSec / 60);

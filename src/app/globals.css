@@ -122,3 +122,29 @@ input[type="range"]::-moz-range-thumb {
   cursor: pointer;
   border: none;
 }
+
+/* iOS Zoom Fix */
+@supports (-webkit-appearance: none) {
+  select,
+  textarea,
+  input {
+    font-size: 16px;
+  }
+}
+
+/* Animação do menu mobile */
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.menu-mobile-enter {
+  animation: slideDown 0.3s ease-out forwards;
+}
+

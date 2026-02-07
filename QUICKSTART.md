@@ -131,9 +131,32 @@ LIQUIDSOAP_CONTROL_URL=http://localhost:8081  # ⚠️ Porta 8081 em dev!
 NEXT_PUBLIC_RADIO_SOURCE=https://radio.somdomato.com
 NEXT_PUBLIC_RADIO_METADATA=https://radio.somdomato.com/json
 LIQUIDSOAP_CONTROL_URL=http://localhost:8080  # ✅ Porta 8080 em prod!
+NEXT_SERVER_ACTIONS_ENCRYPTION_KEY=<64_caracteres_hex>  # ⚠️ Obrigatório!
 ```
 
 **Importante**: Ver [docs/PORTAS.md](docs/PORTAS.md) para entender as diferenças.
+
+### Chave de Criptografia (Produção)
+
+O Next.js 15+ requer `NEXT_SERVER_ACTIONS_ENCRYPTION_KEY` em produção. Esta chave é **gerada automaticamente** pelo script de deploy, mas você pode gerá-la manualmente:
+
+```bash
+# Gerar e mostrar no terminal
+./scripts/generate-encryption-key.sh
+
+# Gerar e adicionar automaticamente ao .env
+./scripts/generate-encryption-key.sh --update-env
+
+# Ou via openssl direto
+openssl rand -hex 32
+```
+
+A chave deve ter 64 caracteres hexadecimais (32 bytes).
+
+**⚠️ Importante:**
+- Usar a mesma chave em todos os deploys
+- Não compartilhar publicamente
+- Mudança de chave requer rebuild
 
 ## Solução de Problemas
 
