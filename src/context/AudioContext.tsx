@@ -32,9 +32,26 @@ export const AudioProvider = ({ children }: { children: React.ReactNode }) => {
   const [cover, setCover] = useState<string>(DEFAULT_SONG.cover);
 
   const setSong = (song: { title: string; artist: string; cover: string }) => {
-    setTitle(song.title);
-    setArtist(song.artist);
-    setCover(song.cover);
+    const { title, artist, cover } = song;
+
+    if ("mediaSession" in navigator) {
+      navigator.mediaSession.metadata = new MediaMetadata({
+        title,
+        artist,
+        album: "Rádio Som do Mato",
+        artwork: [
+          {
+            src: "https://somdomato.com/images/ogp.png",
+            sizes: "any",
+            type: "image/png",
+          },
+        ],
+      });
+    }
+
+    setTitle(title);
+    setArtist(artist);
+    setCover(cover);
   };
 
   const play = async (streamUrl?: string) => {
