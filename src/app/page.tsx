@@ -16,13 +16,9 @@ export default async function Home() {
   return (
     <div className="flex flex-col items-center justify-center h-full w-full max-w-5xl mx-auto">
       <section className="w-full mb-3">
-        <Carousel
-          images={images}
-          autoplay={true}
-          interval={5000}
-        />
+        <Carousel images={images} autoplay={true} interval={5000} />
       </section>
-      
+
       <section className="w-full mb-3">
         <iframe
           className="w-full aspect-video rounded-xl min-h-80"
