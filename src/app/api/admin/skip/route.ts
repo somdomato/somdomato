@@ -1,6 +1,6 @@
 async function verifyAdmin(password?: string) {
   const adminPassword = process.env.ADMIN_PASSWORD;
-  
+
   if (!adminPassword) {
     throw new Error("Configuração de admin ausente");
   }
