@@ -1,13 +1,33 @@
 async function verifyAdmin(password?: string) {
   const adminPassword = process.env.ADMIN_PASSWORD;
-  if (!adminPassword || password !== adminPassword)
+  
+  if (!adminPassword) {
+    throw new Error("Configuração de admin ausente");
+  }
+
+  // Tentar via cookie se não veio senha
+  if (!password) {
+    const { cookies } = await import("next/headers");
+    const cookieStore = await cookies();
+    const adminAuth = cookieStore.get("adminAuth");
+    password = adminAuth?.value;
+  }
+
+  if (!password || password !== adminPassword) {
     throw new Error("Senha inválida");
+  }
 }
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
-    const { password } = body;
+    // Tentar ler body (se existir)
+    let password: string | undefined;
+    try {
+      const body = await request.json();
+      password = body.password;
+    } catch {
+      // Body pode estar vazio, vai tentar via cookie
+    }
 
     await verifyAdmin(password);
 

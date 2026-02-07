@@ -52,7 +52,7 @@ export default function Last({ data }: { data: LatestEntry[] }) {
       // - Se estou em "geral": aceitar músicas com genre='geral' OU allowedInGeneral=1
       // - Se estou em outro gênero: aceitar apenas músicas daquele gênero
       let shouldInclude = false;
-      
+
       if (currentGenre === "geral") {
         shouldInclude = song.genre === "geral" || song.allowedInGeneral === 1;
       } else {

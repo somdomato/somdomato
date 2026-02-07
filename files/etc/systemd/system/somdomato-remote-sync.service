@@ -1,0 +1,12 @@
+[Unit]
+Description=Sync music database with filesystem
+After=network.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/rsync -avz --progress -e 'ssh -p 22000' /var/music/sdm/ lucas@localhost:/home/lucas/music/sdm/ --exclude=".*"
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

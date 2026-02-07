@@ -149,11 +149,31 @@ export default function Next({
         )
       ) : (
         <SongList
-          items={upcoming}
+          items={[
+            ...upcoming,
+            // Adicionar próxima do AutoDJ no final (se existir)
+            ...(nextIfNoRequests
+              ? [
+                  {
+                    reqId: -1,
+                    id: nextIfNoRequests.id,
+                    title: nextIfNoRequests.title,
+                    artist: nextIfNoRequests.artist,
+                    cover: nextIfNoRequests.cover,
+                    requestedAt: null,
+                  },
+                ]
+              : []),
+          ]}
           keyField="reqId"
-          renderRight={(item) =>
-            formatRelativeTime((item as UpcomingEntry).requestedAt)
-          }
+          renderRight={(item) => {
+            const entry = item as UpcomingEntry;
+            // Se reqId=-1, é a próxima do AutoDJ
+            if (entry.reqId === -1) {
+              return "Próxima (AutoDJ)";
+            }
+            return formatRelativeTime(entry.requestedAt);
+          }}
         />
       )}
     </SongBlock>
