@@ -13,6 +13,7 @@ interface YtDlpProgress {
 }
 
 const UPLOADS_DIR = process.env.UPLOADS_DIR || "/var/music/uploads";
+const COOKIES_FILE = process.env.COOKIES_FILE || "/var/lib/youtube_cookies.txt";
 
 // Ensure uploads directory exists
 function ensureUploadsDir() {
@@ -55,8 +56,8 @@ export async function POST(request: NextRequest) {
 
         const ytDlpWrap = new YTDlpWrap("/usr/local/bin/yt-dlp"); // Ajuste para o caminho do yt-dlp no seu sistema
 
-        // Download as MP3
-        const ytDlpProcess = ytDlpWrap.exec([
+        // Build yt-dlp arguments with anti-bot workarounds
+        const ytDlpArgs = [
           url || `https://www.youtube.com/watch?v=${videoId}`,
           "-x",
           "--audio-format",
@@ -67,7 +68,25 @@ export async function POST(request: NextRequest) {
           outputPath,
           "--no-playlist",
           "--newline",
-        ]);
+          // Anti-bot workarounds
+          "--extractor-args",
+          "youtube:player_client=web",
+          "--no-cache-dir",
+          "--force-ipv4",
+          "--user-agent",
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        ];
+
+        // Add cookies if file exists (required for bot detection bypass)
+        if (fs.existsSync(COOKIES_FILE)) {
+          ytDlpArgs.push("--cookies", COOKIES_FILE);
+          console.log(`Using cookies from: ${COOKIES_FILE}`);
+        } else {
+          console.warn(`Cookies file not found: ${COOKIES_FILE}`);
+        }
+
+        // Download as MP3
+        const ytDlpProcess = ytDlpWrap.exec(ytDlpArgs);
 
         ytDlpProcess.on("progress", (progress: YtDlpProgress) => {
           send({
