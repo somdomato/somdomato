@@ -38,11 +38,7 @@ export async function GET(request: NextRequest) {
     url.searchParams.set("maxResults", "10");
     url.searchParams.set("key", YOUTUBE_API_KEY);
 
-    const response = await fetch(url.toString(), {
-      headers: {
-        Referer: process.env.NEXT_PUBLIC_SITE_URL || "https://somdomato.com.br",
-      },
-    });
+    const response = await fetch(url.toString());
     const data = await response.json();
 
     if (!response.ok) {

@@ -209,7 +209,7 @@ export function RequestModal({ isOpen, onClose }: RequestModalProps) {
         aria-modal="true"
         aria-labelledby="requestModalTitle"
         aria-describedby="requestModalDescription"
-        className="fixed inset-0 bg-black/70 flex items-center justify-center z-[9999] p-4 backdrop-blur-sm"
+        className="fixed inset-0 bg-black/70 flex items-center justify-center z-9999 p-4 backdrop-blur-sm"
       >
         <div className="bg-background-alt rounded-lg shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col border-2 border-primary/30">
           {/* Header */}
