@@ -6,19 +6,39 @@ Este setup Docker permite testar o sistema de rádio localmente.
 
 1. Docker e Docker Compose instalados
 2. Next.js rodando em `localhost:3000`
-3. Músicas na pasta definida em `.env`
+3. Músicas na pasta definida em `.env` ou variável de ambiente `MUSIC_PATH`
 
 ## Configuração
 
 ### 1. Configurar MUSIC_PATH
 
+O caminho das músicas pode ser configurado de duas formas:
+
+**Opção A: Via .env (no diretório docker/)**
 ```bash
-# Edite o arquivo .env e ajuste o caminho
-nano .env
-# Ajuste: MUSIC_PATH=/home/lucas/music/sdm
+# Crie ou edite o arquivo .env no diretório docker/
+echo "MUSIC_PATH=/caminho/para/suas/musicas" > .env
 ```
 
-### 2. Ajustar permissões (se necessário)
+**Opção B: Via variável de ambiente**
+```bash
+# Linux/macOS
+export MUSIC_PATH=/home/usuario/music/sdm
+
+# Windows PowerShell
+$env:MUSIC_PATH = "C:\Users\usuario\Music\sdm"
+
+# Windows CMD
+set MUSIC_PATH=C:\Users\usuario\Music\sdm
+```
+
+### Exemplos de caminhos:
+
+- **Linux**: `MUSIC_PATH=/home/lucas/music/sdm`
+- **macOS**: `MUSIC_PATH=/Users/lucas/Music/sdm`
+- **Windows**: `MUSIC_PATH=C:\Users\Lucas\Music\sdm` ou `MUSIC_PATH=/c/Users/Lucas/Music/sdm` (Git Bash)
+
+### 2. Ajustar permissões (Linux/macOS, se necessário)
 
 ```bash
 chmod +x files/etc/liquidsoap/somdomato-docker.liq
@@ -32,7 +52,8 @@ chmod +x files/etc/liquidsoap/somdomato-docker.liq
 # Iniciar Next.js primeiro
 pnpm dev
 
-# Em outro terminal, iniciar Icecast + Liquidsoap
+# Em outro terminal, iniciar Icecast + Liquidsoap + Nginx
+cd docker
 docker-compose up -d
 
 # Ver logs
@@ -41,10 +62,12 @@ docker-compose logs -f
 
 ### Acessar
 
-- **Stream de áudio**: http://localhost:8000/geral.mp3
+- **Stream de áudio (via nginx)**: http://localhost:8080/geral
+- **Stream de áudio (direto)**: http://localhost:8000/geral
+- **Todas as estações**: `/geral`, `/gaucha`, `/modao`, `/arrocha`, `/romantico`, `/forro`
 - **Admin Icecast**: http://localhost:8000/admin/
   - User: `admin`
-  - Password: `hackme`
+  - Password: `hackmeagain`
 - **Status Icecast**: http://localhost:8000/status.xsl
 
 ### Comandos úteis
@@ -62,6 +85,9 @@ docker-compose logs -f liquidsoap
 # Ver logs do Icecast
 docker-compose logs -f icecast
 
+# Ver logs do Nginx
+docker-compose logs -f nginx
+
 # Reiniciar apenas o Liquidsoap
 docker-compose restart liquidsoap
 ```
@@ -71,7 +97,8 @@ docker-compose restart liquidsoap
 ```
 ├── docker-compose.yml          # Orquestração dos containers
 ├── Dockerfile.liquidsoap        # Image do Liquidsoap
-├── .env                         # Variáveis de ambiente
+├── nginx.dev.conf               # Configuração do Nginx (proxy reverso)
+├── .env                         # Variáveis de ambiente (opcional)
 ├── files/
 │   ├── etc/
 │   │   ├── icecast/

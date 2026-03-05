@@ -93,6 +93,8 @@ export async function topSongs() {
   }));
 }
 export async function nextSongs(genre?: string) {
+  const selectedGenre = genre || "geral";
+
   // Apenas o gênero "geral" aceita pedidos
   let upcoming: Array<{
     reqId: number;
@@ -103,7 +105,7 @@ export async function nextSongs(genre?: string) {
     requestedAt: Date | null;
   }> = [];
 
-  if (!genre || genre === "geral") {
+  if (selectedGenre === "geral") {
     // Próximas: pedidos pendentes (apenas para geral)
     upcoming = await db
       .select({
@@ -120,9 +122,9 @@ export async function nextSongs(genre?: string) {
       .limit(10);
   }
 
-  // Se não há pedidos (ou não é geral), pegar próxima do AutoDJ do gênero especificado
-  const nextIfNoRequests =
-    upcoming.length === 0 ? await getNextSongToPlay(undefined, genre) : null;
+  // Sempre pegar próxima do AutoDJ para o gênero especificado
+  // Isso mostra o que o AutoDJ tocaria se não houvesse pedidos
+  const nextAutoDJ = await getNextSongToPlay(undefined, selectedGenre);
 
   const serialUpcoming = upcoming.map((u) => ({
     reqId: u.reqId,
@@ -133,16 +135,14 @@ export async function nextSongs(genre?: string) {
     requestedAt: u.requestedAt ? Number(u.requestedAt) : null,
   }));
 
-  const serialNext = nextIfNoRequests
+  const serialNext = nextAutoDJ
     ? {
         reqId: -1,
-        id: nextIfNoRequests.id,
-        title: nextIfNoRequests.title,
-        artist: nextIfNoRequests.artist,
-        cover: nextIfNoRequests.cover || null,
-        requestedAt: nextIfNoRequests.createdAt
-          ? Number(nextIfNoRequests.createdAt)
-          : null,
+        id: nextAutoDJ.id,
+        title: nextAutoDJ.title,
+        artist: nextAutoDJ.artist,
+        cover: nextAutoDJ.cover || null,
+        requestedAt: nextAutoDJ.createdAt ? Number(nextAutoDJ.createdAt) : null,
       }
     : null;
 

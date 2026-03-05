@@ -102,7 +102,7 @@ export default function Next({
     return () => clearInterval(interval);
   }, []);
 
-  // Para gênero "geral": mostrar pedidos ou próxima do AutoDJ
+  // Para gênero "geral": mostrar próxima do AutoDJ + pedidos
   // Para outros gêneros: mostrar apenas próxima do AutoDJ
   if (currentGenre !== "geral") {
     return (
@@ -117,7 +117,11 @@ export default function Next({
                 cover: nextIfNoRequests.cover,
               },
             ]}
-            renderRight={() => "Próxima (AutoDJ)"}
+            renderRight={() => (
+              <span className="text-xs px-2 py-0.5 bg-primary/20 text-primary rounded">
+                AutoDJ
+              </span>
+            )}
           />
         ) : (
           <div className="text-muted text-sm">Calculando próxima música...</div>
@@ -126,53 +130,54 @@ export default function Next({
     );
   }
 
+  // Para "geral": mostrar AutoDJ primeiro, depois os pedidos
+  // Construir lista ordenada: AutoDJ -> Pedidos
+  const allItems: UpcomingEntry[] = [];
+
+  // Adicionar próxima do AutoDJ primeiro (se existir)
+  if (nextIfNoRequests) {
+    allItems.push({
+      reqId: -1,
+      id: nextIfNoRequests.id,
+      title: nextIfNoRequests.title,
+      artist: nextIfNoRequests.artist,
+      cover: nextIfNoRequests.cover,
+      requestedAt: null,
+    });
+  }
+
+  // Adicionar pedidos depois
+  allItems.push(...upcoming);
+
   return (
     <SongBlock icon={CircleArrowRight} title="Próximas">
-      {upcoming.length === 0 ? (
-        nextIfNoRequests ? (
-          <SongList
-            items={[
-              {
-                id: nextIfNoRequests.reqId ?? "auto",
-                title: nextIfNoRequests.title,
-                artist: nextIfNoRequests.artist,
-                cover: nextIfNoRequests.cover,
-                requestedAt: nextIfNoRequests.requestedAt ?? null,
-              },
-            ]}
-            renderRight={(item) =>
-              formatRelativeTime(item.requestedAt as number | null)
-            }
-          />
-        ) : (
-          <div className="text-muted text-sm">Sem pedidos pendentes.</div>
-        )
+      {allItems.length === 0 ? (
+        <div className="text-muted text-sm">Calculando próxima música...</div>
       ) : (
         <SongList
-          items={[
-            ...upcoming,
-            // Adicionar próxima do AutoDJ no final (se existir)
-            ...(nextIfNoRequests
-              ? [
-                  {
-                    reqId: -1,
-                    id: nextIfNoRequests.id,
-                    title: nextIfNoRequests.title,
-                    artist: nextIfNoRequests.artist,
-                    cover: nextIfNoRequests.cover,
-                    requestedAt: null,
-                  },
-                ]
-              : []),
-          ]}
+          items={allItems}
           keyField="reqId"
           renderRight={(item) => {
             const entry = item as UpcomingEntry;
             // Se reqId=-1, é a próxima do AutoDJ
             if (entry.reqId === -1) {
-              return "Próxima (AutoDJ)";
+              return (
+                <span className="text-xs px-2 py-0.5 bg-primary/20 text-primary rounded">
+                  AutoDJ
+                </span>
+              );
             }
-            return formatRelativeTime(entry.requestedAt);
+            // Pedido: mostrar tempo relativo + badge
+            return (
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted">
+                  {formatRelativeTime(entry.requestedAt)}
+                </span>
+                <span className="text-xs px-2 py-0.5 bg-amber-500/20 text-amber-400 rounded">
+                  Pedido
+                </span>
+              </div>
+            );
           }}
         />
       )}

@@ -157,8 +157,11 @@ export function RequestModal({ isOpen, onClose }: RequestModalProps) {
       const result = await requestSong(songId);
       if (result.success) {
         toast.success(result.message);
-        // Opcional: fechar o modal após pedido bem-sucedido
-        // onClose();
+        // Fechar o modal e limpar o formulário após pedido bem-sucedido
+        setSearchQuery("");
+        setSongs([]);
+        setPage(1);
+        onClose();
       } else {
         toast.error(result.message);
       }
@@ -171,6 +174,9 @@ export function RequestModal({ isOpen, onClose }: RequestModalProps) {
   };
 
   if (!isOpen) return null;
+
+  // Mostrar warning se não está no geral
+  const showNotGeralWarning = currentGenre !== "geral";
 
   return (
     <>
@@ -225,6 +231,41 @@ export function RequestModal({ isOpen, onClose }: RequestModalProps) {
               <X size={24} />
             </button>
           </div>
+
+          {/* Warning Banner - Mostrar quando não está no Geral */}
+          {showNotGeralWarning && (
+            <div className="px-4 sm:px-6 py-3 bg-amber-900/30 border-b border-amber-600/30">
+              <div className="flex items-start gap-3">
+                <div className="shrink-0 w-5 h-5 mt-0.5 text-amber-500">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="currentColor"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M9.401 3.003c1.155-2 4.043-2 5.197 0l7.355 12.748c1.154 2-.29 4.5-2.599 4.5H4.645c-2.309 0-3.752-2.5-2.598-4.5L9.4 3.003zM12 8.25a.75.75 0 01.75.75v3.75a.75.75 0 01-1.5 0V9a.75.75 0 01.75-.75zm0 8.25a.75.75 0 100-1.5.75.75 0 000 1.5z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                </div>
+                <div className="flex-1 text-sm">
+                  <p className="text-amber-200 font-medium">
+                    Você está ouvindo:{" "}
+                    <span className="text-amber-400">
+                      {currentGenre.charAt(0).toUpperCase() +
+                        currentGenre.slice(1)}
+                    </span>
+                  </p>
+                  <p className="text-amber-300/80 mt-0.5">
+                    Pedidos só são tocados no mountpoint{" "}
+                    <strong className="text-amber-400">Geral</strong>. Ao fazer
+                    um pedido, você será trocado automaticamente.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Search Bar */}
           <div className="p-4 sm:p-6 border-b border-primary/30 bg-background/50">

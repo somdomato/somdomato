@@ -60,6 +60,7 @@ function AdminSkipButton() {
 export default function Player({ className = "" }: { className?: string }) {
   const {
     playing,
+    loading,
     play,
     pause,
     volume,
@@ -153,27 +154,56 @@ export default function Player({ className = "" }: { className?: string }) {
 
   return (
     <div
-      className={`flex items-center justify-between gap-3 max-w-2xl bg-linear-to-r from-background-alt to-[#2c3b26] rounded-lg px-3 py-2 border-2 border-black/50 ${className}`}
+      className={`flex items-center gap-2 sm:gap-3 max-w-2xl bg-linear-to-r from-background-alt to-[#2c3b26] rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 border border-primary/30 shadow-lg ${className}`}
     >
       {/* Cover Image */}
       <div className="shrink-0">
         <Image
           src={cover}
           alt="Cover"
-          className="w-12 h-12 sm:w-14 sm:h-14 rounded border-2 border-primary/40 object-cover"
-          width={56}
-          height={56}
+          className="w-10 h-10 sm:w-12 sm:h-12 rounded border border-primary/40 object-cover"
+          width={48}
+          height={48}
         />
       </div>
 
       {/* Metadata */}
       <div className="flex-1 min-w-0">
-        <div className="text-sm font-medium text-white truncate" title={title}>
+        <div
+          className="text-xs sm:text-sm font-medium text-white truncate"
+          title={title}
+        >
           {title}
         </div>
-        <div className="text-xs text-slate-400 truncate" title={artist}>
-          {artist}
-        </div>
+        {loading && playing ? (
+          <div className="flex items-center gap-1 text-xs text-primary animate-pulse">
+            <span>Carregando</span>
+            <span className="inline-flex">
+              <span
+                className="animate-bounce"
+                style={{ animationDelay: "0ms" }}
+              >
+                .
+              </span>
+              <span
+                className="animate-bounce"
+                style={{ animationDelay: "150ms" }}
+              >
+                .
+              </span>
+              <span
+                className="animate-bounce"
+                style={{ animationDelay: "300ms" }}
+              >
+                .
+              </span>
+            </span>
+          </div>
+        ) : (
+          <div className="text-xs text-slate-400 truncate" title={artist}>
+            {artist}
+          </div>
+        )}
       </div>
 
       {/* Station Selector */}
@@ -182,18 +212,18 @@ export default function Player({ className = "" }: { className?: string }) {
           <button
             type="button"
             onClick={() => setShowGenreDropdown(!showGenreDropdown)}
-            className="flex items-center gap-2 px-3 py-2 rounded-lg bg-primary/20 hover:bg-primary/30 border border-primary/40 transition-all group"
+            className="flex items-center gap-1.5 px-2 sm:px-3 py-1.5 rounded-lg bg-primary/20 hover:bg-primary/30 border border-primary/40 transition-all group"
             title="Trocar estação"
           >
             <Radio
-              size={16}
+              size={14}
               className="text-primary group-hover:scale-110 transition-transform"
             />
-            <span className="hidden sm:inline text-sm font-medium text-white">
+            <span className="text-xs sm:text-sm font-medium text-white max-w-16 sm:max-w-none truncate">
               {currentGenreLabel}
             </span>
             <svg
-              className="w-4 h-4 text-primary transition-transform group-hover:rotate-180"
+              className={`w-3 h-3 sm:w-4 sm:h-4 text-primary transition-transform duration-200 ${showGenreDropdown ? "rotate-180" : ""}`}
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -216,18 +246,32 @@ export default function Player({ className = "" }: { className?: string }) {
                 onClick={() => setShowGenreDropdown(false)}
                 aria-label="Fechar"
               />
-              <div className="absolute right-0 top-full mt-2 bg-background-alt border-2 border-primary/50 rounded-lg shadow-2xl z-50 min-w-50 overflow-hidden">
-                {GENRES.map((genre) => (
-                  <button
-                    key={genre.value}
-                    type="button"
-                    onClick={() => handleGenreChange(genre)}
-                    className={`w-full px-4 py-3 text-left text-sm hover:bg-primary/20 transition-colors flex items-center gap-3 ${currentGenre === genre.value ? "bg-primary/10 text-primary font-semibold" : "text-white"}`}
-                  >
-                    <Radio size={16} />
-                    <span>{genre.label}</span>
-                  </button>
-                ))}
+              <div className="absolute right-0 sm:left-1/2 sm:-translate-x-1/2 top-full mt-2 bg-background-alt border border-primary/50 rounded-xl shadow-2xl z-50 min-w-44 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+                <div className="p-1">
+                  {GENRES.map((genre) => (
+                    <button
+                      key={genre.value}
+                      type="button"
+                      onClick={() => handleGenreChange(genre)}
+                      className={`w-full px-3 py-2.5 text-left text-sm rounded-lg hover:bg-primary/20 transition-colors flex items-center gap-2.5 ${currentGenre === genre.value ? "bg-primary/15 text-primary font-semibold" : "text-white"}`}
+                    >
+                      <Radio
+                        size={14}
+                        className={
+                          currentGenre === genre.value
+                            ? "text-primary"
+                            : "text-slate-400"
+                        }
+                      />
+                      <span>{genre.label}</span>
+                      {currentGenre === genre.value && (
+                        <span className="ml-auto text-xs bg-primary/30 px-1.5 py-0.5 rounded">
+                          Ouvindo
+                        </span>
+                      )}
+                    </button>
+                  ))}
+                </div>
               </div>
             </>
           )}
@@ -235,18 +279,18 @@ export default function Player({ className = "" }: { className?: string }) {
       )}
 
       {/* Controls */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1.5 sm:gap-2">
         {/* Play/Pause */}
         <button
           type="button"
           onClick={handlePlayPause}
-          className="w-10 h-10 flex items-center justify-center rounded-full bg-primary text-white hover:bg-primary/90 transition"
+          className="w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center rounded-full bg-primary text-white hover:bg-primary/90 transition-all active:scale-95 shadow-md"
           aria-label={playing ? "Pausar" : "Reproduzir"}
         >
           {playing ? (
-            <Pause size={20} />
+            <Pause size={18} className="sm:w-5 sm:h-5" />
           ) : (
-            <Play size={20} className="ml-0.5" />
+            <Play size={18} className="ml-0.5 sm:w-5 sm:h-5" />
           )}
         </button>
 
@@ -255,20 +299,24 @@ export default function Player({ className = "" }: { className?: string }) {
           type="button"
           onClick={handleReload}
           disabled={!playing}
-          className="w-8 h-8 flex items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition disabled:opacity-30 disabled:cursor-not-allowed"
+          className="hidden sm:flex w-7 h-7 sm:w-8 sm:h-8 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition disabled:opacity-30 disabled:cursor-not-allowed"
           aria-label="Recarregar stream"
         >
-          <RotateCw size={16} />
+          <RotateCw size={14} className="sm:w-4 sm:h-4" />
         </button>
 
         {/* Volume */}
         <button
           type="button"
           onClick={() => toggleMute()}
-          className="hidden md:flex w-8 h-8 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition"
+          className="hidden sm:flex w-7 h-7 sm:w-8 sm:h-8 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition"
           aria-label={muted ? "Ativar som" : "Silenciar"}
         >
-          {muted ? <VolumeX size={16} /> : <Volume2 size={16} />}
+          {muted ? (
+            <VolumeX size={14} className="sm:w-4 sm:h-4" />
+          ) : (
+            <Volume2 size={14} className="sm:w-4 sm:h-4" />
+          )}
         </button>
         <input
           type="range"
@@ -277,7 +325,7 @@ export default function Player({ className = "" }: { className?: string }) {
           value={muted ? 0 : volume}
           onChange={(e) => setVolume(Number.parseInt(e.target.value, 10))}
           style={{ "--value": `${muted ? 0 : volume}%` } as React.CSSProperties}
-          className="hidden md:block w-16 sm:w-20 accent-primary"
+          className="hidden lg:block w-14 sm:w-16 accent-primary"
           aria-label="Volume"
         />
 

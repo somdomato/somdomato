@@ -4,8 +4,9 @@ import { eq } from "drizzle-orm";
 import fs from "node:fs/promises";
 import path from "node:path";
 import NodeID3 from "node-id3";
+import { extractAndSaveCover, findCoverByArtist } from "@/lib/cover";
 
-const MUSIC_DIR = "/var/music/sdm";
+const MUSIC_DIR = process.env.MUSIC_PATH || "/var/music/sdm";
 const SUPPORTED_EXTENSIONS = [".mp3", ".flac", ".ogg", ".m4a", ".wav"];
 
 // Gêneros válidos do sistema
@@ -220,6 +221,25 @@ async function syncDatabase() {
         }
       }
 
+      // Tentar extrair capa do MP3
+      let coverPath = "/images/logotipo.svg"; // padrão
+      try {
+        const extracted = await extractAndSaveCover(filePath);
+        if (extracted) {
+          coverPath = extracted;
+          console.log(`  → Capa extraída: ${coverPath}`);
+        } else {
+          // Tentar encontrar capa existente por artista
+          const found = await findCoverByArtist(artist);
+          if (found) {
+            coverPath = found;
+            console.log(`  → Capa encontrada por artista: ${coverPath}`);
+          }
+        }
+      } catch (error) {
+        console.warn(`  → Erro ao extrair capa:`, error);
+      }
+
       try {
         await db.insert(songs).values({
           title,
@@ -227,7 +247,7 @@ async function syncDatabase() {
           path: filePath,
           genre: genreForDb,
           timeSlots: 127, // Todos os horários por padrão (0b1111111)
-          cover: "/images/logotipo.svg", // usar capa padrão quando não houver uma disponível
+          cover: coverPath,
         });
         console.log(`  → Adicionada ao banco com gênero: ${genreForDb}`);
         addedCount++;

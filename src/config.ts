@@ -15,7 +15,7 @@ export const RADIO_CONFIG = {
   metadataRefreshInterval: 10000, // 10 segundos
 
   // Habilitar seleção de múltiplos gêneros (mountpoints)
-  multipleMounts: Boolean(process.env.NEXT_PUBLIC_MULTIPLE_MOUNTS) || false,
+  multipleMounts: true,
 } as const;
 
 export const GENRES = [

@@ -9,6 +9,7 @@ interface AudioContextType {
   cover: string;
   setSong: (song: { title: string; artist: string; cover: string }) => void;
   playing: boolean;
+  loading: boolean;
   play: (streamUrl?: string) => Promise<void>;
   pause: () => void;
   volume: number;
@@ -22,6 +23,7 @@ const AudioContext = createContext<AudioContextType | undefined>(undefined);
 export const AudioProvider = ({ children }: { children: React.ReactNode }) => {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [playing, setPlaying] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [currentSource, setCurrentSource] = useState(
     buildStreamUrl(DEFAULT_GENRE),
   );
@@ -57,6 +59,10 @@ export const AudioProvider = ({ children }: { children: React.ReactNode }) => {
   const play = async (streamUrl?: string) => {
     if (!audioRef.current) return;
 
+    // Immediately set playing state for instant UI feedback
+    setPlaying(true);
+    setLoading(true);
+
     try {
       const source = streamUrl || currentSource;
       const srcWithTs = `${source}?t=${Date.now()}`;
@@ -68,7 +74,7 @@ export const AudioProvider = ({ children }: { children: React.ReactNode }) => {
       audioRef.current.muted = muted;
 
       await audioRef.current.play();
-      setPlaying(true);
+      // Loading will be set to false when canplaythrough fires
 
       // Atualizar fonte atual se trocar explicitamente
       if (streamUrl) {
@@ -80,6 +86,7 @@ export const AudioProvider = ({ children }: { children: React.ReactNode }) => {
       }
       console.error("Erro ao reproduzir áudio:", error);
       setPlaying(false);
+      setLoading(false);
     }
   };
 
@@ -87,6 +94,7 @@ export const AudioProvider = ({ children }: { children: React.ReactNode }) => {
     if (audioRef.current) {
       audioRef.current.pause();
       setPlaying(false);
+      setLoading(false);
     }
   };
 
@@ -111,12 +119,41 @@ export const AudioProvider = ({ children }: { children: React.ReactNode }) => {
     }
   }, [volume, muted]);
 
+  // Handle audio events for loading state
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    const handleCanPlayThrough = () => {
+      setLoading(false);
+    };
+
+    const handleWaiting = () => {
+      if (playing) setLoading(true);
+    };
+
+    const handlePlaying = () => {
+      setLoading(false);
+    };
+
+    audio.addEventListener("canplaythrough", handleCanPlayThrough);
+    audio.addEventListener("waiting", handleWaiting);
+    audio.addEventListener("playing", handlePlaying);
+
+    return () => {
+      audio.removeEventListener("canplaythrough", handleCanPlayThrough);
+      audio.removeEventListener("waiting", handleWaiting);
+      audio.removeEventListener("playing", handlePlaying);
+    };
+  }, [playing]);
+
   return (
     <AudioContext.Provider
       value={{
         play,
         pause,
         playing,
+        loading,
         volume,
         setVolume,
         toggleMute,

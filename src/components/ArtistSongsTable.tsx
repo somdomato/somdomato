@@ -150,10 +150,26 @@ export default function ArtistSongsTable({ artist }: { artist: string }) {
     console.log(`[Preview] URL: ${url}`);
 
     try {
+      // First, check if the file exists by making a HEAD request
+      const checkResponse = await fetch(url, { method: "HEAD" });
+      if (!checkResponse.ok) {
+        // Try to get error details
+        const errorResponse = await fetch(url);
+        const errorData = await errorResponse.json().catch(() => ({}));
+        const errorMsg =
+          errorData.message ||
+          `Arquivo não encontrado (${checkResponse.status})`;
+        console.error("[Preview] File check failed:", errorData);
+        toast.error(errorMsg);
+        stopPreviewAndRestoreRadio();
+        return;
+      }
+
       // Create audio element
       const audio = new Audio();
       audio.preload = "auto";
       audio.volume = audioCtx.volume / 100;
+      audio.crossOrigin = "anonymous"; // Enable CORS
 
       previewRef.current = audio;
 
@@ -203,8 +219,19 @@ export default function ArtistSongsTable({ artist }: { artist: string }) {
         stopPreviewAndRestoreRadio();
       };
 
+      // Handle loading progress
+      const onLoadStart = () => {
+        console.log(`[Preview] Loading started...`);
+      };
+
+      const onCanPlay = () => {
+        console.log(`[Preview] Can play - ready to start`);
+      };
+
       audio.addEventListener("ended", onEnded);
       audio.addEventListener("error", onError);
+      audio.addEventListener("loadstart", onLoadStart);
+      audio.addEventListener("canplay", onCanPlay);
 
       // Add loadedmetadata listener to debug
       audio.addEventListener("loadedmetadata", () => {

@@ -5,6 +5,29 @@ import fs from "node:fs";
 import fsPromises from "node:fs/promises";
 import path from "node:path";
 
+// Known music path patterns to replace with MUSIC_PATH
+const KNOWN_MUSIC_PATHS = ["/var/music/sdm", "/home/lucas/music/sdm"];
+
+/**
+ * Converts a stored database path to the actual filesystem path
+ * using the MUSIC_PATH environment variable
+ */
+function resolveMusicPath(storedPath: string): string {
+  const musicPath = process.env.MUSIC_PATH;
+  if (!musicPath) {
+    return storedPath; // No conversion if MUSIC_PATH not set
+  }
+
+  // Try to replace any known path prefix with MUSIC_PATH
+  for (const knownPath of KNOWN_MUSIC_PATHS) {
+    if (storedPath.startsWith(knownPath)) {
+      return storedPath.replace(knownPath, musicPath);
+    }
+  }
+
+  return storedPath;
+}
+
 export async function GET(
   _request: Request,
   context: { params: { id: string } | Promise<{ id: string }> },
@@ -29,7 +52,8 @@ export async function GET(
         { status: 404 },
       );
 
-    const filePath = s.path;
+    // Resolve the actual filesystem path
+    const filePath = resolveMusicPath(s.path);
 
     // Ensure file exists
     try {
@@ -39,7 +63,9 @@ export async function GET(
         JSON.stringify({
           error: "file_not_found",
           message: "file path does not exist on disk",
-          path: filePath,
+          storedPath: s.path,
+          resolvedPath: filePath,
+          musicPathEnv: process.env.MUSIC_PATH || "(not set)",
         }),
         { status: 404 },
       );
