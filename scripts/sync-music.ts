@@ -6,7 +6,7 @@ import path from "node:path";
 import NodeID3 from "node-id3";
 import { extractAndSaveCover, findCoverByArtist } from "@/lib/cover";
 
-const MUSIC_DIR = process.env.MUSIC_PATH || "/var/music/sdm";
+const MUSIC_PATH = process.env.MUSIC_PATH || "/var/music/sdm";
 const SUPPORTED_EXTENSIONS = [".mp3", ".flac", ".ogg", ".m4a", ".wav"];
 
 // Gêneros válidos do sistema
@@ -116,7 +116,7 @@ async function scanMusicDirectory(): Promise<Set<string>> {
     }
   }
 
-  await scan(MUSIC_DIR);
+  await scan(MUSIC_PATH);
   return musicFiles;
 }
 

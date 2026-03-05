@@ -23,7 +23,13 @@ export default function Top({ data }: { data: TopEntry[] }) {
       title: string;
       artist: string;
       cover?: string | null;
+      wasRequested?: boolean;
     }) => {
+      // Só contar músicas que foram PEDIDAS (não AutoDJ)
+      if (!song.wasRequested) {
+        return;
+      }
+
       setTop((prev) => {
         const found = prev.find((p) => p.id === song.id);
         if (found) {
@@ -52,7 +58,7 @@ export default function Top({ data }: { data: TopEntry[] }) {
   return (
     <SongBlock icon={Trophy} title="TOP 10">
       {top.length === 0 ? (
-        <div className="text-muted text-sm">Sem dados de reprodução.</div>
+        <div className="text-muted text-sm">Nenhum pedido ainda.</div>
       ) : (
         <SongList items={top} renderRight={(t) => `${t.count}x`} />
       )}

@@ -32,6 +32,7 @@ export const history = sqliteTable("history", {
     .notNull()
     .references(() => songs.id),
   genre: text().notNull().default("geral"), // Gênero do mountpoint onde tocou
+  wasRequested: int().default(0), // 1 se foi pedido pelo usuário, 0 se foi AutoDJ
   createdAt: int({ mode: "timestamp" }).$defaultFn(() => new Date()),
 });
 
@@ -71,3 +72,33 @@ export const likesRelations = relations(likes, ({ one }) => ({
     references: [songs.id],
   }),
 }));
+
+// =============================================================================
+// ESTATÍSTICAS DO SITE
+// =============================================================================
+
+export const pageViews = sqliteTable("page_views", {
+  id: int().primaryKey({ autoIncrement: true }),
+  page: text().notNull(), // Caminho da página ("/", "/pedidos", etc.)
+  ip: text().notNull(), // IP do visitante (para identificar únicos)
+  userAgent: text(), // User agent do navegador
+  sessionId: text(), // Identificador de sessão (para agrupar cliques da mesma visita)
+  createdAt: int({ mode: "timestamp" }).$defaultFn(() => new Date()),
+});
+
+// =============================================================================
+// UPLOADS (ENVIOS DE USUÁRIOS)
+// =============================================================================
+
+export const uploads = sqliteTable("uploads", {
+  id: int().primaryKey({ autoIncrement: true }),
+  title: text().notNull(),
+  artist: text().notNull(),
+  youtubeUrl: text().notNull(), // URL original do YouTube
+  youtubeId: text().notNull(), // ID do vídeo
+  thumbnail: text(), // Thumbnail do vídeo
+  filename: text().notNull(), // Nome do arquivo baixado
+  path: text().notNull(), // Caminho completo do arquivo
+  status: text().default("pending"), // pending, approved, rejected
+  createdAt: int({ mode: "timestamp" }).$defaultFn(() => new Date()),
+});

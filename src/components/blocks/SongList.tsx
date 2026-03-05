@@ -29,7 +29,7 @@ export default function SongList({
         <colgroup>
           <col className="w-10" />
           <col />
-          {hasRight && <col className="w-14" />}
+          {hasRight && <col className="w-24" />}
         </colgroup>
         <tbody>
           {items.map((it) => {

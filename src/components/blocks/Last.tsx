@@ -47,19 +47,13 @@ export default function Last({ data }: { data: LatestEntry[] }) {
       genre?: string;
       allowedInGeneral?: number;
       playedAt?: number;
+      playedOnMountpoint?: string;
     }) => {
-      // Filtrar por gênero:
-      // - Se estou em "geral": aceitar músicas com genre='geral' OU allowedInGeneral=1
-      // - Se estou em outro gênero: aceitar apenas músicas daquele gênero
-      let shouldInclude = false;
+      // Filtrar pelo mountpoint onde a música foi TOCADA
+      // playedOnMountpoint indica em qual mountpoint a música foi tocada
+      const mountpoint = song.playedOnMountpoint || song.genre || "geral";
 
-      if (currentGenre === "geral") {
-        shouldInclude = song.genre === "geral" || song.allowedInGeneral === 1;
-      } else {
-        shouldInclude = song.genre === currentGenre;
-      }
-
-      if (!shouldInclude) {
+      if (mountpoint !== currentGenre) {
         return;
       }
 

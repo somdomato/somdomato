@@ -139,7 +139,11 @@ export async function GET(request: Request) {
       requestResult = results[0] || null;
     }
 
+    // Track se foi um pedido ou AutoDJ
+    let wasFromRequest = false;
+
     if (requestResult) {
+      wasFromRequest = true;
       selectedSong = {
         id: requestResult.id,
         title: requestResult.title,
@@ -165,6 +169,7 @@ export async function GET(request: Request) {
         await db.delete(requests).where(eq(requests.songId, requestResult.id));
         await db.delete(songs).where(eq(songs.id, requestResult.id));
         selectedSong = null;
+        wasFromRequest = false;
       }
     }
 
@@ -201,7 +206,11 @@ export async function GET(request: Request) {
 
     await db
       .insert(history)
-      .values({ songId: selectedSong.id, genre: usedGenre })
+      .values({
+        songId: selectedSong.id,
+        genre: usedGenre,
+        wasRequested: wasFromRequest ? 1 : 0,
+      })
       .returning();
 
     // Garantir que haja um caminho de capa no banco antes de emitir (melhor esforço)
@@ -291,6 +300,10 @@ export async function GET(request: Request) {
       genre: songGenre,
       allowedInGeneral: allowedInGeneral,
       playedAt: Date.now(),
+      // Mountpoint onde foi tocado (pode ser diferente do gênero da música em caso de fallback)
+      playedOnMountpoint: usedGenre,
+      // Se foi um pedido (true) ou AutoDJ (false)
+      wasRequested: wasFromRequest,
     };
 
     // Emitir evento para todos os gêneros (clientes filtram por gênero localmente)

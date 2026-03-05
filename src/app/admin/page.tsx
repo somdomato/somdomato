@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useAuth, LoginForm } from "@/components/AdminAuth";
 import { SongsTable } from "@/components/SongsTable";
-import { Music, ListOrdered, LogOut } from "lucide-react";
+import { Music, ListOrdered, LogOut, Upload } from "lucide-react";
 
 export default function AdminPage() {
   const { password, isAuthenticated, login, logout } = useAuth();
@@ -50,6 +50,13 @@ export default function AdminPage() {
             >
               <ListOrdered size={20} />
               Pedidos
+            </Link>
+            <Link
+              href="/admin/uploads"
+              className="flex items-center gap-2 px-6 py-3 border-b-2 border-transparent text-gray-400 hover:text-white transition-colors"
+            >
+              <Upload size={20} />
+              Envios
             </Link>
           </div>
         </div>

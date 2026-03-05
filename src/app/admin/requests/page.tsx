@@ -4,7 +4,16 @@ import Link from "next/link";
 import Image from "next/image";
 import { useState, useEffect, useCallback } from "react";
 import { useAuth, LoginForm } from "@/components/AdminAuth";
-import { Music, LogOut, Trash2, Plus, ArrowUp, ArrowDown } from "lucide-react";
+import {
+  Music,
+  LogOut,
+  Trash2,
+  Plus,
+  ArrowUp,
+  ArrowDown,
+  ListOrdered,
+  Upload,
+} from "lucide-react";
 import { toast } from "sonner";
 
 async function fetchRequests(page: number, limit: number) {
@@ -209,9 +218,16 @@ export default function RequestsPage() {
               Músicas
             </Link>
             <div className="flex items-center gap-2 px-6 py-3 border-b-2 border-primary text-primary">
-              <Music size={20} />
+              <ListOrdered size={20} />
               Pedidos
             </div>
+            <Link
+              href="/admin/uploads"
+              className="flex items-center gap-2 px-6 py-3 border-b-2 border-transparent text-gray-400 hover:text-white transition-colors"
+            >
+              <Upload size={20} />
+              Envios
+            </Link>
           </div>
         </div>
       </div>

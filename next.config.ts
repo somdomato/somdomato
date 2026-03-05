@@ -7,7 +7,10 @@ const nextConfig: NextConfig = {
     },
   },
   images: {
-    remotePatterns: [new URL("https://cdn.somdomato.com/**")],
+    remotePatterns: [
+      new URL("https://cdn.somdomato.com/**"),
+      new URL("https://i.ytimg.com/**"),
+    ],
   },
 };
 

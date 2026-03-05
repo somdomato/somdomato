@@ -3,6 +3,7 @@ import Carousel from "@/components/Carousel";
 import LastSongs from "@/components/blocks/Last";
 import TopSongs from "@/components/blocks/Top";
 import NextSongs from "@/components/blocks/Next";
+import MiniStats from "@/components/blocks/MiniStats";
 import { lastSongs, nextSongs, topSongs } from "@/actions/songs";
 import { slides as images } from "@/config";
 
@@ -14,7 +15,7 @@ export default async function Home() {
     (await nextSongs("geral")) ?? {};
 
   return (
-    <div className="flex flex-col items-center justify-center h-full w-full max-w-5xl mx-auto">
+    <div className="flex flex-col items-center justify-center h-full w-full max-w-7xl mx-auto px-4 lg:px-6">
       <section className="w-full mb-3">
         <Carousel images={images} autoplay={true} interval={5000} />
       </section>
@@ -38,6 +39,10 @@ export default async function Home() {
           <TopSongs data={top} />
           <NextSongs data={next} initialNextIfNoRequests={nextIfNoRequests} />
         </div>
+      </section>
+
+      <section className="w-full mb-3">
+        <MiniStats />
       </section>
     </div>
   );

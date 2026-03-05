@@ -14,38 +14,26 @@ type TopEntry = {
 };
 
 export async function lastSongs(genre?: string) {
-  // Últimas 10 músicas do gênero especificado (padrão: "geral")
+  // Últimas 10 músicas do mountpoint especificado (padrão: "geral")
   const selectedGenre = genre || "geral";
 
-  const query = db
+  // Filtrar pelo gênero (mountpoint) onde a música foi TOCADA (history.genre)
+  const latest = await db
     .select({
       id: songs.id,
       title: songs.title,
       artist: songs.artist,
       cover: songs.cover,
       playedAt: history.createdAt,
-      genre: songs.genre,
-      allowedInGeneral: songs.allowedInGeneral,
+      historyGenre: history.genre,
     })
     .from(history)
     .innerJoin(songs, eq(history.songId, songs.id))
-    .orderBy(desc(history.id));
+    .where(eq(history.genre, selectedGenre))
+    .orderBy(desc(history.id))
+    .limit(10);
 
-  const latest = await query.limit(100); // Pegar mais para filtrar
-
-  // Filtrar por gênero
-  let filtered = latest;
-  if (selectedGenre === "geral") {
-    // Geral: incluir músicas com genre='geral' OU allowedInGeneral=1
-    filtered = latest.filter(
-      (s) => s.genre === "geral" || s.allowedInGeneral === 1,
-    );
-  } else {
-    // Outros gêneros: incluir apenas músicas do gênero específico
-    filtered = latest.filter((s) => s.genre === selectedGenre);
-  }
-
-  return filtered.slice(0, 10).map((s) => ({
+  return latest.map((s) => ({
     id: s.id,
     title: s.title,
     artist: s.artist,
@@ -55,8 +43,8 @@ export async function lastSongs(genre?: string) {
 }
 
 export async function topSongs() {
-  // Top 10 (agregação em memória a partir do histórico)
-  const allHistory = await db
+  // Top 10 músicas mais PEDIDAS (apenas wasRequested=1, não conta AutoDJ)
+  const requestedHistory = await db
     .select({
       id: songs.id,
       title: songs.title,
@@ -64,10 +52,11 @@ export async function topSongs() {
       cover: songs.cover,
     })
     .from(history)
-    .innerJoin(songs, eq(history.songId, songs.id));
+    .innerJoin(songs, eq(history.songId, songs.id))
+    .where(eq(history.wasRequested, 1));
 
   const map = new Map<number, TopEntry>();
-  for (const row of allHistory) {
+  for (const row of requestedHistory) {
     const entry = map.get(row.id);
     if (entry) entry.count += 1;
     else

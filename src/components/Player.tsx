@@ -2,12 +2,25 @@
 
 import Image from "next/image";
 import { useEffect, useState, useCallback } from "react";
-import { Play, Pause, RotateCw, Volume2, VolumeX, Radio } from "lucide-react";
+import {
+  Play,
+  Pause,
+  RotateCw,
+  Volume2,
+  VolumeX,
+  Radio,
+  Users,
+} from "lucide-react";
 import { useAudio } from "@/context/AudioContext";
 import { useGenre, GENRES } from "@/context/GenreContext";
 import { buildStreamUrl, RADIO_CONFIG } from "@/config";
 import { toast } from "sonner";
 import { useAuth } from "@/components/AdminAuth";
+
+type ListenersData = {
+  current: number;
+  peak: number;
+};
 
 function AdminSkipButton() {
   const { isAuthenticated, password } = useAuth();
@@ -74,9 +87,34 @@ export default function Player({ className = "" }: { className?: string }) {
   } = useAudio();
   const { currentGenre, setGenre, getStreamUrl } = useGenre();
   const [showGenreDropdown, setShowGenreDropdown] = useState(false);
+  const [listeners, setListeners] = useState<ListenersData>({
+    current: 0,
+    peak: 0,
+  });
 
   const currentGenreLabel =
     GENRES.find((g) => g.value === currentGenre)?.label || "Geral";
+
+  // Buscar ouvintes do mountpoint atual
+  const fetchListeners = useCallback(async () => {
+    try {
+      const response = await fetch("/api/listeners");
+      if (response.ok) {
+        const data = await response.json();
+        const currentMount = data.mountpoints?.find(
+          (m: { mountpoint: string }) => m.mountpoint === currentGenre,
+        );
+        if (currentMount) {
+          setListeners({
+            current: currentMount.listeners || 0,
+            peak: currentMount.peak || 0,
+          });
+        }
+      }
+    } catch (error) {
+      console.error("Erro ao buscar ouvintes:", error);
+    }
+  }, [currentGenre]);
 
   // Buscar metadados do gênero atual
   const fetchMetadata = useCallback(async () => {
@@ -96,15 +134,16 @@ export default function Player({ className = "" }: { className?: string }) {
   // Buscar metadados na inicialização e ao trocar de gênero
   useEffect(() => {
     fetchMetadata();
+    fetchListeners();
 
-    // Poll de metadados a cada 10 segundos
-    const interval = setInterval(
-      fetchMetadata,
-      RADIO_CONFIG.metadataRefreshInterval,
-    );
+    // Poll de metadados e ouvintes a cada 10 segundos
+    const interval = setInterval(() => {
+      fetchMetadata();
+      fetchListeners();
+    }, RADIO_CONFIG.metadataRefreshInterval);
 
     return () => clearInterval(interval);
-  }, [fetchMetadata]);
+  }, [fetchMetadata, fetchListeners]);
 
   const handleGenreChange = useCallback(
     async (newGenre: (typeof GENRES)[number]) => {
@@ -200,8 +239,19 @@ export default function Player({ className = "" }: { className?: string }) {
             </span>
           </div>
         ) : (
-          <div className="text-xs text-slate-400 truncate" title={artist}>
-            {artist}
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-slate-400 truncate" title={artist}>
+              {artist}
+            </span>
+            {listeners.current > 0 && (
+              <span
+                className="flex items-center gap-1 text-xs text-emerald-400 bg-emerald-500/20 px-1.5 py-0.5 rounded"
+                title={`Pico: ${listeners.peak}`}
+              >
+                <Users size={10} />
+                {listeners.current}
+              </span>
+            )}
           </div>
         )}
       </div>

@@ -4,6 +4,7 @@ import { Nunito } from "next/font/google";
 import { Toaster } from "sonner";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import PageTracker from "@/components/PageTracker";
 import type { Metadata } from "next";
 import "./globals.css";
 
@@ -47,6 +48,7 @@ export default function RootLayout({
       </head>
       <body className={nunito.className}>
         <Toaster position="bottom-right" />
+        <PageTracker />
         <GenreProvider>
           <AudioProvider>
             <div className="flex flex-col min-h-screen relative">
