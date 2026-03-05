@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
           message: "Iniciando download...",
         });
 
-        const ytDlpWrap = new YTDlpWrap();
+        const ytDlpWrap = new YTDlpWrap("/usr/local/bin/yt-dlp"); // Ajuste para o caminho do yt-dlp no seu sistema
 
         // Download as MP3
         const ytDlpProcess = ytDlpWrap.exec([
