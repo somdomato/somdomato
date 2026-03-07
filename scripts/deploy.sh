@@ -11,7 +11,8 @@ PROJECT_DIR=/var/www/$NAME
 cp -a "$PROJECT_DIR" "$TEMP_DIR"
 cd "$TEMP_DIR" || exit 1
 
-git clean -fxd -e .env -e public/covers -e drizzle/somdomato.db
+#git clean -fxd -e .env -e public/covers -e drizzle/somdomato.db
+git clean -fxd -e .env -e public/covers
 cp .env .env.production 
 
 # Gerar NEXT_SERVER_ACTIONS_ENCRYPTION_KEY se não existir
