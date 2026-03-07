@@ -21,8 +21,8 @@ interface UploadItem {
   id: number;
   title: string;
   artist: string;
-  youtubeUrl: string;
-  youtubeId: string;
+  deezerUrl: string;
+  deezerId: string;
   thumbnail: string | null;
   filename: string;
   status: string;
@@ -239,7 +239,7 @@ export default function UploadsPage() {
                     Artista
                   </th>
                   <th className="px-4 py-3 text-left text-sm font-medium text-gray-400">
-                    YouTube
+                    Deezer
                   </th>
                   <th className="px-4 py-3 text-right text-sm font-medium text-gray-400">
                     Ações
@@ -266,7 +266,7 @@ export default function UploadsPage() {
                     <td className="px-4 py-3 text-gray-400">{upload.artist}</td>
                     <td className="px-4 py-3">
                       <a
-                        href={upload.youtubeUrl}
+                        href={upload.deezerUrl}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-primary hover:underline flex items-center gap-1"

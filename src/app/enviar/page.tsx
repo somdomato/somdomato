@@ -5,16 +5,15 @@ import Image from "next/image";
 import { Search, Music, Loader2, Download, Check, X } from "lucide-react";
 import { toast } from "sonner";
 
-interface YouTubeResult {
+interface DeezerResult {
   id: string;
   title: string;
-  channel: string;
+  artist: string;
   thumbnail: string;
-  url: string;
 }
 
 interface DownloadProgress {
-  videoId: string;
+  trackId: string;
   progress: number;
   status: string;
   message: string;
@@ -22,10 +21,10 @@ interface DownloadProgress {
 
 export default function EnviarPage() {
   const [searchQuery, setSearchQuery] = useState("");
-  const [results, setResults] = useState<YouTubeResult[]>([]);
+  const [results, setResults] = useState<DeezerResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [downloading, setDownloading] = useState<DownloadProgress | null>(null);
-  const [showForm, setShowForm] = useState<YouTubeResult | null>(null);
+  const [showForm, setShowForm] = useState<DeezerResult | null>(null);
   const [formData, setFormData] = useState({ title: "", artist: "" });
 
   const handleSearch = useCallback(async () => {
@@ -34,7 +33,7 @@ export default function EnviarPage() {
     setLoading(true);
     try {
       const res = await fetch(
-        `/api/youtube/search?q=${encodeURIComponent(searchQuery)}`,
+        `/api/deezer/search?q=${encodeURIComponent(searchQuery)}`,
       );
       const data = await res.json();
 
@@ -52,25 +51,9 @@ export default function EnviarPage() {
     }
   }, [searchQuery]);
 
-  const handleSelectVideo = (video: YouTubeResult) => {
-    // Extract artist and title from video title
-    const parts = video.title.split(" - ");
-    let artist = "";
-    let title = video.title;
-
-    if (parts.length >= 2) {
-      artist = parts[0].trim();
-      title = parts.slice(1).join(" - ").trim();
-    }
-
-    // Clean up common suffixes
-    title = title
-      .replace(/\s*\(.*?(oficial|clipe|video|lyric|audio).*?\)/gi, "")
-      .replace(/\s*\[.*?(oficial|clipe|video|lyric|audio).*?\]/gi, "")
-      .trim();
-
-    setFormData({ title, artist });
-    setShowForm(video);
+  const handleSelectVideo = (track: DeezerResult) => {
+    setFormData({ title: track.title, artist: track.artist });
+    setShowForm(track);
   };
 
   const handleDownload = async () => {
@@ -80,7 +63,7 @@ export default function EnviarPage() {
     }
 
     setDownloading({
-      videoId: showForm.id,
+      trackId: showForm.id,
       progress: 0,
       status: "starting",
       message: "Iniciando...",
@@ -88,12 +71,11 @@ export default function EnviarPage() {
     setShowForm(null);
 
     try {
-      const response = await fetch("/api/youtube/download", {
+      const response = await fetch("/api/deezer/download", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          videoId: showForm.id,
-          url: showForm.url,
+          trackId: showForm.id,
           title: formData.title.trim(),
           artist: formData.artist.trim(),
           thumbnail: showForm.thumbnail,
@@ -134,7 +116,7 @@ export default function EnviarPage() {
               }
 
               setDownloading((prev) => ({
-                videoId: prev?.videoId || showForm.id,
+                trackId: prev?.trackId || showForm.id,
                 progress: data.progress || prev?.progress || 0,
                 status: data.status || prev?.status || "",
                 message: data.message || prev?.message || "",
@@ -157,7 +139,7 @@ export default function EnviarPage() {
       <div className="container mx-auto px-4 py-8 max-w-3xl">
         <h1 className="text-3xl font-bold text-primary mb-2">Enviar Música</h1>
         <p className="text-gray-400 mb-8">
-          Pesquise uma música no YouTube e envie para a rádio
+          Pesquise uma música no Deezer e envie para a rádio
         </p>
 
         {/* Search Bar */}
@@ -172,7 +154,7 @@ export default function EnviarPage() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-              placeholder="Pesquisar música no YouTube..."
+              placeholder="Pesquisar música no Deezer..."
               className="w-full pl-10 pr-4 py-3 bg-background-alt border border-primary/30 rounded-lg focus:outline-none focus:border-primary transition-colors"
             />
           </div>
@@ -219,26 +201,26 @@ export default function EnviarPage() {
             <h2 className="text-lg font-semibold text-gray-300 mb-4">
               Resultados ({results.length})
             </h2>
-            {results.map((video) => (
+            {results.map((track) => (
               <div
-                key={video.id}
+                key={track.id}
                 className="flex items-center gap-4 p-4 bg-background-alt border border-primary/20 rounded-lg hover:border-primary/40 transition-colors"
               >
                 <Image
-                  src={video.thumbnail}
-                  alt={video.title}
+                  src={track.thumbnail}
+                  alt={track.title}
                   width={120}
                   height={68}
                   className="rounded object-cover shrink-0"
                 />
                 <div className="flex-1 min-w-0">
-                  <h3 className="font-medium truncate">{video.title}</h3>
+                  <h3 className="font-medium truncate">{track.title}</h3>
                   <p className="text-sm text-gray-400 truncate">
-                    {video.channel}
+                    {track.artist}
                   </p>
                 </div>
                 <button
-                  onClick={() => handleSelectVideo(video)}
+                  onClick={() => handleSelectVideo(track)}
                   className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary/90 rounded-lg font-medium transition-colors shrink-0"
                 >
                   <Download size={18} />
@@ -283,7 +265,7 @@ export default function EnviarPage() {
                   <p className="text-sm text-gray-400 truncate">
                     {showForm.title}
                   </p>
-                  <p className="text-xs text-gray-500">{showForm.channel}</p>
+                  <p className="text-xs text-gray-500">{showForm.artist}</p>
                 </div>
               </div>
 

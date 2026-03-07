@@ -94,8 +94,8 @@ export const uploads = sqliteTable("uploads", {
   id: int().primaryKey({ autoIncrement: true }),
   title: text().notNull(),
   artist: text().notNull(),
-  youtubeUrl: text().notNull(), // URL original do YouTube
-  youtubeId: text().notNull(), // ID do vídeo
+  deezerUrl: text().notNull(), // URL original do Deezer
+  deezerId: text().notNull(), // ID da faixa
   thumbnail: text(), // Thumbnail do vídeo
   filename: text().notNull(), // Nome do arquivo baixado
   path: text().notNull(), // Caminho completo do arquivo

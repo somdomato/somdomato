@@ -98,7 +98,12 @@ export async function GET(_request: NextRequest) {
       totalPeak,
     });
   } catch (error) {
-    console.error("Erro ao buscar ouvintes:", error);
+    // Icecast pode estar offline (ECONNREFUSED, etc.) — retorna fallback silenciosamente
+    const isNetworkError =
+      error instanceof TypeError && error.message.includes("fetch failed");
+    if (!isNetworkError) {
+      console.error("Erro ao buscar ouvintes:", error);
+    }
     return NextResponse.json<ListenersResponse>({
       mountpoints: [],
       total: 0,

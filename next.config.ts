@@ -10,6 +10,7 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       new URL("https://cdn.somdomato.com/**"),
       new URL("https://i.ytimg.com/**"),
+      new URL("https://cdn-images.dzcdn.net/**"),
     ],
   },
 };

@@ -113,10 +113,12 @@ export async function GET(request: NextRequest) {
       genre: genreInfo.label,
     });
   } catch (error) {
-    console.error("Erro ao buscar metadados:", error);
-    return NextResponse.json(
-      { error: "Erro interno", song: DEFAULT_SONG },
-      { status: 500 },
-    );
+    // Icecast pode estar offline (ECONNREFUSED, etc.) — retorna fallback silenciosamente
+    const isNetworkError =
+      error instanceof TypeError && error.message.includes("fetch failed");
+    if (!isNetworkError) {
+      console.error("Erro ao buscar metadados:", error);
+    }
+    return NextResponse.json({ song: DEFAULT_SONG });
   }
 }
