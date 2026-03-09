@@ -1,0 +1,15 @@
+[Unit]
+Description=Sync music database with filesystem
+After=network.target
+
+[Service]
+Type=oneshot
+User=nginx
+Group=nginx
+ExecStartPre=/bin/sleep 300
+ExecStart=/usr/bin/mv /home/nginx/Music/GoDeez/Sertanejo/*.mp3 /var/music/sdm/uploads/
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

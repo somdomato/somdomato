@@ -5,20 +5,20 @@ import { spawn } from "node:child_process";
 import path from "node:path";
 import fs from "node:fs";
 
-const UPLOADS_DIR = process.env.UPLOADS_DIR || "/var/music/uploads";
+const UPLOADS_DIR = process.env.UPLOADS_DIR || "/var/music/sdm/uploads";
 
-function ensureUploadsDir() {
-  if (!fs.existsSync(UPLOADS_DIR)) {
-    fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+function ensureDir(dir: string) {
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
   }
 }
 
-/** Resolve symlinks on UPLOADS_DIR itself so path comparisons are consistent */
-function getRealUploadsDir(): string {
+/** Resolve symlinks so path comparisons are consistent */
+function realpath(dir: string): string {
   try {
-    return fs.realpathSync(UPLOADS_DIR);
+    return fs.realpathSync(dir);
   } catch {
-    return UPLOADS_DIR;
+    return dir;
   }
 }
 
@@ -72,9 +72,9 @@ export async function POST(request: NextRequest) {
           return;
         }
 
-        ensureUploadsDir();
+        ensureDir(UPLOADS_DIR);
 
-        const realUploadsDir = getRealUploadsDir();
+        const realUploadsDir = realpath(UPLOADS_DIR);
         const sanitizedTitle = title.replace(/[^a-zA-Z0-9\s-]/g, "").trim();
         const sanitizedArtist = artist.replace(/[^a-zA-Z0-9\s-]/g, "").trim();
         const filename = `${sanitizedArtist} - ${sanitizedTitle}.mp3`;
@@ -88,7 +88,7 @@ export async function POST(request: NextRequest) {
 
         const startMs = Date.now();
 
-        // Snapshot before download (real paths, for new-file detection)
+        // Snapshot before download
         const filesBefore = getAllAudioFiles(realUploadsDir);
 
         const godeezProcess = spawn(
