@@ -13,14 +13,36 @@ function ensureUploadsDir() {
   }
 }
 
-function getAllAudioFiles(dir: string): Set<string> {
-  const results = new Set<string>();
+/** Resolve symlinks on UPLOADS_DIR itself so path comparisons are consistent */
+function getRealUploadsDir(): string {
+  try {
+    return fs.realpathSync(UPLOADS_DIR);
+  } catch {
+    return UPLOADS_DIR;
+  }
+}
+
+/**
+ * Recursively collect all audio files under `dir`.
+ * Uses fs.statSync (follows symlinks) so symlinked subdirs are traversed.
+ * Returns a Map of absolute path → mtime (ms).
+ */
+function getAllAudioFiles(dir: string): Map<string, number> {
+  const results = new Map<string, number>();
   const recurse = (d: string) => {
     try {
       for (const entry of fs.readdirSync(d, { withFileTypes: true })) {
         const full = path.join(d, entry.name);
-        if (entry.isDirectory()) recurse(full);
-        else if (/\.(mp3|flac|ogg|m4a)$/i.test(entry.name)) results.add(full);
+        try {
+          const stat = fs.statSync(full); // follows symlinks
+          if (stat.isDirectory()) {
+            recurse(full);
+          } else if (/\.(mp3|flac|ogg|m4a)$/i.test(entry.name)) {
+            results.set(full, stat.mtimeMs);
+          }
+        } catch {
+          // skip unreadable entries
+        }
       }
     } catch {
       // ignore unreadable dirs
@@ -52,10 +74,11 @@ export async function POST(request: NextRequest) {
 
         ensureUploadsDir();
 
+        const realUploadsDir = getRealUploadsDir();
         const sanitizedTitle = title.replace(/[^a-zA-Z0-9\s-]/g, "").trim();
         const sanitizedArtist = artist.replace(/[^a-zA-Z0-9\s-]/g, "").trim();
         const filename = `${sanitizedArtist} - ${sanitizedTitle}.mp3`;
-        const outputPath = path.join(UPLOADS_DIR, filename);
+        const outputPath = path.join(realUploadsDir, filename);
 
         send({
           status: "starting",
@@ -63,13 +86,15 @@ export async function POST(request: NextRequest) {
           message: "Iniciando download...",
         });
 
-        // Snapshot files before download to detect newly created file
-        const filesBefore = getAllAudioFiles(UPLOADS_DIR);
+        const startMs = Date.now();
+
+        // Snapshot before download (real paths, for new-file detection)
+        const filesBefore = getAllAudioFiles(realUploadsDir);
 
         const godeezProcess = spawn(
           "godeez",
           ["download", "track", String(trackId)],
-          { cwd: UPLOADS_DIR },
+          { cwd: realUploadsDir },
         );
 
         let lastProgress = 5;
@@ -88,38 +113,62 @@ export async function POST(request: NextRequest) {
           }
         };
 
+        let stderr = "";
+        let stdout = "";
         godeezProcess.stdout?.on("data", (chunk: Buffer) => {
-          parseProgress(chunk.toString());
+          const output = chunk.toString();
+          stdout += output;
+          parseProgress(output);
         });
 
-        let stderr = "";
         godeezProcess.stderr?.on("data", (chunk: Buffer) => {
           const output = chunk.toString();
           stderr += output;
           parseProgress(output);
         });
 
-        await new Promise<void>((resolve, reject) => {
-          godeezProcess.on("close", (code) => {
-            if (code === 0) resolve();
-            else
-              reject(new Error(`godeez exited with code ${code}: ${stderr}`));
-          });
+        const exitCode = await new Promise<number>((resolve, reject) => {
+          godeezProcess.on("close", (code) => resolve(code ?? 0));
           godeezProcess.on("error", reject);
         });
 
+        if (exitCode !== 0) {
+          console.warn(
+            `godeez exited with code ${exitCode}. stdout: ${stdout} stderr: ${stderr}`,
+          );
+        }
+
         send({ status: "processing", progress: 90, message: "Processando..." });
 
-        // Find the newly downloaded file (recursive — godeez may create subdirs)
-        const filesAfter = getAllAudioFiles(UPLOADS_DIR);
-        const newFiles = [...filesAfter].filter((f) => !filesBefore.has(f));
+        // Small delay to ensure the file is fully flushed to disk
+        await new Promise((r) => setTimeout(r, 500));
 
-        if (newFiles.length === 0) {
+        // Find newly downloaded file:
+        // Primary: file path not in the before-snapshot
+        // Fallback: file with mtime >= startMs (handles edge cases with temp files)
+        const filesAfter = getAllAudioFiles(realUploadsDir);
+        const newFiles = [...filesAfter.keys()].filter(
+          (f) => !filesBefore.has(f),
+        );
+        const recentFiles =
+          newFiles.length > 0
+            ? newFiles
+            : [...filesAfter.entries()]
+                .filter(([, mtime]) => mtime >= startMs)
+                .map(([f]) => f);
+
+        if (recentFiles.length === 0) {
+          console.error(
+            `godeez: no new audio file found. realUploadsDir=${realUploadsDir} stdout=${stdout} stderr=${stderr}`,
+          );
           send({ error: "Arquivo não encontrado após download", done: true });
           return;
         }
 
-        const downloadedPath = newFiles[0];
+        // Pick the most recently modified file
+        const downloadedPath = recentFiles.sort((a, b) => {
+          return (filesAfter.get(b) ?? 0) - (filesAfter.get(a) ?? 0);
+        })[0];
 
         // Move to UPLOADS_DIR root with standardized filename
         if (downloadedPath !== outputPath) {
