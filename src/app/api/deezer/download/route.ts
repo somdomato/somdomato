@@ -18,7 +18,9 @@ export async function POST(request: NextRequest) {
 
   const stream = new ReadableStream({
     async start(controller) {
+      let closed = false;
       const send = (data: object) => {
+        if (closed) return;
         controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`));
       };
 
@@ -28,7 +30,6 @@ export async function POST(request: NextRequest) {
 
         if (!trackId || !title || !artist) {
           send({ error: "Missing required fields", done: true });
-          controller.close();
           return;
         }
 
@@ -100,7 +101,6 @@ export async function POST(request: NextRequest) {
 
         if (newFiles.length === 0) {
           send({ error: "Arquivo não encontrado após download", done: true });
-          controller.close();
           return;
         }
 
@@ -137,6 +137,7 @@ export async function POST(request: NextRequest) {
           done: true,
         });
       } finally {
+        closed = true;
         controller.close();
       }
     },
