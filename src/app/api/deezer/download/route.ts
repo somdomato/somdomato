@@ -13,6 +13,23 @@ function ensureUploadsDir() {
   }
 }
 
+function getAllAudioFiles(dir: string): Set<string> {
+  const results = new Set<string>();
+  const recurse = (d: string) => {
+    try {
+      for (const entry of fs.readdirSync(d, { withFileTypes: true })) {
+        const full = path.join(d, entry.name);
+        if (entry.isDirectory()) recurse(full);
+        else if (/\.(mp3|flac|ogg|m4a)$/i.test(entry.name)) results.add(full);
+      }
+    } catch {
+      // ignore unreadable dirs
+    }
+  };
+  recurse(dir);
+  return results;
+}
+
 export async function POST(request: NextRequest) {
   const encoder = new TextEncoder();
 
@@ -47,7 +64,7 @@ export async function POST(request: NextRequest) {
         });
 
         // Snapshot files before download to detect newly created file
-        const filesBefore = new Set(fs.readdirSync(UPLOADS_DIR));
+        const filesBefore = getAllAudioFiles(UPLOADS_DIR);
 
         const godeezProcess = spawn(
           "godeez",
@@ -93,22 +110,19 @@ export async function POST(request: NextRequest) {
 
         send({ status: "processing", progress: 90, message: "Processando..." });
 
-        // Find the newly downloaded file
-        const filesAfter = new Set(fs.readdirSync(UPLOADS_DIR));
-        const newFiles = [...filesAfter].filter(
-          (f) => !filesBefore.has(f) && /\.(mp3|flac|ogg|m4a)$/i.test(f),
-        );
+        // Find the newly downloaded file (recursive — godeez may create subdirs)
+        const filesAfter = getAllAudioFiles(UPLOADS_DIR);
+        const newFiles = [...filesAfter].filter((f) => !filesBefore.has(f));
 
         if (newFiles.length === 0) {
           send({ error: "Arquivo não encontrado após download", done: true });
           return;
         }
 
-        const downloadedFile = newFiles[0];
-        const downloadedPath = path.join(UPLOADS_DIR, downloadedFile);
+        const downloadedPath = newFiles[0];
 
-        // Rename to our standard format
-        if (downloadedFile !== filename) {
+        // Move to UPLOADS_DIR root with standardized filename
+        if (downloadedPath !== outputPath) {
           fs.renameSync(downloadedPath, outputPath);
         }
 
