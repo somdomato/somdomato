@@ -53,9 +53,9 @@ O arquivo `docker/docker-compose.yml` configura 3 serviços:
 
 ```bash
 cd docker
-docker-compose up -d
-docker-compose logs -f  # Ver logs
-docker-compose down     # Parar
+docker compose up -d
+docker compose logs -f  # Ver logs
+docker compose down     # Parar
 ```
 
 ### 2. Variáveis de Ambiente
@@ -160,11 +160,11 @@ docker restart somdomato-liquidsoap
 curl http://localhost:8080/status.xsl
 
 # Limpar cache Docker
-docker-compose down -v
+docker compose down -v
 docker system prune -af
 
 # Build Liquidsoap
-cd docker && docker-compose build liquidsoap
+cd docker && docker compose build liquidsoap
 
 # Testar Socket.io
 # No navegador console:

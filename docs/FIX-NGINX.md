@@ -71,8 +71,8 @@ server {
 ```yaml
 volumes:
   - ./nginx.dev.conf:/etc/nginx/conf.d/default.conf:ro
-  - ../files/etc/icecast/somdomato.xml:/etc/icecast2/icecast.xml:ro
-  - ../files/etc/liquidsoap/somdomato-docker.liq:/etc/liquidsoap/somdomato.liq:ro
+  - ../ansible/etc/icecast/somdomato.xml:/etc/icecast2/icecast.xml:ro
+  - ../ansible/etc/liquidsoap/somdomato-docker.liq:/etc/liquidsoap/somdomato.liq:ro
   - /home/lucas/music/sdm:/var/music/sdm:ro
 ```
 
@@ -87,13 +87,13 @@ volumes:
     
   # Icecast - Configuração XML
   - type: bind
-    source: ../files/etc/icecast/somdomato.xml
+    source: ../ansible/etc/icecast/somdomato.xml
     target: /etc/icecast2/icecast.xml
     read_only: true
     
   # Liquidsoap - Script
   - type: bind
-    source: ../files/etc/liquidsoap/somdomato-docker.liq
+    source: ../ansible/etc/liquidsoap/somdomato-docker.liq
     target: /etc/liquidsoap/somdomato.liq
     read_only: true
     
@@ -125,10 +125,10 @@ networks:
 
 ```bash
 # 1. Parar containers antigos
-cd docker && docker-compose down
+cd docker && docker compose down
 
 # 2. Iniciar com nova configuração
-docker-compose up -d
+docker compose up -d
 
 # 3. Verificar logs (sem erros!)
 docker logs somdomato-nginx

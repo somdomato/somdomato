@@ -98,7 +98,7 @@ elif [ $TOTAL -ge 2 ]; then
 else
     echo -e "${RED}❌ Sistema com problemas sérios ($TOTAL/4)${NC}"
     echo ""
-    echo "Execute: cd docker && docker-compose up -d"
+    echo "Execute: cd docker && docker compose up -d"
 fi
 
 echo ""

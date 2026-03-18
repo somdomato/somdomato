@@ -248,12 +248,22 @@ Ao editar uma música via `updateSong()`:
 ## Comandos Úteis
 
 ```bash
-pnpm dev              # Iniciar desenvolvimento
-pnpm build            # Build para produção
-pnpm db:generate      # Gerar migration
-pnpm db:migrate       # Aplicar migrations
-pnpm db:studio        # UI do banco de dados
-docker-compose up -d  # Iniciar Icecast+Liquidsoap
+# Desenvolvimento (Docker completo)
+./scripts/dev.sh            # Gera certs SSL + sobe 4 containers
+cd docker && docker compose up -d --build  # Alternativa manual
+cd docker && docker compose down           # Parar containers
+
+# Desenvolvimento (Next.js local + Docker streaming)
+pnpm dev                    # Iniciar Next.js local
+cd docker && docker compose up -d icecast liquidsoap  # Apenas streaming
+
+# Build e DB
+pnpm build                  # Build para produção
+pnpm push                   # Push schema para DB
+pnpm test                   # Testes (Vitest)
+
+# Provisioning VPS (Ansible)
+cd ansible && ansible-playbook -i inventory.ini playbook.yml
 ```
 
 ## Recursos Importantes
@@ -261,8 +271,52 @@ docker-compose up -d  # Iniciar Icecast+Liquidsoap
 - Documentação completa: `README.md`
 - Schema do banco: `src/db/schema.ts`
 - Servidor Socket.io: `src/server.ts`
-- Configuração Liquidsoap: `files/etc/liquidsoap/`
+- Configuração Liquidsoap: `ansible/etc/liquidsoap/`
+- Configuração Nginx (produção): `ansible/etc/nginx/`
+- Configuração Icecast: `ansible/etc/icecast/`
+- Services systemd: `ansible/etc/systemd/`
+- Playbook Ansible: `ansible/playbook.yml`
+- Docker (dev): `docker/docker-compose.yml`
 - Tipos TypeScript: `src/types.ts`
+
+## Estrutura de Diretórios
+
+```
+├── src/                  # Código fonte Next.js
+├── docker/               # Docker para desenvolvimento local
+│   ├── docker-compose.yml
+│   ├── Dockerfile.nextjs
+│   ├── Dockerfile.liquidsoap
+│   ├── nginx.dev.conf
+│   └── generate-certs.sh
+├── ansible/              # Configurações de produção + provisioning
+│   ├── playbook.yml      # Ansible playbook para VPS
+│   ├── inventory.ini
+│   └── etc/              # Configs que vão para /etc/ na VPS
+│       ├── icecast/
+│       ├── liquidsoap/
+│       ├── nginx/
+│       └── systemd/
+├── scripts/              # Scripts utilitários
+├── test/                 # Testes
+└── docs/                 # Documentação adicional
+```
+
+## Ambiente de Desenvolvimento
+
+- Docker replica o ambiente de produção (Debian 13, Node 24, pnpm)
+- 4 containers: Next.js, Nginx (SSL auto-assinado), Icecast2, Liquidsoap
+- Nginx no Docker faz proxy reverso idêntico à produção
+- Liquidsoap conecta ao Next.js via rede Docker interna (`http://nextjs:3000`)
+- SSL via certificado auto-assinado gerado por `docker/generate-certs.sh`
+- Acesso: `https://localhost` (aceitar aviso de certificado)
+
+## Ansible (Provisioning VPS)
+
+- Playbook em `ansible/playbook.yml` provisiona VPS Debian 13 completa
+- Mesmos arquivos de `ansible/etc/` são usados no Docker e na VPS
+- Docker usa variantes `-docker.liq` e `-docker.xml` quando necessário
+- Em produção: Liquidsoap usa `localhost:3000`, no Docker usa `nextjs:3000`
 
 ---
 
@@ -271,3 +325,5 @@ docker-compose up -d  # Iniciar Icecast+Liquidsoap
 - Mantenha sincronia entre banco de dados e eventos Socket.io
 - Teste localmente com Docker antes de deploy
 - Documente mudanças significativas no README.md
+- Configs de produção ficam em `ansible/etc/`, NÃO em `files/`
+- Docker para dev fica em `docker/`, Ansible para produção fica em `ansible/`

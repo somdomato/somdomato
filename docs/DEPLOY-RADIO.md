@@ -18,7 +18,7 @@ Este documento explica como fazer deploy completo do sistema de streaming em pro
 
 ```bash
 # Copiar configuração do Icecast
-sudo cp files/etc/icecast/somdomato.xml /etc/icecast2/somdomato.xml
+sudo cp ansible/etc/icecast/somdomato.xml /etc/icecast2/somdomato.xml
 
 # Ajustar permissões
 sudo chown icecast2:icecast /etc/icecast2/somdomato.xml
@@ -29,7 +29,7 @@ sudo mkdir -p /var/log/icecast2
 sudo chown icecast2:icecast /var/log/icecast2
 
 # Copiar e habilitar service
-sudo cp files/etc/systemd/system/icecast2-somdomato.service /etc/systemd/system/
+sudo cp ansible/etc/systemd/system/icecast2-somdomato.service /etc/systemd/system/
 sudo systemctl daemon-reload
 sudo systemctl enable icecast2-somdomato
 sudo systemctl start icecast2-somdomato
@@ -52,7 +52,7 @@ sudo chown liquidsoap:liquidsoap /var/lib/liquidsoap
 sudo chown liquidsoap:liquidsoap /var/log/liquidsoap
 
 # Copiar script do Liquidsoap
-sudo cp files/etc/liquidsoap/somdomato.liq /etc/liquidsoap/somdomato.liq
+sudo cp ansible/etc/liquidsoap/somdomato.liq /etc/liquidsoap/somdomato.liq
 sudo chown liquidsoap:liquidsoap /etc/liquidsoap/somdomato.liq
 sudo chmod 644 /etc/liquidsoap/somdomato.liq
 
@@ -60,7 +60,7 @@ sudo chmod 644 /etc/liquidsoap/somdomato.liq
 sudo chmod -R o+rX /var/music/sdm
 
 # Copiar e habilitar service
-sudo cp files/etc/systemd/system/liquidsoap-somdomato.service /etc/systemd/system/
+sudo cp ansible/etc/systemd/system/liquidsoap-somdomato.service /etc/systemd/system/
 sudo systemctl daemon-reload
 sudo systemctl enable liquidsoap-somdomato
 sudo systemctl start liquidsoap-somdomato
@@ -73,8 +73,8 @@ sudo systemctl status liquidsoap-somdomato
 
 ```bash
 # Copiar configurações do Nginx
-sudo cp files/etc/nginx/sites.d/somdomato.com.conf /etc/nginx/sites-available/
-sudo cp files/etc/nginx/sites.d/radio.somdomato.com.conf /etc/nginx/sites-available/
+sudo cp ansible/etc/nginx/sites.d/somdomato.com.conf /etc/nginx/sites-available/
+sudo cp ansible/etc/nginx/sites.d/radio.somdomato.com.conf /etc/nginx/sites-available/
 
 # Criar symlinks
 sudo ln -sf /etc/nginx/sites-available/somdomato.com.conf /etc/nginx/sites-enabled/
@@ -241,13 +241,13 @@ sudo systemctl restart somdomato icecast2-somdomato liquidsoap-somdomato nginx
 
 ### Atualizar configuração do Liquidsoap:
 ```bash
-sudo cp files/etc/liquidsoap/somdomato.liq /etc/liquidsoap/
+sudo cp ansible/etc/liquidsoap/somdomato.liq /etc/liquidsoap/
 sudo systemctl restart liquidsoap-somdomato
 ```
 
 ### Atualizar configuração do Icecast:
 ```bash
-sudo cp files/etc/icecast/somdomato.xml /etc/icecast2/
+sudo cp ansible/etc/icecast/somdomato.xml /etc/icecast2/
 sudo systemctl restart icecast2-somdomato
 ```
 

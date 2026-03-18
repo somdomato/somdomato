@@ -1,0 +1,308 @@
+---
+# Ansible Playbook - Som do Mato
+# Provisiona uma VPS Debian 13 com Nginx, Icecast2, Liquidsoap e Node.js
+#
+# Uso:
+#   ansible-playbook -i inventory.ini playbook.yml
+#
+# Variáveis importantes (ajuste em group_vars ou --extra-vars):
+#   domain: somdomato.com
+#   app_dir: /var/www/somdomato
+#   music_dir: /var/music/sdm
+
+- name: Provisionar VPS Som do Mato
+  hosts: production
+  become: true
+  vars:
+    domain: somdomato.com
+    app_dir: /var/www/somdomato
+    music_dir: /var/music/sdm
+    node_version: "24"
+    app_user: nginx
+    app_group: nginx
+
+  tasks:
+    # =========================================================================
+    # SISTEMA BASE
+    # =========================================================================
+    - name: Atualizar pacotes do sistema
+      apt:
+        update_cache: yes
+        upgrade: dist
+        cache_valid_time: 3600
+
+    - name: Instalar dependências base
+      apt:
+        name:
+          - curl
+          - ca-certificates
+          - gnupg
+          - git
+          - rsync
+          - jq
+          - openssl
+          - acl
+        state: present
+
+    # =========================================================================
+    # NODE.JS
+    # =========================================================================
+    - name: Adicionar repositório NodeSource
+      shell: curl -fsSL https://deb.nodesource.com/setup_{{ node_version }}.x | bash -
+      args:
+        creates: /etc/apt/sources.list.d/nodesource.list
+
+    - name: Instalar Node.js
+      apt:
+        name: nodejs
+        state: present
+
+    - name: Habilitar corepack e instalar pnpm
+      shell: |
+        corepack enable
+        corepack prepare pnpm@latest --activate
+      args:
+        creates: /usr/lib/node_modules/corepack
+
+    # =========================================================================
+    # USUÁRIOS E DIRETÓRIOS
+    # =========================================================================
+    - name: Criar usuário da aplicação
+      user:
+        name: "{{ app_user }}"
+        group: "{{ app_group }}"
+        system: yes
+        create_home: yes
+        home: "/home/{{ app_user }}"
+        shell: /bin/bash
+
+    - name: Criar diretório da aplicação
+      file:
+        path: "{{ app_dir }}"
+        state: directory
+        owner: "{{ app_user }}"
+        group: "{{ app_group }}"
+        mode: "0755"
+
+    - name: Criar diretório de músicas
+      file:
+        path: "{{ music_dir }}"
+        state: directory
+        owner: "{{ app_user }}"
+        group: "{{ app_group }}"
+        mode: "0755"
+
+    - name: Criar subdiretório uploads
+      file:
+        path: "{{ music_dir }}/uploads"
+        state: directory
+        owner: "{{ app_user }}"
+        group: "{{ app_group }}"
+        mode: "0755"
+
+    # =========================================================================
+    # NGINX
+    # =========================================================================
+    - name: Instalar Nginx
+      apt:
+        name: nginx
+        state: present
+
+    - name: Copiar configuração Nginx - somdomato.com
+      copy:
+        src: etc/nginx/sites.d/somdomato.com.conf
+        dest: /etc/nginx/sites-available/somdomato.com.conf
+        mode: "0644"
+      notify: Reload Nginx
+
+    - name: Copiar configuração Nginx - radio.somdomato.com
+      copy:
+        src: etc/nginx/sites.d/radio.somdomato.com.conf
+        dest: /etc/nginx/sites-available/radio.somdomato.com.conf
+        mode: "0644"
+      notify: Reload Nginx
+
+    - name: Copiar configuração Nginx - cdn.somdomato.com
+      copy:
+        src: etc/nginx/sites.d/cdn.somdomato.com.conf
+        dest: /etc/nginx/sites-available/cdn.somdomato.com.conf
+        mode: "0644"
+      notify: Reload Nginx
+
+    - name: Criar diretório conf.d para Nginx
+      file:
+        path: /etc/nginx/conf.d
+        state: directory
+        mode: "0755"
+
+    - name: Copiar snippets de configuração Nginx
+      copy:
+        src: "etc/nginx/conf.d/{{ item }}"
+        dest: "/etc/nginx/conf.d/{{ item }}"
+        mode: "0644"
+      loop:
+        - cache.conf
+        - deny.conf
+        - nextjs.conf
+        - sdm-errors.conf
+      notify: Reload Nginx
+
+    - name: Habilitar sites Nginx (symlinks)
+      file:
+        src: "/etc/nginx/sites-available/{{ item }}"
+        dest: "/etc/nginx/sites-enabled/{{ item }}"
+        state: link
+      loop:
+        - somdomato.com.conf
+        - radio.somdomato.com.conf
+        - cdn.somdomato.com.conf
+      notify: Reload Nginx
+
+    - name: Remover site default do Nginx
+      file:
+        path: /etc/nginx/sites-enabled/default
+        state: absent
+      notify: Reload Nginx
+
+    # =========================================================================
+    # ICECAST2
+    # =========================================================================
+    - name: Instalar Icecast2
+      apt:
+        name: icecast2
+        state: present
+
+    - name: Criar diretório de logs Icecast
+      file:
+        path: /var/log/icecast2
+        state: directory
+        owner: icecast2
+        group: icecast
+        mode: "0755"
+
+    - name: Copiar configuração Icecast2
+      copy:
+        src: etc/icecast/somdomato.xml
+        dest: /etc/icecast2/somdomato.xml
+        owner: icecast2
+        group: icecast
+        mode: "0640"
+      notify: Restart Icecast
+
+    # =========================================================================
+    # LIQUIDSOAP
+    # =========================================================================
+    - name: Instalar Liquidsoap
+      apt:
+        name: liquidsoap
+        state: present
+
+    - name: Criar diretórios Liquidsoap
+      file:
+        path: "{{ item }}"
+        state: directory
+        owner: liquidsoap
+        group: liquidsoap
+        mode: "0755"
+      loop:
+        - /var/log/liquidsoap
+        - /var/lib/liquidsoap
+
+    - name: Copiar script Liquidsoap
+      copy:
+        src: etc/liquidsoap/somdomato.liq
+        dest: /etc/liquidsoap/somdomato.liq
+        owner: liquidsoap
+        group: liquidsoap
+        mode: "0644"
+      notify: Restart Liquidsoap
+
+    # =========================================================================
+    # SYSTEMD SERVICES
+    # =========================================================================
+    - name: Copiar services do systemd
+      copy:
+        src: "etc/systemd/system/{{ item }}"
+        dest: "/etc/systemd/system/{{ item }}"
+        mode: "0644"
+      loop:
+        - somdomato.service
+        - icecast2-somdomato.service
+        - liquidsoap-somdomato.service
+        - somdomato-sync.service
+        - somdomato-sync.path
+        - somdomato-godeez.service
+        - somdomato-godeez.path
+        - somdomato-remote-sync.service
+        - somdomato-remote-sync.path
+      notify: Reload systemd
+
+    - name: Habilitar e iniciar serviços principais
+      systemd:
+        name: "{{ item }}"
+        enabled: yes
+        state: started
+        daemon_reload: yes
+      loop:
+        - icecast2-somdomato.service
+        - somdomato.service
+        - liquidsoap-somdomato.service
+
+    - name: Habilitar watchers de sincronização
+      systemd:
+        name: "{{ item }}"
+        enabled: yes
+        state: started
+      loop:
+        - somdomato-sync.path
+        - somdomato-godeez.path
+        - somdomato-remote-sync.path
+
+    # =========================================================================
+    # SSL (Let's Encrypt)
+    # =========================================================================
+    - name: Instalar Certbot
+      apt:
+        name:
+          - certbot
+          - python3-certbot-nginx
+        state: present
+
+    - name: Verificar se certificado existe
+      stat:
+        path: "/etc/letsencrypt/live/{{ domain }}/fullchain.pem"
+      register: ssl_cert
+
+    - name: Obter certificado SSL (primeira vez)
+      command: >
+        certbot certonly --nginx
+        -d {{ domain }}
+        -d www.{{ domain }}
+        -d radio.{{ domain }}
+        -d cdn.{{ domain }}
+        --non-interactive --agree-tos
+        --email sistematico@gmail.com
+      when: not ssl_cert.stat.exists
+
+    # =========================================================================
+    # HANDLERS
+    # =========================================================================
+  handlers:
+    - name: Reload Nginx
+      systemd:
+        name: nginx
+        state: reloaded
+
+    - name: Restart Icecast
+      systemd:
+        name: icecast2-somdomato
+        state: restarted
+
+    - name: Restart Liquidsoap
+      systemd:
+        name: liquidsoap-somdomato
+        state: restarted
+
+    - name: Reload systemd
+      systemd:
+        daemon_reload: yes

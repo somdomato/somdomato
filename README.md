@@ -4,144 +4,223 @@
 
 [![Deploy](https://github.com/somdomato/somdomato/actions/workflows/deploy.yml/badge.svg)](https://github.com/somdomato/somdomato/actions/workflows/deploy.yml)
 
-## 🚀 Deploy em Produção
+## Arquitetura Completa (Produção)
 
-Para fazer deploy completo do sistema de rádio (Icecast + Liquidsoap + Nginx):
-
-```bash
-# No servidor de produção
-cd /var/www/somdomato
-sudo ./scripts/deploy-radio.sh
+```
+                    ┌─────────────────────────────────────────────────────┐
+                    │                    VPS Debian 13                    │
+                    │                                                     │
+  Internet          │  ┌──────────────┐    ┌──────────────────────────┐   │
+ ─────────────────────►│    Nginx     │───►│  Next.js (Node.js 24)   │   │
+  HTTPS :443        │  │  :80 / :443  │    │  :3000 (via systemd)    │   │
+  (Let's Encrypt)   │  │              │    │                          │   │
+                    │  │  somdomato   │    │  ├─ App Router (pages)   │   │
+                    │  │  .com        │    │  ├─ API Routes           │   │
+                    │  │              │    │  ├─ Socket.io            │   │
+                    │  │  radio.sdm   │    │  ├─ Drizzle ORM         │   │
+                    │  │  .com ──────────► │  └─ SQLite DB            │   │
+                    │  │              │    │                          │   │
+                    │  │  cdn.sdm     │    └────────────┬─────────────┘   │
+                    │  │  .com ─► /var/www/cdn          │                 │
+                    │  └──────┬───────┘                 │ /api/music      │
+                    │         │                         ▼                 │
+                    │         │              ┌──────────────────────┐     │
+                    │         │              │     Liquidsoap       │     │
+                    │         │              │  (via systemd)       │     │
+                    │         │              │                      │     │
+                    │         │              │  ├─ AutoDJ (6 gên.)  │     │
+                    │         │              │  ├─ request.dynamic  │     │
+                    │         │              │  ├─ Harbor :8010     │     │
+                    │         │              │  └─ HTTP ctrl :8080  │     │
+                    │         │              └──────────┬───────────┘     │
+                    │         │                         │                 │
+                    │         │              ┌──────────▼───────────┐     │
+                    │         └──────────────│     Icecast2         │     │
+                    │           proxy :8000  │  :8000 / :8443       │     │
+                    │                       │                      │     │
+                    │                       │  6 mountpoints:      │     │
+                    │                       │  /geral /gaucha      │     │
+                    │                       │  /modao /arrocha     │     │
+                    │                       │  /romantico /forro   │     │
+                    │                       └──────────────────────┘     │
+                    │                                                     │
+                    │  ┌──────────────────────────────────────────────┐   │
+                    │  │  systemd services:                           │   │
+                    │  │  ├─ somdomato.service (Next.js via pnpm)    │   │
+                    │  │  ├─ icecast2-somdomato.service               │   │
+                    │  │  ├─ liquidsoap-somdomato.service             │   │
+                    │  │  ├─ somdomato-sync.path (watch músicas)     │   │
+                    │  │  ├─ somdomato-godeez.path (GoDeez import)   │   │
+                    │  │  └─ somdomato-remote-sync.path (rsync)      │   │
+                    │  └──────────────────────────────────────────────┘   │
+                    └─────────────────────────────────────────────────────┘
 ```
 
-**Documentação completa:** [docs/DEPLOY-RADIO.md](docs/DEPLOY-RADIO.md)
+### Stack de Produção
 
-### ⚙️ Configuração de Produção
+| Componente   | Tecnologia            | Descrição                                |
+|--------------|-----------------------|------------------------------------------|
+| OS           | Debian 13.3 AMD64     | VPS                                      |
+| Runtime      | Node.js v24.14.0      | Via NodeSource                           |
+| Gerenciador  | pnpm                  | Via corepack                             |
+| Framework    | Next.js 16.1.4        | App Router + TypeScript                  |
+| Banco        | SQLite + Drizzle ORM  | Persistência local                       |
+| Real-time    | Socket.io             | Eventos de música/pedidos                |
+| Proxy        | Nginx                 | SSL (Let's Encrypt) + proxy reverso      |
+| Streaming    | Icecast2 :8000/:8443  | 6 mountpoints                            |
+| AutoDJ       | Liquidsoap            | Fila dinâmica via API Next.js            |
+| Deploy       | GitHub Actions        | CI/CD para VPS                           |
+| Provisioning | Ansible               | Configuração automatizada da VPS         |
+| Init         | systemd               | Gerenciamento de processos               |
 
-#### Chave de Criptografia (NEXT_SERVER_ACTIONS_ENCRYPTION_KEY)
+## Arquitetura Local (Docker)
 
-O Next.js 15+ requer uma chave de criptografia para Server Actions em produção. Esta chave é gerada **automaticamente** pelo `scripts/deploy.sh` se não existir.
+O Docker replica o ambiente de produção para desenvolvimento:
 
-Para gerar ou atualizar manualmente:
+```
+  ┌──────────────────────────────────────────────────────────────┐
+  │                    Docker Compose                            │
+  │                                                              │
+  │   ┌──────────────┐     ┌─────────────────────────────────┐   │
+  │   │    Nginx     │────►│    Next.js (dev mode)           │   │
+  │   │  :443 (SSL)  │     │    :3000 (interno)              │   │
+  │   │  :8080 (HTTP)│     │                                  │   │
+  │   │              │     │  Debian Trixie + Node 24         │   │
+  │   │  Cert auto-  │     │  pnpm dev (hot reload)          │   │
+  │   │  assinado    │     │  Volume bind: código fonte       │   │
+  │   └──────┬───────┘     └──────────────┬──────────────────┘   │
+  │          │                            │                      │
+  │          │                            │ http://nextjs:3000   │
+  │          │                            ▼                      │
+  │          │              ┌─────────────────────────────────┐   │
+  │          │              │      Liquidsoap                 │   │
+  │          │              │      :8081 (HTTP ctrl)          │   │
+  │          │              │                                  │   │
+  │          │              │  Debian Trixie                   │   │
+  │          │              │  Consulta API via Docker DNS     │   │
+  │          │              └──────────────┬──────────────────┘   │
+  │          │                            │                      │
+  │          │              ┌─────────────▼──────────────────┐   │
+  │          └──────────────│      Icecast2                  │   │
+  │            proxy :8000  │      :8000                     │   │
+  │                         │                                 │   │
+  │                         │  6 mountpoints                  │   │
+  │                         └─────────────────────────────────┘   │
+  │                                                              │
+  │   Rede Docker: somdomato-radio-network                       │
+  │   Volumes: node_modules, .next cache, /var/music/sdm (bind)  │
+  └──────────────────────────────────────────────────────────────┘
 
-```bash
-# Gerar e mostrar a chave
-./scripts/generate-encryption-key.sh
-
-# Gerar e atualizar automaticamente o .env
-./scripts/generate-encryption-key.sh --update-env
+  Acesso local:
+  ├─ https://localhost       → Nginx (SSL) → Next.js
+  ├─ https://localhost/geral → Nginx → Icecast (stream)
+  └─ http://localhost:8000   → Icecast (direto)
 ```
 
-A chave deve ter 64 caracteres hexadecimais (32 bytes). Também pode ser gerada com:
-```bash
-openssl rand -hex 32
-```
+## Desenvolvimento
 
-**Importante:** 
-- A mesma chave deve ser usada em todos os deploys para evitar erro "Failed to find Server Action"
-- Não compartilhe esta chave publicamente
-- Se a chave for alterada, será necessário fazer novo build
+### Requisitos
 
-**Documentação completa:** [docs/DEPLOY-RADIO.md](docs/DEPLOY-RADIO.md)
-
-## 🎵 Desenvolvimento
-
-### 📋 Requisitos
-
-- Node.js 18+
-- pnpm
 - Docker e Docker Compose
+- Git
+- OpenSSL (para gerar certificados SSL locais)
+- Arquivos de música em um diretório local
 
-### ⚡ Setup Rápido
+### Setup Rápido
+
+#### Linux / macOS / Git Bash (Windows)
 
 ```bash
-# 1. Instalar dependências
-pnpm install
+# 1. Clonar repositório
+git clone https://github.com/somdomato/somdomato.git
+cd somdomato
 
-# 2. Configurar ambiente
-cp .env.example .env
-# O arquivo .env já vem configurado para desenvolvimento
-# Ajuste MUSIC_PATH se necessário
+# 2. Configurar caminho das músicas
+export MUSIC_PATH=/home/lucas/music/sdm
+# Ou criar arquivo .env na pasta docker/:
+echo "MUSIC_PATH=/home/lucas/music/sdm" > docker/.env
 
-# 3. Iniciar ambiente completo (Nginx + Icecast + Liquidsoap)
+# 3. Iniciar ambiente completo (gera certs SSL + sobe 4 containers)
 ./scripts/dev.sh
 
-# 4. Em outro terminal, iniciar Next.js
-pnpm dev
-
-# 5. Acessar aplicação
-# http://localhost:3000
+# 4. Acessar
+# https://localhost (aceite o aviso de certificado auto-assinado)
 ```
 
-**Acessar:**
-- Aplicação: http://localhost:3000
-- Nginx (proxy): http://localhost:8080
-- Admin Icecast: http://localhost:8080/admin (usuário: `admin`, senha: `hackme`)
+#### Windows (PowerShell)
 
-**Para parar:**
-```bash
-cd docker && docker-compose down
+```powershell
+# 1. Clonar repositório
+git clone https://github.com/somdomato/somdomato.git
+cd somdomato
+
+# 2. Configurar caminho das músicas
+$env:MUSIC_PATH = "C:\Users\Lucas\Music\sdm"
+# Ou criar arquivo .env na pasta docker/:
+Set-Content docker\.env "MUSIC_PATH=C:\Users\Lucas\Music\sdm"
+
+# 3. Gerar certificados SSL (via Git Bash ou WSL)
+cd docker
+bash generate-certs.sh
+cd ..
+
+# 4. Iniciar containers
+cd docker
+docker compose up -d --build
+
+# 5. Acessar
+# https://localhost (aceite o aviso de certificado auto-assinado)
 ```
 
-### 📚 Documentação
+### Acessos em Desenvolvimento
 
-- **[QUICKSTART.md](QUICKSTART.md)** - Guia de início rápido
-- **[DESENVOLVIMENTO.md](docs/DESENVOLVIMENTO.md)** - Guia detalhado de desenvolvimento
-- **[CHANGELOG.md](CHANGELOG.md)** - Mudanças recentes e simplificações
+| URL                          | Serviço                    |
+|------------------------------|----------------------------|
+| https://localhost            | Aplicação (via Nginx SSL)  |
+| http://localhost:8080        | Aplicação (HTTP, redireciona) |
+| https://localhost/geral      | Stream Geral (via Nginx)   |
+| https://localhost/admin      | Admin Icecast              |
+| http://localhost:8000        | Icecast direto             |
 
-### 🏗️ Arquitetura Simplificada
+**Credenciais Icecast**: user `admin`, senha `hackme`
 
-```
-┌─────────────┐
-│  Navegador  │ :3000
-└──────┬──────┘
-       │
-┌──────▼──────┐
-│   Next.js   │ → Player, API, Socket.io
-└──────┬──────┘
-       │
-┌──────▼──────┐
-│    Nginx    │ :8080 → Proxy Reverso
-└──────┬──────┘
-       │
-┌──────▼──────┐
-│   Icecast   │ :8000 → 6 Streams
-└──────▲──────┘
-       │
-┌──────┴──────┐
-│ Liquidsoap  │ → AutoDJ + Pedidos
-└─────────────┘
-```
-
-### 🎯 Mudanças Recentes (v2.0)
-
-✅ **Configurações centralizadas** em `src/config.ts`  
-✅ **Player simplificado** com busca de metadados por gênero  
-✅ **Nginx container** para desenvolvimento  
-✅ **API de metadados** filtrada por mountpoint  
-✅ **Troca de gênero** inicia playback automaticamente  
-
-Ver [CHANGELOG.md](CHANGELOG.md) para detalhes.
-
-## Testes
-
-Para rodar os testes unitários (Vitest):
+### Comandos Docker
 
 ```bash
-# Instalar dependências (se necessário)
+# Iniciar
+cd docker && docker compose up -d --build
+
+# Ver logs (todos)
+docker compose logs -f
+
+# Ver logs de um serviço
+docker compose logs -f nextjs
+docker compose logs -f liquidsoap
+
+# Reiniciar serviço
+docker compose restart liquidsoap
+
+# Parar
+docker compose down
+
+# Limpar tudo (volumes inclusos)
+docker compose down -v
+```
+
+### Desenvolvimento sem Docker (Next.js local)
+
+Se preferir rodar apenas o Next.js localmente (icecast/liquidsoap continuam no Docker):
+
+```bash
+# Instalar dependências
 pnpm install
 
-# Rodar todos os testes
-pnpm test
+# Rodar Next.js em modo dev
+pnpm dev
+
+# Em outro terminal, subir apenas streaming
+cd docker && docker compose up -d icecast liquidsoap
 ```
-
-## Arquitetura
-
-- **Next.js**: Frontend e API para gerenciamento de músicas
-- **Liquidsoap**: Automação da rádio e streaming
-- **Icecast**: Servidor de streaming de áudio
-- **Socket.io**: Comunicação em tempo real
-- **Drizzle ORM**: Gerenciamento do banco de dados SQLite
 
 ## Fluxo do Sistema de Pedidos e Reprodução
 
@@ -300,23 +379,90 @@ Exemplo:
 - `request:removed` - Emitido quando pedido é removido (atualiza "Próximas")
 - `requests:updated` - Emitido para forçar atualização completa da fila
 
+## Deploy em Produção
+
+### Via GitHub Actions (CI/CD)
+
+O deploy é feito automaticamente via GitHub Actions ao fazer push na branch principal.
+
+### Via Ansible (provisioning completo)
+
+Para provisionar uma VPS Debian 13 do zero:
+
+```bash
+# 1. Configurar inventário
+cd ansible
+# Edite inventory.ini com o IP da VPS
+
+# 2. Executar playbook
+ansible-playbook -i inventory.ini playbook.yml
+```
+
+O playbook instala e configura:
+- Node.js 24 + pnpm
+- Nginx com sites (somdomato.com, radio.somdomato.com, cdn.somdomato.com)
+- Icecast2 com 6 mountpoints
+- Liquidsoap com fila dinâmica
+- Services systemd para todos os processos
+- Let's Encrypt SSL
+
+### Chave de Criptografia (NEXT_SERVER_ACTIONS_ENCRYPTION_KEY)
+
+O Next.js requer uma chave de criptografia para Server Actions em produção:
+
+```bash
+# Gerar e atualizar automaticamente o .env
+./scripts/generate-encryption-key.sh --update-env
+```
+
+### Documentação
+
+- [docs/DEPLOY-RADIO.md](docs/DEPLOY-RADIO.md) - Deploy completo radio
+- [docs/QUICKSTART.md](docs/QUICKSTART.md) - Guia rápido
+- [docs/DESENVOLVIMENTO.md](docs/DESENVOLVIMENTO.md) - Desenvolvimento detalhado
+- [CHANGELOG.md](CHANGELOG.md) - Mudanças recentes
+
+## Testes
+
+```bash
+pnpm install
+pnpm test
+```
+
 ## Estrutura do Projeto
 
 ```
 ├── src/
-│   ├── app/              # Páginas e rotas Next.js
-│   ├── components/       # Componentes React
-│   ├── context/          # Contextos React
-│   ├── db/               # Schema e queries do banco
-│   ├── lib/              # Utilitários
-│   └── server.ts         # Servidor Socket.io
-├── files/
+│   ├── app/                  # Páginas e rotas Next.js (App Router)
+│   │   ├── api/              # API Routes (music, requests, admin, etc.)
+│   │   └── admin/            # Painel administrativo
+│   ├── components/           # Componentes React
+│   │   └── blocks/           # Blocos da home (Last, Next, Top, etc.)
+│   ├── context/              # React Contexts (Audio, Genre)
+│   ├── db/                   # Schema Drizzle ORM e utilitários
+│   ├── lib/                  # Utilitários (format, cover, protections, etc.)
+│   ├── actions/              # Server Actions
+│   └── server.ts             # Servidor customizado (Socket.io)
+├── docker/
+│   ├── docker-compose.yml    # Orquestração local (4 serviços)
+│   ├── Dockerfile.nextjs     # Imagem Next.js (Debian Trixie + Node 24)
+│   ├── Dockerfile.liquidsoap # Imagem Liquidsoap (Debian Trixie)
+│   ├── nginx.dev.conf        # Nginx com SSL auto-assinado
+│   └── generate-certs.sh     # Gera certificados SSL para dev
+├── ansible/
+│   ├── playbook.yml          # Playbook Ansible para provisioning VPS
+│   ├── inventory.ini         # Inventário de hosts
 │   └── etc/
-│       ├── icecast/      # Configuração Icecast
-│       ├── liquidsoap/   # Scripts Liquidsoap
-│       ├── nginx/        # Configuração Nginx
-│       └── systemd/      # Services do systemd
-├── scripts/              # Scripts utilitários
-├── docker-compose.yml    # Setup Docker local
-└── Dockerfile.liquidsoap # Image Liquidsoap
+│       ├── icecast/          # Configuração Icecast2
+│       ├── liquidsoap/       # Scripts Liquidsoap (produção + Docker)
+│       ├── nginx/            # Configuração Nginx (sites + snippets)
+│       └── systemd/          # Services systemd
+├── scripts/
+│   ├── dev.sh                # Inicia ambiente Docker completo
+│   ├── deploy.sh             # Deploy em produção
+│   ├── sync-music.ts         # Sincronização de músicas (DB ↔ ID3)
+│   └── generate-encryption-key.sh
+├── test/                     # Testes (Vitest)
+└── docs/                     # Documentação adicional
+```
 ```

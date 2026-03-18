@@ -48,6 +48,9 @@ drizzle/**
 *.sqlite
 
 # custom
+
+# docker dev certs
+docker/certs/
 *.old*
 
 # covers

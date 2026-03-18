@@ -1,0 +1,35 @@
+FROM debian:trixie-slim
+
+ENV LANG=C.UTF-8
+ENV LC_ALL=C.UTF-8
+
+# Instalar Node.js 24.x e pnpm
+RUN apt-get update && apt-get install -y \
+    curl \
+    ca-certificates \
+    && curl -fsSL https://deb.nodesource.com/setup_24.x | bash - \
+    && apt-get install -y nodejs \
+    && corepack enable \
+    && corepack prepare pnpm@latest --activate \
+    && rm -rf /var/lib/apt/lists/*
+
+# Instalar godeez (Deezer downloader)
+ARG GODEEZ_VERSION=1.4.0
+RUN curl -fsSL "https://github.com/mathismqn/godeez/releases/download/v${GODEEZ_VERSION}/godeez-${GODEEZ_VERSION}-linux-amd64" \
+    -o /usr/local/bin/godeez \
+    && chmod +x /usr/local/bin/godeez
+
+WORKDIR /app
+
+# Instalar dependências primeiro (cache layer)
+COPY package.json pnpm-workspace.yaml ./
+COPY pnpm-lock.yaml* ./
+RUN pnpm install
+
+# Copiar código fonte
+COPY . .
+
+EXPOSE 3000
+
+# Rodar em modo desenvolvimento
+CMD ["pnpm", "dev"]

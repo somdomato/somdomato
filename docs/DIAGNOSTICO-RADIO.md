@@ -35,7 +35,7 @@ Todas as requisições para `radio.somdomato.com` falham com erro 404 ou DNS nã
 
 ### ✅ Solução Implementada
 
-Criado arquivo `files/etc/nginx/sites.d/radio.somdomato.com.conf`:
+Criado arquivo `ansible/etc/nginx/sites.d/radio.somdomato.com.conf`:
 - Proxy reverso para `localhost:8000` (Icecast)
 - Suporte a SSL
 - Headers CORS configurados
@@ -86,8 +86,8 @@ Consequência: Não sabíamos se/como esses serviços estavam rodando.
 ### ✅ Solução Implementada
 
 Criados arquivos:
-- `files/etc/systemd/system/icecast2-somdomato.service`
-- `files/etc/systemd/system/liquidsoap-somdomato.service`
+- `ansible/etc/systemd/system/icecast2-somdomato.service`
+- `ansible/etc/systemd/system/liquidsoap-somdomato.service`
 
 Com:
 - Dependências corretas entre serviços
@@ -116,7 +116,7 @@ ping somdomato.com
 # Deve resolver para IP do servidor ou 127.0.0.1
 ```
 
-Se não resolver, alterar para `localhost` em `files/etc/icecast/somdomato.xml` linha 28.
+Se não resolver, alterar para `localhost` em `ansible/etc/icecast/somdomato.xml` linha 28.
 
 ---
 
@@ -124,13 +124,13 @@ Se não resolver, alterar para `localhost` em `files/etc/icecast/somdomato.xml` 
 
 ### Novos Arquivos
 
-1. ✅ `files/etc/nginx/sites.d/radio.somdomato.com.conf`
+1. ✅ `ansible/etc/nginx/sites.d/radio.somdomato.com.conf`
    - Proxy reverso para Icecast
 
-2. ✅ `files/etc/systemd/system/icecast2-somdomato.service`
+2. ✅ `ansible/etc/systemd/system/icecast2-somdomato.service`
    - Service do Icecast
 
-3. ✅ `files/etc/systemd/system/liquidsoap-somdomato.service`
+3. ✅ `ansible/etc/systemd/system/liquidsoap-somdomato.service`
    - Service do Liquidsoap
 
 4. ✅ `docs/DEPLOY-RADIO.md`

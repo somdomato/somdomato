@@ -94,7 +94,7 @@ server {
 }
 ```
 
-### Produção (files/etc/nginx/sites.d/)
+### Produção (ansible/etc/nginx/sites.d/)
 
 **somdomato.com.conf** (aplicação):
 ```nginx

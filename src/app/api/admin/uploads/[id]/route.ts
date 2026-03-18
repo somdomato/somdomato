@@ -36,10 +36,19 @@ export async function PATCH(
       // Move file to music directory
       const destPath = path.join(MUSIC_PATH, upload.filename);
 
-      if (fs.existsSync(upload.path)) {
-        fs.copyFileSync(upload.path, destPath);
-        fs.unlinkSync(upload.path);
+      if (!fs.existsSync(upload.path)) {
+        return NextResponse.json(
+          { error: "Arquivo não encontrado no servidor. O upload pode ter sido removido." },
+          { status: 404 },
+        );
       }
+
+      if (!fs.existsSync(MUSIC_PATH)) {
+        fs.mkdirSync(MUSIC_PATH, { recursive: true });
+      }
+
+      fs.copyFileSync(upload.path, destPath);
+      fs.unlinkSync(upload.path);
 
       // Add to songs table
       await db.insert(songs).values({

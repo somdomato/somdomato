@@ -7,34 +7,56 @@ echo "🚀 Iniciando ambiente de desenvolvimento Som do Mato..."
 # Cores
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
-NC='\033[0m' # No Color
+RED='\033[0;31m'
+NC='\033[0m'
 
-# 1. Iniciar containers Docker (Nginx + Icecast + Liquidsoap)
-echo -e "\n${YELLOW}[1/3]${NC} Iniciando containers Docker..."
-cd docker && docker-compose up -d
+# Verificar se Docker está rodando
+if ! docker info > /dev/null 2>&1; then
+    echo -e "${RED}❌ Docker não está rodando. Inicie o Docker primeiro.${NC}"
+    exit 1
+fi
+
+# 1. Gerar certificados SSL se necessário
+echo -e "\n${YELLOW}[1/3]${NC} Verificando certificados SSL..."
+cd docker
+
+if [ ! -f "certs/selfsigned.crt" ]; then
+    echo "Gerando certificados SSL auto-assinados..."
+    bash generate-certs.sh
+fi
+echo -e "${GREEN}✓${NC} Certificados SSL prontos"
+
+# 2. Iniciar containers Docker
+echo -e "\n${YELLOW}[2/3]${NC} Iniciando containers Docker (Next.js + Nginx + Icecast + Liquidsoap)..."
+docker compose up -d --build
 
 if [ $? -ne 0 ]; then
-    echo "❌ Erro ao iniciar containers Docker"
+    echo -e "${RED}❌ Erro ao iniciar containers Docker${NC}"
     exit 1
 fi
 
 echo -e "${GREEN}✓${NC} Containers iniciados"
-echo "  - Nginx: http://localhost:8080"
-echo "  - Icecast: http://localhost:8000 (direto) ou http://localhost:8080 (via proxy)"
-echo "  - Liquidsoap: rodando"
 
-# 2. Aguardar containers ficarem prontos
-echo -e "\n${YELLOW}[2/3]${NC} Aguardando serviços ficarem prontos..."
-sleep 5
+# 3. Aguardar containers ficarem prontos
+echo -e "\n${YELLOW}[3/3]${NC} Aguardando serviços ficarem prontos..."
+echo "  Aguardando Next.js (healthcheck)..."
 
-# 3. Instruções para o servidor Next.js
-echo -e "\n${YELLOW}[3/3]${NC} Para iniciar o servidor Next.js:"
-echo "  cd .."
-echo "  pnpm dev"
+for i in $(seq 1 60); do
+    if docker inspect --format='{{.State.Health.Status}}' somdomato-nextjs 2>/dev/null | grep -q "healthy"; then
+        break
+    fi
+    sleep 2
+done
 
 echo -e "\n${GREEN}✓${NC} Ambiente pronto!"
-echo -e "\n📻 Acesse: ${GREEN}http://localhost:3000${NC}"
-echo "🔧 Admin Icecast: http://localhost:8080/admin (user: admin, pass: hackme)"
 echo ""
-echo "Para parar os containers:"
-echo "  cd docker && docker-compose down"
+echo "📻 Aplicação:        https://localhost (SSL)"
+echo "📻 Aplicação (HTTP): http://localhost:8080"
+echo "🔧 Icecast Admin:    https://localhost/admin (user: admin, pass: hackme)"
+echo "📡 Streams:          https://localhost/geral"
+echo ""
+echo "Para ver logs:"
+echo "  docker compose -f docker/docker-compose.yml logs -f"
+echo ""
+echo "Para parar:"
+echo "  docker compose -f docker/docker-compose.yml down"

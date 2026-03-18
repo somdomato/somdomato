@@ -7,8 +7,8 @@ live = input.harbor("aovivo", port=8010, user="dj", password="hackme")
 # Função para buscar próxima música do Next.js para um gênero específico
 def next(genre) =
   def request_function() =
-    # Chama a API do Next.js via host.docker.internal (acessa o host)
-    api_url = "http://host.docker.internal:3000/api/music?genre=#{genre}"
+    # Chama a API do Next.js via rede Docker interna
+    api_url = "http://nextjs:3000/api/music?genre=#{genre}"
     result = process.read.lines("curl -s '#{api_url}'")
     json = list.hd(default="", result)
     

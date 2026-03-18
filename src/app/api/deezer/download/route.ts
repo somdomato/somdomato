@@ -23,11 +23,11 @@ function realpath(dir: string): string {
 }
 
 /**
- * Recursively collect all audio files under `dir`.
+ * Recursively collect ALL files under `dir`.
  * Uses fs.statSync (follows symlinks) so symlinked subdirs are traversed.
  * Returns a Map of absolute path → mtime (ms).
  */
-function getAllAudioFiles(dir: string): Map<string, number> {
+function getAllFiles(dir: string): Map<string, number> {
   const results = new Map<string, number>();
   const recurse = (d: string) => {
     try {
@@ -37,7 +37,7 @@ function getAllAudioFiles(dir: string): Map<string, number> {
           const stat = fs.statSync(full); // follows symlinks
           if (stat.isDirectory()) {
             recurse(full);
-          } else if (/\.(mp3|flac|ogg|m4a)$/i.test(entry.name)) {
+          } else {
             results.set(full, stat.mtimeMs);
           }
         } catch {
@@ -77,8 +77,6 @@ export async function POST(request: NextRequest) {
         const realUploadsDir = realpath(UPLOADS_DIR);
         const sanitizedTitle = title.replace(/[^a-zA-Z0-9\s-]/g, "").trim();
         const sanitizedArtist = artist.replace(/[^a-zA-Z0-9\s-]/g, "").trim();
-        const filename = `${sanitizedArtist} - ${sanitizedTitle}.mp3`;
-        const outputPath = path.join(realUploadsDir, filename);
 
         send({
           status: "starting",
@@ -88,13 +86,25 @@ export async function POST(request: NextRequest) {
 
         const startMs = Date.now();
 
-        // Snapshot before download
-        const filesBefore = getAllAudioFiles(realUploadsDir);
+        // godeez v1.4.0 always writes to ~/Music/GoDeez (ignores cwd)
+        const homeDir = process.env.HOME || process.env.USERPROFILE || "/root";
+        const godeezDir = path.join(homeDir, "Music", "GoDeez");
+        ensureDir(godeezDir);
+
+        // Snapshot godeez output dir before download
+        const filesBefore = getAllFiles(godeezDir);
 
         const godeezProcess = spawn(
           "godeez",
           ["download", "track", String(trackId)],
-          { cwd: realUploadsDir },
+          {
+            cwd: realUploadsDir,
+            env: {
+              ...process.env,
+              DEEZER_ARL: process.env.DEEZER_ARL,
+              HOME: homeDir,
+            },
+          },
         );
 
         let lastProgress = 5;
@@ -132,47 +142,78 @@ export async function POST(request: NextRequest) {
           godeezProcess.on("error", reject);
         });
 
-        if (exitCode !== 0) {
-          console.warn(
-            `godeez exited with code ${exitCode}. stdout: ${stdout} stderr: ${stderr}`,
+        const combinedOutput = `${stdout} ${stderr}`;
+        if (exitCode !== 0 || /error:/i.test(combinedOutput)) {
+          console.error(
+            `godeez failed (code ${exitCode}). stdout: ${stdout} stderr: ${stderr}`,
           );
+          const authFailed = /failed to authenticate|invalid arl/i.test(combinedOutput);
+          send({
+            error: authFailed
+              ? "Falha na autenticação Deezer. Verifique o token ARL."
+              : `Falha no download (código ${exitCode}). Verifique o token ARL do Deezer.`,
+            done: true,
+          });
+          return;
         }
 
         send({ status: "processing", progress: 90, message: "Processando..." });
 
-        // Small delay to ensure the file is fully flushed to disk
-        await new Promise((r) => setTimeout(r, 500));
+        // Retry file detection with increasing delays to handle slow I/O
+        let foundPath: string | null = null;
+        const delays = [500, 1500, 3000];
 
-        // Find newly downloaded file:
-        // Primary: file path not in the before-snapshot
-        // Fallback: file with mtime >= startMs (handles edge cases with temp files)
-        const filesAfter = getAllAudioFiles(realUploadsDir);
-        const newFiles = [...filesAfter.keys()].filter(
-          (f) => !filesBefore.has(f),
-        );
-        const recentFiles =
-          newFiles.length > 0
-            ? newFiles
-            : [...filesAfter.entries()]
-                .filter(([, mtime]) => mtime >= startMs)
-                .map(([f]) => f);
+        for (const delay of delays) {
+          await new Promise((r) => setTimeout(r, delay));
 
-        if (recentFiles.length === 0) {
+          // godeez writes to ~/Music/GoDeez/Artist/Album/track.mp3
+          const filesAfter = getAllFiles(godeezDir);
+          const newFiles = [...filesAfter.keys()].filter(
+            (f) => !filesBefore.has(f),
+          );
+
+          if (newFiles.length > 0) {
+            // Pick the most recently modified audio file
+            const audioFiles = newFiles.filter((f) =>
+              /\.(mp3|flac|ogg|m4a)$/i.test(f),
+            );
+            const candidates = audioFiles.length > 0 ? audioFiles : newFiles;
+            foundPath = candidates.sort((a, b) =>
+              (filesAfter.get(b) ?? 0) - (filesAfter.get(a) ?? 0)
+            )[0];
+            break;
+          }
+        }
+
+        if (!foundPath) {
+          const filesAfterFinal = getAllFiles(godeezDir);
           console.error(
-            `godeez: no new audio file found. realUploadsDir=${realUploadsDir} stdout=${stdout} stderr=${stderr}`,
+            `godeez: no new file found after retries.`,
+            `\n  godeezDir=${godeezDir}`,
+            `\n  UPLOADS_DIR=${UPLOADS_DIR}`,
+            `\n  HOME=${homeDir}`,
+            `\n  files before (${filesBefore.size}): ${[...filesBefore.keys()].slice(0, 20).join(", ")}`,
+            `\n  files after (${filesAfterFinal.size}): ${[...filesAfterFinal.keys()].slice(0, 20).join(", ")}`,
+            `\n  stdout: ${stdout}`,
+            `\n  stderr: ${stderr}`,
           );
           send({ error: "Arquivo não encontrado após download", done: true });
           return;
         }
 
-        // Pick the most recently modified file
-        const downloadedPath = recentFiles.sort((a, b) => {
-          return (filesAfter.get(b) ?? 0) - (filesAfter.get(a) ?? 0);
-        })[0];
+        // Move file to UPLOADS_DIR root with standardized filename
+        const ext = path.extname(foundPath) || ".mp3";
+        const filename = `${sanitizedArtist} - ${sanitizedTitle}${ext}`;
+        const outputPath = path.join(realUploadsDir, filename);
 
-        // Move to UPLOADS_DIR root with standardized filename
-        if (downloadedPath !== outputPath) {
-          fs.renameSync(downloadedPath, outputPath);
+        if (foundPath !== outputPath) {
+          try {
+            fs.renameSync(foundPath, outputPath);
+          } catch {
+            // renameSync fails across filesystems — copy + delete instead
+            fs.copyFileSync(foundPath, outputPath);
+            fs.unlinkSync(foundPath);
+          }
         }
 
         // Save to database
