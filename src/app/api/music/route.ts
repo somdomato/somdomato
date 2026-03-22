@@ -67,7 +67,6 @@ export async function GET(request: Request) {
 
     // FALLBACK: Se não houver músicas do gênero específico, buscar do "geral"
     let finalFilteredSongs = filteredSongs;
-    const usedGenre = genre;
 
     if (filteredSongs.length === 0 && genre !== "geral") {
       console.log(
@@ -96,8 +95,6 @@ export async function GET(request: Request) {
       finalFilteredSongs = generalSongs.filter(
         (song) => !generalBlockedArtists.includes(song.artist),
       );
-      // Manter usedGenre como o gênero original do mountpoint
-      // A música toca no stream deste mountpoint, então o histórico deve refletir isso
     }
 
     if (finalFilteredSongs.length === 0) {
@@ -205,15 +202,6 @@ export async function GET(request: Request) {
       });
     }
 
-    await db
-      .insert(history)
-      .values({
-        songId: selectedSong.id,
-        genre: usedGenre,
-        wasRequested: wasFromRequest ? 1 : 0,
-      })
-      .returning();
-
     // Garantir que haja um caminho de capa no banco antes de emitir (melhor esforço)
     try {
       const { extractAndSaveCover, findCoverByArtist } = await import(
@@ -285,38 +273,7 @@ export async function GET(request: Request) {
     const safeCover = selectedSong.cover || "/images/logotipo.svg";
     selectedSong.cover = safeCover;
 
-    // Construir payload consistente (incluir gênero e allowedInGeneral)
-    const songWithGenre = selectedSong as Song & {
-      genre?: string;
-      allowedInGeneral?: number;
-    };
-    const songGenre = songWithGenre.genre || genre || "geral";
-    const allowedInGeneral = songWithGenre.allowedInGeneral || 0;
-
-    const payload = {
-      id: selectedSong.id,
-      title: selectedSong.title,
-      artist: selectedSong.artist,
-      cover: safeCover,
-      genre: songGenre,
-      allowedInGeneral: allowedInGeneral,
-      playedAt: Date.now(),
-      // Mountpoint onde foi tocado (pode ser diferente do gênero da música em caso de fallback)
-      playedOnMountpoint: usedGenre,
-      // Se foi um pedido (true) ou AutoDJ (false)
-      wasRequested: wasFromRequest,
-    };
-
-    // Emitir evento para todos os gêneros (clientes filtram por gênero localmente)
-    if (global.io) {
-      global.io.emit("song:changed", payload);
-    } else {
-      console.warn(
-        "No socket.io server available: cannot emit song:changed event",
-      );
-    }
-
-    return Response.json({ ...selectedSong });
+    return Response.json({ ...selectedSong, wasRequested: wasFromRequest });
   } catch (error) {
     console.error("Error getting music:", error);
 

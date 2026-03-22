@@ -9,20 +9,34 @@ def next()
     path = list.hd(default="", process.read.lines("echo '#{json}' | jq -r '.path'"))
     title = list.hd(default="", process.read.lines("echo '#{json}' | jq -r '.title'"))
     artist = list.hd(default="", process.read.lines("echo '#{json}' | jq -r '.artist'"))
+    song_id = list.hd(default="", process.read.lines("echo '#{json}' | jq -r '.id'"))
+    was_requested = list.hd(default="0", process.read.lines("echo '#{json}' | jq -r 'if .wasRequested then \"1\" else \"0\" end'"))
     
     log("Próxima música: #{path}")
     log("Título: #{title}")
     log("Artista: #{artist}")
     
-    uri = "annotate:title=\"#{title}\",artist=\"#{artist}\":#{path}"
+    uri = "annotate:title=\"#{title}\",artist=\"#{artist}\",song_id=\"#{song_id}\",was_requested=\"#{was_requested}\":#{path}"
     request.create(uri)
   end
   
   request.dynamic(id="next_track", request_function)
 end
 
+# Notificar API quando música começa a tocar efetivamente
+def notify_started(m) =
+  song_id = m["song_id"]
+  was_requested = m["was_requested"]
+  if song_id != "" and song_id != "null" then
+    api_url = "http://localhost:3000/api/music/started?songId=#{song_id}&genre=geral&wasRequested=#{was_requested}"
+    log("Notificando início: songId=#{song_id}")
+    ignore(process.read.lines("curl -s -X POST '#{api_url}'"))
+  end
+end
+
 # Cria a fonte de música automática
 autodj = next()
+autodj.on_track(fun (m) -> notify_started(m))
 
 # Cria uma fila para músicas injetadas manualmente
 queue = request.queue(id="manual_queue")

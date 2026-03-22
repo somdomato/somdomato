@@ -12,10 +12,12 @@ def next(genre) =
     result = process.read.lines("curl -s '#{api_url}'")
     json = list.hd(default="", result)
     
-    # Extrair path, title e artist do JSON
+    # Extrair path, title, artist, id e wasRequested do JSON
     path_raw = list.hd(default="", process.read.lines("echo '#{json}' | jq -r '.path'"))
     title = list.hd(default="", process.read.lines("echo '#{json}' | jq -r '.title'"))
     artist = list.hd(default="", process.read.lines("echo '#{json}' | jq -r '.artist'"))
+    song_id = list.hd(default="", process.read.lines("echo '#{json}' | jq -r '.id'"))
+    was_requested = list.hd(default="0", process.read.lines("echo '#{json}' | jq -r 'if .wasRequested then \"1\" else \"0\" end'"))
     
     # Validar se recebemos dados válidos
     if path_raw == "" or path_raw == "null" then
@@ -35,7 +37,7 @@ def next(genre) =
       
       # Criar request com metadados usando annotate: no URI
       # IMPORTANTE: Não fazer URL encode - paths locais precisam estar sem encoding
-      uri = "annotate:title=\"#{title}\",artist=\"#{artist}\":#{path}"
+      uri = "annotate:title=\"#{title}\",artist=\"#{artist}\",song_id=\"#{song_id}\",was_requested=\"#{was_requested}\":#{path}"
       req = request.create(uri)
       
       # Registrar sucesso/falha e retornar o request (ou null)
@@ -54,6 +56,17 @@ def next(genre) =
   request.dynamic(id="next_#{genre}", retry_delay=5.0, timeout=60.0, request_function)
 end
 
+# Notificar API quando música começa a tocar efetivamente
+def notify_started(genre, m) =
+  song_id = m["song_id"]
+  was_requested = m["was_requested"]
+  if song_id != "" and song_id != "null" then
+    api_url = "http://nextjs:3000/api/music/started?songId=#{song_id}&genre=#{genre}&wasRequested=#{was_requested}"
+    log("[#{genre}] Notificando início: songId=#{song_id}")
+    ignore(process.read.lines("curl -s -X POST '#{api_url}'"))
+  end
+end
+
 # Criar AutoDJ para cada gênero
 autodj_geral = next("geral")
 autodj_gaucha = next("gaucha")
@@ -61,6 +74,14 @@ autodj_modao = next("modao")
 autodj_arrocha = next("arrocha")
 autodj_romantico = next("romantico")
 autodj_forro = next("forro")
+
+# Registrar callbacks para notificar quando cada faixa começa a tocar
+autodj_geral.on_track(fun (m) -> notify_started("geral", m))
+autodj_gaucha.on_track(fun (m) -> notify_started("gaucha", m))
+autodj_modao.on_track(fun (m) -> notify_started("modao", m))
+autodj_arrocha.on_track(fun (m) -> notify_started("arrocha", m))
+autodj_romantico.on_track(fun (m) -> notify_started("romantico", m))
+autodj_forro.on_track(fun (m) -> notify_started("forro", m))
 
 # Cria uma fila para músicas injetadas manualmente (apenas para geral)
 queue = request.queue(id="manual_queue")

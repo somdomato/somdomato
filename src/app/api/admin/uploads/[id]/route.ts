@@ -53,12 +53,31 @@ export async function PATCH(
       fs.copyFileSync(upload.path, destPath);
       fs.unlinkSync(upload.path);
 
+      // Extract and save cover from MP3
+      let coverPath = "/images/logotipo.svg";
+      try {
+        const { extractAndSaveCover, findCoverByArtist } = await import(
+          "@/lib/cover"
+        );
+        const extracted = await extractAndSaveCover(destPath);
+        if (extracted) {
+          coverPath = extracted;
+        } else {
+          const found = await findCoverByArtist(upload.artist);
+          if (found) {
+            coverPath = found;
+          }
+        }
+      } catch (err) {
+        console.error("Erro ao extrair capa:", err);
+      }
+
       // Add to songs table
       await db.insert(songs).values({
         title: upload.title,
         artist: upload.artist,
         path: destPath,
-        cover: upload.thumbnail || "/images/logotipo.svg",
+        cover: coverPath,
         genre: genre || "geral",
         rotation: "normal",
         timeSlots: 15,
