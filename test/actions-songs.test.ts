@@ -6,6 +6,29 @@ vi.mock("@/db", async () => ({
     select: () => ({
       from: () => ({
         innerJoin: () => ({
+          where: () => ({
+            orderBy: () => ({
+              limit: () =>
+                Promise.resolve([
+                  {
+                    id: 1,
+                    title: "A",
+                    artist: "X",
+                    cover: null,
+                    playedAt: Date.now(),
+                    genre: "gaucha",
+                  },
+                  {
+                    id: 2,
+                    title: "B",
+                    artist: "Y",
+                    cover: null,
+                    playedAt: Date.now(),
+                    genre: "geral",
+                  },
+                ]),
+            }),
+          }),
           orderBy: () => ({
             limit: () =>
               Promise.resolve([

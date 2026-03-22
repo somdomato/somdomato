@@ -4,7 +4,7 @@ After=network.target
 
 [Service]
 Type=oneshot
-ExecStart=/home/lucas/code/somdomato/scripts/sync.sh
+ExecStart=/home/lucas/code/sdm/somdomato/scripts/sync.sh
 
 [Install]
 WantedBy=default.target

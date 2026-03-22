@@ -27,10 +27,12 @@ export async function checkMusicRepetition(
     };
   }
 
-  // 1. Verificar se a música está nas últimas 100 do histórico
+  // 1. Verificar se a música está nas últimas N do histórico do geral
+  // (pedidos só tocam no mountpoint "geral", então filtramos por ele)
   const lastSongs = await db
     .select({ songId: history.songId })
     .from(history)
+    .where(eq(history.genre, "geral"))
     .orderBy(desc(history.id))
     .limit(LAST_SONGS_HISTORY_LIMIT);
   const lastSongIds = lastSongs.map((h) => h.songId);
@@ -57,13 +59,14 @@ export async function checkMusicRepetition(
     };
   }
 
-  // 3. Verificar repetição de artista: últimas 10 músicas do histórico
+  // 3. Verificar repetição de artista: últimas 10 músicas do histórico do geral
   const recentHistory = await db
     .select({
       artist: songs.artist,
     })
     .from(history)
     .innerJoin(songs, eq(history.songId, songs.id))
+    .where(eq(history.genre, "geral"))
     .orderBy(desc(history.id))
     .limit(10);
 

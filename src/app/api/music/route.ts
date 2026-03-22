@@ -67,7 +67,7 @@ export async function GET(request: Request) {
 
     // FALLBACK: Se não houver músicas do gênero específico, buscar do "geral"
     let finalFilteredSongs = filteredSongs;
-    let usedGenre = genre;
+    const usedGenre = genre;
 
     if (filteredSongs.length === 0 && genre !== "geral") {
       console.log(
@@ -96,7 +96,8 @@ export async function GET(request: Request) {
       finalFilteredSongs = generalSongs.filter(
         (song) => !generalBlockedArtists.includes(song.artist),
       );
-      usedGenre = "geral"; // Salvar no histórico como "geral" pois é fallback
+      // Manter usedGenre como o gênero original do mountpoint
+      // A música toca no stream deste mountpoint, então o histórico deve refletir isso
     }
 
     if (finalFilteredSongs.length === 0) {
