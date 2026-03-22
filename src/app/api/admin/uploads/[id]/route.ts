@@ -38,7 +38,10 @@ export async function PATCH(
 
       if (!fs.existsSync(upload.path)) {
         return NextResponse.json(
-          { error: "Arquivo não encontrado no servidor. O upload pode ter sido removido." },
+          {
+            error:
+              "Arquivo não encontrado no servidor. O upload pode ter sido removido.",
+          },
           { status: 404 },
         );
       }

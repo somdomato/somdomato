@@ -10,6 +10,15 @@ interface DeezerResult {
   title: string;
   artist: string;
   thumbnail: string;
+  duration: number;
+}
+
+const MAX_DURATION_SECONDS = 10 * 60;
+
+function formatDuration(seconds: number): string {
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return `${m}:${String(s).padStart(2, "0")}`;
 }
 
 interface DownloadProgress {
@@ -218,10 +227,19 @@ export default function EnviarPage() {
                   <p className="text-sm text-gray-400 truncate">
                     {track.artist}
                   </p>
+                  <p className="text-xs text-gray-500">
+                    {formatDuration(track.duration)}
+                    {track.duration > MAX_DURATION_SECONDS && (
+                      <span className="text-red-400 ml-2">
+                        Excede o limite de 10 min
+                      </span>
+                    )}
+                  </p>
                 </div>
                 <button
                   onClick={() => handleSelectVideo(track)}
-                  className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary/90 rounded-lg font-medium transition-colors shrink-0"
+                  disabled={track.duration > MAX_DURATION_SECONDS}
+                  className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg font-medium transition-colors shrink-0"
                 >
                   <Download size={18} />
                   Baixar

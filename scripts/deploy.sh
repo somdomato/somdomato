@@ -11,8 +11,8 @@ PROJECT_DIR=/var/www/$NAME
 cp -a "$PROJECT_DIR" "$TEMP_DIR"
 cd "$TEMP_DIR" || exit 1
 
-#git clean -fxd -e .env -e public/covers -e drizzle/somdomato.db
-git clean -fxd -e .env -e public/covers
+git clean -fxd -e .env -e public/covers -e drizzle/somdomato.db
+#git clean -fxd -e .env -e public/covers
 cp .env .env.production 
 
 # Gerar NEXT_SERVER_ACTIONS_ENCRYPTION_KEY se não existir
@@ -36,12 +36,18 @@ if ! grep -q "NEXT_SERVER_ACTIONS_ENCRYPTION_KEY" .env.production; then
 fi
 
 pnpm install
-pnpm run push
-pnpm run seed
+
+if pnpm run push; then
+  echo "Migrações aplicadas com sucesso."
+  pnpm run seed
+else
+  echo "Erro ao aplicar migrações. Abortando deploy."
+  exit 1
+fi
+
 pnpm run build || exit 1
 
 sudo /usr/bin/systemctl stop $SERVICE
-#pnpm run seed
 rm -rf "$PROJECT_DIR"
 mv "$TEMP_DIR" "$PROJECT_DIR"
 #ln -sf /var/music/sdm "$PROJECT_DIR/public/music"
