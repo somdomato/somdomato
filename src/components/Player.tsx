@@ -23,17 +23,15 @@ type ListenersData = {
 };
 
 function AdminSkipButton() {
-  const { isAuthenticated, password } = useAuth();
+  const { isAuthenticated } = useAuth();
   const handle = useCallback(async () => {
-    if (!isAuthenticated || !password) {
+    if (!isAuthenticated) {
       toast.error("Somente admins");
       return;
     }
     try {
       const res = await fetch("/api/admin/skip", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || "Falha ao enviar skip");
@@ -42,7 +40,7 @@ function AdminSkipButton() {
       toast.error(err instanceof Error ? err.message : "Erro ao enviar skip");
       console.error(err);
     }
-  }, [isAuthenticated, password]);
+  }, [isAuthenticated]);
 
   if (!isAuthenticated) return null;
 

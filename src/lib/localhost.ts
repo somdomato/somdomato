@@ -5,13 +5,19 @@ const LOCAL_IPS = new Set([
   "localhost",
 ]);
 
+/** Normaliza IPv4-mapped IPv6 (::ffff:x.x.x.x → x.x.x.x) */
+function normalizeIP(ip: string): string {
+  return ip.startsWith("::ffff:") ? ip.slice(7) : ip;
+}
+
 function isPrivateIP(ip: string): boolean {
+  const normalized = normalizeIP(ip);
   return (
-    ip.startsWith("10.") ||
-    ip.startsWith("192.168.") ||
-    ip.startsWith("172.") ||
-    ip.startsWith("fc") ||
-    ip.startsWith("fd")
+    normalized.startsWith("10.") ||
+    normalized.startsWith("192.168.") ||
+    normalized.startsWith("172.") ||
+    normalized.startsWith("fc") ||
+    normalized.startsWith("fd")
   );
 }
 

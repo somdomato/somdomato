@@ -6,18 +6,10 @@ import { extractAndSaveCover, findCoverByArtist } from "@/lib/cover";
 import util from "node:util";
 import { exec } from "node:child_process";
 
-async function verifyAdmin(password?: string) {
-  const adminPassword = process.env.ADMIN_PASSWORD;
-  if (!adminPassword || password !== adminPassword)
-    throw new Error("Senha inválida");
-}
-
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { songId, password } = body;
-
-    await verifyAdmin(password);
+    const { songId } = body;
 
     const s = await db
       .select()
@@ -247,12 +239,6 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error("/api/admin/play error:", error);
     const message = error instanceof Error ? error.message : "failed";
-    if (
-      message === "Senha inválida" ||
-      message === "Configuração de admin ausente"
-    ) {
-      return new Response(JSON.stringify({ error: message }), { status: 401 });
-    }
     return new Response(JSON.stringify({ error: message }), { status: 500 });
   }
 }

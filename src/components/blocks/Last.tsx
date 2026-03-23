@@ -9,6 +9,7 @@ import { CircleArrowLeft } from "lucide-react";
 import { formatRelativeTime } from "@/lib/format";
 
 type LatestEntry = {
+  historyId?: number;
   id: number;
   title: string;
   artist: string;
@@ -57,18 +58,17 @@ export default function Last({ data }: { data: LatestEntry[] }) {
         return;
       }
 
+      const now = Date.now();
       const entry: LatestEntry = {
+        historyId: now,
         id: song.id,
         title: song.title,
         artist: song.artist,
         cover: song.cover || null,
-        playedAt: song.playedAt || Date.now(),
+        playedAt: song.playedAt || now,
       };
 
-      setLatest((prev) => {
-        const filtered = prev.filter((p) => p.id !== entry.id);
-        return [entry, ...filtered].slice(0, 10);
-      });
+      setLatest((prev) => [entry, ...prev].slice(0, 10));
     };
 
     socket.on("song:changed", onSongChanged);
@@ -94,6 +94,7 @@ export default function Last({ data }: { data: LatestEntry[] }) {
       ) : (
         <SongList
           items={latest}
+          keyField="historyId"
           renderRight={(item) =>
             formatRelativeTime((item as LatestEntry).playedAt)
           }

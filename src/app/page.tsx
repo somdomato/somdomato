@@ -22,7 +22,7 @@ export default async function Home() {
 
       <section className="w-full mb-3">
         <iframe
-          className="w-full aspect-video rounded-xl min-h-80"
+          className="w-full aspect-video rounded min-h-80 border-2 border-primary/20"
           src="https://irc.somdomato.com"
           title="Bate-Papo - Rádio Som do Mato"
           allowFullScreen

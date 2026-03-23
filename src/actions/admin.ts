@@ -22,10 +22,11 @@ export type Genre =
 // Verificação de autenticação via cookie
 async function verifyAuth() {
   const { cookies } = await import("next/headers");
+  const { getUserFromSession } = await import("@/lib/session");
   const cookieStore = await cookies();
-  const adminAuth = cookieStore.get("adminAuth");
+  const session = getUserFromSession(cookieStore);
 
-  if (!adminAuth || adminAuth.value !== process.env.ADMIN_PASSWORD) {
+  if (!session || session.role !== "admin") {
     throw new Error("Não autorizado");
   }
 }

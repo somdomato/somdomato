@@ -329,7 +329,11 @@ export function SongsTable() {
                             toast.success("Tocando agora (solicitado)");
                             loadSongs();
                           } catch (err) {
-                            toast.error("Erro ao tocar agora");
+                            toast.error(
+                              err instanceof Error
+                                ? err.message
+                                : "Erro ao tocar agora",
+                            );
                             console.error(err);
                           }
                         }}

@@ -6,11 +6,11 @@ export default async function MiniStats() {
   const stats = await getMiniStats();
 
   return (
-    <div className="bg-background-alt border border-primary/20 rounded-xl p-4">
+    <div className="bg-background-alt border-2 border-primary/20 rounded p-4">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <BarChart3 className="w-5 h-5 text-primary" />
-          <h3 className="font-semibold">Estatísticas</h3>
+          <span className="font-semibold">Estatísticas</span>
         </div>
         <Link
           href="/estatisticas"

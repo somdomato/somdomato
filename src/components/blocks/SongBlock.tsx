@@ -13,7 +13,7 @@ export default function SongBlock({
   children: ReactNode;
 }) {
   return (
-    <div className="bg-background-alt border border-primary/20 rounded p-3">
+    <div className="bg-background-alt border-2 border-primary/20 rounded p-3">
       <h3 className="flex items-center font-semibold mb-3">
         {Icon ? <Icon className="inline-block mr-2 w-6 h-6" /> : null}
         {title}

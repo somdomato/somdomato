@@ -20,6 +20,7 @@ export async function lastSongs(genre?: string) {
   // Filtrar pelo gênero (mountpoint) onde a música foi TOCADA (history.genre)
   const latest = await db
     .select({
+      historyId: history.id,
       id: songs.id,
       title: songs.title,
       artist: songs.artist,
@@ -34,6 +35,7 @@ export async function lastSongs(genre?: string) {
     .limit(10);
 
   return latest.map((s) => ({
+    historyId: s.historyId,
     id: s.id,
     title: s.title,
     artist: s.artist,
