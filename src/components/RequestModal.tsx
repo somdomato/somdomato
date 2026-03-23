@@ -7,8 +7,32 @@ import { useAudio } from "@/context/AudioContext";
 import { buildStreamUrl } from "@/config";
 import { GenreWarningModal } from "@/components/GenreWarningModal";
 import Image from "next/image";
-import { X, Search, Music, Loader2 } from "lucide-react";
+import { X, Search, Music, Loader2, Download, Check } from "lucide-react";
 import { toast } from "sonner";
+
+interface DeezerResult {
+  id: string;
+  title: string;
+  artist: string;
+  thumbnail: string;
+  duration: number;
+}
+
+interface DeezerDownloadProgress {
+  trackId: string;
+  progress: number;
+  status: string;
+  message: string;
+}
+
+const MAX_DURATION_SECONDS = 10 * 60;
+const DEEZER_LIMIT = 10;
+
+function formatDuration(seconds: number): string {
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return `${m}:${String(s).padStart(2, "0")}`;
+}
 
 interface Song {
   id: number;
@@ -37,6 +61,17 @@ export function RequestModal({ isOpen, onClose }: RequestModalProps) {
   const [showGenreWarning, setShowGenreWarning] = useState(false);
   const [pendingSongId, setPendingSongId] = useState<number | null>(null);
 
+  // Deezer fallback state
+  const [deezerResults, setDeezerResults] = useState<DeezerResult[]>([]);
+  const [deezerTotal, setDeezerTotal] = useState(0);
+  const [deezerPage, setDeezerPage] = useState(1);
+  const [deezerPages, setDeezerPages] = useState(0);
+  const [deezerLoading, setDeezerLoading] = useState(false);
+  const [deezerSearched, setDeezerSearched] = useState(false);
+  const [showDeezerForm, setShowDeezerForm] = useState<DeezerResult | null>(null);
+  const [deezerFormData, setDeezerFormData] = useState({ title: "", artist: "" });
+  const [deezerDownloading, setDeezerDownloading] = useState<DeezerDownloadProgress | null>(null);
+
   const { currentGenre, setGenre } = useGenre();
   const { playing, play } = useAudio();
 
@@ -63,6 +98,113 @@ export function RequestModal({ isOpen, onClose }: RequestModalProps) {
     },
     [limit],
   );
+
+  const searchDeezer = useCallback(
+    async (query: string, pageParam: number = 1) => {
+      if (!query.trim()) return;
+      setDeezerLoading(true);
+      try {
+        const index = (pageParam - 1) * DEEZER_LIMIT;
+        const res = await fetch(
+          `/api/deezer/search?q=${encodeURIComponent(query)}&limit=${DEEZER_LIMIT}&index=${index}`,
+        );
+        const data = await res.json();
+        if (data.error) {
+          toast.error(data.error);
+          return;
+        }
+        setDeezerResults(data.results || []);
+        setDeezerTotal(data.total || 0);
+        setDeezerPages(Math.ceil((data.total || 0) / DEEZER_LIMIT));
+        setDeezerPage(pageParam);
+        setDeezerSearched(true);
+      } catch (error) {
+        toast.error("Erro ao pesquisar no Deezer");
+        console.error(error);
+      } finally {
+        setDeezerLoading(false);
+      }
+    },
+    [],
+  );
+
+  const handleSelectDeezerTrack = (track: DeezerResult) => {
+    setDeezerFormData({ title: track.title, artist: track.artist });
+    setShowDeezerForm(track);
+  };
+
+  const handleDeezerDownload = async () => {
+    if (!showDeezerForm || !deezerFormData.title.trim() || !deezerFormData.artist.trim()) {
+      toast.error("Preencha todos os campos");
+      return;
+    }
+
+    setDeezerDownloading({
+      trackId: showDeezerForm.id,
+      progress: 0,
+      status: "starting",
+      message: "Iniciando...",
+    });
+    setShowDeezerForm(null);
+
+    try {
+      const response = await fetch("/api/deezer/download", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          trackId: showDeezerForm.id,
+          title: deezerFormData.title.trim(),
+          artist: deezerFormData.artist.trim(),
+          thumbnail: showDeezerForm.thumbnail,
+        }),
+      });
+
+      const reader = response.body?.getReader();
+      if (!reader) throw new Error("No response body");
+
+      const decoder = new TextDecoder();
+      let buffer = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n\n");
+        buffer = lines.pop() || "";
+
+        for (const line of lines) {
+          if (line.startsWith("data: ")) {
+            try {
+              const data = JSON.parse(line.slice(6));
+              if (data.error) {
+                toast.error(data.error);
+                setDeezerDownloading(null);
+                return;
+              }
+              if (data.done) {
+                toast.success(data.message || "Download concluído! Aguardando moderação.");
+                setDeezerDownloading(null);
+                return;
+              }
+              setDeezerDownloading((prev) => ({
+                trackId: prev?.trackId || showDeezerForm.id,
+                progress: data.progress || prev?.progress || 0,
+                status: data.status || prev?.status || "",
+                message: data.message || prev?.message || "",
+              }));
+            } catch {
+              // Ignore parse errors
+            }
+          }
+        }
+      }
+    } catch (error) {
+      toast.error("Erro no download");
+      console.error(error);
+      setDeezerDownloading(null);
+    }
+  };
 
   // Manage focus when opening/closing modal and keyboard traps
   useEffect(() => {
@@ -125,12 +267,22 @@ export function RequestModal({ isOpen, onClose }: RequestModalProps) {
       // Ao abrir o modal, limpar o campo de busca e carregar todas as músicas
       setSearchQuery("");
       setPage(1);
+      setDeezerResults([]);
+      setDeezerSearched(false);
+      setDeezerTotal(0);
+      setDeezerPages(0);
+      setDeezerPage(1);
+      setDeezerDownloading(null);
+      setShowDeezerForm(null);
       loadSongs("", 1);
     }
   }, [isOpen, loadSongs]);
 
   const handleSearch = () => {
     setPage(1);
+    setDeezerResults([]);
+    setDeezerSearched(false);
+    setDeezerPage(1);
     loadSongs(searchQuery, 1);
   };
 
@@ -307,10 +459,130 @@ export function RequestModal({ isOpen, onClose }: RequestModalProps) {
                 <Loader2 className="w-8 h-8 text-primary animate-spin" />
               </div>
             ) : songs.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-12 text-gray-400">
-                <Music className="w-16 h-16 mb-4 opacity-50" />
-                <p className="text-lg">Nenhuma música encontrada</p>
-                <p className="text-sm mt-2">Tente buscar com outros termos</p>
+              <div className="flex flex-col items-center justify-center py-8 text-gray-400">
+                {/* Download progress inside empty state */}
+                {deezerDownloading && (
+                  <div className="w-full max-w-md mb-6 p-4 bg-background border border-primary/30 rounded-lg">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="animate-pulse">
+                        <Music className="text-primary" size={24} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-white truncate">{deezerDownloading.message}</p>
+                        <p className="text-xs text-gray-400">{deezerDownloading.status}</p>
+                      </div>
+                      <span className="text-lg font-bold text-primary">{deezerDownloading.progress}%</span>
+                    </div>
+                    <div className="w-full bg-background-alt rounded-full h-2 overflow-hidden">
+                      <div
+                        className="bg-primary h-full transition-all duration-300 ease-out"
+                        style={{ width: `${deezerDownloading.progress}%` }}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {!deezerSearched && !deezerLoading && !deezerDownloading && (
+                  <>
+                    <Music className="w-12 h-12 mb-3 opacity-50" />
+                    <p className="text-base">Nenhuma música encontrada na rádio</p>
+                    {searchQuery.trim() && (
+                      <button
+                        onClick={() => searchDeezer(searchQuery, 1)}
+                        className="mt-4 px-5 py-2.5 bg-primary hover:bg-primary/80 text-background font-semibold rounded-lg transition-colors flex items-center gap-2 text-sm"
+                      >
+                        <Search className="w-4 h-4" />
+                        Buscar no Deezer
+                      </button>
+                    )}
+                    {!searchQuery.trim() && (
+                      <p className="text-sm mt-2">Tente buscar com outros termos</p>
+                    )}
+                  </>
+                )}
+
+                {deezerLoading && (
+                  <div className="flex items-center justify-center py-4">
+                    <Loader2 className="w-8 h-8 text-primary animate-spin" />
+                  </div>
+                )}
+
+                {deezerSearched && !deezerLoading && deezerResults.length === 0 && !deezerDownloading && (
+                  <>
+                    <Music className="w-12 h-12 mb-3 opacity-50" />
+                    <p className="text-base">Nenhum resultado no Deezer</p>
+                    <p className="text-sm mt-2">Tente buscar com outros termos</p>
+                  </>
+                )}
+
+                {deezerResults.length > 0 && !deezerDownloading && (
+                  <div className="w-full text-left">
+                    <div className="px-4 sm:px-6 pb-3">
+                      <p className="text-sm text-gray-300">
+                        Não encontramos na rádio, mas achamos <strong className="text-primary">{deezerTotal}</strong> resultado{deezerTotal !== 1 ? "s" : ""} no Deezer:
+                      </p>
+                    </div>
+                    <div className="space-y-2 px-4 sm:px-6">
+                      {deezerResults.map((track) => (
+                        <div
+                          key={track.id}
+                          className="flex items-center gap-3 p-3 bg-background border border-primary/20 rounded-lg hover:border-primary/40 transition-colors"
+                        >
+                          <Image
+                            src={track.thumbnail}
+                            alt={track.title}
+                            width={48}
+                            height={48}
+                            className="rounded object-cover shrink-0"
+                          />
+                          <div className="flex-1 min-w-0">
+                            <h3 className="text-sm font-medium text-white truncate">{track.title}</h3>
+                            <p className="text-xs text-gray-400 truncate">{track.artist}</p>
+                            <p className="text-xs text-gray-500">
+                              {formatDuration(track.duration)}
+                              {track.duration > MAX_DURATION_SECONDS && (
+                                <span className="text-red-400 ml-2">Excede 10 min</span>
+                              )}
+                            </p>
+                          </div>
+                          <button
+                            onClick={() => handleSelectDeezerTrack(track)}
+                            disabled={track.duration > MAX_DURATION_SECONDS}
+                            className="flex items-center gap-1.5 px-3 py-1.5 bg-primary hover:bg-primary/80 disabled:opacity-50 disabled:cursor-not-allowed text-background font-semibold rounded-lg transition-colors shrink-0 text-xs sm:text-sm"
+                          >
+                            <Download size={14} />
+                            <span className="hidden sm:inline">Enviar</span>
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Deezer Pagination */}
+                    {deezerPages > 1 && (
+                      <div className="flex justify-between items-center px-4 sm:px-6 pt-4">
+                        <div className="text-xs text-gray-400">
+                          Página {deezerPage} de {deezerPages}
+                        </div>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => searchDeezer(searchQuery, Math.max(1, deezerPage - 1))}
+                            disabled={deezerPage === 1}
+                            className="px-3 py-1.5 bg-background border border-primary/30 rounded-lg hover:bg-primary/10 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-xs"
+                          >
+                            Anterior
+                          </button>
+                          <button
+                            onClick={() => searchDeezer(searchQuery, Math.min(deezerPages, deezerPage + 1))}
+                            disabled={deezerPage === deezerPages}
+                            className="px-3 py-1.5 bg-background border border-primary/30 rounded-lg hover:bg-primary/10 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-xs"
+                          >
+                            Próxima
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             ) : (
               <div className="overflow-x-auto">
@@ -418,6 +690,80 @@ export function RequestModal({ isOpen, onClose }: RequestModalProps) {
           )}
         </div>
       </div>
+
+      {/* Deezer Download Confirmation Modal */}
+      {showDeezerForm && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-10000 p-4">
+          <div className="bg-background-alt border border-primary/30 rounded-xl max-w-md w-full p-6">
+            <div className="flex justify-between items-start mb-6">
+              <h3 className="text-xl font-bold text-primary">Confirmar Envio</h3>
+              <button
+                onClick={() => setShowDeezerForm(null)}
+                className="p-1 hover:bg-background rounded"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="flex gap-4 mb-6">
+              <Image
+                src={showDeezerForm.thumbnail}
+                alt={showDeezerForm.title}
+                width={64}
+                height={64}
+                className="rounded object-cover shrink-0"
+              />
+              <div className="min-w-0">
+                <p className="text-sm text-gray-300 truncate">{showDeezerForm.title}</p>
+                <p className="text-xs text-gray-500">{showDeezerForm.artist}</p>
+                <p className="text-xs text-gray-500 mt-1">{formatDuration(showDeezerForm.duration)}</p>
+              </div>
+            </div>
+
+            <div className="space-y-4 mb-6">
+              <div>
+                <label htmlFor="deezer-artist" className="block text-sm text-gray-400 mb-1">Artista *</label>
+                <input
+                  id="deezer-artist"
+                  type="text"
+                  value={deezerFormData.artist}
+                  onChange={(e) => setDeezerFormData((p) => ({ ...p, artist: e.target.value }))}
+                  className="w-full px-4 py-2 bg-background border border-primary/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-sm"
+                  placeholder="Nome do artista"
+                />
+              </div>
+              <div>
+                <label htmlFor="deezer-title" className="block text-sm text-gray-400 mb-1">Título da Música *</label>
+                <input
+                  id="deezer-title"
+                  type="text"
+                  value={deezerFormData.title}
+                  onChange={(e) => setDeezerFormData((p) => ({ ...p, title: e.target.value }))}
+                  className="w-full px-4 py-2 bg-background border border-primary/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-sm"
+                  placeholder="Título da música"
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowDeezerForm(null)}
+                className="flex-1 px-4 py-2 border border-gray-600 hover:bg-background rounded-lg transition-colors text-sm"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleDeezerDownload}
+                disabled={!deezerFormData.title.trim() || !deezerFormData.artist.trim()}
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-primary hover:bg-primary/80 disabled:opacity-50 text-background font-semibold rounded-lg transition-colors text-sm"
+              >
+                <Check size={16} />
+                Enviar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

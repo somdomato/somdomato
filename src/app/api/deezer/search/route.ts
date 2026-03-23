@@ -17,9 +17,13 @@ export async function GET(request: NextRequest) {
   }
 
   try {
+    const limit = Math.min(Number(searchParams.get("limit")) || 10, 25);
+    const index = Math.max(Number(searchParams.get("index")) || 0, 0);
+
     const url = new URL("https://api.deezer.com/search");
     url.searchParams.set("q", query);
-    url.searchParams.set("limit", "10");
+    url.searchParams.set("limit", String(limit));
+    url.searchParams.set("index", String(index));
 
     const response = await fetch(url.toString());
     const data = await response.json();
@@ -41,7 +45,10 @@ export async function GET(request: NextRequest) {
         duration: item.duration || 0,
       })) || [];
 
-    return NextResponse.json({ results });
+    return NextResponse.json({
+      results,
+      total: data.total || results.length,
+    });
   } catch (error) {
     console.error("Search error:", error);
     return NextResponse.json(

@@ -296,29 +296,29 @@ export default function Player({ className = "" }: { className?: string }) {
                 onClick={() => setShowGenreDropdown(false)}
                 aria-label="Fechar"
               />
-              <div className="absolute right-0 sm:left-1/2 sm:-translate-x-1/2 top-full mt-2 bg-background-alt border border-primary/50 rounded-xl shadow-2xl z-50 min-w-44 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
-                <div className="p-1">
+              <div className="absolute right-0 min-w-38 sm:left-1/2 sm:-translate-x-1/2 top-full mt-2 bg-background-alt border border-primary/50 rounded-xl shadow-2xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+                <div className="p-1 space-y-1">
                   {GENRES.map((genre) => (
                     <button
                       key={genre.value}
                       type="button"
                       onClick={() => handleGenreChange(genre)}
-                      className={`w-full px-3 py-2.5 text-left text-sm rounded-lg hover:bg-primary/20 transition-colors flex items-center gap-2.5 ${currentGenre === genre.value ? "bg-primary/15 text-primary font-semibold" : "text-white"}`}
+                      className={`w-full px-3 py-2.5 text-left text-xs rounded-lg hover:bg-primary/20 transition-colors flex items-center gap-2.5 ${currentGenre === genre.value ? "bg-primary/15 text-primary font-semibold" : "text-white"}`}
                     >
                       <Radio
                         size={14}
-                        className={
+                        className={`shrink-0 ${
                           currentGenre === genre.value
                             ? "text-primary"
                             : "text-slate-400"
-                        }
+                        }`}
                       />
                       <span>{genre.label}</span>
-                      {currentGenre === genre.value && (
-                        <span className="ml-auto text-xs bg-primary/30 px-1.5 py-0.5 rounded">
+                      {/* {currentGenre === genre.value && (
+                        <span className="ml-auto text-xs/4 bg-primary/30 px-1.5 py-1 rounded">
                           Ouvindo
                         </span>
-                      )}
+                      )} */}
                     </button>
                   ))}
                 </div>
