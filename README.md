@@ -207,6 +207,21 @@ docker compose down
 docker compose down -v
 ```
 
+### Via Makefile (monorepo)
+
+Se estiver trabalhando no monorepo (`sdm/`), use o Makefile da raiz para simular a VPS1 completa — Next.js + Nginx + Icecast + Liquidsoap (com os configs do repo `stream/`):
+
+```bash
+# Na raiz do monorepo (pasta sdm/)
+export MUSIC_PATH=/home/lucas/music/sdm
+make vps1       # sobe VPS1 completa
+make site       # sobe apenas este repo (compose original)
+make logs-vps1  # logs de todos os serviços da VPS1
+make down-vps1  # para a VPS1
+```
+
+> O `make vps1` usa `stream/docker/icecast.docker.xml` e `stream/docker/somdomato.docker.liq` em vez dos configs deste repo — espelhando o fato de que na produção os dois repos coexistem na mesma VPS.
+
 ### Desenvolvimento sem Docker (Next.js local)
 
 Se preferir rodar apenas o Next.js localmente (icecast/liquidsoap continuam no Docker):
