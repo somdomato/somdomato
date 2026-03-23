@@ -68,9 +68,15 @@ export function RequestModal({ isOpen, onClose }: RequestModalProps) {
   const [deezerPages, setDeezerPages] = useState(0);
   const [deezerLoading, setDeezerLoading] = useState(false);
   const [deezerSearched, setDeezerSearched] = useState(false);
-  const [showDeezerForm, setShowDeezerForm] = useState<DeezerResult | null>(null);
-  const [deezerFormData, setDeezerFormData] = useState({ title: "", artist: "" });
-  const [deezerDownloading, setDeezerDownloading] = useState<DeezerDownloadProgress | null>(null);
+  const [showDeezerForm, setShowDeezerForm] = useState<DeezerResult | null>(
+    null,
+  );
+  const [deezerFormData, setDeezerFormData] = useState({
+    title: "",
+    artist: "",
+  });
+  const [deezerDownloading, setDeezerDownloading] =
+    useState<DeezerDownloadProgress | null>(null);
 
   const { currentGenre, setGenre } = useGenre();
   const { playing, play } = useAudio();
@@ -134,7 +140,11 @@ export function RequestModal({ isOpen, onClose }: RequestModalProps) {
   };
 
   const handleDeezerDownload = async () => {
-    if (!showDeezerForm || !deezerFormData.title.trim() || !deezerFormData.artist.trim()) {
+    if (
+      !showDeezerForm ||
+      !deezerFormData.title.trim() ||
+      !deezerFormData.artist.trim()
+    ) {
       toast.error("Preencha todos os campos");
       return;
     }
@@ -183,7 +193,9 @@ export function RequestModal({ isOpen, onClose }: RequestModalProps) {
                 return;
               }
               if (data.done) {
-                toast.success(data.message || "Download concluído! Aguardando moderação.");
+                toast.success(
+                  data.message || "Download concluído! Aguardando moderação.",
+                );
                 setDeezerDownloading(null);
                 return;
               }
@@ -468,10 +480,16 @@ export function RequestModal({ isOpen, onClose }: RequestModalProps) {
                         <Music className="text-primary" size={24} />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-white truncate">{deezerDownloading.message}</p>
-                        <p className="text-xs text-gray-400">{deezerDownloading.status}</p>
+                        <p className="text-sm font-medium text-white truncate">
+                          {deezerDownloading.message}
+                        </p>
+                        <p className="text-xs text-gray-400">
+                          {deezerDownloading.status}
+                        </p>
                       </div>
-                      <span className="text-lg font-bold text-primary">{deezerDownloading.progress}%</span>
+                      <span className="text-lg font-bold text-primary">
+                        {deezerDownloading.progress}%
+                      </span>
                     </div>
                     <div className="w-full bg-background-alt rounded-full h-2 overflow-hidden">
                       <div
@@ -485,7 +503,9 @@ export function RequestModal({ isOpen, onClose }: RequestModalProps) {
                 {!deezerSearched && !deezerLoading && !deezerDownloading && (
                   <>
                     <Music className="w-12 h-12 mb-3 opacity-50" />
-                    <p className="text-base">Nenhuma música encontrada na rádio</p>
+                    <p className="text-base">
+                      Nenhuma música encontrada na rádio
+                    </p>
                     {searchQuery.trim() && (
                       <button
                         onClick={() => searchDeezer(searchQuery, 1)}
@@ -496,7 +516,9 @@ export function RequestModal({ isOpen, onClose }: RequestModalProps) {
                       </button>
                     )}
                     {!searchQuery.trim() && (
-                      <p className="text-sm mt-2">Tente buscar com outros termos</p>
+                      <p className="text-sm mt-2">
+                        Tente buscar com outros termos
+                      </p>
                     )}
                   </>
                 )}
@@ -507,19 +529,26 @@ export function RequestModal({ isOpen, onClose }: RequestModalProps) {
                   </div>
                 )}
 
-                {deezerSearched && !deezerLoading && deezerResults.length === 0 && !deezerDownloading && (
-                  <>
-                    <Music className="w-12 h-12 mb-3 opacity-50" />
-                    <p className="text-base">Nenhum resultado no Deezer</p>
-                    <p className="text-sm mt-2">Tente buscar com outros termos</p>
-                  </>
-                )}
+                {deezerSearched &&
+                  !deezerLoading &&
+                  deezerResults.length === 0 &&
+                  !deezerDownloading && (
+                    <>
+                      <Music className="w-12 h-12 mb-3 opacity-50" />
+                      <p className="text-base">Nenhum resultado no Deezer</p>
+                      <p className="text-sm mt-2">
+                        Tente buscar com outros termos
+                      </p>
+                    </>
+                  )}
 
                 {deezerResults.length > 0 && !deezerDownloading && (
                   <div className="w-full text-left">
                     <div className="px-4 sm:px-6 pb-3">
                       <p className="text-sm text-gray-300">
-                        Não encontramos na rádio, mas achamos <strong className="text-primary">{deezerTotal}</strong> resultado{deezerTotal !== 1 ? "s" : ""} no Deezer:
+                        Não encontramos na rádio, mas achamos{" "}
+                        <strong className="text-primary">{deezerTotal}</strong>{" "}
+                        resultado{deezerTotal !== 1 ? "s" : ""} no Deezer:
                       </p>
                     </div>
                     <div className="space-y-2 px-4 sm:px-6">
@@ -536,12 +565,18 @@ export function RequestModal({ isOpen, onClose }: RequestModalProps) {
                             className="rounded object-cover shrink-0"
                           />
                           <div className="flex-1 min-w-0">
-                            <h3 className="text-sm font-medium text-white truncate">{track.title}</h3>
-                            <p className="text-xs text-gray-400 truncate">{track.artist}</p>
+                            <h3 className="text-sm font-medium text-white truncate">
+                              {track.title}
+                            </h3>
+                            <p className="text-xs text-gray-400 truncate">
+                              {track.artist}
+                            </p>
                             <p className="text-xs text-gray-500">
                               {formatDuration(track.duration)}
                               {track.duration > MAX_DURATION_SECONDS && (
-                                <span className="text-red-400 ml-2">Excede 10 min</span>
+                                <span className="text-red-400 ml-2">
+                                  Excede 10 min
+                                </span>
                               )}
                             </p>
                           </div>
@@ -565,14 +600,24 @@ export function RequestModal({ isOpen, onClose }: RequestModalProps) {
                         </div>
                         <div className="flex gap-2">
                           <button
-                            onClick={() => searchDeezer(searchQuery, Math.max(1, deezerPage - 1))}
+                            onClick={() =>
+                              searchDeezer(
+                                searchQuery,
+                                Math.max(1, deezerPage - 1),
+                              )
+                            }
                             disabled={deezerPage === 1}
                             className="px-3 py-1.5 bg-background border border-primary/30 rounded-lg hover:bg-primary/10 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-xs"
                           >
                             Anterior
                           </button>
                           <button
-                            onClick={() => searchDeezer(searchQuery, Math.min(deezerPages, deezerPage + 1))}
+                            onClick={() =>
+                              searchDeezer(
+                                searchQuery,
+                                Math.min(deezerPages, deezerPage + 1),
+                              )
+                            }
                             disabled={deezerPage === deezerPages}
                             className="px-3 py-1.5 bg-background border border-primary/30 rounded-lg hover:bg-primary/10 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-xs"
                           >
@@ -696,7 +741,9 @@ export function RequestModal({ isOpen, onClose }: RequestModalProps) {
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-10000 p-4">
           <div className="bg-background-alt border border-primary/30 rounded-xl max-w-md w-full p-6">
             <div className="flex justify-between items-start mb-6">
-              <h3 className="text-xl font-bold text-primary">Confirmar Envio</h3>
+              <h3 className="text-xl font-bold text-primary">
+                Confirmar Envio
+              </h3>
               <button
                 onClick={() => setShowDeezerForm(null)}
                 className="p-1 hover:bg-background rounded"
@@ -714,31 +761,49 @@ export function RequestModal({ isOpen, onClose }: RequestModalProps) {
                 className="rounded object-cover shrink-0"
               />
               <div className="min-w-0">
-                <p className="text-sm text-gray-300 truncate">{showDeezerForm.title}</p>
+                <p className="text-sm text-gray-300 truncate">
+                  {showDeezerForm.title}
+                </p>
                 <p className="text-xs text-gray-500">{showDeezerForm.artist}</p>
-                <p className="text-xs text-gray-500 mt-1">{formatDuration(showDeezerForm.duration)}</p>
+                <p className="text-xs text-gray-500 mt-1">
+                  {formatDuration(showDeezerForm.duration)}
+                </p>
               </div>
             </div>
 
             <div className="space-y-4 mb-6">
               <div>
-                <label htmlFor="deezer-artist" className="block text-sm text-gray-400 mb-1">Artista *</label>
+                <label
+                  htmlFor="deezer-artist"
+                  className="block text-sm text-gray-400 mb-1"
+                >
+                  Artista *
+                </label>
                 <input
                   id="deezer-artist"
                   type="text"
                   value={deezerFormData.artist}
-                  onChange={(e) => setDeezerFormData((p) => ({ ...p, artist: e.target.value }))}
+                  onChange={(e) =>
+                    setDeezerFormData((p) => ({ ...p, artist: e.target.value }))
+                  }
                   className="w-full px-4 py-2 bg-background border border-primary/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-sm"
                   placeholder="Nome do artista"
                 />
               </div>
               <div>
-                <label htmlFor="deezer-title" className="block text-sm text-gray-400 mb-1">Título da Música *</label>
+                <label
+                  htmlFor="deezer-title"
+                  className="block text-sm text-gray-400 mb-1"
+                >
+                  Título da Música *
+                </label>
                 <input
                   id="deezer-title"
                   type="text"
                   value={deezerFormData.title}
-                  onChange={(e) => setDeezerFormData((p) => ({ ...p, title: e.target.value }))}
+                  onChange={(e) =>
+                    setDeezerFormData((p) => ({ ...p, title: e.target.value }))
+                  }
                   className="w-full px-4 py-2 bg-background border border-primary/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-sm"
                   placeholder="Título da música"
                 />
@@ -754,7 +819,9 @@ export function RequestModal({ isOpen, onClose }: RequestModalProps) {
               </button>
               <button
                 onClick={handleDeezerDownload}
-                disabled={!deezerFormData.title.trim() || !deezerFormData.artist.trim()}
+                disabled={
+                  !deezerFormData.title.trim() || !deezerFormData.artist.trim()
+                }
                 className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-primary hover:bg-primary/80 disabled:opacity-50 text-background font-semibold rounded-lg transition-colors text-sm"
               >
                 <Check size={16} />

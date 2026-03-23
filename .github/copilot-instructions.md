@@ -190,6 +190,7 @@ Ao editar uma música via `updateSong()`:
 - Use Server Components para fetch inicial de dados
 - Componentes de blocos em `src/components/blocks/`
 - Actions do servidor em `src/actions/`
+- **Nunca** use índice de array como `key` em elementos React (ex: `key={i}`). Use IDs únicos ou arrays estáticos de strings.
 
 ### Formatação de Tempo
 - Use `formatRelativeTime()` de `@/lib/format` para tempos relativos

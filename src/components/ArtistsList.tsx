@@ -2,6 +2,7 @@
 
 import React from "react";
 import Image from "next/image";
+import { Search } from "lucide-react";
 
 interface Artist {
   artist: string;
@@ -16,6 +17,7 @@ export default function ArtistsList({
 }) {
   const [artists, setArtists] = React.useState<Artist[]>([]);
   const [loading, setLoading] = React.useState(true);
+  const [search, setSearch] = React.useState("");
 
   React.useEffect(() => {
     fetch("/api/artists")
@@ -26,38 +28,79 @@ export default function ArtistsList({
       .finally(() => setLoading(false));
   }, []);
 
-  if (loading) return <div>Carregando artistas...</div>;
+  const filtered = React.useMemo(() => {
+    if (!search.trim()) return artists;
+    const q = search.toLowerCase();
+    return artists.filter((a) => (a.artist || "").toLowerCase().includes(q));
+  }, [artists, search]);
+
+  if (loading) {
+    return (
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+        {["a", "b", "c", "d", "e", "f", "g", "h"].map((id) => (
+          <div
+            key={id}
+            className="aspect-square rounded-xl bg-white/5 animate-pulse"
+          />
+        ))}
+      </div>
+    );
+  }
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-      {artists.map((a) => {
-        const displayName = a.artist || "(Sem artista)";
-        const keyName = a.artist || "__empty__";
-        const selectValue =
-          a.artist === "" ? "__EMPTY_ARTIST__" : String(a.artist);
-        return (
-          <button
-            type="button"
-            key={keyName}
-            onClick={() => onSelect(selectValue)}
-            className="flex flex-col items-center gap-2 p-3 bg-surface border border-primary/10 rounded hover:shadow-sm transition"
-          >
-            <div className="w-24 h-24 relative rounded overflow-hidden">
-              <Image
-                src={a.cover || "/images/logotipo.svg"}
-                alt={displayName}
-                fill
-                sizes="96px"
-                className="object-cover"
-              />
-            </div>
-            <div className="text-sm font-semibold text-center">
-              {displayName}
-            </div>
-            <div className="text-xs text-muted">{a.count ?? ""}</div>
-          </button>
-        );
-      })}
+    <div className="space-y-4">
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
+        <input
+          type="text"
+          placeholder="Buscar artista..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="w-full pl-10 pr-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-sm placeholder:text-white/30 focus:outline-none focus:border-primary/50 transition"
+        />
+      </div>
+
+      {filtered.length === 0 ? (
+        <p className="text-center text-white/40 py-8 text-sm">
+          Nenhum artista encontrado.
+        </p>
+      ) : (
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+          {filtered.map((a) => {
+            const displayName = a.artist || "(Sem artista)";
+            const keyName = a.artist || "__empty__";
+            const selectValue =
+              a.artist === "" ? "__EMPTY_ARTIST__" : String(a.artist);
+            return (
+              <button
+                type="button"
+                key={keyName}
+                onClick={() => onSelect(selectValue)}
+                className="group relative aspect-square rounded-xl overflow-hidden focus:outline-none focus:ring-2 focus:ring-primary/50"
+              >
+                <Image
+                  src={a.cover || "/images/logotipo.svg"}
+                  alt={displayName}
+                  fill
+                  sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, 25vw"
+                  className="object-cover transition-transform duration-300 group-hover:scale-105"
+                />
+                <div className="absolute inset-0 bg-linear-to-t from-black/80 via-black/20 to-transparent" />
+                <div className="absolute bottom-0 left-0 right-0 p-3">
+                  <p className="text-sm font-semibold leading-tight line-clamp-2">
+                    {displayName}
+                  </p>
+                  {a.count != null && (
+                    <p className="text-xs text-white/50 mt-0.5">
+                      {a.count} {a.count === 1 ? "música" : "músicas"}
+                    </p>
+                  )}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

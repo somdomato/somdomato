@@ -437,6 +437,10 @@ O Next.js requer uma chave de criptografia para Server Actions em produção:
 - [docs/DESENVOLVIMENTO.md](docs/DESENVOLVIMENTO.md) - Desenvolvimento detalhado
 - [CHANGELOG.md](CHANGELOG.md) - Mudanças recentes
 
+## Convenções de Código
+
+- **Nunca** use índice de array como `key` em elementos React (ex: `key={i}`). Use IDs únicos ou arrays estáticos de strings.
+
 ## Testes
 
 ```bash
