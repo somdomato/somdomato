@@ -3,10 +3,8 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useState, useEffect, useCallback } from "react";
-import { useAuth, LoginForm } from "@/components/AdminAuth";
 import {
   Music,
-  LogOut,
   ListOrdered,
   Upload,
   Check,
@@ -14,6 +12,7 @@ import {
   Trash2,
   ExternalLink,
 } from "lucide-react";
+import { LogoutButton } from "@/components/LogoutButton";
 import { toast } from "sonner";
 import { GENRES } from "@/config";
 
@@ -30,7 +29,6 @@ interface UploadItem {
 }
 
 export default function UploadsPage() {
-  const { password, isAuthenticated, login, logout } = useAuth();
   const [uploads, setUploads] = useState<UploadItem[]>([]);
   const [_total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -64,10 +62,8 @@ export default function UploadsPage() {
   }, [filter, page]);
 
   useEffect(() => {
-    if (isAuthenticated) {
-      loadUploads();
-    }
-  }, [isAuthenticated, loadUploads]);
+    loadUploads();
+  }, [loadUploads]);
 
   const handleApprove = async (upload: UploadItem) => {
     setShowApproveModal(upload);
@@ -141,10 +137,6 @@ export default function UploadsPage() {
     }
   };
 
-  if (!isAuthenticated || !password) {
-    return <LoginForm onLogin={login} />;
-  }
-
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -158,13 +150,7 @@ export default function UploadsPage() {
             >
               Ver Site
             </Link>
-            <button
-              onClick={logout}
-              className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 rounded-md transition-colors"
-            >
-              <LogOut size={18} />
-              Sair
-            </button>
+            <LogoutButton />
           </div>
         </div>
       </header>

@@ -1,6 +1,6 @@
 # Rádio Som do Mato
 
-![Rádio Som do Mato](./public/images/logotipo.svg)
+![Rádio Som do Mato](https://raw.githubusercontent.com/somdomato/somdomato/refs/heads/main/public/images/logo.svg "Rádio Som do Mato")
 
 [![Deploy](https://github.com/somdomato/somdomato/actions/workflows/deploy.yml/badge.svg)](https://github.com/somdomato/somdomato/actions/workflows/deploy.yml)
 
@@ -461,6 +461,7 @@ pnpm test
 │   ├── db/                   # Schema Drizzle ORM e utilitários
 │   ├── lib/                  # Utilitários (format, cover, protections, etc.)
 │   ├── actions/              # Server Actions
+│   ├── proxy.ts              # Proxy de autenticação admin (ex-middleware.ts)
 │   └── server.ts             # Servidor customizado (Socket.io)
 ├── docker/
 │   ├── docker-compose.yml    # Orquestração local (4 serviços)

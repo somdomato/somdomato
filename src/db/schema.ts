@@ -1,6 +1,19 @@
 import { int, sqliteTable, text } from "drizzle-orm/sqlite-core";
 import { relations } from "drizzle-orm";
 
+export const users = sqliteTable("users", {
+  id: int().primaryKey({ autoIncrement: true }),
+  name: text().notNull(),
+  email: text().notNull().unique(),
+  password: text(),
+  salt: text(),
+  role: text().default("user"), // "user" | "admin"
+  createdAt: int({ mode: "timestamp" }).$defaultFn(() => new Date()),
+  updatedAt: int({ mode: "timestamp" })
+    .$defaultFn(() => new Date())
+    .$onUpdate(() => new Date()),
+});
+
 export const songs = sqliteTable("songs", {
   id: int().primaryKey({ autoIncrement: true }),
   title: text().notNull(),

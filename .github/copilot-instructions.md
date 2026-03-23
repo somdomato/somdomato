@@ -5,7 +5,7 @@ Este projeto é uma rádio web com sistema de pedidos de músicas e AutoDJ.
 ## Contexto Geral do Sistema
 
 ### Stack Tecnológica
-- **Frontend/Backend**: Next.js 15 (App Router)
+- **Frontend/Backend**: Next.js 16 (App Router)
 - **Banco de Dados**: SQLite com Drizzle ORM
 - **Real-time**: Socket.io para atualizações em tempo real
 - **Streaming**: Liquidsoap + Icecast
@@ -272,6 +272,7 @@ cd ansible && ansible-playbook -i inventory.ini playbook.yml
 - Documentação completa: `README.md`
 - Schema do banco: `src/db/schema.ts`
 - Servidor Socket.io: `src/server.ts`
+- Proxy (auth admin): `src/proxy.ts`
 - Configuração Liquidsoap: `ansible/etc/liquidsoap/`
 - Configuração Nginx (produção): `ansible/etc/nginx/`
 - Configuração Icecast: `ansible/etc/icecast/`
@@ -284,6 +285,8 @@ cd ansible && ansible-playbook -i inventory.ini playbook.yml
 
 ```
 ├── src/                  # Código fonte Next.js
+│   ├── proxy.ts          # Proxy de autenticação admin (ex-middleware.ts)
+│   └── server.ts         # Servidor customizado (Socket.io)
 ├── docker/               # Docker para desenvolvimento local
 │   ├── docker-compose.yml
 │   ├── Dockerfile.nextjs

@@ -3,10 +3,8 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useState, useEffect, useCallback } from "react";
-import { useAuth, LoginForm } from "@/components/AdminAuth";
 import {
   Music,
-  LogOut,
   Trash2,
   Plus,
   ArrowUp,
@@ -14,6 +12,7 @@ import {
   ListOrdered,
   Upload,
 } from "lucide-react";
+import { LogoutButton } from "@/components/LogoutButton";
 import { toast } from "sonner";
 
 async function fetchRequests(page: number, limit: number) {
@@ -74,7 +73,6 @@ interface SongOption {
 }
 
 export default function RequestsPage() {
-  const { password, isAuthenticated, login, logout } = useAuth();
   const [requests, setRequests] = useState<Request[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -111,20 +109,14 @@ export default function RequestsPage() {
   }, []);
 
   useEffect(() => {
-    if (isAuthenticated) {
-      loadRequests();
-    }
-  }, [isAuthenticated, loadRequests]);
+    loadRequests();
+  }, [loadRequests]);
 
   useEffect(() => {
-    if (isAuthenticated && showAddModal) {
+    if (showAddModal) {
       loadSongs();
     }
-  }, [showAddModal, isAuthenticated, loadSongs]);
-
-  if (!isAuthenticated || !password) {
-    return <LoginForm onLogin={login} />;
-  }
+  }, [showAddModal, loadSongs]);
 
   const handleDelete = async (id: number) => {
     if (!confirm("Tem certeza que deseja deletar este pedido?")) return;
@@ -195,13 +187,7 @@ export default function RequestsPage() {
             >
               Ver Site
             </Link>
-            <button
-              onClick={logout}
-              className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 rounded-md transition-colors"
-            >
-              <LogOut size={18} />
-              Sair
-            </button>
+            <LogoutButton />
           </div>
         </div>
       </header>

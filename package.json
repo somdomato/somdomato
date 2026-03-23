@@ -9,6 +9,8 @@
     "start": "cross-env NODE_ENV=production node src/server.ts",
     "push": "drizzle-kit push",
     "seed": "tsx src/db/seed.ts",
+    "seed:admin": "tsx src/db/seed-admin.ts",
+    "reset": "rm -f drizzle/somdomato.db && pnpm run push && pnpm run seed",
     "lint": "biome check",
     "format": "biome format --write",
     "check": "tsc --noEmit",

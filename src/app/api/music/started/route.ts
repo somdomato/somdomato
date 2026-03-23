@@ -1,12 +1,17 @@
 import { db } from "@/db";
 import { eq } from "drizzle-orm";
 import { songs, history } from "@/db/schema";
+import { isLocalRequest } from "@/lib/localhost";
 
 /**
  * Called by Liquidsoap's on_track callback when a song actually starts playing.
  * Inserts into history and emits the song:changed socket event.
  */
 export async function POST(request: Request) {
+  if (!isLocalRequest(request)) {
+    return Response.json({ error: "Acesso restrito" }, { status: 403 });
+  }
+
   try {
     const url = new URL(request.url);
     const songId = Number(url.searchParams.get("songId"));

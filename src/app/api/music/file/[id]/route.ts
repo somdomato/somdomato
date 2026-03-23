@@ -4,6 +4,7 @@ import { eq } from "drizzle-orm";
 import fs from "node:fs";
 import fsPromises from "node:fs/promises";
 import path from "node:path";
+import { isLocalRequest } from "@/lib/localhost";
 
 // Known music path patterns to replace with MUSIC_PATH
 const KNOWN_MUSIC_PATHS = ["/var/music/sdm", "/home/lucas/music/sdm"];
@@ -32,6 +33,10 @@ export async function GET(
   _request: Request,
   context: { params: { id: string } | Promise<{ id: string }> },
 ) {
+  if (!isLocalRequest(_request)) {
+    return Response.json({ error: "Acesso restrito" }, { status: 403 });
+  }
+
   // Ensure params is available regardless of framework promise behavior
   const p = await (context.params as Promise<{ id: string }> | { id: string });
   const id = Number(p.id);
@@ -77,9 +82,12 @@ export async function GET(
       const headers = new Headers();
       headers.set("Content-Type", "audio/mpeg");
       headers.set("Content-Length", String(stat.size));
+      const basename = path.basename(filePath);
+      const asciiName = basename.replaceAll(/[^\x20-\x7E]/g, "_");
+      const encodedName = encodeURIComponent(basename);
       headers.set(
         "Content-Disposition",
-        `inline; filename="${path.basename(filePath)}"`,
+        `inline; filename="${asciiName}"; filename*=UTF-8''${encodedName}`,
       );
       headers.set("Accept-Ranges", "bytes");
 

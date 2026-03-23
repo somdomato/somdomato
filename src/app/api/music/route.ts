@@ -5,6 +5,7 @@ import path from "node:path";
 import { songs, history, requests } from "@/db/schema";
 import { getCurrentTimeSlot } from "@/lib/time";
 import { getBlockedSongIds } from "@/lib/protections";
+import { isLocalRequest } from "@/lib/localhost";
 import type { Song } from "@/types";
 
 async function checkFileExists(filePath: string) {
@@ -17,6 +18,10 @@ async function checkFileExists(filePath: string) {
 }
 
 export async function GET(request: Request) {
+  if (!isLocalRequest(request)) {
+    return Response.json({ error: "Acesso restrito" }, { status: 403 });
+  }
+
   try {
     const url = new URL(request.url);
     const notificationParam = url.searchParams.get("notify");

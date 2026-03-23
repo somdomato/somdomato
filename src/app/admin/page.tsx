@@ -1,17 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useAuth, LoginForm } from "@/components/AdminAuth";
 import { SongsTable } from "@/components/SongsTable";
-import { Music, ListOrdered, LogOut, Upload } from "lucide-react";
+import { Music, ListOrdered, Upload } from "lucide-react";
+import { LogoutButton } from "@/components/LogoutButton";
 
 export default function AdminPage() {
-  const { password, isAuthenticated, login, logout } = useAuth();
-
-  if (!isAuthenticated || !password) {
-    return <LoginForm onLogin={login} />;
-  }
-
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -25,13 +19,7 @@ export default function AdminPage() {
             >
               Ver Site
             </Link>
-            <button
-              onClick={logout}
-              className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 rounded-md transition-colors"
-            >
-              <LogOut size={18} />
-              Sair
-            </button>
+            <LogoutButton />
           </div>
         </div>
       </header>

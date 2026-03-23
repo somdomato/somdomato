@@ -1,10 +1,10 @@
 import path from "node:path";
 import NodeID3 from "node-id3";
-import { getAllFilesRecursive, extractAndSaveCover } from "../lib";
 import { db } from "@/db";
-import { songs } from "@/db/schema";
-import { parse } from "node:path";
 import { eq } from "drizzle-orm";
+import { songs } from "@/db/schema";
+import { getAllFilesRecursive, extractAndSaveCover } from "../lib";
+import { parse } from "node:path";
 
 export function normalizeString(s?: string | null) {
   if (!s) return "";
