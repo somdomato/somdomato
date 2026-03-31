@@ -97,8 +97,15 @@ export async function extractAndSaveCover(
           mime?: string;
         };
 
-        // Validar buffer básico antes de salvar
+        // Validar buffer: tamanho mínimo + magic bytes de imagem
         if (!image.imageBuffer || image.imageBuffer.length < 1000) {
+          resolve(null);
+          return;
+        }
+        const buf = image.imageBuffer;
+        const isJpeg = buf[0] === 0xff && buf[1] === 0xd8;
+        const isPng = buf[0] === 0x89 && buf[1] === 0x50;
+        if (!isJpeg && !isPng) {
           resolve(null);
           return;
         }

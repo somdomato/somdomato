@@ -35,10 +35,11 @@ export async function POST(request: Request) {
     await db.insert(history).values({ songId: s.id }).returning();
 
     // ensure cover is present in DB (best-effort)
+    let resolvedCover = s.cover ?? null;
     try {
       let coverPath = s.cover ?? null;
 
-      if (coverPath) {
+      if (coverPath && coverPath !== "/images/logotipo.svg") {
         // confirm physical file exists
         const coverFsPath = `${process.cwd()}/public/${coverPath.replace(/^\/+/, "")}`;
         try {
@@ -48,7 +49,7 @@ export async function POST(request: Request) {
         }
       }
 
-      if (!coverPath) {
+      if (!coverPath || coverPath === "/images/logotipo.svg") {
         try {
           const extracted = await extractAndSaveCover(s.path, s.artist);
           if (extracted) coverPath = extracted;
@@ -57,17 +58,24 @@ export async function POST(request: Request) {
         }
       }
 
-      if (!coverPath) {
+      if (!coverPath || coverPath === "/images/logotipo.svg") {
         const found = await checkExistingCover(s.artist);
         if (found) coverPath = found;
       }
 
-      if (coverPath && coverPath !== s.cover) {
+      // Se não encontrou nenhuma capa válida, usa o logo padrão
+      if (!coverPath) {
+        coverPath = "/images/logotipo.svg";
+      }
+
+      if (coverPath !== s.cover) {
         await db
           .update(songs)
           .set({ cover: coverPath })
           .where(eq(songs.id, s.id));
       }
+
+      resolvedCover = coverPath;
     } catch (err) {
       console.error("Erro ao garantir capa:", err);
     }
@@ -78,7 +86,7 @@ export async function POST(request: Request) {
       title: s.title,
       artist: s.artist,
       path: s.path,
-      cover: s.cover || null,
+      cover: resolvedCover,
       timeSlots: s.timeSlots,
       createdAt: s.createdAt,
       genre: s.genre,
@@ -90,7 +98,7 @@ export async function POST(request: Request) {
         id: selectedSong.id,
         title: selectedSong.title,
         artist: selectedSong.artist,
-        cover: selectedSong.cover,
+        cover: resolvedCover,
         genre: selectedSong.genre || "geral",
         allowedInGeneral: selectedSong.allowedInGeneral || 0,
         playedAt: Date.now(),
