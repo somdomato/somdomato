@@ -60,6 +60,28 @@ export async function checkExistingCover(
   }
 }
 
+/**
+ * Verifica se um URL de capa (ex: `/covers/artista.jpg`) corresponde a um
+ * arquivo válido no disco (>= 1 KB). Útil para validar antes de salvar no banco.
+ *
+ * Retorna o próprio `coverUrl` se válido, ou `null` caso contrário.
+ */
+export async function verifyCoverOnDisk(
+  coverUrl: string,
+  publicDir = path.join(process.cwd(), "public"),
+): Promise<string | null> {
+  if (!coverUrl || coverUrl === "/images/logotipo.svg") return null;
+  const filePath = path.join(publicDir, coverUrl.replace(/^\/+/, ""));
+  if (!existsSync(filePath)) return null;
+  try {
+    const info = await stat(filePath);
+    if (info.size < 1000) return null;
+    return coverUrl;
+  } catch {
+    return null;
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Extração do ID3
 // ---------------------------------------------------------------------------
@@ -113,7 +135,10 @@ export async function extractAndSaveCover(
         const filePath = coverPublicPath(artist, coversDir);
         await writeFile(filePath, image.imageBuffer);
 
-        resolve(coverUrlPath(artist));
+        // Verificar se o arquivo realmente persistiu no disco
+        const url = coverUrlPath(artist);
+        const verified = await verifyCoverOnDisk(url, path.dirname(coversDir));
+        resolve(verified);
       } catch (e) {
         reject(e);
       }
@@ -229,7 +254,10 @@ export async function resolveSongCover(opts: {
       await mkdir(coversDir, { recursive: true });
       const filePath = coverPublicPath(artist, coversDir);
       await writeFile(filePath, buffer);
-      return coverUrlPath(artist);
+      // Verificar se o arquivo realmente persistiu no disco
+      const url = coverUrlPath(artist);
+      const verified = await verifyCoverOnDisk(url, path.dirname(coversDir));
+      if (verified) return verified;
     }
   } catch (e) {
     console.warn(`[cover] Falha no Deezer para "${artist} - ${title}":`, e);

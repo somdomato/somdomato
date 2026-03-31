@@ -4,6 +4,9 @@ import { uploads } from "@/db/schema";
 import { spawn } from "node:child_process";
 import path from "node:path";
 import fs from "node:fs";
+import { checkAutoApproval, scheduleAutoApprove } from "@/lib/upload";
+import { eq } from "drizzle-orm";
+import { AUTO_APPROVE_DELAY_MINUTES } from "@/config";
 
 const UPLOADS_DIR = process.env.UPLOADS_DIR || "/var/music/sdm/uploads";
 const MAX_UPLOADS_PER_HOUR = 5;
@@ -281,7 +284,7 @@ export async function POST(request: NextRequest) {
         recordUpload(clientIp);
 
         // Save to database
-        await db.insert(uploads).values({
+        const [uploadRecord] = await db.insert(uploads).values({
           title,
           artist,
           deezerUrl: `https://www.deezer.com/track/${trackId}`,
@@ -290,7 +293,54 @@ export async function POST(request: NextRequest) {
           filename,
           path: outputPath,
           status: "pending",
-        });
+        }).returning({ id: uploads.id });
+
+        // Check auto-approval criteria via Deezer metadata
+        try {
+          const check = await checkAutoApproval(String(trackId));
+
+          // Store duration and genre info regardless of approval
+          await db
+            .update(uploads)
+            .set({
+              duration: check.duration || null,
+              deezerGenre: check.deezerGenre || null,
+            })
+            .where(eq(uploads.id, uploadRecord.id));
+
+          if (check.approved) {
+            const delayMs = AUTO_APPROVE_DELAY_MINUTES * 60 * 1000;
+            const autoApproveAt = new Date(Date.now() + delayMs);
+
+            await db
+              .update(uploads)
+              .set({
+                autoApproveAt,
+                autoApproveGenre: check.genre,
+              })
+              .where(eq(uploads.id, uploadRecord.id));
+
+            // Schedule the actual approval after the delay
+            scheduleAutoApprove(uploadRecord.id, delayMs);
+
+            const delayLabel =
+              AUTO_APPROVE_DELAY_MINUTES >= 1
+                ? `${AUTO_APPROVE_DELAY_MINUTES}min`
+                : `${AUTO_APPROVE_DELAY_MINUTES * 60}s`;
+
+            send({
+              status: "complete",
+              progress: 100,
+              message: `Download concluído! Será aprovada automaticamente em ${delayLabel}.`,
+              done: true,
+              autoApproveScheduled: true,
+            });
+            return;
+          }
+        } catch (e) {
+          console.error("Auto-approve check failed:", e);
+          // Continue with pending status — admin will review manually
+        }
 
         send({
           status: "complete",

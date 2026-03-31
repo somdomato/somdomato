@@ -1,6 +1,7 @@
 import { createServer } from "node:http";
 import next from "next";
 import { Server } from "socket.io";
+import { restorePendingAutoApprovals } from "@/lib/upload";
 
 const dev = process.env.NODE_ENV !== "production";
 const hostname = dev ? "localhost" : "somdomato.com";
@@ -20,4 +21,7 @@ app.prepare().then(() => {
 
   server.listen(port);
   console.log(`🚀 Server listening on port ${hostname}:${port}`);
+
+  // Restore any pending auto-approvals from before server restart
+  restorePendingAutoApprovals();
 });

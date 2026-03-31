@@ -253,7 +253,7 @@ export async function updateSong(
       const artistName = (data.artist as string) ?? song.artist;
       await deleteArtistCover(artistName);
     } else {
-      const { extractAndSaveCover, checkExistingCover } = await import(
+      const { extractAndSaveCover, checkExistingCover, verifyCoverOnDisk } = await import(
         "@/lib/cover"
       );
 
@@ -265,7 +265,11 @@ export async function updateSong(
       );
 
       if (fromId3) {
-        await db.update(songs).set({ cover: fromId3 }).where(eq(songs.id, id));
+        // Verificar se o arquivo realmente existe no disco antes de salvar no banco
+        const verified = await verifyCoverOnDisk(fromId3);
+        if (verified) {
+          await db.update(songs).set({ cover: verified }).where(eq(songs.id, id));
+        }
       } else {
         // Verificar se já existe arquivo de capa no disco para este artista
         const existing = await checkExistingCover(artistName);

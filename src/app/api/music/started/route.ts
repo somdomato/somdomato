@@ -85,10 +85,14 @@ async function triggerCoverResolution(
   artist: string,
   title: string,
 ): Promise<void> {
-  const { resolveSongCover } = await import("@/lib/cover");
+  const { resolveSongCover, verifyCoverOnDisk } = await import("@/lib/cover");
 
   const coverUrl = await resolveSongCover({ mp3Path, artist, title });
   if (!coverUrl) return;
+
+  // Verificar se o arquivo realmente existe no disco antes de salvar
+  const verified = await verifyCoverOnDisk(coverUrl);
+  if (!verified) return;
 
   // Verificar novamente antes de salvar: outra instância pode ter resolvido
   const [current] = await db
@@ -99,10 +103,10 @@ async function triggerCoverResolution(
 
   if (current?.cover && current.cover !== DEFAULT_COVER) return;
 
-  await db.update(songs).set({ cover: coverUrl }).where(eq(songs.id, songId));
+  await db.update(songs).set({ cover: verified }).where(eq(songs.id, songId));
 
   // Notificar clientes sobre a nova capa via socket
   if (global.io) {
-    global.io.emit("song:cover", { songId, cover: coverUrl });
+    global.io.emit("song:cover", { songId, cover: verified });
   }
 }

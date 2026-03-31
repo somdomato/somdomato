@@ -1,7 +1,6 @@
 import { db } from "@/db";
 import { asc, eq, and, sql } from "drizzle-orm";
 import fs from "node:fs/promises";
-import path from "node:path";
 import { songs, history, requests } from "@/db/schema";
 import { getCurrentTimeSlot } from "@/lib/time";
 import { getBlockedSongIds } from "@/lib/protections";
@@ -209,7 +208,7 @@ export async function GET(request: Request) {
 
     // Garantir que haja um caminho de capa no banco antes de emitir (melhor esforço)
     try {
-      const { extractAndSaveCover, checkExistingCover } = await import(
+      const { extractAndSaveCover, checkExistingCover, verifyCoverOnDisk } = await import(
         "@/lib/cover"
       );
 
@@ -217,16 +216,7 @@ export async function GET(request: Request) {
 
       // Se já houver cover salvo, verificar se o arquivo físico existe. Se não existir, forçar nova busca.
       if (coverPath) {
-        const coverFsPath = path.join(
-          process.cwd(),
-          "public",
-          coverPath.replace(/^\/+/, ""),
-        );
-        try {
-          await fs.access(coverFsPath);
-        } catch {
-          coverPath = null;
-        }
+        coverPath = await verifyCoverOnDisk(coverPath);
       }
 
       // Tentar extrair capa embutida no MP3
@@ -252,13 +242,18 @@ export async function GET(request: Request) {
         }
       }
 
-      // Atualizar DB se encontramos um caminho válido
+      // Atualizar DB se encontramos um caminho válido e verificado no disco
       if (coverPath && coverPath !== selectedSong.cover) {
-        await db
-          .update(songs)
-          .set({ cover: coverPath })
-          .where(eq(songs.id, selectedSong.id));
-        selectedSong.cover = coverPath;
+        const verified = await verifyCoverOnDisk(coverPath);
+        if (verified) {
+          await db
+            .update(songs)
+            .set({ cover: verified })
+            .where(eq(songs.id, selectedSong.id));
+          selectedSong.cover = verified;
+        } else {
+          selectedSong.cover = null;
+        }
       } else if (!coverPath && selectedSong.cover) {
         // A capa referenciada no DB não existe mais. **Não** gravar `null` no banco (isso
         // causa quebras de imagem). Em vez disso, registrar um aviso e usar o fallback

@@ -2,7 +2,7 @@ import { db } from "@/db";
 import { songs, history } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import fs from "node:fs/promises";
-import { extractAndSaveCover, checkExistingCover } from "@/lib/cover";
+import { extractAndSaveCover, checkExistingCover, verifyCoverOnDisk } from "@/lib/cover";
 import util from "node:util";
 import { exec } from "node:child_process";
 
@@ -41,12 +41,7 @@ export async function POST(request: Request) {
 
       if (coverPath && coverPath !== "/images/logotipo.svg") {
         // confirm physical file exists
-        const coverFsPath = `${process.cwd()}/public/${coverPath.replace(/^\/+/, "")}`;
-        try {
-          await fs.access(coverFsPath);
-        } catch {
-          coverPath = null;
-        }
+        coverPath = await verifyCoverOnDisk(coverPath);
       }
 
       if (!coverPath || coverPath === "/images/logotipo.svg") {
@@ -66,6 +61,12 @@ export async function POST(request: Request) {
       // Se não encontrou nenhuma capa válida, usa o logo padrão
       if (!coverPath) {
         coverPath = "/images/logotipo.svg";
+      }
+
+      // Verificação final antes de salvar no banco
+      if (coverPath !== "/images/logotipo.svg") {
+        const verified = await verifyCoverOnDisk(coverPath);
+        if (!verified) coverPath = "/images/logotipo.svg";
       }
 
       if (coverPath !== s.cover) {

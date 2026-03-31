@@ -24,7 +24,11 @@ interface UploadItem {
   deezerId: string;
   thumbnail: string | null;
   filename: string;
+  duration: number | null;
+  deezerGenre: string | null;
   status: string;
+  autoApproved: number | null;
+  autoApproveAt: string | null;
   createdAt: Date | null;
 }
 
@@ -42,6 +46,13 @@ export default function UploadsPage() {
     null,
   );
   const [selectedGenre, setSelectedGenre] = useState("geral");
+  const [now, setNow] = useState(Date.now());
+
+  // Tick every second for countdown timers
+  useEffect(() => {
+    const interval = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   const loadUploads = useCallback(async () => {
     setLoading(true);
@@ -246,7 +257,45 @@ export default function UploadsPage() {
                             className="rounded object-cover"
                           />
                         )}
-                        <span className="font-medium">{upload.title}</span>
+                        <div>
+                          <span className="font-medium">{upload.title}</span>
+                          {upload.autoApproved === 1 && (
+                            <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-900/50 text-green-400 border border-green-700/50">
+                              Auto
+                            </span>
+                          )}
+                          {upload.autoApproveAt &&
+                            upload.status === "pending" &&
+                            (() => {
+                              const remaining = Math.max(
+                                0,
+                                Math.ceil(
+                                  (new Date(upload.autoApproveAt).getTime() -
+                                    now) /
+                                    1000,
+                                ),
+                              );
+                              const m = Math.floor(remaining / 60);
+                              const s = remaining % 60;
+                              return (
+                                <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-900/50 text-yellow-400 border border-yellow-700/50">
+                                  {remaining > 0
+                                    ? `Auto em ${m}:${String(s).padStart(2, "0")}`
+                                    : "Aprovando..."}
+                                </span>
+                              );
+                            })()}
+                          {upload.deezerGenre && (
+                            <span className="ml-2 text-xs text-gray-500">
+                              {upload.deezerGenre}
+                            </span>
+                          )}
+                        </div>
+                        {upload.duration && (
+                          <span className="text-xs text-gray-500">
+                            {Math.floor(upload.duration / 60)}:{String(upload.duration % 60).padStart(2, "0")}
+                          </span>
+                        )}
                       </div>
                     </td>
                     <td className="px-4 py-3 text-gray-400">{upload.artist}</td>

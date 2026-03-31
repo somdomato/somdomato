@@ -1,11 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
-import { uploads, songs } from "@/db/schema";
+import { uploads } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import fs from "node:fs";
-import path from "node:path";
-
-const MUSIC_PATH = process.env.MUSIC_PATH || "/var/music/sdm";
+import { approveUpload, cancelAutoApprove } from "@/lib/upload";
 
 export async function PATCH(
   request: NextRequest,
@@ -33,66 +31,19 @@ export async function PATCH(
     }
 
     if (action === "approve") {
-      // Move file to music directory
-      const destPath = path.join(MUSIC_PATH, upload.filename);
-
-      if (!fs.existsSync(upload.path)) {
+      cancelAutoApprove(uploadId);
+      const result = await approveUpload(uploadId, genre || "geral");
+      if (!result.success) {
         return NextResponse.json(
-          {
-            error:
-              "Arquivo não encontrado no servidor. O upload pode ter sido removido.",
-          },
+          { error: result.error },
           { status: 404 },
         );
       }
-
-      if (!fs.existsSync(MUSIC_PATH)) {
-        fs.mkdirSync(MUSIC_PATH, { recursive: true });
-      }
-
-      fs.copyFileSync(upload.path, destPath);
-      fs.unlinkSync(upload.path);
-
-      // Extract and save cover from MP3
-      let coverPath = "/images/logotipo.svg";
-      try {
-        const { extractAndSaveCover, checkExistingCover } = await import(
-          "@/lib/cover"
-        );
-        const extracted = await extractAndSaveCover(destPath, upload.artist);
-        if (extracted) {
-          coverPath = extracted;
-        } else {
-          const found = await checkExistingCover(upload.artist);
-          if (found) {
-            coverPath = found;
-          }
-        }
-      } catch (err) {
-        console.error("Erro ao extrair capa:", err);
-      }
-
-      // Add to songs table
-      await db.insert(songs).values({
-        title: upload.title,
-        artist: upload.artist,
-        path: destPath,
-        cover: coverPath,
-        genre: genre || "geral",
-        rotation: "normal",
-        timeSlots: 15,
-      });
-
-      // Update upload status
-      await db
-        .update(uploads)
-        .set({ status: "approved" })
-        .where(eq(uploads.id, uploadId));
-
       return NextResponse.json({ success: true, message: "Upload approved" });
     }
 
     if (action === "reject") {
+      cancelAutoApprove(uploadId);
       // Delete file
       if (fs.existsSync(upload.path)) {
         fs.unlinkSync(upload.path);
@@ -101,7 +52,7 @@ export async function PATCH(
       // Update upload status
       await db
         .update(uploads)
-        .set({ status: "rejected" })
+        .set({ status: "rejected", autoApproveAt: null, autoApproveGenre: null })
         .where(eq(uploads.id, uploadId));
 
       return NextResponse.json({ success: true, message: "Upload rejected" });

@@ -112,6 +112,11 @@ export const uploads = sqliteTable("uploads", {
   thumbnail: text(), // Thumbnail do vídeo
   filename: text().notNull(), // Nome do arquivo baixado
   path: text().notNull(), // Caminho completo do arquivo
+  duration: int(), // Duração em segundos (do Deezer)
+  deezerGenre: text(), // Gênero reportado pelo Deezer (ex: "Sertanejo")
   status: text().default("pending"), // pending, approved, rejected
+  autoApproved: int().default(0), // 1 se foi auto-aprovado
+  autoApproveAt: int({ mode: "timestamp" }), // Quando será auto-aprovado (null = não elegível)
+  autoApproveGenre: text(), // Gênero a usar na auto-aprovação
   createdAt: int({ mode: "timestamp" }).$defaultFn(() => new Date()),
 });
