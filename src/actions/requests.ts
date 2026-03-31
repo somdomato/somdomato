@@ -10,6 +10,7 @@ interface SearchSongsParams {
   query?: string;
   page?: number;
   limit?: number;
+  letter?: string; // filtra pela primeira letra do artista
 }
 
 import { normalizeString } from "@/db/utils";
@@ -18,51 +19,43 @@ export async function searchSongs({
   query = "",
   page = 1,
   limit = 10,
+  letter = "",
 }: SearchSongsParams) {
   const offset = (page - 1) * limit;
 
-  // Se houver query de busca, normaliza e filtra sem acentos/caixa
-  if (query && query.trim() !== "") {
-    const qn = normalizeString(query);
+  const hasQuery = query.trim() !== "";
+  const hasLetter = letter.trim() !== "";
 
-    // Buscar todos (small DB expected) e filtrar em JS usando normalizeString
-    const rows = await db.select().from(songs).orderBy(songs.title);
+  if (hasQuery || hasLetter) {
+    const rows = await db.select().from(songs).orderBy(songs.artist);
 
-    const filtered = rows.filter((s) => {
-      const title = normalizeString(s.title);
-      const artist = normalizeString(s.artist);
-      const path = normalizeString(s.path || "");
-      return title.includes(qn) || artist.includes(qn) || path.includes(qn);
-    });
+    let filtered = rows;
+
+    if (hasLetter) {
+      const letterNorm = normalizeString(letter.trim())[0] ?? "";
+      filtered = filtered.filter((s) =>
+        normalizeString(s.artist).startsWith(letterNorm),
+      );
+    }
+
+    if (hasQuery) {
+      const qn = normalizeString(query);
+      filtered = filtered.filter((s) => {
+        const title = normalizeString(s.title);
+        const artist = normalizeString(s.artist);
+        const p = normalizeString(s.path || "");
+        return title.includes(qn) || artist.includes(qn) || p.includes(qn);
+      });
+    }
 
     const total = filtered.length;
     const paginated = filtered.slice(offset, offset + limit);
 
-    return {
-      songs: paginated,
-      total,
-      pages: Math.ceil(total / limit),
-    };
+    return { songs: paginated, total, pages: Math.ceil(total / limit) };
   }
 
-  // Sem query: comportamento paginado normal
-  const allSongs = await db
-    .select()
-    .from(songs)
-    .limit(limit)
-    .offset(offset)
-    .orderBy(songs.title);
-  const [{ count }] = await db
-    .select({ count: songs.id })
-    .from(songs)
-    .execute()
-    .then((rows) => [{ count: rows.length }]);
-
-  return {
-    songs: allSongs,
-    total: count,
-    pages: Math.ceil(count / limit),
-  };
+  // Sem filtro: não retornar nada (modal começa vazio)
+  return { songs: [], total: 0, pages: 0 };
 }
 
 export async function requestSong(songId: number) {

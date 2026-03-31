@@ -483,3 +483,69 @@ export async function getAllSongsForSelect() {
     .from(songs)
     .orderBy(asc(songs.title));
 }
+
+export interface DuplicateGroup {
+  key: string;
+  songs: {
+    id: number;
+    title: string;
+    artist: string;
+    path: string;
+    cover: string | null;
+    requests: number | null;
+    rotation: string | null;
+    genre: string | null;
+    recommended: boolean;
+  }[];
+}
+
+export async function getDuplicateSongs(): Promise<DuplicateGroup[]> {
+  await verifyAuth();
+
+  const all = await db
+    .select({
+      id: songs.id,
+      title: songs.title,
+      artist: songs.artist,
+      path: songs.path,
+      cover: songs.cover,
+      requests: songs.requests,
+      rotation: songs.rotation,
+      genre: songs.genre,
+    })
+    .from(songs)
+    .orderBy(asc(songs.title));
+
+  // Agrupar por chave normalizada: artista|título
+  const groups = new Map<string, typeof all>();
+  for (const song of all) {
+    const key = `${normalizeString(song.artist)}|${normalizeString(song.title)}`;
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key)!.push(song);
+  }
+
+  const duplicates: DuplicateGroup[] = [];
+
+  for (const [key, group] of groups) {
+    if (group.length < 2) continue;
+
+    // Recomendar: maior requests; empate → menor id
+    const recommended = group.reduce((best, s) => {
+      const bReq = best.requests ?? 0;
+      const sReq = s.requests ?? 0;
+      if (sReq > bReq) return s;
+      if (sReq === bReq && s.id < best.id) return s;
+      return best;
+    });
+
+    duplicates.push({
+      key,
+      songs: group.map((s) => ({ ...s, recommended: s.id === recommended.id })),
+    });
+  }
+
+  // Ordenar por número de duplicatas (maior grupo primeiro)
+  duplicates.sort((a, b) => b.songs.length - a.songs.length);
+
+  return duplicates;
+}
