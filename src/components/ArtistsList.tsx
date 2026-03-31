@@ -36,7 +36,7 @@ export default function ArtistsList({
 
   if (loading) {
     return (
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-2">
         {["a", "b", "c", "d", "e", "f", "g", "h"].map((id) => (
           <div
             key={id}

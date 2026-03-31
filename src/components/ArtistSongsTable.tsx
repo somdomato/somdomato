@@ -342,7 +342,7 @@ export default function ArtistSongsTable({ artist }: { artist: string }) {
         return (
           <div
             key={s.id}
-            className={`flex items-center gap-3 p-2.5 rounded-xl transition group ${isActive ? "bg-primary/10" : "hover:bg-white/5"}`}
+            className={`flex items-center gap-2 p-2.5 rounded-xl transition group ${isActive ? "bg-primary/10" : "hover:bg-white/5"}`}
           >
             {/* Play overlay on cover */}
             <button

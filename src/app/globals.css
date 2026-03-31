@@ -54,7 +54,7 @@ h4 {
 }
 
 a:not(.logo) {
-  @apply text-primary-alt hover:text-white transition-colors duration-400;
+  @apply hover:text-white transition-colors duration-400;
 }
 
 /* Prevent iOS Safari from zooming when inputs are focused */

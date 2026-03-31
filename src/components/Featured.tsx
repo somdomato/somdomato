@@ -22,7 +22,7 @@ export default function Featured() {
           </div>
           <Link
             href="/pedidos"
-            className="inline-flex items-center gap-2 bg-primary hover:bg-primary/90 text-white font-semibold text-sm px-5 py-2.5 rounded-lg transition-all active:scale-95 self-start shadow-md"
+            className="inline-flex items-center gap-2 bg-primary font-semibold text-sm px-5 py-2.5 rounded-lg transition-all active:scale-95 self-start shadow-md"
           >
             <Music2 className="w-4 h-4" />
             Peça sua música
@@ -32,7 +32,7 @@ export default function Featured() {
         {/* Direita: cards de ação rápida */}
         <div className="grid grid-cols-2 gap-px bg-black/30">
           <Link
-            href="/artists"
+            href="/artistas"
             className="flex flex-col items-center justify-center gap-2 p-5 bg-background-alt hover:bg-primary/10 transition-colors group"
           >
             <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center group-hover:bg-primary/30 transition-colors">

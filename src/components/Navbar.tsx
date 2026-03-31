@@ -12,7 +12,7 @@ export default function Navbar() {
   const menuItems = [
     { href: "/", label: "Início", icon: Home },
     { href: "/pedidos", label: "Pedidos", icon: Music },
-    { href: "/artists", label: "Artistas", icon: Users },
+    { href: "/artistas", label: "Artistas", icon: Users },
   ];
 
   if (isAuthenticated) {
