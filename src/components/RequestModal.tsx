@@ -15,8 +15,11 @@ import {
   Download,
   Check,
   Globe,
+  Pencil,
 } from "lucide-react";
 import { toast } from "sonner";
+import { useAuth } from "@/components/AdminAuth";
+import { EditSongModal } from "@/components/EditSongModal";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -45,6 +48,9 @@ interface Song {
   cover: string | null;
   timeSlots: number | null;
   rotation: string | null;
+  album: string | null;
+  genre: string | null;
+  allowedInGeneral: number | null;
 }
 
 interface RequestModalProps {
@@ -107,6 +113,9 @@ export function RequestModal({ isOpen, onClose }: RequestModalProps) {
 
   const { currentGenre, setGenre } = useGenre();
   const { playing, play } = useAudio();
+  const { isAuthenticated } = useAuth();
+
+  const [editingSong, setEditingSong] = useState<Song | null>(null);
 
   const modalRef = useRef<HTMLDivElement | null>(null);
   const queryInputRef = useRef<HTMLInputElement | null>(null);
@@ -692,18 +701,29 @@ export function RequestModal({ isOpen, onClose }: RequestModalProps) {
                             </div>
                           </td>
                           <td className="px-4 py-2.5 text-center">
-                            <button
-                              onClick={() => handleRequest(song.id)}
-                              disabled={requesting === song.id}
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary hover:bg-primary/80 text-background font-semibold rounded-lg transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed text-xs"
-                            >
-                              {requesting === song.id ? (
-                                <Loader2 className="w-3 h-3 animate-spin" />
-                              ) : (
-                                <Music className="w-3 h-3" />
+                            <div className="inline-flex items-center gap-1">
+                              {isAuthenticated && (
+                                <button
+                                  onClick={() => setEditingSong(song)}
+                                  className="p-1.5 text-white/30 hover:text-primary transition rounded-lg hover:bg-white/5"
+                                  title="Editar"
+                                >
+                                  <Pencil className="w-3.5 h-3.5" />
+                                </button>
                               )}
-                              {requesting === song.id ? "..." : "Pedir"}
-                            </button>
+                              <button
+                                onClick={() => handleRequest(song.id)}
+                                disabled={requesting === song.id}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary hover:bg-primary/80 text-background font-semibold rounded-lg transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed text-xs"
+                              >
+                                {requesting === song.id ? (
+                                  <Loader2 className="w-3 h-3 animate-spin" />
+                                ) : (
+                                  <Music className="w-3 h-3" />
+                                )}
+                                {requesting === song.id ? "..." : "Pedir"}
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       ))}
@@ -935,6 +955,19 @@ export function RequestModal({ isOpen, onClose }: RequestModalProps) {
             </div>
           </div>
         </div>
+      )}
+
+      {editingSong && (
+        <EditSongModal
+          song={editingSong}
+          onClose={() => setEditingSong(null)}
+          onSave={() => {
+            setEditingSong(null);
+            if (hasSearched) {
+              loadRadioSongs({ query, letter: activeLetter ?? "", pageParam: page });
+            }
+          }}
+        />
       )}
     </>
   );

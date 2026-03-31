@@ -2,16 +2,24 @@
 
 import React from "react";
 import Image from "next/image";
-import { Music, Play, Pause, Volume2, VolumeX } from "lucide-react";
+import { Music, Play, Pause, Volume2, VolumeX, Pencil } from "lucide-react";
 import { requestSong } from "@/actions/requests";
 import { useAudio } from "@/context/AudioContext";
+import { useAuth } from "@/components/AdminAuth";
+import { EditSongModal } from "@/components/EditSongModal";
 import { toast } from "sonner";
 
 interface Song {
   id: number;
   title: string;
   artist: string;
-  cover?: string | null;
+  cover: string | null;
+  path: string;
+  album?: string | null;
+  timeSlots: number | null;
+  rotation: string | null;
+  genre: string | null;
+  allowedInGeneral: number | null;
 }
 
 // ─── Mini Player ────────────────────────────────────────────────────────────
@@ -221,14 +229,16 @@ export default function ArtistSongsTable({ artist }: { artist: string }) {
   const [loading, setLoading] = React.useState(false);
   const [requestingId, setRequestingId] = React.useState<number | null>(null);
   const [playingSong, setPlayingSong] = React.useState<Song | null>(null);
+  const [editingSong, setEditingSong] = React.useState<Song | null>(null);
 
+  const { isAuthenticated } = useAuth();
   const radio = useAudio();
   const radioWasPlayingRef = React.useRef(false);
   const radioWasMutedRef = React.useRef(false);
   const radioToggleMuteRef = React.useRef(radio.toggleMute);
   radioToggleMuteRef.current = radio.toggleMute;
 
-  React.useEffect(() => {
+  const fetchSongs = React.useCallback(() => {
     if (artist === null || artist === undefined) return;
     setLoading(true);
     setPlayingSong(null);
@@ -238,6 +248,10 @@ export default function ArtistSongsTable({ artist }: { artist: string }) {
       .then((data) => setSongs(data.songs || []))
       .finally(() => setLoading(false));
   }, [artist]);
+
+  React.useEffect(() => {
+    fetchSongs();
+  }, [fetchSongs]);
 
   // Restore radio on unmount
   React.useEffect(() => {
@@ -373,6 +387,17 @@ export default function ArtistSongsTable({ artist }: { artist: string }) {
               <p className="text-xs text-white/40 truncate">{s.artist}</p>
             </div>
 
+            {isAuthenticated && (
+              <button
+                type="button"
+                onClick={() => setEditingSong(s)}
+                className="shrink-0 p-1.5 text-white/30 hover:text-primary transition rounded-lg hover:bg-white/5"
+                title="Editar"
+              >
+                <Pencil className="w-3.5 h-3.5" />
+              </button>
+            )}
+
             <button
               type="button"
               onClick={() => handleRequest(s)}
@@ -384,6 +409,17 @@ export default function ArtistSongsTable({ artist }: { artist: string }) {
           </div>
         );
       })}
+
+      {editingSong && (
+        <EditSongModal
+          song={editingSong}
+          onClose={() => setEditingSong(null)}
+          onSave={() => {
+            setEditingSong(null);
+            fetchSongs();
+          }}
+        />
+      )}
     </div>
   );
 }

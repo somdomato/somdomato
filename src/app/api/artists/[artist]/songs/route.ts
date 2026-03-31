@@ -16,14 +16,7 @@ export async function GET(
 
     // Try exact match first
     let rows = await db
-      .select({
-        id: songs.id,
-        title: songs.title,
-        artist: songs.artist,
-        cover: songs.cover,
-        path: songs.path,
-        createdAt: songs.createdAt,
-      })
+      .select()
       .from(songs)
       .where(eq(songs.artist, searchArtist));
 
@@ -32,14 +25,7 @@ export async function GET(
       try {
         const { normalizeString } = await import("@/db/utils");
         const all = await db
-          .select({
-            id: songs.id,
-            title: songs.title,
-            artist: songs.artist,
-            cover: songs.cover,
-            path: songs.path,
-            createdAt: songs.createdAt,
-          })
+          .select()
           .from(songs);
         const normalizedParam = normalizeString(searchArtist);
         rows = all.filter((r) => normalizeString(r.artist) === normalizedParam);

@@ -1,5 +1,5 @@
-import { db } from "@/db";
-import { uploads, songs } from "@/db/schema";
+import { db } from "../db/index.ts";
+import { uploads, songs } from "../db/schema.ts";
 import { eq, and, isNotNull } from "drizzle-orm";
 import fs from "node:fs";
 import path from "node:path";
@@ -44,7 +44,7 @@ export async function approveUpload(
   let coverPath = "/images/logotipo.svg";
   try {
     const { extractAndSaveCover, checkExistingCover } = await import(
-      "@/lib/cover"
+      "../lib/cover"
     );
     const extracted = await extractAndSaveCover(destPath, upload.artist);
     if (extracted) {
