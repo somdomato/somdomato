@@ -964,7 +964,11 @@ export function RequestModal({ isOpen, onClose }: RequestModalProps) {
           onSave={() => {
             setEditingSong(null);
             if (hasSearched) {
-              loadRadioSongs({ query, letter: activeLetter ?? "", pageParam: page });
+              loadRadioSongs({
+                query,
+                letter: activeLetter ?? "",
+                pageParam: page,
+              });
             }
           }}
         />

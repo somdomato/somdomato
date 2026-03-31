@@ -293,7 +293,8 @@ export default function UploadsPage() {
                         </div>
                         {upload.duration && (
                           <span className="text-xs text-gray-500">
-                            {Math.floor(upload.duration / 60)}:{String(upload.duration % 60).padStart(2, "0")}
+                            {Math.floor(upload.duration / 60)}:
+                            {String(upload.duration % 60).padStart(2, "0")}
                           </span>
                         )}
                       </div>

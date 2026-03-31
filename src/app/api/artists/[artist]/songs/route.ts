@@ -24,9 +24,7 @@ export async function GET(
     if (!rows || rows.length === 0) {
       try {
         const { normalizeString } = await import("@/db/utils");
-        const all = await db
-          .select()
-          .from(songs);
+        const all = await db.select().from(songs);
         const normalizedParam = normalizeString(searchArtist);
         rows = all.filter((r) => normalizeString(r.artist) === normalizedParam);
       } catch (e) {

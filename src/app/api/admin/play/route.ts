@@ -2,7 +2,11 @@ import { db } from "@/db";
 import { songs, history } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import fs from "node:fs/promises";
-import { extractAndSaveCover, checkExistingCover, verifyCoverOnDisk } from "@/lib/cover";
+import {
+  extractAndSaveCover,
+  checkExistingCover,
+  verifyCoverOnDisk,
+} from "@/lib/cover";
 import util from "node:util";
 import { exec } from "node:child_process";
 

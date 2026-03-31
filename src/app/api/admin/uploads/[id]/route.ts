@@ -34,10 +34,7 @@ export async function PATCH(
       cancelAutoApprove(uploadId);
       const result = await approveUpload(uploadId, genre || "geral");
       if (!result.success) {
-        return NextResponse.json(
-          { error: result.error },
-          { status: 404 },
-        );
+        return NextResponse.json({ error: result.error }, { status: 404 });
       }
       return NextResponse.json({ success: true, message: "Upload approved" });
     }
@@ -52,7 +49,11 @@ export async function PATCH(
       // Update upload status
       await db
         .update(uploads)
-        .set({ status: "rejected", autoApproveAt: null, autoApproveGenre: null })
+        .set({
+          status: "rejected",
+          autoApproveAt: null,
+          autoApproveGenre: null,
+        })
         .where(eq(uploads.id, uploadId));
 
       return NextResponse.json({ success: true, message: "Upload rejected" });

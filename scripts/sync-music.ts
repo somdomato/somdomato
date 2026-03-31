@@ -4,7 +4,11 @@ import { eq } from "drizzle-orm";
 import fs from "node:fs/promises";
 import path from "node:path";
 import NodeID3 from "node-id3";
-import { extractAndSaveCover, checkExistingCover, verifyCoverOnDisk } from "@/lib/cover";
+import {
+  extractAndSaveCover,
+  checkExistingCover,
+  verifyCoverOnDisk,
+} from "@/lib/cover";
 
 const MUSIC_PATH = process.env.MUSIC_PATH || "/var/music/sdm";
 const SUPPORTED_EXTENSIONS = [".mp3", ".flac", ".ogg", ".m4a", ".wav"];
@@ -244,7 +248,9 @@ async function syncDatabase() {
       if (coverPath !== "/images/logotipo.svg") {
         const verified = await verifyCoverOnDisk(coverPath);
         if (!verified) {
-          console.warn(`  → Capa não encontrada no disco, usando padrão: ${coverPath}`);
+          console.warn(
+            `  → Capa não encontrada no disco, usando padrão: ${coverPath}`,
+          );
           coverPath = "/images/logotipo.svg";
         }
       }

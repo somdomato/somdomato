@@ -284,16 +284,19 @@ export async function POST(request: NextRequest) {
         recordUpload(clientIp);
 
         // Save to database
-        const [uploadRecord] = await db.insert(uploads).values({
-          title,
-          artist,
-          deezerUrl: `https://www.deezer.com/track/${trackId}`,
-          deezerId: String(trackId),
-          thumbnail: thumbnail || null,
-          filename,
-          path: outputPath,
-          status: "pending",
-        }).returning({ id: uploads.id });
+        const [uploadRecord] = await db
+          .insert(uploads)
+          .values({
+            title,
+            artist,
+            deezerUrl: `https://www.deezer.com/track/${trackId}`,
+            deezerId: String(trackId),
+            thumbnail: thumbnail || null,
+            filename,
+            path: outputPath,
+            status: "pending",
+          })
+          .returning({ id: uploads.id });
 
         // Check auto-approval criteria via Deezer metadata
         try {

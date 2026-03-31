@@ -208,9 +208,8 @@ export async function GET(request: Request) {
 
     // Garantir que haja um caminho de capa no banco antes de emitir (melhor esforço)
     try {
-      const { extractAndSaveCover, checkExistingCover, verifyCoverOnDisk } = await import(
-        "@/lib/cover"
-      );
+      const { extractAndSaveCover, checkExistingCover, verifyCoverOnDisk } =
+        await import("@/lib/cover");
 
       let coverPath: string | null = selectedSong.cover ?? null;
 

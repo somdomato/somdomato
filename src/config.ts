@@ -46,7 +46,8 @@ export const LAST_SONGS_HISTORY_LIMIT = 20;
  * Delay em minutos antes de auto-aprovar uploads elegíveis.
  * 0 = aprovação imediata. Permite ao admin rejeitar antes da aprovação.
  */
-export const AUTO_APPROVE_DELAY_MINUTES = Number(process.env.AUTO_APPROVE_DELAY_MINUTES) || 5;
+export const AUTO_APPROVE_DELAY_MINUTES =
+  Number(process.env.AUTO_APPROVE_DELAY_MINUTES) || 5;
 
 export const slides = [
   {

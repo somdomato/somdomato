@@ -13,7 +13,9 @@ const MUSIC_PATH = process.env.MUSIC_PATH || "/var/music/sdm";
 export async function approveUpload(
   uploadId: number,
   genre: string,
-): Promise<{ success: true; songId: number } | { success: false; error: string }> {
+): Promise<
+  { success: true; songId: number } | { success: false; error: string }
+> {
   const [upload] = await db
     .select()
     .from(uploads)
@@ -27,7 +29,8 @@ export async function approveUpload(
   if (!fs.existsSync(upload.path)) {
     return {
       success: false,
-      error: "Arquivo não encontrado no servidor. O upload pode ter sido removido.",
+      error:
+        "Arquivo não encontrado no servidor. O upload pode ter sido removido.",
     };
   }
 
@@ -119,7 +122,10 @@ async function fetchDeezerAlbumGenres(albumId: number): Promise<string[]> {
  */
 export async function checkAutoApproval(
   trackId: string,
-): Promise<{ approved: true; genre: string; deezerGenre: string; duration: number } | { approved: false; duration: number; deezerGenre: string }> {
+): Promise<
+  | { approved: true; genre: string; deezerGenre: string; duration: number }
+  | { approved: false; duration: number; deezerGenre: string }
+> {
   const res = await fetch(
     `https://api.deezer.com/track/${encodeURIComponent(trackId)}`,
   );
@@ -234,10 +240,7 @@ export async function restorePendingAutoApprovals(): Promise<void> {
       .select()
       .from(uploads)
       .where(
-        and(
-          eq(uploads.status, "pending"),
-          isNotNull(uploads.autoApproveAt),
-        ),
+        and(eq(uploads.status, "pending"), isNotNull(uploads.autoApproveAt)),
       );
 
     const now = Date.now();
@@ -255,6 +258,9 @@ export async function restorePendingAutoApprovals(): Promise<void> {
       );
     }
   } catch (err) {
-    console.error("[auto-approve] Erro ao restaurar aprovações pendentes:", err);
+    console.error(
+      "[auto-approve] Erro ao restaurar aprovações pendentes:",
+      err,
+    );
   }
 }
