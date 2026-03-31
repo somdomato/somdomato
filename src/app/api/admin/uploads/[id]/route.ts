@@ -56,14 +56,14 @@ export async function PATCH(
       // Extract and save cover from MP3
       let coverPath = "/images/logotipo.svg";
       try {
-        const { extractAndSaveCover, findCoverByArtist } = await import(
+        const { extractAndSaveCover, checkExistingCover } = await import(
           "@/lib/cover"
         );
-        const extracted = await extractAndSaveCover(destPath);
+        const extracted = await extractAndSaveCover(destPath, upload.artist);
         if (extracted) {
           coverPath = extracted;
         } else {
-          const found = await findCoverByArtist(upload.artist);
+          const found = await checkExistingCover(upload.artist);
           if (found) {
             coverPath = found;
           }

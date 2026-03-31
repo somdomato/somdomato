@@ -65,13 +65,13 @@ export default function Carousel({
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      <div className="relative overflow-hidden md:rounded">
+      <div className="relative overflow-hidden rounded-xl shadow-2xl">
         {/* Imagens */}
         <div className="relative aspect-[16/9] w-full">
           {images.map((image, index) => (
             <div
               key={image.id}
-              className={`absolute inset-0 transition-opacity duration-500 ${index === currentIndex ? "opacity-100" : "opacity-0"}`}
+              className={`absolute inset-0 transition-opacity duration-700 ${index === currentIndex ? "opacity-100" : "opacity-0"}`}
             >
               <Image
                 src={image.src}
@@ -83,6 +83,15 @@ export default function Carousel({
               />
             </div>
           ))}
+
+          {/* Overlay com título do slide */}
+          {images[currentIndex]?.title && (
+            <div className="absolute bottom-0 left-0 right-0 bg-linear-to-t from-black/70 to-transparent px-5 py-4 pointer-events-none">
+              <p className="text-white font-semibold text-sm sm:text-base drop-shadow">
+                {images[currentIndex].title}
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Botões de navegação */}
@@ -90,24 +99,18 @@ export default function Carousel({
           <>
             <button
               onClick={goToPrevious}
-              className="absolute left-4 top-1/2 -translate-y-1/2 rounded-full bg-black/80 p-3 backdrop-blur-sm transition-all hover:bg-white hover:text-black hover:scale-110"
+              className="absolute left-3 top-1/2 -translate-y-1/2 rounded-full bg-black/60 p-2.5 backdrop-blur-sm transition-all hover:bg-primary hover:scale-105 shadow-lg"
               aria-label="Slide anterior"
             >
-              {/* <svg className="h-6 w-6 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg> */}
-              <ChevronLeft className="h-6 w-6" />
+              <ChevronLeft className="h-5 w-5" />
             </button>
 
             <button
               onClick={goToNext}
-              className="absolute right-4 top-1/2 -translate-y-1/2 rounded-full bg-black/80 p-3 backdrop-blur-sm transition-all hover:bg-white hover:text-black hover:scale-110"
+              className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full bg-black/60 p-2.5 backdrop-blur-sm transition-all hover:bg-primary hover:scale-105 shadow-lg"
               aria-label="Próximo slide"
             >
-              {/* <svg className="h-6 w-6 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg> */}
-              <ChevronRight className="h-6 w-6" />
+              <ChevronRight className="h-5 w-5" />
             </button>
           </>
         )}
@@ -119,7 +122,7 @@ export default function Carousel({
               <button
                 key={image.id}
                 onClick={() => goToSlide(index)}
-                className={`h-2 rounded-full transition-all ${index === currentIndex ? "w-8 bg-white" : "w-2 bg-white/50 hover:bg-white/75"}`}
+                className={`h-1.5 rounded-full transition-all duration-300 ${index === currentIndex ? "w-8 bg-primary" : "w-2 bg-white/40 hover:bg-white/70"}`}
                 aria-label={`Ir para slide ${index + 1}`}
               />
             ))}

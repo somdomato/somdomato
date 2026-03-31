@@ -1,219 +1,254 @@
-import { readdir, writeFile, mkdir, unlink } from "node:fs/promises";
+import { writeFile, mkdir, stat, unlink } from "node:fs/promises";
 import { existsSync } from "node:fs";
-import * as path from "node:path";
+import path from "node:path";
 import * as NodeID3 from "node-id3";
 
-interface ID3Tags {
-  title?: string;
-  artist?: string;
-  album?: string;
-  year?: string;
-  image?: {
-    mime: string;
-    type: {
-      id: number;
-      name: string;
-    };
-    description?: string;
-    imageBuffer: Buffer;
-  };
-}
-
-export interface ImageData {
-  buffer: Buffer;
-  mimeType: string;
-  extension: string;
-}
-
-export interface CoverResult {
-  filePath: string;
-  cover: string | null;
-  error?: string;
-}
+// ---------------------------------------------------------------------------
+// Helpers de nome
+// ---------------------------------------------------------------------------
 
 /**
- * Normaliza nome de artista para busca inteligente
+ * Converte nome de artista em slug seguro para usar como nome de arquivo.
+ * Ex: "Henrique & Juliano" → "henrique-e-juliano"
+ *     "Jorge e Mateus"     → "jorge-e-mateus"
  */
-function normalizeArtistName(name: string): string {
-  return name
+export function sanitizeArtistForFile(artist: string): string {
+  return artist
     .toLowerCase()
     .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "") // Remove acentos
-    .replace(/[_\-.]+/g, " ") // Converte underscores, traços e pontos em espaço
-    .replace(/\s*&\s*|\s*\+\s*|\s*\/\s*/g, " e ") // Mapeia &, +, / para " e "
-    .replace(/\s+e\s+/g, " e ") // Normaliza espaçamento em torno de 'e'
-    .replace(/\s+/g, " ") // Normaliza espaços
-    .replace(/[^a-z0-9 ]/g, "") // Remove caracteres especiais remanescentes
-    .trim();
+    .replace(/[\u0300-\u036f]/g, "") // remove acentos
+    .replace(/\s*[&+/]\s*/g, "-e-") // & + / → -e-
+    .replace(/\s+e\s+/g, "-e-") // "e" como palavra → -e-
+    .replace(/[^a-z0-9-]/g, "-") // tudo mais → -
+    .replace(/-+/g, "-") // colapsar traços duplos
+    .replace(/^-|-$/g, ""); // remover traços nas bordas
 }
 
-/**
- * Gera nome de diretório canônico para o artista (ex: 'henrique_e_juliano')
- */
-function artistDirName(name: string): string {
-  return normalizeArtistName(name).replace(/\s+/g, "_");
-}
-
-/**
- * Busca capa pelo nome do artista, considerando variações comuns
- */
-export async function findCoverByArtist(
+/** Caminho físico do arquivo de capa para um artista */
+export function coverPublicPath(
   artist: string,
-  coversDir: string = "public/covers",
-): Promise<string | null> {
-  const normalized = normalizeArtistName(artist);
-  const dirs = await readdir(coversDir, { withFileTypes: true });
-  for (const dirent of dirs) {
-    if (!dirent.isDirectory()) continue;
-    const candidate = normalizeArtistName(dirent.name);
-    if (candidate === normalized) {
-      // Retorna arquivo de capa preferencialmente nomeado 'cover.*' ou o primeiro existente
-      const files = await readdir(path.join(coversDir, dirent.name));
-      if (files.length > 0) {
-        const coverFile =
-          files.find((f) => /^cover\.[a-z0-9]+$/i.test(f)) ||
-          files.find((f) => /^cover/i.test(f)) ||
-          files[0];
-        return path.join("/covers", dirent.name, coverFile).replace(/\\/g, "/");
-      }
-    }
-  }
-  return null;
+  coversDir = path.join(process.cwd(), "public/covers"),
+): string {
+  return path.join(coversDir, `${sanitizeArtistForFile(artist)}.jpg`);
 }
 
+/** Caminho da URL pública da capa */
+export function coverUrlPath(artist: string): string {
+  return `/covers/${sanitizeArtistForFile(artist)}.jpg`;
+}
+
+// ---------------------------------------------------------------------------
+// Verificar capa existente no disco
+// ---------------------------------------------------------------------------
+
 /**
- * Extrai a capa de um arquivo MP3 e salva em disco organizando por artista
- * @param mp3FilePath - Caminho para o arquivo MP3
- * @param outputDir - Diretório base onde salvar as capas (padrão: public/covers)
- * @returns Promise<string | null> - Retorna o caminho da capa salva ou null se não houver capa
+ * Verifica se já existe um arquivo de capa válido (>= 1 KB) para o artista.
+ * Retorna o URL path se existir, null caso contrário.
+ */
+export async function checkExistingCover(
+  artist: string,
+  coversDir = path.join(process.cwd(), "public/covers"),
+): Promise<string | null> {
+  const filePath = coverPublicPath(artist, coversDir);
+  if (!existsSync(filePath)) return null;
+  try {
+    const info = await stat(filePath);
+    if (info.size < 1000) return null; // arquivo muito pequeno → inválido
+    return coverUrlPath(artist);
+  } catch {
+    return null;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Extração do ID3
+// ---------------------------------------------------------------------------
+
+/**
+ * Extrai a imagem embutida nas tags ID3 do arquivo MP3 e salva em disco
+ * como `public/covers/[slug].jpg`.
+ *
+ * @param mp3FilePath  Caminho absoluto do arquivo MP3
+ * @param artist       Nome do artista (para determinar o slug do arquivo)
+ * @param coversDir    Diretório raiz de capas (padrão: public/covers)
+ * @returns URL path da capa salva, ou null se não houver imagem ID3
  */
 export async function extractAndSaveCover(
   mp3FilePath: string,
-  outputDir: string = "public/covers",
+  artist: string,
+  coversDir = path.join(process.cwd(), "public/covers"),
 ): Promise<string | null> {
   return new Promise((resolve, reject) => {
-    NodeID3.read(mp3FilePath, async (err: Error | null, tags: ID3Tags) => {
+    NodeID3.read(mp3FilePath, async (err: Error | null, tags: NodeID3.Tags) => {
       if (err) {
         reject(err);
         return;
       }
-
       if (!tags?.image) {
         resolve(null);
         return;
       }
 
       try {
-        // Obter informações do artista
-        const artist = tags.artist || "Unknown Artist";
-        const dirName = artistDirName(artist);
+        await mkdir(coversDir, { recursive: true });
 
-        // Criar diretório do artista
-        const artistDir = path.join(outputDir, dirName);
-        if (!existsSync(artistDir)) {
-          await mkdir(artistDir, { recursive: true });
+        const image = tags.image as {
+          imageBuffer: Buffer;
+          mime?: string;
+        };
+
+        // Validar buffer básico antes de salvar
+        if (!image.imageBuffer || image.imageBuffer.length < 1000) {
+          resolve(null);
+          return;
         }
 
-        // Definir nome canônico da capa (cover.ext)
-        const imageExtension = getImageExtension(tags.image.mime);
-        const coverFileName = `cover${imageExtension}`;
-        const coverPath = path.join(artistDir, coverFileName);
+        const filePath = coverPublicPath(artist, coversDir);
+        await writeFile(filePath, image.imageBuffer);
 
-        // Salvar a imagem (sobrescreve se já existir)
-        await writeFile(coverPath, tags.image.imageBuffer);
-
-        // Remover arquivos extras dentro da pasta do artista, mantendo apenas a capa canônica
-        const existingFiles = await readdir(artistDir);
-        for (const f of existingFiles) {
-          if (f !== coverFileName) {
-            await unlink(path.join(artistDir, f));
-          }
-        }
-
-        // Retornar o caminho relativo para uso no frontend (sempre com barras normais)
-        const relativePath = coverPath
-          .replace(/\\/g, "/") // Converter barras do Windows para web
-          .replace("public/", "/"); // Remover "public" do início
-        resolve(relativePath);
-      } catch (error) {
-        reject(error);
+        resolve(coverUrlPath(artist));
+      } catch (e) {
+        reject(e);
       }
     });
   });
 }
 
+// ---------------------------------------------------------------------------
+// Busca via API (Deezer) — usado apenas na auto-resolução no play
+// ---------------------------------------------------------------------------
+
 /**
- * Extrai apenas os dados da capa sem salvar em disco
- * @param mp3FilePath - Caminho para o arquivo MP3
- * @returns Promise<ImageData | null> - Retorna os dados da imagem ou null
+ * Busca a capa de um artista/título via API do Deezer.
+ * Retorna o buffer da imagem, ou null em caso de erro ou não encontrado.
+ *
+ * Limites: Deezer permite ~50 req/s. Como usamos somente quando a capa
+ * não existe no disco e somente no evento de play (1 req por música nova),
+ * o volume de chamadas é baixíssimo.
  */
-export async function extractCoverData(
-  mp3FilePath: string,
-): Promise<ImageData | null> {
-  return new Promise((resolve, reject) => {
-    NodeID3.read(mp3FilePath, (err: Error | null, tags: ID3Tags) => {
-      if (err) {
-        reject(err);
-        return;
-      }
+export async function fetchCoverFromDeezer(
+  artist: string,
+  title: string,
+): Promise<Buffer | null> {
+  try {
+    const query = encodeURIComponent(`${artist} ${title}`);
+    const searchUrl = `https://api.deezer.com/search?q=${query}&limit=1`;
 
-      if (!tags?.image) {
-        resolve(null);
-        return;
-      }
-
-      resolve({
-        buffer: tags.image.imageBuffer,
-        mimeType: tags.image.mime,
-        extension: getImageExtension(tags.image.mime),
-      });
+    const searchRes = await fetch(searchUrl, {
+      signal: AbortSignal.timeout(8000),
+      headers: { "User-Agent": "SomDoMato-Radio/1.0" },
     });
-  });
+
+    if (!searchRes.ok) return null;
+
+    const searchData = await searchRes.json();
+    const track = searchData?.data?.[0];
+
+    // Preferir cover_xl (1000x1000), fallback para cover_medium (250x250)
+    const coverUrl: string | undefined =
+      track?.album?.cover_xl || track?.album?.cover_medium;
+
+    if (!coverUrl) return null;
+
+    const imgRes = await fetch(coverUrl, {
+      signal: AbortSignal.timeout(10000),
+    });
+
+    if (!imgRes.ok) return null;
+
+    const buffer = Buffer.from(await imgRes.arrayBuffer());
+
+    // Validação de integridade: tamanho mínimo + magic bytes de imagem
+    if (buffer.length < 1000) return null;
+    const isJpeg = buffer[0] === 0xff && buffer[1] === 0xd8;
+    const isPng = buffer[0] === 0x89 && buffer[1] === 0x50;
+    if (!isJpeg && !isPng) return null;
+
+    return buffer;
+  } catch {
+    return null;
+  }
 }
 
+// ---------------------------------------------------------------------------
+// Pipeline principal de resolução (usado no play automático)
+// ---------------------------------------------------------------------------
+
 /**
- * Extrai capas de múltiplos arquivos MP3 em lote
- * @param mp3FilePaths - Array de caminhos para arquivos MP3
- * @param outputDir - Diretório onde salvar as capas
- * @returns Promise<CoverResult[]> - Array com resultados
+ * Resolve a capa de uma música seguindo a ordem de prioridade:
+ *  1. Arquivo já existe no disco (`public/covers/[slug].jpg`) → reutiliza
+ *  2. Extração das tags ID3 do arquivo MP3
+ *  3. Busca via API do Deezer
+ *
+ * Retorna o URL path (ex: `/covers/henrique-e-juliano.jpg`) ou null.
+ *
+ * IMPORTANTE: Esta função NÃO deve ser chamada se a música já tem uma capa
+ * diferente do padrão (`/images/logotipo.svg`) — isso protege capas
+ * configuradas manualmente no painel de admin.
  */
+export async function resolveSongCover(opts: {
+  mp3Path: string;
+  artist: string;
+  title: string;
+  coversDir?: string;
+}): Promise<string | null> {
+  const {
+    mp3Path,
+    artist,
+    title,
+    coversDir = path.join(process.cwd(), "public/covers"),
+  } = opts;
 
-export async function extractMultipleCovers(
-  mp3FilePaths: string[],
-  outputDir: string = "public/covers",
-): Promise<CoverResult[]> {
-  const results: CoverResult[] = [];
-
-  for (const filePath of mp3FilePaths) {
-    try {
-      const cover = await extractAndSaveCover(filePath, outputDir);
-      results.push({ filePath, cover });
-    } catch (error) {
-      results.push({
-        filePath,
-        cover: null,
-        error: error instanceof Error ? error.message : "Unknown error",
-      });
-    }
+  // 1. Arquivo de capa já existe no disco?
+  const existing = await checkExistingCover(artist, coversDir);
+  if (existing) {
+    return existing;
   }
 
-  return results;
+  // 2. Extração das tags ID3
+  try {
+    const fromId3 = await extractAndSaveCover(mp3Path, artist, coversDir);
+    if (fromId3) {
+      return fromId3;
+    }
+  } catch (e) {
+    console.warn(`[cover] Falha na extração ID3 de ${mp3Path}:`, e);
+  }
+
+  // 3. API do Deezer (somente se arquivo não existe e ID3 não tem capa)
+  try {
+    const buffer = await fetchCoverFromDeezer(artist, title);
+    if (buffer) {
+      await mkdir(coversDir, { recursive: true });
+      const filePath = coverPublicPath(artist, coversDir);
+      await writeFile(filePath, buffer);
+      return coverUrlPath(artist);
+    }
+  } catch (e) {
+    console.warn(`[cover] Falha no Deezer para "${artist} - ${title}":`, e);
+  }
+
+  return null;
 }
 
+// ---------------------------------------------------------------------------
+// Remoção de capa (usada pelo admin ao resetar)
+// ---------------------------------------------------------------------------
+
 /**
- * Determina a extensão da imagem baseada no MIME type
+ * Remove o arquivo de capa do disco para um artista.
+ * Chamado quando admin "Apaga capa" para garantir que a auto-resolução
+ * possa buscar uma nova imagem na próxima execução.
  */
-function getImageExtension(mimeType: string): string {
-  switch (mimeType) {
-    case "image/jpeg":
-      return ".jpg";
-    case "image/png":
-      return ".png";
-    case "image/gif":
-      return ".gif";
-    case "image/webp":
-      return ".webp";
-    default:
-      return ".jpg"; // padrão
+export async function deleteArtistCover(
+  artist: string,
+  coversDir = path.join(process.cwd(), "public/covers"),
+): Promise<void> {
+  const filePath = coverPublicPath(artist, coversDir);
+  if (!existsSync(filePath)) return;
+  try {
+    await unlink(filePath);
+  } catch (e) {
+    console.warn(`[cover] Não foi possível remover ${filePath}:`, e);
   }
 }

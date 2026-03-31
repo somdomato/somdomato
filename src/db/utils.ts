@@ -57,16 +57,16 @@ export async function upsertSongFromFile(filePath: string) {
   const detectedArtistFromFilename = parsed.artist;
   const detectedTitleFromFilename = parsed.title;
 
+  // Determine title/artist (needed for cover extraction slug)
+  const artist = tagArtist ? tagArtist : detectedArtistFromFilename || "";
+
   // Extract cover if possible (best-effort)
   let cover: string | null = null;
   try {
-    cover = await extractAndSaveCover(resolved);
+    cover = await extractAndSaveCover(resolved, artist);
   } catch (_err) {
     // continue without cover
   }
-
-  // Determine title/artist
-  const artist = tagArtist ? tagArtist : detectedArtistFromFilename || "";
   const title = tagTitle ? tagTitle : detectedTitleFromFilename || filename;
 
   // Decide whether we will create a new row or update an existing one

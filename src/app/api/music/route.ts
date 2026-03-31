@@ -209,7 +209,7 @@ export async function GET(request: Request) {
 
     // Garantir que haja um caminho de capa no banco antes de emitir (melhor esforço)
     try {
-      const { extractAndSaveCover, findCoverByArtist } = await import(
+      const { extractAndSaveCover, checkExistingCover } = await import(
         "@/lib/cover"
       );
 
@@ -229,20 +229,23 @@ export async function GET(request: Request) {
         }
       }
 
-      // Tentar extrair capa embutida no MP3 (preferível para evitar buscar por artista)
+      // Tentar extrair capa embutida no MP3
       if (!coverPath) {
         try {
-          const extracted = await extractAndSaveCover(selectedSong.path);
+          const extracted = await extractAndSaveCover(
+            selectedSong.path,
+            selectedSong.artist,
+          );
           if (extracted) coverPath = extracted;
         } catch (err) {
           console.error("Erro ao extrair capa:", err);
         }
       }
 
-      // Se não extraímos, procurar por capa existente por artista
+      // Se não extraímos, procurar por capa existente no disco para este artista
       if (!coverPath) {
         try {
-          const found = await findCoverByArtist(selectedSong.artist);
+          const found = await checkExistingCover(selectedSong.artist);
           if (found) coverPath = found;
         } catch (err) {
           console.error("Erro ao procurar capa por artista:", err);

@@ -218,72 +218,67 @@ export async function updateSong(
     await db.update(songs).set(updateFields).where(eq(songs.id, id));
   }
 
-  // Tentar extrair/salvar capa do arquivo (ou procurar por capa existente por artista)
+  // Processar capa
   try {
-    // Se solicitarem reset da capa, não executamos extração/busca para evitar sobrescrever o valor padrão
     if (data.resetCover) {
-      // Garantir que o DB contenha a capa padrão
+      // Garantir DB com capa padrão (já setado acima, mas confirmar)
       await db
         .update(songs)
         .set({ cover: "/images/logotipo.svg" })
         .where(eq(songs.id, id));
-      console.log(`Capa resetada para padrão na música ${id}`);
 
-      // Remover imagem embutida no ID3 (se existir) e regravar tags básicas
-      try {
-        await new Promise<void>((resolve) => {
-          NodeID3.read(currentPath, (err: Error | null, tags: NodeID3.Tags) => {
-            if (err) {
-              console.error("Erro ao ler tags ID3 para remoção da capa:", err);
-              return resolve();
-            }
-
-            if (!tags || !tags.image) return resolve();
-
-            try {
-              // Remove todas as tags e reescreve apenas title/artist/album para preservar metadados
-              NodeID3.removeTags(currentPath);
-
-              const tagsToWrite: NodeID3.Tags = {};
-              tagsToWrite.title = (data.title as string) ?? song.title;
-              tagsToWrite.artist = (data.artist as string) ?? song.artist;
-              if ((data.album as string) ?? song.album)
-                tagsToWrite.album =
-                  (data.album as string) ?? (song.album as string);
-
-              const success = NodeID3.update(tagsToWrite, currentPath);
-              if (!success)
-                console.error("Falha ao regravar tags ID3 sem a imagem");
-            } catch (e) {
-              console.error("Erro ao remover imagem ID3:", e);
-            }
-
-            resolve();
-          });
+      // Remover imagem embutida no ID3 para que o pipeline de auto-extração
+      // possa buscar uma nova capa na próxima execução
+      await new Promise<void>((resolve) => {
+        NodeID3.read(currentPath, (err: Error | null, tags: NodeID3.Tags) => {
+          if (err || !tags?.image) return resolve();
+          try {
+            NodeID3.removeTags(currentPath);
+            const tagsToWrite: NodeID3.Tags = {
+              title: (data.title as string) ?? song.title,
+              artist: (data.artist as string) ?? song.artist,
+            };
+            const album = (data.album as string) ?? song.album;
+            if (album) tagsToWrite.album = album;
+            NodeID3.update(tagsToWrite, currentPath);
+          } catch (e) {
+            console.error("[cover] Erro ao remover imagem ID3:", e);
+          }
+          resolve();
         });
-      } catch (e) {
-        console.error("Erro no processo de remoção de imagem ID3:", e);
-      }
+      });
+
+      // Remover o arquivo de capa do disco para permitir re-fetch limpo
+      const { deleteArtistCover } = await import("@/lib/cover");
+      const artistName = (data.artist as string) ?? song.artist;
+      await deleteArtistCover(artistName);
     } else {
-      const { extractAndSaveCover, findCoverByArtist } = await import(
+      const { extractAndSaveCover, checkExistingCover } = await import(
         "@/lib/cover"
       );
-      // currentPath aponta para o caminho atual do arquivo (pode ter sido renomeado)
-      const coverPath = await extractAndSaveCover(currentPath);
-      if (coverPath) {
-        await db
-          .update(songs)
-          .set({ cover: coverPath })
-          .where(eq(songs.id, id));
-      } else if (data.artist) {
-        const found = await findCoverByArtist(data.artist);
-        if (found) {
-          await db.update(songs).set({ cover: found }).where(eq(songs.id, id));
+
+      const artistName = (data.artist as string) ?? song.artist;
+
+      // Tentar extrair do ID3 (que pode ter sido atualizado com coverFile acima)
+      const fromId3 = await extractAndSaveCover(currentPath, artistName).catch(
+        () => null,
+      );
+
+      if (fromId3) {
+        await db.update(songs).set({ cover: fromId3 }).where(eq(songs.id, id));
+      } else {
+        // Verificar se já existe arquivo de capa no disco para este artista
+        const existing = await checkExistingCover(artistName);
+        if (existing) {
+          await db
+            .update(songs)
+            .set({ cover: existing })
+            .where(eq(songs.id, id));
         }
       }
     }
   } catch (error) {
-    console.error("Erro ao processar capa da música:", error);
+    console.error("[cover] Erro ao processar capa da música:", error);
   }
 
   revalidatePath("/admin");

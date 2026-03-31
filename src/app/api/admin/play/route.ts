@@ -2,7 +2,7 @@ import { db } from "@/db";
 import { songs, history } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import fs from "node:fs/promises";
-import { extractAndSaveCover, findCoverByArtist } from "@/lib/cover";
+import { extractAndSaveCover, checkExistingCover } from "@/lib/cover";
 import util from "node:util";
 import { exec } from "node:child_process";
 
@@ -50,7 +50,7 @@ export async function POST(request: Request) {
 
       if (!coverPath) {
         try {
-          const extracted = await extractAndSaveCover(s.path);
+          const extracted = await extractAndSaveCover(s.path, s.artist);
           if (extracted) coverPath = extracted;
         } catch (err) {
           console.error("Erro ao extrair capa:", err);
@@ -58,7 +58,7 @@ export async function POST(request: Request) {
       }
 
       if (!coverPath) {
-        const found = await findCoverByArtist(s.artist);
+        const found = await checkExistingCover(s.artist);
         if (found) coverPath = found;
       }
 

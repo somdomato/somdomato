@@ -4,7 +4,7 @@ import { eq } from "drizzle-orm";
 import fs from "node:fs/promises";
 import path from "node:path";
 import NodeID3 from "node-id3";
-import { extractAndSaveCover, findCoverByArtist } from "@/lib/cover";
+import { extractAndSaveCover, checkExistingCover } from "@/lib/cover";
 
 const MUSIC_PATH = process.env.MUSIC_PATH || "/var/music/sdm";
 const SUPPORTED_EXTENSIONS = [".mp3", ".flac", ".ogg", ".m4a", ".wav"];
@@ -224,13 +224,13 @@ async function syncDatabase() {
       // Tentar extrair capa do MP3
       let coverPath = "/images/logotipo.svg"; // padrão
       try {
-        const extracted = await extractAndSaveCover(filePath);
+        const extracted = await extractAndSaveCover(filePath, artist);
         if (extracted) {
           coverPath = extracted;
           console.log(`  → Capa extraída: ${coverPath}`);
         } else {
-          // Tentar encontrar capa existente por artista
-          const found = await findCoverByArtist(artist);
+          // Tentar encontrar capa existente no disco para este artista
+          const found = await checkExistingCover(artist);
           if (found) {
             coverPath = found;
             console.log(`  → Capa encontrada por artista: ${coverPath}`);
