@@ -19,6 +19,7 @@ import {
   SkipForward,
   UserPlus,
   LogIn,
+  Users,
 } from "lucide-react";
 import { LogoutButton } from "@/components/LogoutButton";
 import { toast } from "sonner";
@@ -123,6 +124,26 @@ const ACTION_CONFIG: Record<
     label: "Upload do usuário",
     icon: Upload,
     color: "text-blue-400",
+  },
+  "user:created": {
+    label: "Usuário criado",
+    icon: UserPlus,
+    color: "text-green-400",
+  },
+  "user:updated": {
+    label: "Usuário atualizado",
+    icon: UserPlus,
+    color: "text-blue-400",
+  },
+  "user:deleted": {
+    label: "Usuário deletado",
+    icon: Trash2,
+    color: "text-red-400",
+  },
+  "permissions:updated": {
+    label: "Permissões atualizadas",
+    icon: Check,
+    color: "text-purple-400",
   },
 };
 
@@ -248,6 +269,13 @@ export default function LogsPage() {
               <ScrollText size={18} />
               <span className="hidden sm:inline">Logs</span>
             </div>
+            <Link
+              href="/admin/usuarios"
+              className="flex items-center gap-2 px-4 sm:px-6 py-3 border-b-2 border-transparent text-gray-400 hover:text-white transition-colors whitespace-nowrap text-sm"
+            >
+              <Users size={18} />
+              <span className="hidden sm:inline">Usuários</span>
+            </Link>
           </div>
         </div>
       </div>

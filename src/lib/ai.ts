@@ -7,6 +7,23 @@
 const GROQ_API_KEY = process.env.GROQ_API_KEY;
 const GROQ_MODEL = process.env.GROQ_MODEL || "llama-3.3-70b-versatile";
 
+// ---------------------------------------------------------------------------
+// Simple sequential queue – ensures only one evaluation runs at a time so we
+// don't burst the free-tier API rate limits.
+// ---------------------------------------------------------------------------
+
+let _queueTail: Promise<unknown> = Promise.resolve();
+
+/**
+ * Enqueue a function so it only runs after all previously enqueued work has
+ * finished (success or failure).
+ */
+export function enqueue<T>(fn: () => Promise<T>): Promise<T> {
+  const task = _queueTail.catch(() => {}).then(() => fn());
+  _queueTail = task;
+  return task;
+}
+
 interface AIEvaluation {
   approved: boolean;
   confidence: number; // 0-100

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { SongsTable } from "@/components/SongsTable";
-import { Music, ListOrdered, Upload, ScrollText } from "lucide-react";
+import { Music, ListOrdered, Upload, ScrollText, Users } from "lucide-react";
 import { LogoutButton } from "@/components/LogoutButton";
 
 export default function AdminPage() {
@@ -52,6 +52,13 @@ export default function AdminPage() {
             >
               <ScrollText size={18} />
               <span className="hidden sm:inline">Logs</span>
+            </Link>
+            <Link
+              href="/admin/usuarios"
+              className="flex items-center gap-2 px-4 sm:px-6 py-3 border-b-2 border-transparent text-gray-400 hover:text-white transition-colors whitespace-nowrap text-sm"
+            >
+              <Users size={18} />
+              <span className="hidden sm:inline">Usuários</span>
             </Link>
           </div>
         </div>

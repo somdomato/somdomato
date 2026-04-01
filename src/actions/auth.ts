@@ -7,6 +7,7 @@ import { users } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { comparePasswords } from "@/lib/password";
 import { createUserSession, removeUserFromSession } from "@/lib/session";
+import { ADMIN_ROLES, type Role } from "@/lib/permissions";
 import { logAction } from "@/lib/logging";
 
 export async function signIn(
@@ -28,7 +29,7 @@ export async function signIn(
     return { error: "Email ou senha incorretos" };
   }
 
-  if (user.role !== "admin") {
+  if (!ADMIN_ROLES.includes(user.role as Role)) {
     return { error: "Acesso não autorizado" };
   }
 

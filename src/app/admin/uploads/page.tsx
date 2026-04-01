@@ -19,6 +19,7 @@ import {
   Bot,
   Shield,
   Timer,
+  Users,
 } from "lucide-react";
 import { LogoutButton } from "@/components/LogoutButton";
 import { toast } from "sonner";
@@ -262,6 +263,13 @@ export default function UploadsPage() {
             >
               <ScrollText size={18} />
               <span className="hidden sm:inline">Logs</span>
+            </Link>
+            <Link
+              href="/admin/usuarios"
+              className="flex items-center gap-2 px-4 sm:px-6 py-3 border-b-2 border-transparent text-gray-400 hover:text-white transition-colors whitespace-nowrap text-sm"
+            >
+              <Users size={18} />
+              <span className="hidden sm:inline">Usuários</span>
             </Link>
           </div>
         </div>

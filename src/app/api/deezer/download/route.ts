@@ -7,7 +7,7 @@ import fs from "node:fs";
 import { checkAutoApproval, scheduleAutoApprove } from "@/lib/upload";
 import { eq } from "drizzle-orm";
 import { AUTO_APPROVE_DELAY_MINUTES } from "@/config";
-import { evaluateTrack } from "@/lib/ai";
+import { evaluateTrack, enqueue } from "@/lib/ai";
 import { logAction } from "@/lib/logging";
 
 const UPLOADS_DIR = process.env.UPLOADS_DIR || "/var/music/sdm/uploads";
@@ -301,46 +301,53 @@ export async function POST(request: NextRequest) {
           .returning({ id: uploads.id });
 
         // Check auto-approval criteria via Deezer metadata + AI
+        // Queued sequentially to avoid bursting free-tier API rate limits.
         try {
-          const check = await checkAutoApproval(String(trackId));
+          const { shouldApprove, approveGenre, aiReason } = await enqueue(
+            async () => {
+              const check = await checkAutoApproval(String(trackId));
 
-          // Store duration and genre info regardless of approval
-          await db
-            .update(uploads)
-            .set({
-              duration: check.duration || null,
-              deezerGenre: check.deezerGenre || null,
-            })
-            .where(eq(uploads.id, uploadRecord.id));
+              // Store duration and genre info regardless of approval
+              await db
+                .update(uploads)
+                .set({
+                  duration: check.duration || null,
+                  deezerGenre: check.deezerGenre || null,
+                })
+                .where(eq(uploads.id, uploadRecord.id));
 
-          // Run AI evaluation for richer analysis
-          let aiResult: {
-            approved: boolean;
-            reason: string;
-            suggestedGenre: string;
-          } | null = null;
-          try {
-            aiResult = await evaluateTrack({
-              title,
-              artist,
-              deezerGenre: check.deezerGenre || "Desconhecido",
-              duration: check.duration || 0,
-            });
+              // Run AI evaluation for richer analysis
+              let aiResult: {
+                approved: boolean;
+                reason: string;
+                suggestedGenre: string;
+              } | null = null;
+              try {
+                aiResult = await evaluateTrack({
+                  title,
+                  artist,
+                  deezerGenre: check.deezerGenre || "Desconhecido",
+                  duration: check.duration || 0,
+                });
 
-            // Store AI reason in the upload record
-            await db
-              .update(uploads)
-              .set({ aiReason: aiResult.reason })
-              .where(eq(uploads.id, uploadRecord.id));
-          } catch (aiErr) {
-            console.error("AI evaluation failed:", aiErr);
-          }
+                // Store AI reason in the upload record
+                await db
+                  .update(uploads)
+                  .set({ aiReason: aiResult.reason })
+                  .where(eq(uploads.id, uploadRecord.id));
+              } catch (aiErr) {
+                console.error("AI evaluation failed:", aiErr);
+              }
 
-          // Use AI result if available, fall back to heuristic
-          const shouldApprove = aiResult?.approved ?? check.approved;
-          const approveGenre =
-            aiResult?.suggestedGenre ??
-            (check.approved ? check.genre : "geral");
+              return {
+                shouldApprove: aiResult?.approved ?? check.approved,
+                approveGenre:
+                  aiResult?.suggestedGenre ??
+                  (check.approved ? check.genre : "geral"),
+                aiReason: aiResult?.reason ?? null,
+              };
+            },
+          );
 
           if (shouldApprove) {
             const delayMs = AUTO_APPROVE_DELAY_MINUTES * 60 * 1000;
@@ -365,7 +372,7 @@ export async function POST(request: NextRequest) {
                 title,
                 artist,
                 autoApprove: true,
-                aiReason: aiResult?.reason,
+                aiReason,
               },
               ip: clientIp,
             });

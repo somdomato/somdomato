@@ -8,6 +8,7 @@ import { promises as fs } from "node:fs";
 import path from "node:path";
 import NodeID3 from "node-id3";
 import { normalizeString } from "@/db/utils";
+import { ADMIN_ROLES, type Permission, type Role } from "@/lib/permissions";
 import { logAction } from "@/lib/logging";
 
 // Tipos
@@ -20,16 +21,38 @@ export type Genre =
   | "romantico"
   | "forro";
 
-// Verificação de autenticação via cookie
-async function verifyAuth() {
+// Verificação de autenticação via cookie com suporte a permissões
+export async function verifyAuth(requiredPermission?: Permission) {
   const { cookies } = await import("next/headers");
   const { getUserFromSession } = await import("@/lib/session");
   const cookieStore = await cookies();
   const session = getUserFromSession(cookieStore);
 
-  if (!session || session.role !== "admin") {
+  if (!session || !ADMIN_ROLES.includes(session.role as Role)) {
     throw new Error("Não autorizado");
   }
+
+  if (session.role === "super_admin") return session;
+
+  if (requiredPermission) {
+    const { rolePermissions } = await import("@/db/schema");
+    const { and, eq: eqOp } = await import("drizzle-orm");
+    const perm = await db
+      .select()
+      .from(rolePermissions)
+      .where(
+        and(
+          eqOp(rolePermissions.role, session.role),
+          eqOp(rolePermissions.permission, requiredPermission),
+        ),
+      )
+      .limit(1)
+      .get();
+
+    if (!perm) throw new Error("Permissão insuficiente");
+  }
+
+  return session;
 }
 
 // ===== ACTIONS DE MÚSICAS =====

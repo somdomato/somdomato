@@ -20,7 +20,11 @@ export type LogAction =
   | "admin:login"
   | "admin:logout"
   | "user:request"
-  | "user:upload";
+  | "user:upload"
+  | "user:created"
+  | "user:updated"
+  | "user:deleted"
+  | "permissions:updated";
 
 interface LogEntry {
   action: LogAction;

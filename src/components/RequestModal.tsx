@@ -264,6 +264,7 @@ export function RequestModal({ isOpen, onClose }: RequestModalProps) {
             if (data.done) {
               toast.success(data.message || "Enviado! Aguardando aprovação.");
               setDeezerDownloading(null);
+              onClose();
               return;
             }
             setDeezerDownloading((prev) => ({

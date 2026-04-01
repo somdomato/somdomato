@@ -61,24 +61,28 @@ export const slides = [
     src: "https://cdn.somdomato.com/images/slides/jem.webp",
     alt: "Jorge & Mateus",
     title: "Jorge & Mateus",
+    objectPosition: "center 20%",
   },
   {
     id: 3,
     src: "https://cdn.somdomato.com/images/slides/hej.webp",
     alt: "Henrique & Juliano",
     title: "Henrique & Juliano",
+    objectPosition: "center 20%",
   },
   {
     id: 4,
     src: "https://cdn.somdomato.com/images/slides/mek.webp",
     alt: "Matheus & Kauan",
     title: "Matheus & Kauan",
+    objectPosition: "center 20%",
   },
   {
     id: 5,
     src: "https://cdn.somdomato.com/images/slides/par.webp",
     alt: "Paraná",
     title: "Paraná",
+    objectPosition: "center 20%",
   },
 ];
 

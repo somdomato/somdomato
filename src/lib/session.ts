@@ -1,9 +1,11 @@
+import { ALL_ROLES, type Role } from "./permissions";
+
 const SESSION_EXPIRATION_SECONDS = 60 * 60 * 24 * 7; // 7 dias
 const COOKIE_SESSION_KEY = "session-id";
 
 export type UserSession = {
   id: string;
-  role: "user" | "admin";
+  role: Role;
 };
 
 export type Cookies = {
@@ -33,7 +35,7 @@ function decodeSession(raw: string | undefined): UserSession | null {
     if (
       parsed &&
       typeof parsed.id === "string" &&
-      (parsed.role === "user" || parsed.role === "admin")
+      ALL_ROLES.includes(parsed.role)
     ) {
       return parsed as UserSession;
     }
@@ -53,7 +55,9 @@ export async function createUserSession(
   cookies: Pick<Cookies, "set">,
 ) {
   const sessionId = user.id != null ? String(user.id) : crypto.randomUUID();
-  const role = user.role === "admin" ? "admin" : "user";
+  const role: Role = ALL_ROLES.includes(user.role as Role)
+    ? (user.role as Role)
+    : "user";
   const userSession: UserSession = { id: sessionId, role };
   setCookie(userSession, cookies);
   return userSession;

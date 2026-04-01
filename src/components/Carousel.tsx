@@ -10,6 +10,7 @@ interface CarouselProps {
     src: string;
     alt: string;
     title?: string;
+    objectPosition?: string;
   }[];
   autoplay?: boolean;
   interval?: number;
@@ -79,6 +80,11 @@ export default function Carousel({
                 fill
                 sizes="(max-width: 1024px) 100vw, 1024px"
                 className="object-cover"
+                style={
+                  image.objectPosition
+                    ? { objectPosition: image.objectPosition }
+                    : undefined
+                }
                 priority={index === 0}
               />
             </div>

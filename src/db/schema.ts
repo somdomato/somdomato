@@ -114,6 +114,16 @@ export const adminLogs = sqliteTable("admin_logs", {
 });
 
 // =============================================================================
+// PERMISSÕES POR CARGO
+// =============================================================================
+
+export const rolePermissions = sqliteTable("role_permissions", {
+  id: int().primaryKey({ autoIncrement: true }),
+  role: text().notNull(), // "admin", "moderator"
+  permission: text().notNull(), // "songs:manage", "uploads:manage", etc.
+});
+
+// =============================================================================
 // UPLOADS (ENVIOS DE USUÁRIOS)
 // =============================================================================
 

@@ -1,13 +1,20 @@
 import "dotenv/config";
-import { users } from "./schema";
+import { users, rolePermissions } from "./schema";
 import { db } from "./index";
 import { generateSalt, hashPassword } from "../lib/password";
+import {
+  SUPER_ADMIN_EMAIL,
+  DEFAULT_ROLE_PERMISSIONS,
+} from "../lib/permissions";
+import { eq } from "drizzle-orm";
 import seedUtils from "./utils";
 
 const email = process.env.ADMIN_EMAIL!;
 const password = process.env.ADMIN_PASSWORD!;
 const salt = generateSalt();
 const hashed = await hashPassword(password, salt);
+
+const role = email === SUPER_ADMIN_EMAIL ? "super_admin" : "admin";
 
 await db
   .insert(users)
@@ -16,7 +23,7 @@ await db
     email,
     password: hashed,
     salt,
-    role: "admin",
+    role,
   })
   .onConflictDoUpdate({
     target: users.email,
@@ -24,11 +31,23 @@ await db
       name: "Admin",
       password: hashed,
       salt,
-      role: "admin",
+      role,
     },
   });
 
-console.log(`✓ Admin criado: Admin <${email}>`);
+console.log(`✓ Admin criado: Admin <${email}> (${role})`);
+
+// Seed default role permissions
+for (const [roleName, perms] of Object.entries(DEFAULT_ROLE_PERMISSIONS)) {
+  // Clear existing permissions for this role
+  await db.delete(rolePermissions).where(eq(rolePermissions.role, roleName));
+  if (perms.length > 0) {
+    await db
+      .insert(rolePermissions)
+      .values(perms.map((permission) => ({ role: roleName, permission })));
+  }
+  console.log(`✓ Permissões padrão para "${roleName}": ${perms.join(", ")}`);
+}
 
 async function main() {
   const musicPath = process.env.MUSIC_PATH;
