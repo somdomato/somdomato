@@ -26,8 +26,15 @@ fi
 pnpm install
 
 if pnpm run push; then
-  echo "Migrações aplicadas com sucesso."
+  echo "Push do banco de dados com sucesso."
   pnpm run seed
+else
+  echo "Erro ao aplicar push do banco de dados. Abortando deploy."
+  exit 1
+fi
+
+if pnpm run migrate; then
+  echo "Migrações aplicadas com sucesso."
 else
   echo "Erro ao aplicar migrações. Abortando deploy."
   exit 1
