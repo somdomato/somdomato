@@ -4,6 +4,7 @@ import { uploads } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import fs from "node:fs";
 import { approveUpload, cancelAutoApprove } from "@/lib/upload";
+import { logAction } from "@/lib/logging";
 
 export async function PATCH(
   request: NextRequest,
@@ -18,7 +19,7 @@ export async function PATCH(
 
   try {
     const body = await request.json();
-    const { action, genre } = body;
+    const { action, genre, rotation, timeSlots } = body;
 
     const [upload] = await db
       .select()
@@ -36,17 +37,28 @@ export async function PATCH(
       if (!result.success) {
         return NextResponse.json({ error: result.error }, { status: 404 });
       }
+
+      // Update rotation and timeSlots if provided
+      if (rotation || timeSlots !== undefined) {
+        const { songs } = await import("@/db/schema");
+        const updateData: Record<string, unknown> = {};
+        if (rotation) updateData.rotation = rotation;
+        if (timeSlots !== undefined) updateData.timeSlots = timeSlots;
+        await db
+          .update(songs)
+          .set(updateData)
+          .where(eq(songs.id, result.songId));
+      }
+
       return NextResponse.json({ success: true, message: "Upload approved" });
     }
 
     if (action === "reject") {
       cancelAutoApprove(uploadId);
-      // Delete file
       if (fs.existsSync(upload.path)) {
         fs.unlinkSync(upload.path);
       }
 
-      // Update upload status
       await db
         .update(uploads)
         .set({
@@ -56,7 +68,69 @@ export async function PATCH(
         })
         .where(eq(uploads.id, uploadId));
 
+      await logAction({
+        action: "upload:rejected",
+        targetType: "upload",
+        targetId: uploadId,
+        details: { title: upload.title, artist: upload.artist },
+      });
+
       return NextResponse.json({ success: true, message: "Upload rejected" });
+    }
+
+    // AI-approved: admin keeps the approval (actually add to library)
+    if (action === "ai_keep") {
+      const result = await approveUpload(
+        uploadId,
+        genre || upload.autoApproveGenre || "geral",
+      );
+      if (!result.success) {
+        return NextResponse.json({ error: result.error }, { status: 404 });
+      }
+
+      if (rotation || timeSlots !== undefined) {
+        const { songs } = await import("@/db/schema");
+        const updateData: Record<string, unknown> = {};
+        if (rotation) updateData.rotation = rotation;
+        if (timeSlots !== undefined) updateData.timeSlots = timeSlots;
+        await db
+          .update(songs)
+          .set(updateData)
+          .where(eq(songs.id, result.songId));
+      }
+
+      await logAction({
+        action: "upload:ai_kept",
+        targetType: "upload",
+        targetId: uploadId,
+        details: { title: upload.title, artist: upload.artist, genre },
+      });
+
+      return NextResponse.json({ success: true, message: "AI approval kept" });
+    }
+
+    // AI-approved: admin rejects
+    if (action === "ai_reject") {
+      if (fs.existsSync(upload.path)) {
+        fs.unlinkSync(upload.path);
+      }
+
+      await db
+        .update(uploads)
+        .set({ status: "rejected" })
+        .where(eq(uploads.id, uploadId));
+
+      await logAction({
+        action: "upload:ai_rejected",
+        targetType: "upload",
+        targetId: uploadId,
+        details: { title: upload.title, artist: upload.artist },
+      });
+
+      return NextResponse.json({
+        success: true,
+        message: "AI approval rejected",
+      });
     }
 
     return NextResponse.json({ error: "Invalid action" }, { status: 400 });
@@ -91,13 +165,20 @@ export async function DELETE(
       return NextResponse.json({ error: "Upload not found" }, { status: 404 });
     }
 
-    // Delete file if exists
     if (fs.existsSync(upload.path)) {
       fs.unlinkSync(upload.path);
     }
 
-    // Delete from database
+    const wasAiApproved = upload.status === "ai_approved";
+
     await db.delete(uploads).where(eq(uploads.id, uploadId));
+
+    await logAction({
+      action: wasAiApproved ? "upload:ai_deleted" : "upload:deleted",
+      targetType: "upload",
+      targetId: uploadId,
+      details: { title: upload.title, artist: upload.artist },
+    });
 
     return NextResponse.json({ success: true });
   } catch (error) {

@@ -8,6 +8,7 @@ import { promises as fs } from "node:fs";
 import path from "node:path";
 import NodeID3 from "node-id3";
 import { normalizeString } from "@/db/utils";
+import { logAction } from "@/lib/logging";
 
 // Tipos
 export type RotationType = "inativo" | "leve" | "normal" | "pesado";
@@ -291,6 +292,19 @@ export async function updateSong(
 
   // Retornar a música atualizada para que o cliente possa sincronizar imediatamente
   const updated = await db.select().from(songs).where(eq(songs.id, id)).get();
+
+  await logAction({
+    action: "song:updated",
+    targetType: "song",
+    targetId: id,
+    details: {
+      title: updated?.title,
+      artist: updated?.artist,
+      genre: data.genre,
+      rotation: data.rotation,
+    },
+  });
+
   return { success: true, song: updated };
 }
 
@@ -314,6 +328,13 @@ export async function deleteSong(id: number) {
 
   // Deletar do banco
   await db.delete(songs).where(eq(songs.id, id));
+
+  await logAction({
+    action: "song:deleted",
+    targetType: "song",
+    targetId: id,
+    details: { title: song.title, artist: song.artist },
+  });
 
   revalidatePath("/admin");
   return { success: true };
@@ -401,6 +422,23 @@ export async function addRequest(songId: number) {
     console.warn("Falha ao emitir request:added (admin)", e);
   }
 
+  // Buscar info da música para log
+  const songInfo = await db
+    .select({ title: songs.title, artist: songs.artist })
+    .from(songs)
+    .where(eq(songs.id, songId))
+    .get();
+  await logAction({
+    action: "request:added",
+    details: {
+      title: songInfo?.title,
+      artist: songInfo?.artist,
+      source: "admin",
+    },
+    targetType: "request",
+    targetId: songId,
+  });
+
   revalidatePath("/admin/requests");
   return { success: true };
 }
@@ -421,6 +459,13 @@ export async function deleteRequest(id: number) {
   } catch (e) {
     console.warn("Falha ao emitir request:removed (admin)", e);
   }
+
+  await logAction({
+    action: "request:removed",
+    details: { source: "admin" },
+    targetType: "request",
+    targetId: id,
+  });
 
   revalidatePath("/admin/requests");
   return { success: true };
@@ -472,6 +517,13 @@ export async function reorderRequests(requestId: number, newOrder: number) {
   } catch (e) {
     console.warn("Falha ao emitir requests:updated (admin)", e);
   }
+
+  await logAction({
+    action: "request:reordered",
+    details: { newOrder },
+    targetType: "request",
+    targetId: requestId,
+  });
 
   revalidatePath("/admin/requests");
   return { success: true };

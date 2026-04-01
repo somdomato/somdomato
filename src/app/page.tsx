@@ -42,28 +42,32 @@ export default async function Home() {
       {/* Chat + Estatísticas lado a lado */}
       <section className="w-full">
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
-          <div className="lg:col-span-3 flex flex-col gap-2">
-            <h3 className="flex items-center gap-2 text-base font-semibold text-white/80 m-0">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="w-4 h-4 text-primary"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-              </svg>
-              Bate-Papo
-            </h3>
-            <iframe
-              className="w-full rounded-xl border-2 border-primary/20 h-72 lg:h-88"
-              src="https://irc.somdomato.com"
-              title="Bate-Papo - Rádio Som do Mato"
-              allowFullScreen
-            />
+          <div className="lg:col-span-3">
+            <div className="bg-background-alt border-2 border-primary/20 rounded-xl p-4 h-full flex flex-col">
+              <h3 className="flex items-center gap-2 font-semibold text-base mb-3 m-0 pb-2.5 border-b border-black/30">
+                <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-primary/20">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="w-4 h-4 text-primary"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                  </svg>
+                </span>
+                Bate-Papo
+              </h3>
+              <iframe
+                className="w-full rounded-lg border border-primary/10 flex-1 min-h-72 lg:min-h-96"
+                src="https://irc.somdomato.com"
+                title="Bate-Papo - Rádio Som do Mato"
+                allowFullScreen
+              />
+            </div>
           </div>
           <div className="lg:col-span-2">
             <MiniStats />

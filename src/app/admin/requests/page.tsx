@@ -11,6 +11,7 @@ import {
   ArrowDown,
   ListOrdered,
   Upload,
+  ScrollText,
 } from "lucide-react";
 import { LogoutButton } from "@/components/LogoutButton";
 import { toast } from "sonner";
@@ -195,24 +196,31 @@ export default function RequestsPage() {
       {/* Tabs */}
       <div className="bg-background-alt border-b border-primary/30">
         <div className="container mx-auto px-4">
-          <div className="flex gap-2">
+          <div className="flex gap-1 overflow-x-auto">
             <Link
               href="/admin"
-              className="flex items-center gap-2 px-6 py-3 border-b-2 border-transparent text-gray-400 hover:text-white transition-colors"
+              className="flex items-center gap-2 px-4 sm:px-6 py-3 border-b-2 border-transparent text-gray-400 hover:text-white transition-colors whitespace-nowrap text-sm"
             >
-              <Music size={20} />
-              Músicas
+              <Music size={18} />
+              <span className="hidden sm:inline">Músicas</span>
             </Link>
-            <div className="flex items-center gap-2 px-6 py-3 border-b-2 border-primary text-primary">
-              <ListOrdered size={20} />
-              Pedidos
+            <div className="flex items-center gap-2 px-4 sm:px-6 py-3 border-b-2 border-primary text-primary whitespace-nowrap text-sm">
+              <ListOrdered size={18} />
+              <span className="hidden sm:inline">Pedidos</span>
             </div>
             <Link
               href="/admin/uploads"
-              className="flex items-center gap-2 px-6 py-3 border-b-2 border-transparent text-gray-400 hover:text-white transition-colors"
+              className="flex items-center gap-2 px-4 sm:px-6 py-3 border-b-2 border-transparent text-gray-400 hover:text-white transition-colors whitespace-nowrap text-sm"
             >
-              <Upload size={20} />
-              Envios
+              <Upload size={18} />
+              <span className="hidden sm:inline">Envios</span>
+            </Link>
+            <Link
+              href="/admin/logs"
+              className="flex items-center gap-2 px-4 sm:px-6 py-3 border-b-2 border-transparent text-gray-400 hover:text-white transition-colors whitespace-nowrap text-sm"
+            >
+              <ScrollText size={18} />
+              <span className="hidden sm:inline">Logs</span>
             </Link>
           </div>
         </div>

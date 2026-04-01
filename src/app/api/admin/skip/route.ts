@@ -1,3 +1,5 @@
+import { logAction } from "@/lib/logging";
+
 export async function POST() {
   try {
     // Call the public endpoint that selects the next song and emits song:changed
@@ -12,6 +14,11 @@ export async function POST() {
     }
 
     const json = await res.json();
+
+    await logAction({
+      action: "admin:skip",
+      details: { nextSong: json?.title, nextArtist: json?.artist },
+    });
 
     // Try to trigger Liquidsoap to fetch next/skip immediately, if control URL provided
     const controlUrl = process.env.LIQUIDSOAP_CONTROL_URL;

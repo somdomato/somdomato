@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { uploads } from "@/db/schema";
-import { desc, eq } from "drizzle-orm";
+import { desc, eq, sql } from "drizzle-orm";
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
@@ -20,12 +20,12 @@ export async function GET(request: NextRequest) {
         .limit(limit)
         .offset(offset),
       db
-        .select({ count: uploads.id })
+        .select({ count: sql<number>`count(*)` })
         .from(uploads)
         .where(eq(uploads.status, status)),
     ]);
 
-    const total = countResult.length;
+    const total = countResult[0]?.count || 0;
 
     return NextResponse.json({
       items,

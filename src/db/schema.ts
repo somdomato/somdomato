@@ -100,6 +100,20 @@ export const pageViews = sqliteTable("page_views", {
 });
 
 // =============================================================================
+// ADMIN LOGS
+// =============================================================================
+
+export const adminLogs = sqliteTable("admin_logs", {
+  id: int().primaryKey({ autoIncrement: true }),
+  action: text().notNull(), // "upload:approved", "upload:rejected", "upload:deleted", "upload:ai_approved", "song:updated", "song:deleted", "request:added", "request:removed", "admin:skip", etc.
+  details: text(), // JSON string with additional context
+  targetType: text(), // "upload", "song", "request"
+  targetId: int(), // ID of the affected record
+  ip: text(), // IP of the actor
+  createdAt: int({ mode: "timestamp" }).$defaultFn(() => new Date()),
+});
+
+// =============================================================================
 // UPLOADS (ENVIOS DE USUÁRIOS)
 // =============================================================================
 
@@ -114,8 +128,9 @@ export const uploads = sqliteTable("uploads", {
   path: text().notNull(), // Caminho completo do arquivo
   duration: int(), // Duração em segundos (do Deezer)
   deezerGenre: text(), // Gênero reportado pelo Deezer (ex: "Sertanejo")
-  status: text().default("pending"), // pending, approved, rejected
+  status: text().default("pending"), // pending, approved, rejected, ai_approved
   autoApproved: int().default(0), // 1 se foi auto-aprovado
+  aiReason: text(), // Justificativa da IA para aprovação/rejeição
   autoApproveAt: int({ mode: "timestamp" }), // Quando será auto-aprovado (null = não elegível)
   autoApproveGenre: text(), // Gênero a usar na auto-aprovação
   createdAt: int({ mode: "timestamp" }).$defaultFn(() => new Date()),

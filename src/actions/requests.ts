@@ -5,6 +5,7 @@ import { songs, requests } from "@/db/schema";
 import { eq, desc } from "drizzle-orm";
 import { checkMusicRepetition } from "@/lib/protections";
 import { revalidatePath } from "next/cache";
+import { logAction } from "@/lib/logging";
 
 interface SearchSongsParams {
   query?: string;
@@ -136,6 +137,13 @@ export async function requestSong(songId: number) {
       .update(songs)
       .set({ requests: (song.requests || 0) + 1 })
       .where(eq(songs.id, songId));
+
+    await logAction({
+      action: "user:request",
+      details: { title: song.title, artist: song.artist },
+      targetType: "request",
+      targetId: songId,
+    });
 
     revalidatePath("/pedidos");
 

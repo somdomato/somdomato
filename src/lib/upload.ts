@@ -1,8 +1,9 @@
-import { db } from "../db/index.ts";
+import { db } from "../db";
 import { uploads, songs } from "../db/schema.ts";
 import { eq, and, isNotNull } from "drizzle-orm";
 import fs from "node:fs";
 import path from "node:path";
+import { logAction } from "./logging.ts";
 
 const MUSIC_PATH = process.env.MUSIC_PATH || "/var/music/sdm";
 
@@ -81,6 +82,18 @@ export async function approveUpload(
     .update(uploads)
     .set({ status: "approved" })
     .where(eq(uploads.id, uploadId));
+
+  await logAction({
+    action: "upload:approved",
+    targetType: "upload",
+    targetId: uploadId,
+    details: {
+      title: upload.title,
+      artist: upload.artist,
+      genre,
+      songId: inserted.id,
+    },
+  });
 
   return { success: true, songId: inserted.id };
 }
@@ -181,23 +194,36 @@ async function executeAutoApprove(uploadId: number): Promise<void> {
       return;
     }
 
-    const genre = upload.autoApproveGenre || "geral";
-    const result = await approveUpload(uploadId, genre);
+    // Move to ai_approved status (admin can then keep/reject/delete)
+    await db
+      .update(uploads)
+      .set({ status: "ai_approved", autoApproved: 1 })
+      .where(eq(uploads.id, uploadId));
 
-    if (result.success) {
-      await db
-        .update(uploads)
-        .set({ status: "approved", autoApproved: 1 })
-        .where(eq(uploads.id, uploadId));
+    await logAction({
+      action: "upload:ai_approved",
+      targetType: "upload",
+      targetId: uploadId,
+      details: {
+        title: upload.title,
+        artist: upload.artist,
+        genre: upload.autoApproveGenre,
+        reason: upload.aiReason || "Auto-aprovação por critérios automáticos",
+      },
+    });
 
-      console.log(
-        `[auto-approve] Upload #${uploadId} "${upload.title}" aprovado automaticamente.`,
-      );
-    } else {
-      console.error(
-        `[auto-approve] Falha ao aprovar upload #${uploadId}: ${result.error}`,
-      );
+    // Emit socket event for real-time update
+    if (global.io) {
+      global.io.emit("upload:ai_approved", {
+        id: uploadId,
+        title: upload.title,
+        artist: upload.artist,
+      });
     }
+
+    console.log(
+      `[auto-approve] Upload #${uploadId} "${upload.title}" movido para aprovação IA.`,
+    );
   } catch (err) {
     console.error(`[auto-approve] Erro no upload #${uploadId}:`, err);
   }

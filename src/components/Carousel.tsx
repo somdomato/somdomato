@@ -67,7 +67,7 @@ export default function Carousel({
     >
       <div className="relative overflow-hidden rounded-xl shadow-2xl">
         {/* Imagens */}
-        <div className="relative aspect-[16/9] w-full">
+        <div className="relative aspect-[2.4/1] sm:aspect-[2.8/1] md:aspect-[3.2/1] w-full">
           {images.map((image, index) => (
             <div
               key={image.id}
@@ -86,8 +86,8 @@ export default function Carousel({
 
           {/* Overlay com título do slide */}
           {images[currentIndex]?.title && (
-            <div className="absolute bottom-0 left-0 right-0 bg-linear-to-t from-black/70 to-transparent px-5 py-4 pointer-events-none">
-              <p className="text-white font-semibold text-sm sm:text-base drop-shadow">
+            <div className="absolute bottom-0 left-0 right-0 bg-linear-to-t from-black/70 to-transparent px-4 py-3 pointer-events-none">
+              <p className="text-white font-semibold text-xs sm:text-sm drop-shadow">
                 {images[currentIndex].title}
               </p>
             </div>
@@ -99,30 +99,30 @@ export default function Carousel({
           <>
             <button
               onClick={goToPrevious}
-              className="absolute left-3 top-1/2 -translate-y-1/2 rounded-full bg-black/60 p-2.5 backdrop-blur-sm transition-all hover:bg-primary hover:scale-105 shadow-lg"
+              className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full bg-black/50 p-1.5 sm:p-2 backdrop-blur-sm transition-all hover:bg-primary hover:scale-105 shadow-lg"
               aria-label="Slide anterior"
             >
-              <ChevronLeft className="h-5 w-5" />
+              <ChevronLeft className="h-4 w-4" />
             </button>
 
             <button
               onClick={goToNext}
-              className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full bg-black/60 p-2.5 backdrop-blur-sm transition-all hover:bg-primary hover:scale-105 shadow-lg"
+              className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-black/50 p-1.5 sm:p-2 backdrop-blur-sm transition-all hover:bg-primary hover:scale-105 shadow-lg"
               aria-label="Próximo slide"
             >
-              <ChevronRight className="h-5 w-5" />
+              <ChevronRight className="h-4 w-4" />
             </button>
           </>
         )}
 
         {/* Indicadores */}
         {showIndicators && images.length > 1 && (
-          <div className="absolute bottom-4 left-1/2 flex -translate-x-1/2 gap-2">
+          <div className="absolute bottom-2 left-1/2 flex -translate-x-1/2 gap-1.5">
             {images.map((image, index) => (
               <button
                 key={image.id}
                 onClick={() => goToSlide(index)}
-                className={`h-1.5 rounded-full transition-all duration-300 ${index === currentIndex ? "w-8 bg-primary" : "w-2 bg-white/40 hover:bg-white/70"}`}
+                className={`h-1 rounded-full transition-all duration-300 ${index === currentIndex ? "w-6 bg-primary" : "w-1.5 bg-white/40 hover:bg-white/70"}`}
                 aria-label={`Ir para slide ${index + 1}`}
               />
             ))}

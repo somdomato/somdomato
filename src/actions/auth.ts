@@ -7,6 +7,7 @@ import { users } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { comparePasswords } from "@/lib/password";
 import { createUserSession, removeUserFromSession } from "@/lib/session";
+import { logAction } from "@/lib/logging";
 
 export async function signIn(
   _prevState: { error: string },
@@ -46,10 +47,17 @@ export async function signIn(
     { id: user.id, role: user.role ?? "user" },
     cookieStore,
   );
+  await logAction({
+    action: "admin:login",
+    details: { email },
+    targetType: "user",
+    targetId: user.id,
+  });
   redirect("/admin");
 }
 
 export async function logOut() {
+  await logAction({ action: "admin:logout" });
   const cookieStore = await cookies();
   await removeUserFromSession(cookieStore);
   redirect("/admin/login");

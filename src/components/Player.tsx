@@ -191,29 +191,29 @@ export default function Player({ className = "" }: { className?: string }) {
 
   return (
     <div
-      className={`flex items-center gap-2 sm:gap-3 max-w-2xl bg-linear-to-r from-background-alt to-[#2c3b26] rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 border border-primary/30 shadow-lg ${className}`}
+      className={`flex items-center gap-2 max-w-xl bg-linear-to-r from-background-alt to-[#2c3b26] rounded-lg px-2 py-1 sm:px-2.5 sm:py-1.5 border border-primary/30 shadow-lg ${className}`}
     >
       {/* Cover Image */}
       <div className="shrink-0">
         <Image
           src={cover}
           alt="Cover"
-          className="w-10 h-10 sm:w-12 sm:h-12 rounded border border-primary/40 object-cover"
-          width={48}
-          height={48}
+          className="w-8 h-8 sm:w-10 sm:h-10 rounded border border-primary/40 object-cover"
+          width={40}
+          height={40}
         />
       </div>
 
       {/* Metadata */}
       <div className="flex-1 min-w-0">
         <div
-          className="text-xs sm:text-sm font-medium text-white truncate"
+          className="text-[11px] sm:text-xs font-medium text-white truncate leading-tight"
           title={title}
         >
           {title}
         </div>
         {loading && playing ? (
-          <div className="flex items-center gap-1 text-xs text-primary animate-pulse">
+          <div className="flex items-center gap-1 text-[10px] text-primary animate-pulse">
             <span>Carregando</span>
             <span className="inline-flex">
               <span
@@ -237,16 +237,19 @@ export default function Player({ className = "" }: { className?: string }) {
             </span>
           </div>
         ) : (
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-slate-400 truncate" title={artist}>
+          <div className="flex items-center gap-1.5">
+            <span
+              className="text-[10px] sm:text-xs text-slate-400 truncate"
+              title={artist}
+            >
               {artist}
             </span>
             {listeners.current > 0 && (
               <span
-                className="flex items-center gap-1 text-xs text-emerald-400 bg-emerald-500/20 px-1.5 py-0.5 rounded"
+                className="flex items-center gap-0.5 text-[10px] text-emerald-400 bg-emerald-500/20 px-1 py-0.5 rounded leading-none"
                 title={`Pico: ${listeners.peak}`}
               >
-                <Users size={10} />
+                <Users size={9} />
                 {listeners.current}
               </span>
             )}
@@ -260,18 +263,18 @@ export default function Player({ className = "" }: { className?: string }) {
           <button
             type="button"
             onClick={() => setShowGenreDropdown(!showGenreDropdown)}
-            className="flex items-center gap-1.5 px-2 sm:px-3 py-1.5 rounded-lg bg-primary/20 hover:bg-primary/30 border border-primary/40 transition-all group"
+            className="flex items-center gap-1 px-2 py-1 rounded-lg bg-primary/20 hover:bg-primary/30 border border-primary/40 transition-all group"
             title="Trocar estação"
           >
             <Radio
-              size={14}
+              size={12}
               className="text-primary group-hover:scale-110 transition-transform"
             />
-            <span className="text-xs sm:text-sm font-medium text-white max-w-16 sm:max-w-none truncate">
+            <span className="text-[11px] sm:text-xs font-medium text-white max-w-14 sm:max-w-none truncate">
               {currentGenreLabel}
             </span>
             <svg
-              className={`w-3 h-3 sm:w-4 sm:h-4 text-primary transition-transform duration-200 ${showGenreDropdown ? "rotate-180" : ""}`}
+              className={`w-3 h-3 text-primary transition-transform duration-200 ${showGenreDropdown ? "rotate-180" : ""}`}
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -327,18 +330,18 @@ export default function Player({ className = "" }: { className?: string }) {
       )}
 
       {/* Controls */}
-      <div className="flex items-center gap-1.5 sm:gap-2">
+      <div className="flex items-center gap-1 sm:gap-1.5">
         {/* Play/Pause */}
         <button
           type="button"
           onClick={handlePlayPause}
-          className="w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center rounded-full bg-primary text-white hover:bg-primary/90 transition-all active:scale-95 shadow-md"
+          className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center rounded-full bg-primary text-white hover:bg-primary/90 transition-all active:scale-95 shadow-md"
           aria-label={playing ? "Pausar" : "Reproduzir"}
         >
           {playing ? (
-            <Pause size={18} className="sm:w-5 sm:h-5" />
+            <Pause size={16} className="sm:w-[18px] sm:h-[18px]" />
           ) : (
-            <Play size={18} className="ml-0.5 sm:w-5 sm:h-5" />
+            <Play size={16} className="ml-0.5 sm:w-[18px] sm:h-[18px]" />
           )}
         </button>
 
@@ -347,24 +350,20 @@ export default function Player({ className = "" }: { className?: string }) {
           type="button"
           onClick={handleReload}
           disabled={!playing}
-          className="hidden sm:flex w-7 h-7 sm:w-8 sm:h-8 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition disabled:opacity-30 disabled:cursor-not-allowed"
+          className="hidden sm:flex w-7 h-7 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition disabled:opacity-30 disabled:cursor-not-allowed"
           aria-label="Recarregar stream"
         >
-          <RotateCw size={14} className="sm:w-4 sm:h-4" />
+          <RotateCw size={13} />
         </button>
 
         {/* Volume */}
         <button
           type="button"
           onClick={() => toggleMute()}
-          className="hidden sm:flex w-7 h-7 sm:w-8 sm:h-8 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition"
+          className="hidden sm:flex w-7 h-7 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition"
           aria-label={muted ? "Ativar som" : "Silenciar"}
         >
-          {muted ? (
-            <VolumeX size={14} className="sm:w-4 sm:h-4" />
-          ) : (
-            <Volume2 size={14} className="sm:w-4 sm:h-4" />
-          )}
+          {muted ? <VolumeX size={13} /> : <Volume2 size={13} />}
         </button>
         <input
           type="range"
@@ -373,7 +372,7 @@ export default function Player({ className = "" }: { className?: string }) {
           value={muted ? 0 : volume}
           onChange={(e) => setVolume(Number.parseInt(e.target.value, 10))}
           style={{ "--value": `${muted ? 0 : volume}%` } as React.CSSProperties}
-          className="hidden lg:block w-14 sm:w-16 accent-primary"
+          className="hidden lg:block w-12 sm:w-14 accent-primary"
           aria-label="Volume"
         />
 

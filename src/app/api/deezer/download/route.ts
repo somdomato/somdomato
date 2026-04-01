@@ -7,6 +7,8 @@ import fs from "node:fs";
 import { checkAutoApproval, scheduleAutoApprove } from "@/lib/upload";
 import { eq } from "drizzle-orm";
 import { AUTO_APPROVE_DELAY_MINUTES } from "@/config";
+import { evaluateTrack } from "@/lib/ai";
+import { logAction } from "@/lib/logging";
 
 const UPLOADS_DIR = process.env.UPLOADS_DIR || "/var/music/sdm/uploads";
 const MAX_UPLOADS_PER_HOUR = 5;
@@ -298,7 +300,7 @@ export async function POST(request: NextRequest) {
           })
           .returning({ id: uploads.id });
 
-        // Check auto-approval criteria via Deezer metadata
+        // Check auto-approval criteria via Deezer metadata + AI
         try {
           const check = await checkAutoApproval(String(trackId));
 
@@ -311,7 +313,36 @@ export async function POST(request: NextRequest) {
             })
             .where(eq(uploads.id, uploadRecord.id));
 
-          if (check.approved) {
+          // Run AI evaluation for richer analysis
+          let aiResult: {
+            approved: boolean;
+            reason: string;
+            suggestedGenre: string;
+          } | null = null;
+          try {
+            aiResult = await evaluateTrack({
+              title,
+              artist,
+              deezerGenre: check.deezerGenre || "Desconhecido",
+              duration: check.duration || 0,
+            });
+
+            // Store AI reason in the upload record
+            await db
+              .update(uploads)
+              .set({ aiReason: aiResult.reason })
+              .where(eq(uploads.id, uploadRecord.id));
+          } catch (aiErr) {
+            console.error("AI evaluation failed:", aiErr);
+          }
+
+          // Use AI result if available, fall back to heuristic
+          const shouldApprove = aiResult?.approved ?? check.approved;
+          const approveGenre =
+            aiResult?.suggestedGenre ??
+            (check.approved ? check.genre : "geral");
+
+          if (shouldApprove) {
             const delayMs = AUTO_APPROVE_DELAY_MINUTES * 60 * 1000;
             const autoApproveAt = new Date(Date.now() + delayMs);
 
@@ -319,12 +350,25 @@ export async function POST(request: NextRequest) {
               .update(uploads)
               .set({
                 autoApproveAt,
-                autoApproveGenre: check.genre,
+                autoApproveGenre: approveGenre,
               })
               .where(eq(uploads.id, uploadRecord.id));
 
             // Schedule the actual approval after the delay
             scheduleAutoApprove(uploadRecord.id, delayMs);
+
+            await logAction({
+              action: "user:upload",
+              targetType: "upload",
+              targetId: uploadRecord.id,
+              details: {
+                title,
+                artist,
+                autoApprove: true,
+                aiReason: aiResult?.reason,
+              },
+              ip: clientIp,
+            });
 
             const delayLabel =
               AUTO_APPROVE_DELAY_MINUTES >= 1
@@ -344,6 +388,14 @@ export async function POST(request: NextRequest) {
           console.error("Auto-approve check failed:", e);
           // Continue with pending status — admin will review manually
         }
+
+        await logAction({
+          action: "user:upload",
+          targetType: "upload",
+          targetId: uploadRecord.id,
+          details: { title, artist, autoApprove: false },
+          ip: clientIp,
+        });
 
         send({
           status: "complete",
