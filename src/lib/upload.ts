@@ -1,4 +1,4 @@
-import { db } from "../db";
+import { db } from "../db/index.ts";
 import { uploads, songs } from "../db/schema.ts";
 import { eq, and, isNotNull } from "drizzle-orm";
 import fs from "node:fs";

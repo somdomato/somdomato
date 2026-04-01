@@ -339,9 +339,9 @@ export default function Player({ className = "" }: { className?: string }) {
           aria-label={playing ? "Pausar" : "Reproduzir"}
         >
           {playing ? (
-            <Pause size={16} className="sm:w-[18px] sm:h-[18px]" />
+            <Pause size={16} className="sm:w-4.5 sm:h-4.5" />
           ) : (
-            <Play size={16} className="ml-0.5 sm:w-[18px] sm:h-[18px]" />
+            <Play size={16} className="ml-0.5 sm:w-4.5 sm:h-4.5" />
           )}
         </button>
 
