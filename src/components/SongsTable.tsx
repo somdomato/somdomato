@@ -3,7 +3,14 @@
 import Image from "next/image";
 import { useState, useEffect, useCallback } from "react";
 import { EditSongModal } from "@/components/EditSongModal";
-import { Pencil, Trash2, Search, CopyX } from "lucide-react";
+import {
+  Pencil,
+  Trash2,
+  Search,
+  CopyX,
+  ArrowUp,
+  ArrowDown,
+} from "lucide-react";
 import { toast } from "sonner";
 import { DuplicatesPanel } from "@/components/DuplicatesPanel";
 
@@ -57,6 +64,26 @@ export function SongsTable() {
   const [searchQuery, setSearchQuery] = useState("");
   const [genreFilter, setGenreFilter] = useState<string>("");
   const [showDuplicates, setShowDuplicates] = useState(false);
+  const [sortColumn, setSortColumn] = useState<keyof Song>("artist");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
+
+  const handleSort = (column: keyof Song) => {
+    if (sortColumn === column) {
+      setSortDirection((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortColumn(column);
+      setSortDirection("asc");
+    }
+  };
+
+  const sortedSongs = [...songs].sort((a, b) => {
+    const valA = a[sortColumn];
+    const valB = b[sortColumn];
+    const strA = String(valA ?? "").toLowerCase();
+    const strB = String(valB ?? "").toLowerCase();
+    const cmp = strA.localeCompare(strB);
+    return sortDirection === "asc" ? cmp : -cmp;
+  });
 
   const loadSongs = useCallback(async () => {
     setLoading(true);
@@ -97,12 +124,13 @@ export function SongsTable() {
 
   const getTimeSlotsText = (slots: number | null) => {
     if (!slots) return "Nenhum";
+    if ((slots & 15) === 15) return "Todos";
     const times = [];
     if (slots & 1) times.push("Madrugada");
     if (slots & 2) times.push("Manhã");
     if (slots & 4) times.push("Tarde");
     if (slots & 8) times.push("Noite");
-    return times.join(", ") || "Todos";
+    return times.join(", ") || "Nenhum";
   };
 
   const getRotationColor = (rotation: string | null) => {
@@ -221,31 +249,39 @@ export function SongsTable() {
                     <th className="px-4 py-3 text-left text-sm font-semibold">
                       Capa
                     </th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold">
-                      Arquivo
-                    </th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold">
-                      Artista
-                    </th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold">
-                      Título
-                    </th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold">
-                      Gênero
-                    </th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold">
-                      Rotação
-                    </th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold">
-                      Horários
-                    </th>
+                    {(
+                      [
+                        ["path", "Arquivo"],
+                        ["artist", "Artista"],
+                        ["title", "Título"],
+                        ["genre", "Gênero"],
+                        ["rotation", "Rotação"],
+                        ["timeSlots", "Horários"],
+                      ] as [keyof Song, string][]
+                    ).map(([key, label]) => (
+                      <th
+                        key={key}
+                        className="px-4 py-3 text-left text-sm font-semibold cursor-pointer select-none hover:text-primary transition-colors"
+                        onClick={() => handleSort(key)}
+                      >
+                        <span className="inline-flex items-center gap-1">
+                          {label}
+                          {sortColumn === key &&
+                            (sortDirection === "asc" ? (
+                              <ArrowUp size={14} />
+                            ) : (
+                              <ArrowDown size={14} />
+                            ))}
+                        </span>
+                      </th>
+                    ))}
                     <th className="px-4 py-3 text-center text-sm font-semibold">
                       Ações
                     </th>
                   </tr>
                 </thead>
                 <tbody>
-                  {songs.map((song) => (
+                  {sortedSongs.map((song) => (
                     <tr
                       key={song.id}
                       className="border-b border-primary/10 hover:bg-background/50 transition-colors"
@@ -262,8 +298,18 @@ export function SongsTable() {
                       <td className="px-4 py-3 text-sm max-w-xs truncate">
                         {song.path.split("/").pop()}
                       </td>
-                      <td className="px-4 py-3 text-sm">{song.artist}</td>
-                      <td className="px-4 py-3 text-sm">{song.title}</td>
+                      <td
+                        className="px-4 py-3 text-sm max-w-50 truncate"
+                        title={song.artist}
+                      >
+                        {song.artist}
+                      </td>
+                      <td
+                        className="px-4 py-3 text-sm max-w-50 truncate"
+                        title={song.title}
+                      >
+                        {song.title}
+                      </td>
                       <td className="px-4 py-3 text-sm">
                         <span className="px-2 py-1 rounded bg-primary/20 text-primary text-xs">
                           {song.genre || "geral"}

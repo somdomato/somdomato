@@ -72,7 +72,7 @@ export async function getSongs(
     const qn = normalizeString(query);
 
     // Buscar todos e filtrar em JS usando normalizeString
-    const rows = await db.select().from(songs).orderBy(asc(songs.title));
+    const rows = await db.select().from(songs).orderBy(asc(songs.artist));
 
     const filtered = rows.filter((s) => {
       const title = normalizeString(s.title);
@@ -106,7 +106,7 @@ export async function getSongs(
   const allSongs = await query_builder
     .limit(limit)
     .offset(offset)
-    .orderBy(asc(songs.title));
+    .orderBy(asc(songs.artist));
 
   // Contar total de músicas (com filtro de gênero)
   let totalQuery = db.select().from(songs);

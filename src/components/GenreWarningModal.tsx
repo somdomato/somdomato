@@ -20,7 +20,7 @@ export function GenreWarningModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+    <div className="fixed inset-0 z-10001 flex items-center justify-center bg-black/50 backdrop-blur-sm">
       <div className="bg-background-alt border border-primary/30 rounded-lg shadow-lg p-6 max-w-md mx-4">
         <h2 className="text-xl font-bold text-primary mb-4">
           Trocar para Geral?
