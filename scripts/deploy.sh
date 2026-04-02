@@ -33,12 +33,12 @@ else
   exit 1
 fi
 
-if pnpm run migrate; then
-  echo "Migrações aplicadas com sucesso."
-else
-  echo "Erro ao aplicar migrações. Abortando deploy."
-  exit 1
-fi
+# if pnpm run migrate; then
+#   echo "Migrações aplicadas com sucesso."
+# else
+#   echo "Erro ao aplicar migrações. Abortando deploy."
+#   exit 1
+# fi
 
 pnpm run build || exit 1
 
