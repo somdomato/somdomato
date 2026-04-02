@@ -38,19 +38,19 @@ button {
 }
 
 h1 {
-  @apply text-3xl font-bold mb-4;
+  @apply text-3xl font-bold;
 }
 
 h2 {
-  @apply text-2xl font-semibold mb-3;
+  @apply text-2xl font-semibold;
 }
 
 h3 {
-  @apply text-xl font-semibold mb-2;
+  @apply text-xl font-semibold;
 }
 
 h4 {
-  @apply text-lg font-semibold mb-1;
+  @apply text-lg font-semibold;
 }
 
 a:not(.logo) {
