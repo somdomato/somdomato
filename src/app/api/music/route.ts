@@ -1,7 +1,7 @@
 import { db } from "@/db";
 import { asc, eq, and, sql, notInArray } from "drizzle-orm";
 import fs from "node:fs/promises";
-import { songs, requests } from "@/db/schema";
+import { songs, requests, history } from "@/db/schema";
 import { getCurrentTimeSlot } from "@/lib/time";
 import { getBlockedSongIds } from "@/lib/protections";
 import { isLocalRequest } from "@/lib/localhost";
@@ -281,6 +281,31 @@ export async function GET(request: Request) {
     // Garantir um valor seguro para envio ao frontend (fallback se não tivermos capa)
     const safeCover = selectedSong.cover || "/images/logotipo.svg";
     selectedSong.cover = safeCover;
+
+    // Inserir no histórico e emitir evento socket diretamente aqui,
+    // pois o on_track do Liquidsoap pode não preservar os metadados annotate
+    try {
+      await db.insert(history).values({
+        songId: selectedSong.id,
+        genre,
+        wasRequested: wasFromRequest ? 1 : 0,
+      });
+
+      if (global.io) {
+        global.io.emit("song:changed", {
+          id: selectedSong.id,
+          title: selectedSong.title,
+          artist: selectedSong.artist,
+          cover: safeCover,
+          genre: (selectedSong as Song & { genre?: string }).genre,
+          playedAt: Date.now(),
+          playedOnMountpoint: genre,
+          wasRequested: wasFromRequest,
+        });
+      }
+    } catch (err) {
+      console.error("[music] Erro ao inserir histórico:", err);
+    }
 
     return Response.json({ ...selectedSong, wasRequested: wasFromRequest });
   } catch (error) {

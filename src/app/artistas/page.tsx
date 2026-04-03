@@ -12,7 +12,7 @@ export default function ArtistsPage() {
     selected === "__EMPTY_ARTIST__" ? "(Sem artista)" : selected;
 
   return (
-    <main className="max-w-3xl mx-auto px-4 py-6">
+    <main className="max-w-3xl md:max-w-6xl mx-auto px-4 py-6">
       {selected === null ? (
         <>
           <h1 className="text-2xl font-bold mb-5">Artistas</h1>

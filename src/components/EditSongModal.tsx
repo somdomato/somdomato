@@ -47,31 +47,36 @@ export function EditSongModal({
   const [displayedCover, setDisplayedCover] = useState<string>(
     song.cover || "/images/logotipo.svg",
   );
-  const [coverWasReset, setCoverWasReset] = useState(false); // marca que a capa foi resetada no modal
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
 
     try {
-      const res = await updateSong(song.id, {
-        filename: formData.filename,
-        title: formData.title,
-        artist: formData.artist,
-        album: formData.album,
-        rotation: formData.rotation as RotationType,
-        timeSlots: formData.timeSlots,
-        genre: formData.genre as Genre,
-        allowedInGeneral: formData.allowedInGeneral,
-        coverFile: formData.coverFile || undefined,
-        resetCover: coverWasReset,
-      });
+      // Só enviar campos que realmente mudaram para evitar sobrescritas desnecessárias
+      const payload: Parameters<typeof updateSong>[1] = {};
+
+      if (formData.filename !== (song.path.split("/").pop() || ""))
+        payload.filename = formData.filename;
+      if (formData.title !== song.title) payload.title = formData.title;
+      if (formData.artist !== song.artist) payload.artist = formData.artist;
+      if (formData.album !== (song.album || "")) payload.album = formData.album;
+      if (formData.rotation !== (song.rotation || "normal"))
+        payload.rotation = formData.rotation as RotationType;
+      if (formData.timeSlots !== (song.timeSlots || 15))
+        payload.timeSlots = formData.timeSlots;
+      if (formData.genre !== (song.genre || "geral"))
+        payload.genre = formData.genre as Genre;
+      if (formData.allowedInGeneral !== (song.allowedInGeneral === 1))
+        payload.allowedInGeneral = formData.allowedInGeneral;
+      if (formData.coverFile) payload.coverFile = formData.coverFile;
+      // Não reenviar resetCover — já foi aplicado imediatamente pelo handleResetCover
+
+      const res = await updateSong(song.id, payload);
 
       // Atualizar preview com valor retornado pelo servidor (garante sincronização)
       const newCover = res?.song?.cover || "/images/logotipo.svg";
       setDisplayedCover(newCover);
-      setCoverWasReset(false);
-
       toast.success("Música atualizada com sucesso!");
       onSave();
     } catch (error) {
@@ -115,7 +120,6 @@ export function EditSongModal({
         coverFile: reader.result as string,
       }));
       setDisplayedCover(reader.result as string);
-      setCoverWasReset(false);
     };
     reader.readAsDataURL(file);
   };
@@ -127,7 +131,6 @@ export function EditSongModal({
       const res = await updateSong(song.id, { resetCover: true });
       const newCover = res?.song?.cover || "/images/logotipo.svg";
       setDisplayedCover(newCover);
-      setCoverWasReset(true);
       toast.success("Capa resetada para o padrão");
       // não fechar o modal — apenas avisar que a capa foi resetada para permitir reload na tabela
       onCoverReset?.();

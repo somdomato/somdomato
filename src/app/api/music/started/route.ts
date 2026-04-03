@@ -1,14 +1,14 @@
 import { db } from "@/db";
 import { eq } from "drizzle-orm";
-import { songs, history } from "@/db/schema";
+import { songs } from "@/db/schema";
 import { isLocalRequest } from "@/lib/localhost";
 
 const DEFAULT_COVER = "/images/logotipo.svg";
 
 /**
  * Called by Liquidsoap's on_track callback when a song actually starts playing.
- * Inserts into history and emits the song:changed socket event.
- * Also triggers async cover resolution when the song has no custom cover.
+ * History is already inserted by GET /api/music, so this only emits the socket
+ * event (as backup) and triggers async cover resolution.
  */
 export async function POST(request: Request) {
   if (!isLocalRequest(request)) {
@@ -37,12 +37,6 @@ export async function POST(request: Request) {
     if (!song) {
       return Response.json({ error: "Song not found" }, { status: 404 });
     }
-
-    await db.insert(history).values({
-      songId: song.id,
-      genre,
-      wasRequested: wasRequested ? 1 : 0,
-    });
 
     const safeCover = song.cover || DEFAULT_COVER;
 

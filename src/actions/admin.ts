@@ -341,32 +341,26 @@ export async function updateSong(
         .set({ cover: "/images/logotipo.svg" })
         .where(eq(songs.id, id));
 
-      // Remover imagem embutida no ID3 para que o pipeline de auto-extração
-      // possa buscar uma nova capa na próxima execução
-      await new Promise<void>((resolve) => {
-        NodeID3.read(currentPath, (err: Error | null, tags: NodeID3.Tags) => {
-          if (err || !tags?.image) return resolve();
-          try {
-            NodeID3.removeTags(currentPath);
-            const tagsToWrite: NodeID3.Tags = {
-              title: (data.title as string) ?? song.title,
-              artist: (data.artist as string) ?? song.artist,
-            };
-            const album = (data.album as string) ?? song.album;
-            if (album) tagsToWrite.album = album;
-            NodeID3.update(tagsToWrite, currentPath);
-          } catch (e) {
-            console.error("[cover] Erro ao remover imagem ID3:", e);
-          }
-          resolve();
-        });
-      });
+      // Remover imagem embutida no ID3 preservando as demais tags
+      // Ler tags atuais, remover tudo, e reescrever sem a imagem
+      const existingTags = NodeID3.read(currentPath);
+      if (existingTags?.image) {
+        NodeID3.removeTags(currentPath);
+        // Reescrever todas as tags exceto a imagem
+        const { image: _removed, ...tagsWithoutImage } = existingTags;
+        NodeID3.update(tagsWithoutImage, currentPath);
+      }
 
       // Remover o arquivo de capa do disco para permitir re-fetch limpo
       const { deleteArtistCover } = await import("@/lib/cover");
       const artistName = (data.artist as string) ?? song.artist;
       await deleteArtistCover(artistName);
-    } else {
+      // Se o artista mudou, remover a capa antiga também
+      if (data.artist && data.artist !== song.artist) {
+        await deleteArtistCover(song.artist);
+      }
+    } else if (data.coverFile || data.artist) {
+      // Só processar capa se houve upload de nova capa ou mudança de artista
       const { extractAndSaveCover, checkExistingCover, verifyCoverOnDisk } =
         await import("@/lib/cover");
 
