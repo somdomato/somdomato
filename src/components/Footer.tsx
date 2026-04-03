@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Heart } from "lucide-react";
-import { SiFacebook, SiX, SiInstagram } from "@icons-pack/react-simple-icons";
+import { SiFacebook, SiX, SiInstagram, SiReddit } from "@icons-pack/react-simple-icons";
 
 export default function Footer() {
   return (
@@ -22,6 +22,12 @@ export default function Footer() {
           <SiInstagram
             size="20"
             className="text-white/80 hover:text-[#405de6] transitions-colors duration-450"
+          />
+        </Link>
+        <Link href="https://reddit.somdomato.com" target="_blank">
+          <SiReddit
+            size="20"
+            className="text-white/80 hover:text-[#ff4500] transitions-colors duration-450"
           />
         </Link>
       </div>

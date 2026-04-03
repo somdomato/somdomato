@@ -10,12 +10,15 @@ import {
   VolumeX,
   Radio,
   Users,
+  Share2,
 } from "lucide-react";
+import { SiWhatsapp, SiX, SiFacebook } from "@icons-pack/react-simple-icons";
 import { useAudio } from "@/context/AudioContext";
 import { useGenre, GENRES } from "@/context/GenreContext";
 import { buildStreamUrl, RADIO_CONFIG } from "@/config";
 import { toast } from "sonner";
 import { useAuth } from "@/components/AdminAuth";
+import { socket } from "@/lib/socket";
 
 type ListenersData = {
   current: number;
@@ -85,10 +88,15 @@ export default function Player({ className = "" }: { className?: string }) {
   } = useAudio();
   const { currentGenre, setGenre, getStreamUrl } = useGenre();
   const [showGenreDropdown, setShowGenreDropdown] = useState(false);
+  const [showShareDropdown, setShowShareDropdown] = useState(false);
   const [listeners, setListeners] = useState<ListenersData>({
     current: 0,
     peak: 0,
   });
+  const [nextSong, setNextSong] = useState<{
+    title: string;
+    artist: string;
+  } | null>(null);
 
   const currentGenreLabel =
     GENRES.find((g) => g.value === currentGenre)?.label || "Geral";
@@ -129,10 +137,27 @@ export default function Player({ className = "" }: { className?: string }) {
     }
   }, [currentGenre, setSong]);
 
+  // Buscar próxima música
+  const fetchNextSong = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/songs/next?genre=${currentGenre}`);
+      if (!res.ok) return;
+      const data = await res.json();
+      const next =
+        data.upcoming?.[0] || data.nextIfNoRequests || null;
+      setNextSong(
+        next ? { title: next.title, artist: next.artist } : null,
+      );
+    } catch {
+      // silencioso
+    }
+  }, [currentGenre]);
+
   // Buscar metadados na inicialização e ao trocar de gênero
   useEffect(() => {
     fetchMetadata();
     fetchListeners();
+    fetchNextSong();
 
     // Poll de metadados e ouvintes a cada 10 segundos
     const interval = setInterval(() => {
@@ -141,7 +166,20 @@ export default function Player({ className = "" }: { className?: string }) {
     }, RADIO_CONFIG.metadataRefreshInterval);
 
     return () => clearInterval(interval);
-  }, [fetchMetadata, fetchListeners]);
+  }, [fetchMetadata, fetchListeners, fetchNextSong]);
+
+  // Atualizar próxima música via socket
+  useEffect(() => {
+    const onSongChanged = () => fetchNextSong();
+    socket.on("song:changed", onSongChanged);
+    socket.on("request:added", onSongChanged);
+    socket.on("request:removed", onSongChanged);
+    return () => {
+      socket.off("song:changed", onSongChanged);
+      socket.off("request:added", onSongChanged);
+      socket.off("request:removed", onSongChanged);
+    };
+  }, [fetchNextSong]);
 
   const handleGenreChange = useCallback(
     async (newGenre: (typeof GENRES)[number]) => {
@@ -188,6 +226,18 @@ export default function Player({ className = "" }: { className?: string }) {
       toast.success("Stream recarregada");
     }
   }, [playing, pause, play, getStreamUrl]);
+
+  const shareText = nextSong
+    ? `🎶 Já já toca "${nextSong.title}" de ${nextSong.artist} na Som do Mato! Vem ouvir ao vivo e sentir a emoção do sertanejo! 🤠🔥\n\nhttps://somdomato.com`
+    : null;
+
+  const shareLinks = shareText
+    ? {
+        whatsapp: `https://api.whatsapp.com/send?text=${encodeURIComponent(shareText)}`,
+        x: `https://x.com/intent/tweet?text=${encodeURIComponent(shareText)}`,
+        facebook: `https://www.facebook.com/sharer/sharer.php?quote=${encodeURIComponent(shareText)}&u=${encodeURIComponent("https://somdomato.com")}`,
+      }
+    : null;
 
   return (
     <div
