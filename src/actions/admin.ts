@@ -55,6 +55,28 @@ export async function verifyAuth(requiredPermission?: Permission) {
   return session;
 }
 
+/** Check if current user has a specific permission (returns boolean, does not throw) */
+async function checkPermission(
+  session: { id: string; role: string },
+  permission: Permission,
+): Promise<boolean> {
+  if (session.role === "super_admin") return true;
+  const { rolePermissions } = await import("@/db/schema");
+  const { and, eq: eqOp } = await import("drizzle-orm");
+  const perm = await db
+    .select()
+    .from(rolePermissions)
+    .where(
+      and(
+        eqOp(rolePermissions.role, session.role),
+        eqOp(rolePermissions.permission, permission),
+      ),
+    )
+    .limit(1)
+    .get();
+  return !!perm;
+}
+
 // ===== ACTIONS DE MÚSICAS =====
 
 export async function getSongs(
@@ -138,7 +160,29 @@ export async function updateSong(
     resetCover?: boolean; // Se true, reseta a capa para o padrão
   },
 ) {
-  await verifyAuth();
+  const session = await verifyAuth();
+
+  // Check granular permissions
+  const isChangingFile = !!data.filename;
+  const isChangingTags =
+    !!data.title ||
+    !!data.artist ||
+    !!data.album ||
+    !!data.rotation ||
+    data.timeSlots !== undefined ||
+    !!data.genre ||
+    data.allowedInGeneral !== undefined ||
+    !!data.coverFile ||
+    !!data.resetCover;
+
+  if (isChangingFile) {
+    const canEditFile = await checkPermission(session, "songs:edit_file");
+    if (!canEditFile) throw new Error("Sem permissão para editar arquivo");
+  }
+  if (isChangingTags) {
+    const canEditTags = await checkPermission(session, "songs:edit_tags");
+    if (!canEditTags) throw new Error("Sem permissão para editar tags");
+  }
 
   const song = await db.select().from(songs).where(eq(songs.id, id)).get();
   if (!song) throw new Error("Música não encontrada");
@@ -154,14 +198,60 @@ export async function updateSong(
     newPath = path.join(dir, data.filename);
 
     try {
-      await fs.rename(oldPath, newPath);
+      // Verificar se o arquivo existe antes de renomear
+      try {
+        await fs.access(oldPath);
+      } catch {
+        throw new Error(`Arquivo original não encontrado no disco: ${oldPath}`);
+      }
+
+      // Tentar rename com retry (arquivo pode ser deletado entre check e rename por outro processo)
+      let success = false;
+      let lastError: Error | null = null;
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        try {
+          await fs.rename(oldPath, newPath);
+          success = true;
+          break;
+        } catch (err) {
+          lastError = err instanceof Error ? err : new Error(String(err));
+          // Se foi ENOENT (arquivo não encontrado), arquivo foi deletado - não faz retry
+          if (
+            lastError.message.includes("ENOENT") ||
+            lastError.message.includes("no such file")
+          ) {
+            throw new Error(
+              `Arquivo foi deletado antes de renomear: ${oldPath}`,
+            );
+          }
+          // Se for erro de permissão, também não faz retry
+          if (
+            lastError.message.includes("EACCES") ||
+            lastError.message.includes("Permission denied")
+          ) {
+            throw lastError;
+          }
+          // Para outros erros (EBUSY, etc), tenta novamente após 100ms
+          if (attempt < 3) {
+            await new Promise((resolve) => setTimeout(resolve, 100));
+          }
+        }
+      }
+
+      if (!success) {
+        throw lastError || new Error("Falha ao renomear arquivo");
+      }
+
       currentPath = newPath;
       data.filename = newPath; // Atualizar caminho no banco
     } catch (error) {
-      console.error("Erro ao renomear arquivo:", error);
-      throw new Error(
-        `Erro ao renomear arquivo: ${error instanceof Error ? error.message : "desconhecido"}`,
-      );
+      const errorMsg = error instanceof Error ? error.message : "desconhecido";
+      console.error("Erro ao renomear arquivo:", {
+        oldPath: song.path,
+        newPath,
+        error: errorMsg,
+      });
+      throw new Error(`Erro ao renomear arquivo: ${errorMsg}`);
     }
   } else {
     // Se não está renomeando, não atualizar o path no banco
@@ -332,7 +422,7 @@ export async function updateSong(
 }
 
 export async function deleteSong(id: number) {
-  await verifyAuth();
+  await verifyAuth("songs:delete");
 
   const song = await db.select().from(songs).where(eq(songs.id, id)).get();
   if (!song) throw new Error("Música não encontrada");
@@ -351,6 +441,23 @@ export async function deleteSong(id: number) {
 
   // Deletar do banco
   await db.delete(songs).where(eq(songs.id, id));
+
+  // Se não há mais músicas deste artista, remover a capa para poupar espaço
+  const remaining = await db
+    .select()
+    .from(songs)
+    .where(eq(songs.artist, song.artist))
+    .limit(1)
+    .get();
+
+  if (!remaining) {
+    try {
+      const { deleteArtistCover } = await import("@/lib/cover");
+      await deleteArtistCover(song.artist);
+    } catch (error) {
+      console.error("Erro ao remover capa órfã:", error);
+    }
+  }
 
   await logAction({
     action: "song:deleted",

@@ -461,7 +461,7 @@ pnpm test
 │   ├── db/                   # Schema Drizzle ORM e utilitários
 │   ├── lib/                  # Utilitários (format, cover, protections, etc.)
 │   ├── actions/              # Server Actions
-│   ├── proxy.ts              # Proxy de autenticação admin (ex-middleware.ts)
+│   ├── proxy.ts              # Proteção de rotas admin (Next.js 16+ usa proxy.ts em vez de middleware.ts)
 │   └── server.ts             # Servidor customizado (Socket.io)
 ├── docker/
 │   ├── docker-compose.yml    # Orquestração local (4 serviços)

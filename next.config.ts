@@ -7,7 +7,11 @@ const nextConfig: NextConfig = {
     },
   },
   images: {
-    localPatterns: [{ pathname: "/covers/**" }, { pathname: "/images/**" }],
+    localPatterns: [
+      { pathname: "/images/covers/**" },
+      { pathname: "/covers/**" },
+      { pathname: "/images/**" },
+    ],
     remotePatterns: [
       new URL("https://cdn.somdomato.com/**"),
       new URL("https://i.ytimg.com/**"),

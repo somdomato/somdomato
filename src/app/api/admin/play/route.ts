@@ -107,6 +107,8 @@ export async function POST(request: Request) {
         genre: selectedSong.genre || "geral",
         allowedInGeneral: selectedSong.allowedInGeneral || 0,
         playedAt: Date.now(),
+        playedOnMountpoint: selectedSong.genre || "geral",
+        wasRequested: false,
       });
 
     // try to call liquidsoap control endpoint to skip immediately (optional)

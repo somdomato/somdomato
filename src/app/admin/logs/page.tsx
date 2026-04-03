@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import {
   Music,
   ListOrdered,
@@ -19,13 +19,20 @@ import {
   SkipForward,
   UserPlus,
   LogIn,
+  LogOut,
   Users,
+  User,
+  Shield,
+  Pencil,
 } from "lucide-react";
 import { LogoutButton } from "@/components/LogoutButton";
 import { toast } from "sonner";
+import { socket } from "@/lib/socket";
 
 interface LogItem {
   id: number;
+  userId: number | null;
+  userName: string | null;
   action: string;
   details: Record<string, unknown> | null;
   targetType: string | null;
@@ -85,7 +92,7 @@ const ACTION_CONFIG: Record<
   },
   "song:updated": {
     label: "Música atualizada",
-    icon: Music,
+    icon: Pencil,
     color: "text-blue-400",
   },
   "song:deleted": {
@@ -114,7 +121,7 @@ const ACTION_CONFIG: Record<
     color: "text-yellow-400",
   },
   "admin:login": { label: "Login", icon: LogIn, color: "text-green-400" },
-  "admin:logout": { label: "Logout", icon: LogIn, color: "text-gray-400" },
+  "admin:logout": { label: "Logout", icon: LogOut, color: "text-gray-400" },
   "user:request": {
     label: "Pedido do usuário",
     icon: UserPlus,
@@ -132,7 +139,7 @@ const ACTION_CONFIG: Record<
   },
   "user:updated": {
     label: "Usuário atualizado",
-    icon: UserPlus,
+    icon: Pencil,
     color: "text-blue-400",
   },
   "user:deleted": {
@@ -142,8 +149,23 @@ const ACTION_CONFIG: Record<
   },
   "permissions:updated": {
     label: "Permissões atualizadas",
-    icon: Check,
+    icon: Shield,
     color: "text-purple-400",
+  },
+  "role:created": {
+    label: "Cargo criado",
+    icon: Shield,
+    color: "text-green-400",
+  },
+  "role:updated": {
+    label: "Cargo atualizado",
+    icon: Shield,
+    color: "text-blue-400",
+  },
+  "role:deleted": {
+    label: "Cargo deletado",
+    icon: Trash2,
+    color: "text-red-400",
   },
 };
 
@@ -154,7 +176,16 @@ const ACTION_GROUPS = [
   { value: "request", label: "Pedidos" },
   { value: "admin", label: "Admin" },
   { value: "user", label: "Usuários" },
+  { value: "role", label: "Cargos" },
 ];
+
+const ROLE_LABELS: Record<string, string> = {
+  user: "Ouvinte",
+  locutor: "Locutor",
+  moderator: "Moderador",
+  admin: "Admin",
+  super_admin: "Super Admin",
+};
 
 function formatLogDate(dateStr: string | null): string {
   if (!dateStr) return "—";
@@ -174,6 +205,171 @@ function formatLogDate(dateStr: string | null): string {
   });
 }
 
+function formatFullDate(dateStr: string | null): string {
+  if (!dateStr) return "";
+  const d = new Date(dateStr);
+  return d.toLocaleDateString("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  });
+}
+
+/** Render log details in a human-friendly way */
+function renderDetails(
+  action: string,
+  details: Record<string, unknown> | null,
+  userName: string | null,
+) {
+  if (!details || Object.keys(details).length === 0) {
+    if (action === "admin:login" || action === "admin:logout") {
+      return userName ? (
+        <span className="text-gray-300">{userName}</span>
+      ) : null;
+    }
+    return null;
+  }
+
+  const d = details;
+
+  // Login / Logout
+  if (action === "admin:login" || action === "admin:logout") {
+    const name = String(d.name || userName || "");
+    const email = d.email ? String(d.email) : "";
+    const role = d.role ? ROLE_LABELS[String(d.role)] || String(d.role) : "";
+    return (
+      <div className="flex items-center gap-1.5 flex-wrap">
+        <User size={11} className="text-gray-500 shrink-0" />
+        {name && <span className="text-gray-300 font-medium">{name}</span>}
+        {email && <span className="text-gray-500">({email})</span>}
+        {role && (
+          <span className="text-[10px] px-1.5 py-0.5 rounded bg-white/5 text-gray-500 border border-white/5">
+            {role}
+          </span>
+        )}
+      </div>
+    );
+  }
+
+  // Song / Request actions
+  if (
+    action.startsWith("song:") ||
+    action === "request:added" ||
+    action === "request:removed"
+  ) {
+    const title = d.title ? String(d.title) : "";
+    const artist = d.artist ? String(d.artist) : "";
+    if (title || artist) {
+      return (
+        <span>
+          {title && <span className="text-gray-300">{title}</span>}
+          {artist && <span className="text-gray-500"> — {artist}</span>}
+          {d.genre ? (
+            <span className="text-[10px] ml-1.5 px-1.5 py-0.5 rounded bg-white/5 text-gray-500 border border-white/5">
+              {String(d.genre)}
+            </span>
+          ) : null}
+          {d.rotation ? (
+            <span className="text-[10px] ml-1 px-1.5 py-0.5 rounded bg-white/5 text-gray-500 border border-white/5">
+              {String(d.rotation)}
+            </span>
+          ) : null}
+        </span>
+      );
+    }
+  }
+
+  // Upload actions
+  if (action.startsWith("upload:")) {
+    const title = d.title ? String(d.title) : "";
+    const artist = d.artist ? String(d.artist) : "";
+    const reason = d.reason
+      ? String(d.reason)
+      : d.aiReason
+        ? String(d.aiReason)
+        : "";
+    return (
+      <span>
+        {title && <span className="text-gray-300">{title}</span>}
+        {artist && <span className="text-gray-500"> — {artist}</span>}
+        {reason && (
+          <span className="text-gray-500 italic ml-1">({reason})</span>
+        )}
+      </span>
+    );
+  }
+
+  // User / permissions actions
+  if (action.startsWith("user:") || action === "permissions:updated") {
+    const name = d.name ? String(d.name) : "";
+    const email = d.email ? String(d.email) : "";
+    const role = d.role ? ROLE_LABELS[String(d.role)] || String(d.role) : "";
+    const passwordChanged = d.passwordChanged ? " (senha alterada)" : "";
+    return (
+      <div className="flex items-center gap-1.5 flex-wrap">
+        {name && <span className="text-gray-300">{name}</span>}
+        {email && <span className="text-gray-500">({email})</span>}
+        {role && (
+          <span className="text-[10px] px-1.5 py-0.5 rounded bg-white/5 text-gray-500 border border-white/5">
+            {role}
+          </span>
+        )}
+        {passwordChanged && (
+          <span className="text-yellow-500/70 text-[10px]">
+            {passwordChanged}
+          </span>
+        )}
+        {Array.isArray(d.permissions) ? (
+          <span className="text-gray-500 text-[10px]">
+            [{(d.permissions as string[]).join(", ")}]
+          </span>
+        ) : null}
+      </div>
+    );
+  }
+
+  // Role actions
+  if (action.startsWith("role:")) {
+    const label = d.label ? String(d.label) : "";
+    const name = d.name ? String(d.name) : "";
+    return (
+      <span>
+        {label && <span className="text-gray-300">{label}</span>}
+        {name && <span className="text-gray-500 ml-1">({name})</span>}
+      </span>
+    );
+  }
+
+  // AI reason
+  if (d.reason) {
+    return <span className="text-gray-400 italic">{String(d.reason)}</span>;
+  }
+
+  // Fallback: show key-value pairs nicely
+  const entries = Object.entries(d).filter(([, v]) => v != null && v !== "");
+  if (entries.length === 0) return null;
+
+  return (
+    <div className="flex items-center gap-1.5 flex-wrap">
+      {entries.slice(0, 4).map(([key, value]) => (
+        <span
+          key={key}
+          className="text-[10px] px-1.5 py-0.5 rounded bg-white/5 text-gray-400 border border-white/5"
+        >
+          {key}:{" "}
+          {typeof value === "object" ? JSON.stringify(value) : String(value)}
+        </span>
+      ))}
+      {entries.length > 4 && (
+        <span className="text-[10px] text-gray-600">+{entries.length - 4}</span>
+      )}
+    </div>
+  );
+}
+
 export default function LogsPage() {
   const [logs, setLogs] = useState<LogItem[]>([]);
   const [page, setPage] = useState(1);
@@ -183,6 +379,16 @@ export default function LogsPage() {
   const [actionFilter, setActionFilter] = useState("");
   const [search, setSearch] = useState("");
   const [searchInput, setSearchInput] = useState("");
+  const pageRef = useRef(page);
+  const actionFilterRef = useRef(actionFilter);
+  const searchRef = useRef(search);
+
+  // Keep refs in sync
+  useEffect(() => {
+    pageRef.current = page;
+    actionFilterRef.current = actionFilter;
+    searchRef.current = search;
+  }, [page, actionFilter, search]);
 
   const loadLogs = useCallback(async () => {
     setLoading(true);
@@ -210,11 +416,42 @@ export default function LogsPage() {
     loadLogs();
   }, [loadLogs]);
 
-  // Auto-refresh every 10s
+  // Socket.io real-time updates instead of polling
   useEffect(() => {
-    const interval = setInterval(loadLogs, 10000);
+    const handleNewLog = (newLog: LogItem) => {
+      // Only add to the list if we're on page 1 and the log matches current filters
+      if (pageRef.current !== 1) return;
+
+      const filter = actionFilterRef.current;
+      if (filter && !newLog.action.startsWith(filter)) return;
+
+      const searchTerm = searchRef.current;
+      if (searchTerm && newLog.details) {
+        const detailsStr = JSON.stringify(newLog.details).toLowerCase();
+        if (!detailsStr.includes(searchTerm.toLowerCase())) return;
+      }
+
+      setLogs((prev) => {
+        // Avoid duplicates
+        if (prev.some((l) => l.id === newLog.id)) return prev;
+        // Prepend and limit to 50
+        return [newLog, ...prev].slice(0, 50);
+      });
+      setTotal((prev) => prev + 1);
+    };
+
+    socket.on("log:added", handleNewLog);
+    return () => {
+      socket.off("log:added", handleNewLog);
+    };
+  }, []);
+
+  // Update relative times every 60s
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    const interval = setInterval(() => setTick((t) => t + 1), 60000);
     return () => clearInterval(interval);
-  }, [loadLogs]);
+  }, []);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -332,6 +569,7 @@ export default function LogsPage() {
         <div className="text-xs text-gray-500 mb-3">
           {total} registro{total !== 1 ? "s" : ""} encontrado
           {total !== 1 ? "s" : ""}
+          <span className="ml-2 text-green-500/50">● ao vivo</span>
         </div>
 
         {/* Logs list */}
@@ -351,7 +589,6 @@ export default function LogsPage() {
                 color: "text-gray-400",
               };
               const Icon = config.icon;
-              const details = log.details || {};
 
               return (
                 <div
@@ -369,39 +606,29 @@ export default function LogsPage() {
                       <span className={`text-sm font-medium ${config.color}`}>
                         {config.label}
                       </span>
+                      {log.userName && (
+                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-white/5 text-gray-500 border border-white/5">
+                          por {log.userName}
+                        </span>
+                      )}
                       {log.targetId && (
-                        <span className="text-xs text-gray-500">
+                        <span className="text-xs text-gray-600">
                           #{log.targetId}
                         </span>
                       )}
                     </div>
 
                     {/* Details */}
-                    {details && Object.keys(details).length > 0 && (
-                      <div className="text-xs text-gray-400 mt-0.5 truncate">
-                        {(() => {
-                          const d = details as Record<string, unknown>;
-                          if (d.title) {
-                            return (
-                              <span>
-                                {String(d.title)}
-                                {d.artist ? ` — ${String(d.artist)}` : null}
-                              </span>
-                            );
-                          }
-                          if (d.reason) {
-                            return <span>({String(d.reason)})</span>;
-                          }
-                          return (
-                            <span>{JSON.stringify(details).slice(0, 100)}</span>
-                          );
-                        })()}
-                      </div>
-                    )}
+                    <div className="text-xs mt-0.5">
+                      {renderDetails(log.action, log.details, log.userName)}
+                    </div>
                   </div>
 
                   <div className="text-right shrink-0">
-                    <div className="text-xs text-gray-500">
+                    <div
+                      className="text-xs text-gray-500"
+                      title={formatFullDate(log.createdAt)}
+                    >
                       {formatLogDate(log.createdAt)}
                     </div>
                     {log.ip && (

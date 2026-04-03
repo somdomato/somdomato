@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { users, rolePermissions } from "./schema";
+import { users, rolePermissions, roles } from "./schema";
 import { db } from "./index";
 import { generateSalt, hashPassword } from "../lib/password";
 import {
@@ -36,6 +36,41 @@ await db
   });
 
 console.log(`✓ Admin criado: Admin <${email}> (${role})`);
+
+// Seed default roles
+const defaultRoles = [
+  { name: "super_admin", label: "Super Admin", isAdmin: 1 },
+  { name: "admin", label: "Admin", isAdmin: 1 },
+  { name: "moderator", label: "Moderador", isAdmin: 1 },
+  { name: "locutor", label: "Locutor", isAdmin: 1 },
+  { name: "user", label: "Ouvinte", isAdmin: 0 },
+];
+
+for (const r of defaultRoles) {
+  await db.insert(roles).values(r).onConflictDoNothing();
+}
+console.log(
+  `✓ Cargos padrão inseridos: ${defaultRoles.map((r) => r.label).join(", ")}`,
+);
+
+// Migrate old songs:manage permission to new granular permissions
+const oldSongsManage = await db
+  .select()
+  .from(rolePermissions)
+  .where(eq(rolePermissions.permission, "songs:manage"));
+
+for (const entry of oldSongsManage) {
+  // Replace songs:manage with the 3 granular permissions
+  await db.delete(rolePermissions).where(eq(rolePermissions.id, entry.id));
+  await db.insert(rolePermissions).values([
+    { role: entry.role, permission: "songs:edit_tags" },
+    { role: entry.role, permission: "songs:edit_file" },
+    { role: entry.role, permission: "songs:delete" },
+  ]);
+  console.log(
+    `✓ Migrado songs:manage → permissões granulares para "${entry.role}"`,
+  );
+}
 
 // Seed default role permissions
 for (const [roleName, perms] of Object.entries(DEFAULT_ROLE_PERMISSIONS)) {

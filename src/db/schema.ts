@@ -105,6 +105,7 @@ export const pageViews = sqliteTable("page_views", {
 
 export const adminLogs = sqliteTable("admin_logs", {
   id: int().primaryKey({ autoIncrement: true }),
+  userId: int(), // ID of the user who performed the action
   action: text().notNull(), // "upload:approved", "upload:rejected", "upload:deleted", "upload:ai_approved", "song:updated", "song:deleted", "request:added", "request:removed", "admin:skip", etc.
   details: text(), // JSON string with additional context
   targetType: text(), // "upload", "song", "request"
@@ -121,6 +122,18 @@ export const rolePermissions = sqliteTable("role_permissions", {
   id: int().primaryKey({ autoIncrement: true }),
   role: text().notNull(), // "admin", "moderator"
   permission: text().notNull(), // "songs:manage", "uploads:manage", etc.
+});
+
+// =============================================================================
+// CARGOS (ROLES)
+// =============================================================================
+
+export const roles = sqliteTable("roles", {
+  id: int().primaryKey({ autoIncrement: true }),
+  name: text().notNull().unique(), // "super_admin", "admin", "moderator", "locutor", "user"
+  label: text().notNull(), // "Super Admin", "Admin", "Moderador", "Locutor", "Ouvinte"
+  isAdmin: int().default(0), // 1 = pode acessar o painel admin
+  createdAt: int({ mode: "timestamp" }).$defaultFn(() => new Date()),
 });
 
 // =============================================================================

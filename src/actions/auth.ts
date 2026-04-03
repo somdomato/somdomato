@@ -6,7 +6,11 @@ import { db } from "@/db";
 import { users } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { comparePasswords } from "@/lib/password";
-import { createUserSession, removeUserFromSession } from "@/lib/session";
+import {
+  createUserSession,
+  getUserFromSession,
+  removeUserFromSession,
+} from "@/lib/session";
 import { ADMIN_ROLES, type Role } from "@/lib/permissions";
 import { logAction } from "@/lib/logging";
 
@@ -50,16 +54,40 @@ export async function signIn(
   );
   await logAction({
     action: "admin:login",
-    details: { email },
+    details: { name: user.name, email: user.email, role: user.role },
     targetType: "user",
     targetId: user.id,
+    userId: user.id,
   });
   redirect("/admin");
 }
 
 export async function logOut() {
-  await logAction({ action: "admin:logout" });
   const cookieStore = await cookies();
+  const session = getUserFromSession(cookieStore);
+
+  // Capture user info before destroying the session
+  let details: Record<string, unknown> = {};
+  let targetId: number | undefined;
+  let userId: number | undefined;
+  if (session) {
+    targetId = Number(session.id);
+    userId = Number(session.id);
+    const user = await db.query.users.findFirst({
+      where: eq(users.id, Number(session.id)),
+    });
+    if (user) {
+      details = { name: user.name, email: user.email, role: user.role };
+    }
+  }
+
+  await logAction({
+    action: "admin:logout",
+    details,
+    targetType: "user",
+    targetId,
+    userId,
+  });
   await removeUserFromSession(cookieStore);
   redirect("/admin/login");
 }

@@ -66,6 +66,16 @@ export function SongsTable() {
   const [showDuplicates, setShowDuplicates] = useState(false);
   const [sortColumn, setSortColumn] = useState<keyof Song>("artist");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
+  const [permissions, setPermissions] = useState<string[]>([]);
+
+  useEffect(() => {
+    fetch("/api/auth/me")
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.permissions) setPermissions(d.permissions);
+      })
+      .catch(() => {});
+  }, []);
 
   const handleSort = (column: keyof Song) => {
     if (sortColumn === column) {
@@ -334,107 +344,119 @@ export function SongsTable() {
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex justify-center gap-2">
-                          <button
-                            onClick={() => setEditingSong(song)}
-                            className="p-2 text-blue-400 hover:text-blue-300 transition-colors"
-                            title="Editar"
-                          >
-                            <Pencil size={18} />
-                          </button>
+                          {(permissions.includes("songs:edit_tags") ||
+                            permissions.includes("songs:edit_file")) && (
+                            <button
+                              onClick={() => setEditingSong(song)}
+                              className="p-2 text-blue-400 hover:text-blue-300 transition-colors"
+                              title="Editar"
+                            >
+                              <Pencil size={18} />
+                            </button>
+                          )}
 
                           {/* Pedir a música (admin-only UI) */}
-                          <button
-                            onClick={async () => {
-                              try {
-                                const res = await fetch("/api/admin/request", {
-                                  method: "POST",
-                                  headers: {
-                                    "Content-Type": "application/json",
-                                  },
-                                  body: JSON.stringify({ songId: song.id }),
-                                });
-                                const data = await res.json();
-                                if (!res.ok)
-                                  throw new Error(
-                                    data?.error || "Falha ao pedir música",
+                          {permissions.includes("requests:manage") && (
+                            <button
+                              onClick={async () => {
+                                try {
+                                  const res = await fetch(
+                                    "/api/admin/request",
+                                    {
+                                      method: "POST",
+                                      headers: {
+                                        "Content-Type": "application/json",
+                                      },
+                                      body: JSON.stringify({ songId: song.id }),
+                                    },
                                   );
-                                toast.success("Pedido adicionado");
-                              } catch (err) {
-                                toast.error("Erro ao pedir música");
-                                console.error(err);
-                              }
-                            }}
-                            className="p-2 text-emerald-400 hover:text-emerald-300 transition-colors"
-                            title="Pedir"
-                          >
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              width="18"
-                              height="18"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
+                                  const data = await res.json();
+                                  if (!res.ok)
+                                    throw new Error(
+                                      data?.error || "Falha ao pedir música",
+                                    );
+                                  toast.success("Pedido adicionado");
+                                } catch (err) {
+                                  toast.error("Erro ao pedir música");
+                                  console.error(err);
+                                }
+                              }}
+                              className="p-2 text-emerald-400 hover:text-emerald-300 transition-colors"
+                              title="Pedir"
                             >
-                              <path d="M12 5v14"></path>
-                              <path d="M5 12h14"></path>
-                            </svg>
-                          </button>
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="18"
+                                height="18"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              >
+                                <path d="M12 5v14"></path>
+                                <path d="M5 12h14"></path>
+                              </svg>
+                            </button>
+                          )}
 
                           {/* Tocar agora (força tocar imediatamente) */}
-                          <button
-                            onClick={async () => {
-                              try {
-                                const res = await fetch("/api/admin/play", {
-                                  method: "POST",
-                                  headers: {
-                                    "Content-Type": "application/json",
-                                  },
-                                  body: JSON.stringify({ songId: song.id }),
-                                });
-                                const data = await res.json();
-                                if (!res.ok)
-                                  throw new Error(
-                                    data?.error || "Falha ao tocar agora",
+                          {permissions.includes("requests:manage") && (
+                            <button
+                              onClick={async () => {
+                                try {
+                                  const res = await fetch("/api/admin/play", {
+                                    method: "POST",
+                                    headers: {
+                                      "Content-Type": "application/json",
+                                    },
+                                    body: JSON.stringify({ songId: song.id }),
+                                  });
+                                  const data = await res.json();
+                                  if (!res.ok)
+                                    throw new Error(
+                                      data?.error || "Falha ao tocar agora",
+                                    );
+                                  toast.success("Tocando agora (solicitado)");
+                                  loadSongs();
+                                } catch (err) {
+                                  toast.error(
+                                    err instanceof Error
+                                      ? err.message
+                                      : "Erro ao tocar agora",
                                   );
-                                toast.success("Tocando agora (solicitado)");
-                                loadSongs();
-                              } catch (err) {
-                                toast.error(
-                                  err instanceof Error
-                                    ? err.message
-                                    : "Erro ao tocar agora",
-                                );
-                                console.error(err);
-                              }
-                            }}
-                            className="p-2 text-yellow-400 hover:text-yellow-300 transition-colors"
-                            title="Tocar agora"
-                          >
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              width="18"
-                              height="18"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
+                                  console.error(err);
+                                }
+                              }}
+                              className="p-2 text-yellow-400 hover:text-yellow-300 transition-colors"
+                              title="Tocar agora"
                             >
-                              <polygon points="5 3 19 12 5 21 5 3"></polygon>
-                            </svg>
-                          </button>
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="18"
+                                height="18"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              >
+                                <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                              </svg>
+                            </button>
+                          )}
 
-                          <button
-                            onClick={() => handleDelete(song.id, song.title)}
-                            className="p-2 text-red-400 hover:text-red-300 transition-colors"
-                            title="Deletar"
-                          >
-                            <Trash2 size={18} />
-                          </button>
+                          {permissions.includes("songs:delete") && (
+                            <button
+                              onClick={() => handleDelete(song.id, song.title)}
+                              className="p-2 text-red-400 hover:text-red-300 transition-colors"
+                              title="Deletar"
+                            >
+                              <Trash2 size={18} />
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>
