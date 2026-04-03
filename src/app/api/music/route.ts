@@ -1,7 +1,7 @@
 import { db } from "@/db";
 import { asc, eq, and, sql, notInArray } from "drizzle-orm";
 import fs from "node:fs/promises";
-import { songs, history, requests } from "@/db/schema";
+import { songs, requests } from "@/db/schema";
 import { getCurrentTimeSlot } from "@/lib/time";
 import { getBlockedSongIds } from "@/lib/protections";
 import { isLocalRequest } from "@/lib/localhost";
@@ -180,7 +180,11 @@ export async function GET(request: Request) {
       const candidates = [...finalFilteredSongs];
       selectedSong = null;
 
-      for (let attempt = 0; attempt < Math.min(candidates.length, 100); attempt++) {
+      for (
+        let attempt = 0;
+        attempt < Math.min(candidates.length, 100);
+        attempt++
+      ) {
         const randomIndex = Math.floor(Math.random() * candidates.length);
         const candidate = candidates[randomIndex];
 
