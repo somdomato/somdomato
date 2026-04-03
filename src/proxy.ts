@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 const COOKIE_NAME = "session-id";
+const ALL_ROLES = ["user", "moderator", "admin", "super_admin"];
+const ADMIN_ROLES = ["moderator", "admin", "super_admin"];
 
 function getSessionFromCookie(
   cookies: NextRequest["cookies"],
@@ -12,10 +14,11 @@ function getSessionFromCookie(
     // atob é compatível com Edge Runtime
     const decoded = atob(raw);
     const parsed = JSON.parse(decoded);
+
     if (
       parsed &&
       typeof parsed.id === "string" &&
-      (parsed.role === "user" || parsed.role === "admin")
+      ALL_ROLES.includes(parsed.role)
     ) {
       return parsed as { id: string; role: string };
     }
@@ -33,7 +36,7 @@ export function proxy(request: NextRequest) {
 
   const session = getSessionFromCookie(request.cookies);
 
-  if (!session || session.role !== "admin") {
+  if (!session || !ADMIN_ROLES.includes(session.role)) {
     // API routes retornam 401
     if (pathname.startsWith("/api/")) {
       return NextResponse.json({ error: "Não autorizado" }, { status: 401 });

@@ -4,7 +4,7 @@ import { useActionState } from "react";
 import { signIn } from "@/actions/auth";
 
 export default function AdminLoginPage() {
-  const [state, action, isPending] = useActionState(signIn, { error: "" });
+  const [state, action, isPending] = useActionState(signIn, { error: "", email: "" });
 
   return (
     <div className="flex flex-1 items-center justify-center bg-background">
@@ -21,6 +21,7 @@ export default function AdminLoginPage() {
               type="email"
               id="email"
               name="email"
+              defaultValue={state.email}
               className="w-full px-4 py-2 bg-background border border-primary/30 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
               placeholder="admin@exemplo.com"
               required
