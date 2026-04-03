@@ -1,6 +1,11 @@
 import Link from "next/link";
 import { Heart } from "lucide-react";
-import { SiFacebook, SiX, SiInstagram, SiReddit } from "@icons-pack/react-simple-icons";
+import {
+  SiFacebook,
+  SiX,
+  SiInstagram,
+  SiReddit,
+} from "@icons-pack/react-simple-icons";
 
 export default function Footer() {
   return (

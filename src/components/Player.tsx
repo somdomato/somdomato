@@ -143,11 +143,8 @@ export default function Player({ className = "" }: { className?: string }) {
       const res = await fetch(`/api/songs/next?genre=${currentGenre}`);
       if (!res.ok) return;
       const data = await res.json();
-      const next =
-        data.upcoming?.[0] || data.nextIfNoRequests || null;
-      setNextSong(
-        next ? { title: next.title, artist: next.artist } : null,
-      );
+      const next = data.upcoming?.[0] || data.nextIfNoRequests || null;
+      setNextSong(next ? { title: next.title, artist: next.artist } : null);
     } catch {
       // silencioso
     }
@@ -425,6 +422,73 @@ export default function Player({ className = "" }: { className?: string }) {
           className="hidden lg:block w-12 sm:w-14 accent-primary"
           aria-label="Volume"
         />
+
+        {/* Compartilhar próxima música */}
+        {shareLinks && (
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setShowShareDropdown(!showShareDropdown)}
+              className="hidden sm:flex w-7 h-7 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition"
+              aria-label="Compartilhar próxima música"
+              title="Compartilhar próxima música"
+            >
+              <Share2 size={13} />
+            </button>
+
+            {showShareDropdown && (
+              <>
+                <button
+                  type="button"
+                  className="fixed inset-0 z-40"
+                  onClick={() => setShowShareDropdown(false)}
+                  aria-label="Fechar"
+                />
+                <div className="absolute right-0 top-full mt-2 bg-background-alt border border-primary/50 rounded-xl shadow-2xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200 p-2 min-w-44">
+                  <p className="text-[10px] text-slate-400 mb-2 px-1">
+                    Compartilhar:{" "}
+                    <span className="text-white font-medium">
+                      {nextSong?.title}
+                    </span>{" "}
+                    — {nextSong?.artist}
+                  </p>
+                  <div className="flex items-center gap-2 justify-center">
+                    <a
+                      href={shareLinks.whatsapp}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={() => setShowShareDropdown(false)}
+                      className="w-8 h-8 flex items-center justify-center rounded-full bg-[#25D366]/20 hover:bg-[#25D366]/40 transition"
+                      title="WhatsApp"
+                    >
+                      <SiWhatsapp size={16} className="text-[#25D366]" />
+                    </a>
+                    <a
+                      href={shareLinks.x}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={() => setShowShareDropdown(false)}
+                      className="w-8 h-8 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition"
+                      title="X"
+                    >
+                      <SiX size={14} className="text-white" />
+                    </a>
+                    <a
+                      href={shareLinks.facebook}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={() => setShowShareDropdown(false)}
+                      className="w-8 h-8 flex items-center justify-center rounded-full bg-[#1877F2]/20 hover:bg-[#1877F2]/40 transition"
+                      title="Facebook"
+                    >
+                      <SiFacebook size={16} className="text-[#1877F2]" />
+                    </a>
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+        )}
 
         {/* Botão de Skip (admin) */}
         <AdminSkipButton />
