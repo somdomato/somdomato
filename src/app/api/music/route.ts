@@ -1,5 +1,5 @@
 import { db } from "@/db";
-import { asc, eq, and, sql } from "drizzle-orm";
+import { asc, eq, and, sql, notInArray } from "drizzle-orm";
 import fs from "node:fs/promises";
 import { songs, history, requests } from "@/db/schema";
 import { getCurrentTimeSlot } from "@/lib/time";
@@ -59,7 +59,7 @@ export async function GET(request: Request) {
           sql`(${songs.timeSlots} & ${currentTimeSlot}) > 0`,
           genreCondition,
           blockedSongIds.length > 0
-            ? sql`${songs.id} NOT IN (${blockedSongIds.join(",")})`
+            ? notInArray(songs.id, blockedSongIds)
             : sql`1=1`,
         ),
       );
@@ -91,7 +91,7 @@ export async function GET(request: Request) {
             sql`(${songs.timeSlots} & ${currentTimeSlot}) > 0`,
             sql`(${songs.genre} = 'geral' OR ${songs.allowedInGeneral} = 1)`,
             generalBlockedSongIds.length > 0
-              ? sql`${songs.id} NOT IN (${generalBlockedSongIds.join(",")})`
+              ? notInArray(songs.id, generalBlockedSongIds)
               : sql`1=1`,
           ),
         );
@@ -162,14 +162,12 @@ export async function GET(request: Request) {
       await db.delete(requests).where(eq(requests.id, requestResult.requestId));
       if (global.io) global.io.emit("request:removed", requestResult);
 
-      // Verificar se o arquivo do pedido existe. Se não existir, remover a música do DB
-      // e forçar que a seleção aleatória seja executada (selectedSong = null)
+      // Verificar se o arquivo do pedido existe. Se não, pular para seleção aleatória.
       const requestFileExists = await checkFileExists(requestResult.path);
       if (!requestFileExists) {
-        // Deletar dependências primeiro para evitar erro de foreign key
-        await db.delete(history).where(eq(history.songId, requestResult.id));
-        await db.delete(requests).where(eq(requests.songId, requestResult.id));
-        await db.delete(songs).where(eq(songs.id, requestResult.id));
+        console.warn(
+          `[music] Arquivo do pedido não encontrado: ${requestResult.path} (songId=${requestResult.id})`,
+        );
         selectedSong = null;
         wasFromRequest = false;
       }
@@ -178,19 +176,24 @@ export async function GET(request: Request) {
     // Se não temos uma música selecionada por pedido (ou o arquivo do pedido faltou),
     // buscar por uma música aleatória válida
     if (!selectedSong) {
-      for (let attempt = 0; attempt < 100; attempt++) {
-        const randomIndex = Math.floor(
-          Math.random() * finalFilteredSongs.length,
-        );
-        selectedSong = finalFilteredSongs[randomIndex];
+      // Filtrar músicas com arquivos inexistentes sem deletar do banco
+      const candidates = [...finalFilteredSongs];
+      selectedSong = null;
 
-        if (await checkFileExists(selectedSong.path)) {
+      for (let attempt = 0; attempt < Math.min(candidates.length, 100); attempt++) {
+        const randomIndex = Math.floor(Math.random() * candidates.length);
+        const candidate = candidates[randomIndex];
+
+        if (await checkFileExists(candidate.path)) {
+          selectedSong = candidate;
           break;
         } else {
-          // Deletar dependências primeiro para evitar erro de foreign key
-          await db.delete(history).where(eq(history.songId, selectedSong.id));
-          await db.delete(requests).where(eq(requests.songId, selectedSong.id));
-          await db.delete(songs).where(eq(songs.id, selectedSong.id));
+          console.warn(
+            `[music] Arquivo não encontrado: ${candidate.path} (songId=${candidate.id})`,
+          );
+          // Remover da lista de candidatos para não selecionar de novo
+          candidates.splice(randomIndex, 1);
+          if (candidates.length === 0) break;
         }
       }
     }
