@@ -4,7 +4,10 @@ import { useActionState } from "react";
 import { signIn } from "@/actions/auth";
 
 export default function AdminLoginPage() {
-  const [state, action, isPending] = useActionState(signIn, { error: "", email: "" });
+  const [state, action, isPending] = useActionState(signIn, {
+    error: "",
+    email: "",
+  });
 
   return (
     <div className="flex flex-1 items-center justify-center bg-background">
