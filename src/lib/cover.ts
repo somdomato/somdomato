@@ -203,6 +203,55 @@ export async function fetchCoverFromDeezer(
 }
 
 // ---------------------------------------------------------------------------
+// Helper: validar e salvar buffer de imagem como capa
+// ---------------------------------------------------------------------------
+
+/**
+ * Valida um buffer de imagem (>= 1 KB, magic bytes JPEG/PNG) e salva em disco.
+ * Retorna o URL path verificado, ou `null` se inválido.
+ */
+async function saveImageBufferAsCover(
+  buffer: Buffer,
+  artist: string,
+  coversDir: string,
+): Promise<string | null> {
+  if (buffer.length < 1000) return null;
+  const isJpeg = buffer[0] === 0xff && buffer[1] === 0xd8;
+  const isPng = buffer[0] === 0x89 && buffer[1] === 0x50;
+  if (!isJpeg && !isPng) return null;
+
+  await mkdir(coversDir, { recursive: true });
+  const filePath = coverPublicPath(artist, coversDir);
+  await writeFile(filePath, buffer);
+
+  const url = coverUrlPath(artist);
+  return verifyCoverOnDisk(url, path.dirname(coversDir));
+}
+
+// ---------------------------------------------------------------------------
+// Busca via URL direta — fallback quando todas as outras fontes falham
+// ---------------------------------------------------------------------------
+
+/**
+ * Baixa uma imagem de uma URL direta (ex: thumbnail do Deezer salvo no upload).
+ * Valida integridade (>= 1 KB, magic bytes) e salva em disco.
+ */
+async function fetchCoverFromUrl(
+  url: string,
+  artist: string,
+  coversDir: string,
+): Promise<string | null> {
+  try {
+    const res = await fetch(url, { signal: AbortSignal.timeout(10000) });
+    if (!res.ok) return null;
+    const buffer = Buffer.from(await res.arrayBuffer());
+    return saveImageBufferAsCover(buffer, artist, coversDir);
+  } catch {
+    return null;
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Pipeline principal de resolução (usado no play automático)
 // ---------------------------------------------------------------------------
 
@@ -211,24 +260,23 @@ export async function fetchCoverFromDeezer(
  *  1. Arquivo já existe no disco (`public/covers/[slug].jpg`) → reutiliza
  *  2. Extração das tags ID3 do arquivo MP3
  *  3. Busca via API do Deezer
+ *  4. Download da `fallbackUrl` (ex: thumbnail do Deezer salvo no upload)
  *
  * Retorna o URL path (ex: `/covers/henrique-e-juliano.jpg`) ou null.
- *
- * IMPORTANTE: Esta função NÃO deve ser chamada se a música já tem uma capa
- * diferente do padrão (`/images/logotipo.svg`) — isso protege capas
- * configuradas manualmente no painel de admin.
  */
 export async function resolveSongCover(opts: {
   mp3Path: string;
   artist: string;
   title: string;
   coversDir?: string;
+  fallbackUrl?: string;
 }): Promise<string | null> {
   const {
     mp3Path,
     artist,
     title,
     coversDir = path.join(process.cwd(), "public/covers"),
+    fallbackUrl,
   } = opts;
 
   // 1. Arquivo de capa já existe no disco?
@@ -251,19 +299,41 @@ export async function resolveSongCover(opts: {
   try {
     const buffer = await fetchCoverFromDeezer(artist, title);
     if (buffer) {
-      await mkdir(coversDir, { recursive: true });
-      const filePath = coverPublicPath(artist, coversDir);
-      await writeFile(filePath, buffer);
-      // Verificar se o arquivo realmente persistiu no disco
-      const url = coverUrlPath(artist);
-      const verified = await verifyCoverOnDisk(url, path.dirname(coversDir));
+      const verified = await saveImageBufferAsCover(buffer, artist, coversDir);
       if (verified) return verified;
     }
   } catch (e) {
     console.warn(`[cover] Falha no Deezer para "${artist} - ${title}":`, e);
   }
 
+  // 4. Fallback URL direto (ex: thumbnail do Deezer salvo na tabela uploads)
+  if (fallbackUrl) {
+    try {
+      const fromUrl = await fetchCoverFromUrl(fallbackUrl, artist, coversDir);
+      if (fromUrl) return fromUrl;
+    } catch (e) {
+      console.warn(`[cover] Falha no fallback URL ${fallbackUrl}:`, e);
+    }
+  }
+
   return null;
+}
+
+// ---------------------------------------------------------------------------
+// Validação para escrita no banco de dados
+// ---------------------------------------------------------------------------
+
+/**
+ * Gate de validação central: toda escrita de `cover` no banco DEVE passar
+ * por esta função. Garante que nunca salvamos uma capa quebrada/inexistente.
+ *
+ * @returns O URL verificado se o arquivo existe no disco e é >= 1 KB, ou `null`.
+ */
+export async function validateCoverForDb(
+  coverUrl: string | null | undefined,
+): Promise<string | null> {
+  if (!coverUrl || coverUrl === "/images/logotipo.svg") return null;
+  return verifyCoverOnDisk(coverUrl);
 }
 
 // ---------------------------------------------------------------------------

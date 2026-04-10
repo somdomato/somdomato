@@ -44,7 +44,7 @@ export default function SongList({
                       width={36}
                       height={36}
                       alt={it.title}
-                      className="rounded"
+                      className="rounded object-cover"
                     />
                   </div>
                 </td>

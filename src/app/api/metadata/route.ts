@@ -1,6 +1,9 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { RADIO_CONFIG, GENRES, DEFAULT_SONG, isValidGenre } from "@/config";
+import { db } from "@/db";
+import { songs } from "@/db/schema";
+import { and, eq } from "drizzle-orm";
 
 interface IcecastSource {
   listenurl: string;
@@ -81,7 +84,6 @@ export async function GET(request: NextRequest) {
     // Extrair título e artista
     let title: string = DEFAULT_SONG.title;
     let artist: string = DEFAULT_SONG.artist;
-    const cover: string = DEFAULT_SONG.cover;
 
     if (source.title) {
       // Se tiver artista separado
@@ -100,8 +102,22 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // TODO: Buscar cover do banco de dados se necessário
-    // Por enquanto usa cover padrão
+    // Buscar cover do banco de dados pelo título e artista
+    let cover: string = DEFAULT_SONG.cover;
+    if (title !== DEFAULT_SONG.title && artist !== DEFAULT_SONG.artist) {
+      try {
+        const [match] = await db
+          .select({ cover: songs.cover })
+          .from(songs)
+          .where(and(eq(songs.title, title), eq(songs.artist, artist)))
+          .limit(1);
+        if (match?.cover && match.cover !== "/images/logotipo.svg") {
+          cover = match.cover;
+        }
+      } catch {
+        // fallback para cover padrão
+      }
+    }
 
     return NextResponse.json({
       song: {

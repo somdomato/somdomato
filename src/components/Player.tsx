@@ -84,7 +84,9 @@ export default function Player({ className = "" }: { className?: string }) {
     title,
     artist,
     cover,
+    songId,
     setSong,
+    updateCover,
   } = useAudio();
   const { currentGenre, setGenre, getStreamUrl } = useGenre();
   const [showGenreDropdown, setShowGenreDropdown] = useState(false);
@@ -165,18 +167,46 @@ export default function Player({ className = "" }: { className?: string }) {
     return () => clearInterval(interval);
   }, [fetchMetadata, fetchListeners, fetchNextSong]);
 
-  // Atualizar próxima música via socket
+  // Atualizar próxima música e capa via socket
   useEffect(() => {
-    const onSongChanged = () => fetchNextSong();
+    const onSongChanged = (data: {
+      id?: number;
+      title?: string;
+      artist?: string;
+      cover?: string;
+      playedOnMountpoint?: string;
+    }) => {
+      fetchNextSong();
+      // Atualizar capa instantaneamente via socket (sem esperar poll de 10s)
+      if (
+        data.playedOnMountpoint === currentGenre &&
+        data.title &&
+        data.artist
+      ) {
+        setSong({
+          id: data.id,
+          title: data.title,
+          artist: data.artist,
+          cover: data.cover || "/images/logotipo.svg",
+        });
+      }
+    };
+    const onCoverUpdate = (data: { songId: number; cover: string }) => {
+      if (data.songId === songId && data.cover) {
+        updateCover(data.cover);
+      }
+    };
     socket.on("song:changed", onSongChanged);
-    socket.on("request:added", onSongChanged);
-    socket.on("request:removed", onSongChanged);
+    socket.on("song:cover", onCoverUpdate);
+    socket.on("request:added", fetchNextSong);
+    socket.on("request:removed", fetchNextSong);
     return () => {
       socket.off("song:changed", onSongChanged);
-      socket.off("request:added", onSongChanged);
-      socket.off("request:removed", onSongChanged);
+      socket.off("song:cover", onCoverUpdate);
+      socket.off("request:added", fetchNextSong);
+      socket.off("request:removed", fetchNextSong);
     };
-  }, [fetchNextSong]);
+  }, [fetchNextSong, currentGenre, setSong, songId, updateCover]);
 
   const handleGenreChange = useCallback(
     async (newGenre: (typeof GENRES)[number]) => {

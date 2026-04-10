@@ -2,11 +2,7 @@ import { db } from "@/db";
 import { songs, history } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import fs from "node:fs/promises";
-import {
-  extractAndSaveCover,
-  checkExistingCover,
-  verifyCoverOnDisk,
-} from "@/lib/cover";
+import { resolveSongCover, validateCoverForDb } from "@/lib/cover";
 import util from "node:util";
 import { exec } from "node:child_process";
 
@@ -41,46 +37,24 @@ export async function POST(request: Request) {
     // ensure cover is present in DB (best-effort)
     let resolvedCover = s.cover ?? null;
     try {
-      let coverPath = s.cover ?? null;
-
-      if (coverPath && coverPath !== "/images/logotipo.svg") {
-        // confirm physical file exists
-        coverPath = await verifyCoverOnDisk(coverPath);
-      }
-
-      if (!coverPath || coverPath === "/images/logotipo.svg") {
-        try {
-          const extracted = await extractAndSaveCover(s.path, s.artist);
-          if (extracted) coverPath = extracted;
-        } catch (err) {
-          console.error("Erro ao extrair capa:", err);
+      const valid = await validateCoverForDb(s.cover);
+      if (!valid) {
+        const found = await resolveSongCover({
+          mp3Path: s.path,
+          artist: s.artist,
+          title: s.title,
+        });
+        const verified = await validateCoverForDb(found);
+        if (verified && verified !== s.cover) {
+          await db
+            .update(songs)
+            .set({ cover: verified })
+            .where(eq(songs.id, s.id));
         }
+        resolvedCover = verified;
+      } else {
+        resolvedCover = valid;
       }
-
-      if (!coverPath || coverPath === "/images/logotipo.svg") {
-        const found = await checkExistingCover(s.artist);
-        if (found) coverPath = found;
-      }
-
-      // Se não encontrou nenhuma capa válida, usa o logo padrão
-      if (!coverPath) {
-        coverPath = "/images/logotipo.svg";
-      }
-
-      // Verificação final antes de salvar no banco
-      if (coverPath !== "/images/logotipo.svg") {
-        const verified = await verifyCoverOnDisk(coverPath);
-        if (!verified) coverPath = "/images/logotipo.svg";
-      }
-
-      if (coverPath !== s.cover) {
-        await db
-          .update(songs)
-          .set({ cover: coverPath })
-          .where(eq(songs.id, s.id));
-      }
-
-      resolvedCover = coverPath;
     } catch (err) {
       console.error("Erro ao garantir capa:", err);
     }

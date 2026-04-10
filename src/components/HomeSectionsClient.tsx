@@ -198,7 +198,7 @@ export default function HomeSectionsClient({
                           width={36}
                           height={36}
                           alt={s.title}
-                          className="rounded"
+                          className="rounded object-cover"
                         />
                       </div>
                     </td>
@@ -238,7 +238,7 @@ export default function HomeSectionsClient({
                           width={36}
                           height={36}
                           alt={t.title}
-                          className="rounded"
+                          className="rounded object-cover"
                         />
                       </div>
                     </td>
@@ -269,7 +269,7 @@ export default function HomeSectionsClient({
                 width={36}
                 height={36}
                 alt={nextIfNoRequests.title}
-                className="rounded"
+                className="rounded object-cover"
               />
               <div className="flex-1 min-w-0">
                 <div className="font-medium truncate">
@@ -300,7 +300,7 @@ export default function HomeSectionsClient({
                           width={36}
                           height={36}
                           alt={u.title}
-                          className="rounded"
+                          className="rounded object-cover"
                         />
                       </div>
                     </td>

@@ -7,7 +7,14 @@ interface AudioContextType {
   title: string;
   artist: string;
   cover: string;
-  setSong: (song: { title: string; artist: string; cover: string }) => void;
+  songId: number | null;
+  setSong: (song: {
+    id?: number;
+    title: string;
+    artist: string;
+    cover: string;
+  }) => void;
+  updateCover: (cover: string) => void;
   playing: boolean;
   loading: boolean;
   play: (streamUrl?: string) => Promise<void>;
@@ -32,9 +39,15 @@ export const AudioProvider = ({ children }: { children: React.ReactNode }) => {
   const [title, setTitle] = useState<string>(DEFAULT_SONG.title);
   const [artist, setArtist] = useState<string>(DEFAULT_SONG.artist);
   const [cover, setCover] = useState<string>(DEFAULT_SONG.cover);
+  const [songId, setSongId] = useState<number | null>(null);
 
-  const setSong = (song: { title: string; artist: string; cover: string }) => {
-    const { title, artist, cover } = song;
+  const setSong = (song: {
+    id?: number;
+    title: string;
+    artist: string;
+    cover: string;
+  }) => {
+    const { title, artist, cover, id } = song;
 
     if ("mediaSession" in navigator) {
       navigator.mediaSession.metadata = new MediaMetadata({
@@ -54,6 +67,11 @@ export const AudioProvider = ({ children }: { children: React.ReactNode }) => {
     setTitle(title);
     setArtist(artist);
     setCover(cover);
+    if (id != null) setSongId(id);
+  };
+
+  const updateCover = (newCover: string) => {
+    setCover(newCover);
   };
 
   const play = async (streamUrl?: string) => {
@@ -161,7 +179,9 @@ export const AudioProvider = ({ children }: { children: React.ReactNode }) => {
         title,
         artist,
         cover,
+        songId,
         setSong,
+        updateCover,
       }}
     >
       {children}

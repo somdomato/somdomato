@@ -322,6 +322,66 @@ cd ansible && ansible-playbook -i inventory.ini playbook.yml
 - Docker usa variantes `-docker.liq` e `-docker.xml` quando necessário
 - Em produção: Liquidsoap usa `localhost:3000`, no Docker usa `nextjs:3000`
 
+## Sistema de Capas (Covers)
+
+### Armazenamento
+
+Capas são armazenadas em `public/covers/{slug}.jpg`, onde `slug` é derivado do nome do artista via `sanitizeArtistForFile()` (em `src/lib/cover.ts`). Uma capa por artista — todas as músicas do mesmo artista compartilham o mesmo arquivo.
+
+Exemplo: "Henrique & Juliano" → `public/covers/henrique-e-juliano.jpg`
+
+### Pipeline de Resolução
+
+`resolveSongCover()` é o ponto de entrada único para resolução de capas. Ordem de prioridade:
+
+1. **Disco** — Verifica se `public/covers/{slug}.jpg` já existe e é >= 1 KB
+2. **ID3** — Extrai imagem embutida nas tags ID3 do MP3 (valida magic bytes JPEG/PNG)
+3. **Deezer API** — Busca `cover_xl` (1000x1000) via `api.deezer.com/search`
+4. **Fallback URL** — URL direta (ex: thumbnail do Deezer salvo na tabela `uploads`)
+
+### Validação (Regra Crítica)
+
+**Toda escrita de `cover` no banco DEVE passar por `validateCoverForDb()`**. Esta função:
+- Retorna `null` se o URL é falsy ou é o logo padrão (`/images/logotipo.svg`)
+- Verifica se o arquivo existe no disco e é >= 1 KB
+- Impede salvar capas quebradas/inexistentes no banco
+
+### Quando a Resolução Acontece
+
+| Momento | Função | Inclui Deezer? |
+|---------|--------|----------------|
+| Aprovação de upload | `approveUpload()` → `resolveSongCover()` | Sim (+ fallback URL) |
+| Seleção AutoDJ (`/api/music`) | Inline (disco + ID3 apenas) | Não (evita latência) |
+| Callback on_track (`/api/music/started`) | `triggerCoverResolution()` → `resolveSongCover()` | Sim (async) |
+| Admin play (`/api/admin/play`) | `resolveSongCover()` | Sim |
+| Scan/sync (`upsertSongFromFile`) | `resolveSongCover()` | Sim |
+| Edição no admin (`updateSong`) | `resolveSongCover()` | Sim |
+
+### Eventos Socket.io
+
+- `song:changed` — Inclui `cover` no payload. Player atualiza capa instantaneamente.
+- `song:cover` — Emitido após resolução assíncrona. Player atualiza se `songId` corresponde.
+
+### Rename de Artista
+
+Quando o nome do artista muda no admin:
+1. A capa é copiada (se outros usam o artista antigo) ou renomeada para o novo slug
+2. O campo `cover` é atualizado para o novo URL path
+3. Se a migração falha, `resolveSongCover()` roda como fallback
+
+### UI e Fallback Visual
+
+- Todas as `<Image>` de capas usam `className="object-cover"` para manter aspecto 1:1
+- Fallback visual: `"/images/logotipo.svg"` — usado apenas na UI, não salvo como capa real
+- O endpoint `/api/metadata` retorna a capa real do banco (busca por `title + artist`)
+
+### Arquivos-Chave
+
+- `src/lib/cover.ts` — Funções de capa: resolução, validação, extração, remoção
+- `src/lib/upload.ts` — `approveUpload()` — usa `resolveSongCover()` com `fallbackUrl`
+- `src/actions/admin.ts` — `updateSong()` — processamento de capa no admin
+- `src/app/api/music/started/route.ts` — Resolução assíncrona no play
+
 ---
 
 **Ao trabalhar neste projeto:**

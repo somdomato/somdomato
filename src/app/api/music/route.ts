@@ -213,44 +213,30 @@ export async function GET(request: Request) {
       });
     }
 
-    // Garantir que haja um caminho de capa no banco antes de emitir (melhor esforço)
+    // Resolução de capa (melhor esforço, sem Deezer para não atrasar resposta)
+    // A resolução completa (com Deezer) roda async em /api/music/started
     try {
-      const { extractAndSaveCover, checkExistingCover, verifyCoverOnDisk } =
+      const { validateCoverForDb, extractAndSaveCover, checkExistingCover } =
         await import("@/lib/cover");
 
-      let coverPath: string | null = selectedSong.cover ?? null;
-
-      // Se já houver cover salvo, verificar se o arquivo físico existe. Se não existir, forçar nova busca.
-      if (coverPath) {
-        coverPath = await verifyCoverOnDisk(coverPath);
-      }
-
-      // Tentar extrair capa embutida no MP3
-      if (!coverPath) {
+      const validCover = await validateCoverForDb(selectedSong.cover);
+      if (!validCover) {
+        // Capa ausente ou inválida — tentar disco + ID3 (rápido)
+        let resolved: string | null = null;
         try {
-          const extracted = await extractAndSaveCover(
+          resolved = await extractAndSaveCover(
             selectedSong.path,
             selectedSong.artist,
           );
-          if (extracted) coverPath = extracted;
-        } catch (err) {
-          console.error("Erro ao extrair capa:", err);
+        } catch {
+          // ignora
         }
-      }
-
-      // Se não extraímos, procurar por capa existente no disco para este artista
-      if (!coverPath) {
-        try {
-          const found = await checkExistingCover(selectedSong.artist);
-          if (found) coverPath = found;
-        } catch (err) {
-          console.error("Erro ao procurar capa por artista:", err);
+        if (!resolved) {
+          resolved = await checkExistingCover(selectedSong.artist).catch(
+            () => null,
+          );
         }
-      }
-
-      // Atualizar DB se encontramos um caminho válido e verificado no disco
-      if (coverPath && coverPath !== selectedSong.cover) {
-        const verified = await verifyCoverOnDisk(coverPath);
+        const verified = await validateCoverForDb(resolved);
         if (verified) {
           await db
             .update(songs)
@@ -260,19 +246,6 @@ export async function GET(request: Request) {
         } else {
           selectedSong.cover = null;
         }
-      } else if (!coverPath && selectedSong.cover) {
-        // A capa referenciada no DB não existe mais. **Não** gravar `null` no banco (isso
-        // causa quebras de imagem). Em vez disso, registrar um aviso e usar o fallback
-        // ao enviar ao frontend. Se quiser, podemos atualizar para o valor padrão explicitamente.
-        try {
-          console.warn(
-            `Capa referenciada para a música ${selectedSong.id} não existe: ${selectedSong.cover}`,
-          );
-        } catch (e) {
-          console.error("Erro ao tratar capa ausente:", e);
-        }
-        // Não atualizar o banco para null; o fallback será aplicado abaixo ao enviar ao frontend
-        selectedSong.cover = null;
       }
     } catch (err) {
       console.error("Erro ao processar capa da música:", err);
@@ -280,7 +253,6 @@ export async function GET(request: Request) {
 
     // Garantir um valor seguro para envio ao frontend (fallback se não tivermos capa)
     const safeCover = selectedSong.cover || "/images/logotipo.svg";
-    selectedSong.cover = safeCover;
 
     // Inserir no histórico e emitir evento socket diretamente aqui,
     // pois o on_track do Liquidsoap pode não preservar os metadados annotate

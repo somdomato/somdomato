@@ -45,17 +45,18 @@ export async function approveUpload(
   fs.unlinkSync(upload.path);
 
   // Extract and save cover from MP3, existing file, or Deezer API
-  let coverPath = "/images/logotipo.svg";
+  let coverPath: string | null = null;
   try {
-    const { resolveSongCover } = await import("../lib/cover");
+    const { resolveSongCover, validateCoverForDb } = await import(
+      "../lib/cover"
+    );
     const resolved = await resolveSongCover({
       mp3Path: destPath,
       artist: upload.artist,
       title: upload.title,
+      fallbackUrl: upload.thumbnail || undefined,
     });
-    if (resolved) {
-      coverPath = resolved;
-    }
+    coverPath = await validateCoverForDb(resolved);
   } catch (err) {
     console.error("Erro ao resolver capa:", err);
   }

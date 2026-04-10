@@ -3,7 +3,8 @@ import NodeID3 from "node-id3";
 import { db } from "@/db";
 import { eq } from "drizzle-orm";
 import { songs } from "@/db/schema";
-import { getAllFilesRecursive, extractAndSaveCover } from "../lib";
+import { getAllFilesRecursive } from "../lib";
+import { resolveSongCover, validateCoverForDb } from "../lib/cover";
 import { parse } from "node:path";
 
 export function normalizeString(s?: string | null) {
@@ -59,15 +60,20 @@ export async function upsertSongFromFile(filePath: string) {
 
   // Determine title/artist (needed for cover extraction slug)
   const artist = tagArtist ? tagArtist : detectedArtistFromFilename || "";
+  const title = tagTitle ? tagTitle : detectedTitleFromFilename || filename;
 
-  // Extract cover if possible (best-effort)
+  // Extract cover if possible (best-effort, full pipeline)
   let cover: string | null = null;
   try {
-    cover = await extractAndSaveCover(resolved, artist);
+    const coverResult = await resolveSongCover({
+      mp3Path: resolved,
+      artist,
+      title,
+    });
+    cover = await validateCoverForDb(coverResult);
   } catch (_err) {
     // continue without cover
   }
-  const title = tagTitle ? tagTitle : detectedTitleFromFilename || filename;
 
   // Decide whether we will create a new row or update an existing one
   const [existing] = await db
@@ -77,11 +83,14 @@ export async function upsertSongFromFile(filePath: string) {
     .limit(1);
   const isExisting = Boolean(existing);
 
-  // Insert or update
+  // Insert or update (never wipe a valid cover with null)
+  const conflictSet: Record<string, unknown> = { title, artist };
+  if (cover) conflictSet.cover = cover;
+
   await db
     .insert(songs)
     .values({ title, artist, path: resolved, cover })
-    .onConflictDoUpdate({ target: songs.path, set: { title, artist, cover } });
+    .onConflictDoUpdate({ target: songs.path, set: conflictSet });
 
   return {
     skipped: false,

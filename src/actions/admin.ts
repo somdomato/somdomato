@@ -361,32 +361,67 @@ export async function updateSong(
       }
     } else if (data.coverFile || data.artist) {
       // Só processar capa se houve upload de nova capa ou mudança de artista
-      const { extractAndSaveCover, checkExistingCover, verifyCoverOnDisk } =
-        await import("@/lib/cover");
+      const {
+        resolveSongCover,
+        validateCoverForDb,
+        coverPublicPath,
+        checkExistingCover,
+      } = await import("@/lib/cover");
 
       const artistName = (data.artist as string) ?? song.artist;
 
-      // Tentar extrair do ID3 (que pode ter sido atualizado com coverFile acima)
-      const fromId3 = await extractAndSaveCover(currentPath, artistName).catch(
-        () => null,
-      );
+      // Se o artista mudou, migrar/copiar o arquivo de capa para o novo slug
+      let coverHandled = false;
+      if (data.artist && data.artist !== song.artist) {
+        const { existsSync } = await import("node:fs");
+        const { copyFile } = await import("node:fs/promises");
+        const oldCoverPath = coverPublicPath(song.artist);
+        const newCoverPath = coverPublicPath(data.artist);
+        if (existsSync(oldCoverPath) && !existsSync(newCoverPath)) {
+          try {
+            // Verificar se outras músicas ainda usam o artista antigo
+            const othersWithOldArtist = await db
+              .select({ id: songs.id })
+              .from(songs)
+              .where(eq(songs.artist, song.artist))
+              .limit(2);
+            const othersExist = othersWithOldArtist.some((s) => s.id !== id);
+            if (othersExist) {
+              await copyFile(oldCoverPath, newCoverPath);
+            } else {
+              const { rename } = await import("node:fs/promises");
+              await rename(oldCoverPath, newCoverPath);
+            }
+          } catch (e) {
+            console.warn("[cover] Erro ao migrar capa para novo artista:", e);
+          }
+        }
+        // Atualizar cover para o novo slug se a capa existe
+        const newCoverUrl = await checkExistingCover(data.artist);
+        if (newCoverUrl) {
+          const verified = await validateCoverForDb(newCoverUrl);
+          if (verified) {
+            await db
+              .update(songs)
+              .set({ cover: verified })
+              .where(eq(songs.id, id));
+            coverHandled = true;
+          }
+        }
+      }
 
-      if (fromId3) {
-        // Verificar se o arquivo realmente existe no disco antes de salvar no banco
-        const verified = await verifyCoverOnDisk(fromId3);
+      // Resolução completa se necessário (nova capa ou migração falhou)
+      if (!coverHandled) {
+        const resolved = await resolveSongCover({
+          mp3Path: currentPath,
+          artist: artistName,
+          title: (data.title as string) ?? song.title,
+        });
+        const verified = await validateCoverForDb(resolved);
         if (verified) {
           await db
             .update(songs)
             .set({ cover: verified })
-            .where(eq(songs.id, id));
-        }
-      } else {
-        // Verificar se já existe arquivo de capa no disco para este artista
-        const existing = await checkExistingCover(artistName);
-        if (existing) {
-          await db
-            .update(songs)
-            .set({ cover: existing })
             .where(eq(songs.id, id));
         }
       }
