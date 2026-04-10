@@ -16,10 +16,12 @@ export default function SongList({
   items,
   keyField = "id",
   renderRight,
+  rightColClass = "w-24",
 }: {
   items: Item[];
   keyField?: string;
   renderRight?: (item: Item) => React.ReactNode;
+  rightColClass?: string;
 }) {
   const hasRight = !!renderRight;
 
@@ -29,7 +31,7 @@ export default function SongList({
         <colgroup>
           <col className="w-10" />
           <col />
-          {hasRight && <col className="w-24" />}
+          {hasRight && <col className={rightColClass} />}
         </colgroup>
         <tbody>
           {items.map((it) => {

@@ -24,25 +24,26 @@ export default function Next({
   data: UpcomingEntry[];
   initialNextIfNoRequests: UpcomingEntry | null;
 }) {
-  const [upcoming, setUpcoming] = useState<UpcomingEntry[]>(data);
-  const [nextIfNoRequests, setNextIfNoRequests] =
-    useState<UpcomingEntry | null>(initialNextIfNoRequests);
+  const [requests, setRequests] = useState<UpcomingEntry[]>(data);
+  const [autoDJ, setAutoDJ] = useState<UpcomingEntry | null>(
+    initialNextIfNoRequests,
+  );
   const [, setTick] = useState(0);
   const { currentGenre } = useGenre();
+  const isGeral = currentGenre === "geral";
 
   const fetchUpcoming = useCallback(async () => {
     try {
       const res = await fetch(`/api/songs/next?genre=${currentGenre}`);
       if (!res.ok) return;
       const json = await res.json();
-      setUpcoming(json.upcoming || []);
-      setNextIfNoRequests(json.nextIfNoRequests || null);
+      setRequests(json.upcoming || []);
+      setAutoDJ(json.nextIfNoRequests || null);
     } catch (err) {
       console.warn("fetchUpcoming failed:", err);
     }
   }, [currentGenre]);
 
-  // Recarregar quando o gênero mudar
   useEffect(() => {
     fetchUpcoming();
   }, [fetchUpcoming]);
@@ -58,16 +59,15 @@ export default function Next({
         fetchUpcoming();
         return;
       }
-      setUpcoming((prev) => prev.filter((u) => u.reqId !== reqId));
+      setRequests((prev) => prev.filter((u) => u.reqId !== reqId));
     };
 
     const onRequestAdded = (req: unknown) => {
-      // Pedidos só são relevantes para o gênero "geral"
-      if (currentGenre !== "geral") return;
+      if (!isGeral) return;
 
       if (req && typeof req === "object" && "reqId" in req) {
         const r = req as UpcomingEntry;
-        setUpcoming((prev) => {
+        setRequests((prev) => {
           if (prev.some((p) => p.reqId === r.reqId)) return prev;
           return [...prev, { ...r, cover: r.cover ?? null }].slice(-10);
         });
@@ -76,90 +76,50 @@ export default function Next({
       fetchUpcoming();
     };
 
-    const onSongChanged = () => {
-      // Atualizar próxima música do AutoDJ
-      fetchUpcoming();
-    };
-
-    socket.on("song:changed", onSongChanged);
+    socket.on("song:changed", fetchUpcoming);
     socket.on("request:removed", onRequestRemoved);
     socket.on("request:added", onRequestAdded);
     socket.on("requests:updated", fetchUpcoming);
 
     return () => {
-      socket.off("song:changed", onSongChanged);
+      socket.off("song:changed", fetchUpcoming);
       socket.off("request:removed", onRequestRemoved);
       socket.off("request:added", onRequestAdded);
       socket.off("requests:updated", fetchUpcoming);
     };
-  }, [fetchUpcoming, currentGenre]);
+  }, [fetchUpcoming, isGeral]);
 
   // Atualizar tempos relativos a cada minuto
   useEffect(() => {
-    const interval = setInterval(() => {
-      setTick((t) => t + 1);
-    }, 60000);
+    const interval = setInterval(() => setTick((t) => t + 1), 60000);
     return () => clearInterval(interval);
   }, []);
 
-  // Para gênero "geral": mostrar próxima do AutoDJ + pedidos
-  // Para outros gêneros: mostrar apenas próxima do AutoDJ
-  if (currentGenre !== "geral") {
-    return (
-      <SongBlock icon={CircleArrowRight} title="Próximas">
-        {nextIfNoRequests ? (
-          <SongList
-            items={[
-              {
-                id: nextIfNoRequests.id,
-                title: nextIfNoRequests.title,
-                artist: nextIfNoRequests.artist,
-                cover: nextIfNoRequests.cover,
-              },
-            ]}
-            renderRight={() => (
-              <span className="text-xs px-2 py-0.5 bg-primary/20 text-primary rounded">
-                AutoDJ
-              </span>
-            )}
-          />
-        ) : (
-          <div className="text-muted text-sm">Calculando próxima música...</div>
-        )}
-      </SongBlock>
-    );
+  // Montar lista: AutoDJ primeiro, depois pedidos (só no geral)
+  const items: UpcomingEntry[] = [];
+
+  if (autoDJ) {
+    items.push({ ...autoDJ, reqId: -1, requestedAt: null });
   }
 
-  // Para "geral": mostrar AutoDJ primeiro, depois os pedidos
-  // Construir lista ordenada: AutoDJ -> Pedidos
-  const allItems: UpcomingEntry[] = [];
-
-  // Adicionar próxima do AutoDJ primeiro (se existir)
-  if (nextIfNoRequests) {
-    allItems.push({
-      reqId: -1,
-      id: nextIfNoRequests.id,
-      title: nextIfNoRequests.title,
-      artist: nextIfNoRequests.artist,
-      cover: nextIfNoRequests.cover,
-      requestedAt: null,
-    });
+  if (isGeral) {
+    items.push(...requests);
   }
 
-  // Adicionar pedidos depois
-  allItems.push(...upcoming);
+  const hasRequests = items.some((i) => i.reqId !== -1);
 
   return (
     <SongBlock icon={CircleArrowRight} title="Próximas">
-      {allItems.length === 0 ? (
+      {items.length === 0 ? (
         <div className="text-muted text-sm">Calculando próxima música...</div>
       ) : (
         <SongList
-          items={allItems}
+          items={items}
           keyField="reqId"
+          rightColClass={hasRequests ? "w-36" : "w-24"}
           renderRight={(item) => {
             const entry = item as UpcomingEntry;
-            // Se reqId=-1, é a próxima do AutoDJ
+
             if (entry.reqId === -1) {
               return (
                 <span className="text-xs px-2 py-0.5 bg-primary/20 text-primary rounded">
@@ -167,13 +127,13 @@ export default function Next({
                 </span>
               );
             }
-            // Pedido: mostrar tempo relativo + badge
+
             return (
               <div className="flex items-center gap-2">
-                <span className="text-xs text-muted">
+                <span className="text-xs text-muted whitespace-nowrap">
                   {formatRelativeTime(entry.requestedAt)}
                 </span>
-                <span className="text-xs px-2 py-0.5 bg-amber-500/20 text-amber-400 rounded">
+                <span className="text-xs px-2 py-0.5 bg-amber-500/20 text-amber-400 rounded whitespace-nowrap">
                   Pedido
                 </span>
               </div>
