@@ -102,17 +102,21 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Buscar cover do banco de dados pelo título e artista
+    // Buscar cover e id do banco de dados pelo título e artista
     let cover: string = DEFAULT_SONG.cover;
+    let id: number | undefined;
     if (title !== DEFAULT_SONG.title && artist !== DEFAULT_SONG.artist) {
       try {
         const [match] = await db
-          .select({ cover: songs.cover })
+          .select({ id: songs.id, cover: songs.cover })
           .from(songs)
           .where(and(eq(songs.title, title), eq(songs.artist, artist)))
           .limit(1);
-        if (match?.cover && match.cover !== "/images/logotipo.svg") {
-          cover = match.cover;
+        if (match) {
+          id = match.id;
+          if (match.cover && match.cover !== "/images/logotipo.svg") {
+            cover = match.cover;
+          }
         }
       } catch {
         // fallback para cover padrão
@@ -121,6 +125,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       song: {
+        id,
         title,
         artist,
         cover,
