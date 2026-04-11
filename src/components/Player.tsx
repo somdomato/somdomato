@@ -580,7 +580,9 @@ export default function Player({ className = "" }: { className?: string }) {
                           className="w-3 h-3 accent-primary"
                         />
                         <div className="flex-1 min-w-0">
-                          <div className="text-[10px] text-slate-400">Música atual</div>
+                          <div className="text-[10px] text-slate-400">
+                            Música atual
+                          </div>
                           <div className="text-[10px] text-white font-medium truncate">
                             {title}
                           </div>
