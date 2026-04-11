@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { socket } from "@/lib/socket";
 import { useGenre } from "@/context/GenreContext";
+import { useLive } from "@/context/LiveContext";
 import SongBlock from "./SongBlock";
 import SongList from "./SongList";
 import { CircleArrowRight } from "lucide-react";
@@ -30,6 +31,7 @@ export default function Next({
   );
   const [, setTick] = useState(0);
   const { currentGenre } = useGenre();
+  const { live, djName } = useLive();
   const isGeral = currentGenre === "geral";
 
   const fetchUpcoming = useCallback(async () => {
@@ -110,7 +112,24 @@ export default function Next({
 
   return (
     <SongBlock icon={CircleArrowRight} title="Próximas">
-      {items.length === 0 ? (
+      {live ? (
+        <div className="flex flex-col items-center justify-center gap-3 py-6 text-center">
+          <span className="inline-flex items-center gap-2 px-3 py-1 bg-red-500/20 text-red-400 rounded-full text-sm font-semibold">
+            <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+            AO VIVO
+          </span>
+          <p className="text-sm text-muted">
+            {djName ? (
+              <>
+                <strong className="text-white">{djName}</strong> está no comando
+                da locução ao vivo.
+              </>
+            ) : (
+              "Um DJ está no comando da locução ao vivo."
+            )}
+          </p>
+        </div>
+      ) : items.length === 0 ? (
         <div className="text-muted text-sm">Calculando próxima música...</div>
       ) : (
         <SongList

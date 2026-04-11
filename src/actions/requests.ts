@@ -4,6 +4,7 @@ import { db } from "@/db";
 import { songs, requests } from "@/db/schema";
 import { eq, desc } from "drizzle-orm";
 import { checkMusicRepetition } from "@/lib/protections";
+import { isLive } from "@/lib/live";
 import { revalidatePath } from "next/cache";
 import { logAction } from "@/lib/logging";
 
@@ -61,6 +62,15 @@ export async function searchSongs({
 
 export async function requestSong(songId: number) {
   try {
+    // Bloquear pedidos durante transmissão ao vivo
+    if (isLive()) {
+      return {
+        success: false,
+        message:
+          "Pedidos desabilitados durante a transmissão ao vivo. Peça pelo bate-papo!",
+      };
+    }
+
     // Verificar se a música existe
     const song = await db
       .select()

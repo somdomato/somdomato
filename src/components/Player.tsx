@@ -18,6 +18,7 @@ import { useGenre, GENRES } from "@/context/GenreContext";
 import { buildStreamUrl, RADIO_CONFIG } from "@/config";
 import { toast } from "sonner";
 import { useAuth } from "@/components/AdminAuth";
+import { useLive } from "@/context/LiveContext";
 import { socket } from "@/lib/socket";
 
 type ListenersData = {
@@ -68,6 +69,90 @@ function AdminSkipButton() {
         <line x1="6" y1="4" x2="6" y2="20"></line>
       </svg>
     </button>
+  );
+}
+
+function AdminLiveButton() {
+  const { isAuthenticated } = useAuth();
+  const { live, djName } = useLive();
+  const [showPrompt, setShowPrompt] = useState(false);
+  const [name, setName] = useState("");
+
+  const toggleLive = useCallback(
+    async (newLive: boolean, newDjName?: string) => {
+      try {
+        const res = await fetch("/api/admin/live", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ live: newLive, djName: newDjName || "" }),
+        });
+        if (!res.ok) throw new Error("Falha");
+        toast.success(newLive ? "Modo ao vivo ativado" : "Modo ao vivo desativado");
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Erro");
+      }
+    },
+    [],
+  );
+
+  const handleClick = useCallback(() => {
+    if (live) {
+      toggleLive(false);
+    } else {
+      setName("");
+      setShowPrompt(true);
+    }
+  }, [live, toggleLive]);
+
+  const handleConfirm = useCallback(() => {
+    toggleLive(true, name.trim());
+    setShowPrompt(false);
+  }, [name, toggleLive]);
+
+  if (!isAuthenticated) return null;
+
+  return (
+    <>
+      <button
+        onClick={handleClick}
+        title={live ? `Ao vivo${djName ? `: ${djName}` : ""} — clique para desativar` : "Ativar modo ao vivo"}
+        className={`w-8 h-8 flex items-center justify-center rounded-full transition ${
+          live
+            ? "bg-red-500 text-white animate-pulse hover:bg-red-600"
+            : "bg-white/10 text-white hover:bg-white/20"
+        }`}
+      >
+        <Radio size={14} />
+      </button>
+
+      {showPrompt && (
+        <>
+          <button
+            type="button"
+            className="fixed inset-0 z-40"
+            onClick={() => setShowPrompt(false)}
+            aria-label="Fechar"
+          />
+          <div className="absolute right-0 top-full mt-2 bg-background-alt border border-primary/50 rounded-xl shadow-2xl z-50 p-3 min-w-52 animate-in fade-in slide-in-from-top-2 duration-200">
+            <p className="text-xs text-slate-300 mb-2">Nome do DJ (opcional):</p>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Ex: DJ Lucas"
+              className="w-full px-2 py-1.5 text-xs bg-background border border-white/10 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary/40 mb-2"
+              onKeyDown={(e) => e.key === "Enter" && handleConfirm()}
+            />
+            <button
+              onClick={handleConfirm}
+              className="w-full px-3 py-1.5 text-xs bg-red-500 hover:bg-red-600 text-white font-semibold rounded-lg transition"
+            >
+              Entrar ao vivo
+            </button>
+          </div>
+        </>
+      )}
+    </>
   );
 }
 
@@ -576,6 +661,8 @@ export default function Player({ className = "" }: { className?: string }) {
 
         {/* Botão de Skip (admin) */}
         <AdminSkipButton />
+        {/* Botão de Ao Vivo (admin) */}
+        <AdminLiveButton />
       </div>
     </div>
   );

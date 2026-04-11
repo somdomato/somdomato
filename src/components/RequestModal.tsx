@@ -20,6 +20,7 @@ import {
 import { toast } from "sonner";
 import { useAuth } from "@/components/AdminAuth";
 import { EditSongModal } from "@/components/EditSongModal";
+import { useLive } from "@/context/LiveContext";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -77,6 +78,8 @@ function formatDuration(seconds: number): string {
 // ---------------------------------------------------------------------------
 
 export function RequestModal({ isOpen, onClose }: RequestModalProps) {
+  const { live, djName } = useLive();
+
   // Mode
   const [mode, setMode] = useState<"radio" | "internet">("radio");
 
@@ -451,6 +454,31 @@ export function RequestModal({ isOpen, onClose }: RequestModalProps) {
             </button>
           </div>
 
+          {/* ── Live mode ── */}
+          {live ? (
+            <div className="flex-1 flex flex-col items-center justify-center gap-4 p-8 text-center">
+              <span className="inline-flex items-center gap-2 px-4 py-1.5 bg-red-500/20 text-red-400 rounded-full text-sm font-semibold">
+                <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+                AO VIVO
+              </span>
+              <p className="text-base text-white font-semibold">
+                {djName ? (
+                  <>
+                    <strong>{djName}</strong> está ao vivo!
+                  </>
+                ) : (
+                  "Estamos ao vivo!"
+                )}
+              </p>
+              <p className="text-sm text-muted max-w-sm">
+                Os pedidos de música estão temporariamente desabilitados durante
+                a transmissão ao vivo. Faça seu pedido pelo{" "}
+                <strong className="text-primary">bate-papo</strong> direto com o
+                locutor!
+              </p>
+            </div>
+          ) : (
+            <>
           {/* ── Genre warning ── */}
           {showNotGeralWarning && (
             <div className="px-5 py-2.5 bg-amber-950/60 border-b border-amber-600/20 shrink-0">
@@ -854,6 +882,8 @@ export function RequestModal({ isOpen, onClose }: RequestModalProps) {
                 </button>
               </div>
             </div>
+          )}
+        </>
           )}
         </div>
       </div>
