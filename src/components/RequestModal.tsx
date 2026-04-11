@@ -479,30 +479,31 @@ export function RequestModal({ isOpen, onClose }: RequestModalProps) {
             </div>
           ) : (
             <>
-          {/* ── Genre warning ── */}
-          {showNotGeralWarning && (
-            <div className="px-5 py-2.5 bg-amber-950/60 border-b border-amber-600/20 shrink-0">
-              <p className="text-xs text-amber-300/90">
-                Ouvindo{" "}
-                <strong className="text-amber-400">
-                  {currentGenre.charAt(0).toUpperCase() + currentGenre.slice(1)}
-                </strong>{" "}
-                — pedidos tocam no{" "}
-                <strong className="text-amber-400">Geral</strong> e você será
-                trocado automaticamente.
-              </p>
-            </div>
-          )}
+              {/* ── Genre warning ── */}
+              {showNotGeralWarning && (
+                <div className="px-5 py-2.5 bg-amber-950/60 border-b border-amber-600/20 shrink-0">
+                  <p className="text-xs text-amber-300/90">
+                    Ouvindo{" "}
+                    <strong className="text-amber-400">
+                      {currentGenre.charAt(0).toUpperCase() +
+                        currentGenre.slice(1)}
+                    </strong>{" "}
+                    — pedidos tocam no{" "}
+                    <strong className="text-amber-400">Geral</strong> e você
+                    será trocado automaticamente.
+                  </p>
+                </div>
+              )}
 
-          {/* ── Search controls ── */}
-          <div className="px-5 pt-4 pb-3 border-b border-white/8 shrink-0 space-y-3">
-            {/* Mode toggle (radio input) */}
-            <div className="flex">
-              <div className="inline-flex rounded-xl bg-background/60 border border-white/8 p-1 gap-1">
-                {(["radio", "internet"] as const).map((m) => (
-                  <label
-                    key={m}
-                    className={`
+              {/* ── Search controls ── */}
+              <div className="px-5 pt-4 pb-3 border-b border-white/8 shrink-0 space-y-3">
+                {/* Mode toggle (radio input) */}
+                <div className="flex">
+                  <div className="inline-flex rounded-xl bg-background/60 border border-white/8 p-1 gap-1">
+                    {(["radio", "internet"] as const).map((m) => (
+                      <label
+                        key={m}
+                        className={`
                       relative flex items-center gap-2 px-4 py-1.5 rounded-lg cursor-pointer select-none
                       text-sm font-semibold transition-all duration-200
                       ${
@@ -513,72 +514,74 @@ export function RequestModal({ isOpen, onClose }: RequestModalProps) {
                           : "text-gray-400 hover:text-white"
                       }
                     `}
-                  >
-                    <input
-                      type="radio"
-                      name="search-mode"
-                      value={m}
-                      checked={mode === m}
-                      onChange={() => setMode(m)}
-                      className="sr-only"
-                    />
-                    {m === "radio" ? (
-                      <>
-                        <Music className="w-3.5 h-3.5 shrink-0" />
-                        <span>Na Rádio</span>
-                      </>
-                    ) : (
-                      <>
-                        <Globe className="w-3.5 h-3.5 shrink-0" />
-                        <span>Na Internet</span>
-                      </>
-                    )}
-                  </label>
-                ))}
-              </div>
-            </div>
+                      >
+                        <input
+                          type="radio"
+                          name="search-mode"
+                          value={m}
+                          checked={mode === m}
+                          onChange={() => setMode(m)}
+                          className="sr-only"
+                        />
+                        {m === "radio" ? (
+                          <>
+                            <Music className="w-3.5 h-3.5 shrink-0" />
+                            <span>Na Rádio</span>
+                          </>
+                        ) : (
+                          <>
+                            <Globe className="w-3.5 h-3.5 shrink-0" />
+                            <span>Na Internet</span>
+                          </>
+                        )}
+                      </label>
+                    ))}
+                  </div>
+                </div>
 
-            {/* Search input */}
-            <div className="flex gap-2">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
-                {mode === "radio" ? (
-                  <input
-                    ref={queryInputRef}
-                    type="text"
-                    aria-label="Buscar músicas na rádio"
-                    value={query}
-                    onChange={(e) => {
-                      setQuery(e.target.value);
-                      setActiveLetter(null);
-                    }}
-                    onKeyDown={(e) => e.key === "Enter" && handleRadioSearch()}
-                    placeholder="Buscar por artista ou título..."
-                    className="w-full pl-9 pr-3 py-2.5 bg-background/70 border border-primary/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/40 text-sm placeholder:text-gray-600 transition-colors"
-                  />
-                ) : (
-                  <input
-                    ref={internetInputRef}
-                    type="text"
-                    aria-label="Buscar músicas na internet"
-                    value={internetQuery}
-                    onChange={(e) => setInternetQuery(e.target.value)}
-                    onKeyDown={(e) =>
-                      e.key === "Enter" && searchInternet(internetQuery)
+                {/* Search input */}
+                <div className="flex gap-2">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
+                    {mode === "radio" ? (
+                      <input
+                        ref={queryInputRef}
+                        type="text"
+                        aria-label="Buscar músicas na rádio"
+                        value={query}
+                        onChange={(e) => {
+                          setQuery(e.target.value);
+                          setActiveLetter(null);
+                        }}
+                        onKeyDown={(e) =>
+                          e.key === "Enter" && handleRadioSearch()
+                        }
+                        placeholder="Buscar por artista ou título..."
+                        className="w-full pl-9 pr-3 py-2.5 bg-background/70 border border-primary/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/40 text-sm placeholder:text-gray-600 transition-colors"
+                      />
+                    ) : (
+                      <input
+                        ref={internetInputRef}
+                        type="text"
+                        aria-label="Buscar músicas na internet"
+                        value={internetQuery}
+                        onChange={(e) => setInternetQuery(e.target.value)}
+                        onKeyDown={(e) =>
+                          e.key === "Enter" && searchInternet(internetQuery)
+                        }
+                        placeholder="Buscar por artista ou título..."
+                        className="w-full pl-9 pr-3 py-2.5 bg-background/70 border border-emerald-600/25 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-600/40 text-sm placeholder:text-gray-600 transition-colors"
+                      />
+                    )}
+                  </div>
+                  <button
+                    onClick={
+                      mode === "radio"
+                        ? handleRadioSearch
+                        : () => searchInternet(internetQuery)
                     }
-                    placeholder="Buscar por artista ou título..."
-                    className="w-full pl-9 pr-3 py-2.5 bg-background/70 border border-emerald-600/25 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-600/40 text-sm placeholder:text-gray-600 transition-colors"
-                  />
-                )}
-              </div>
-              <button
-                onClick={
-                  mode === "radio"
-                    ? handleRadioSearch
-                    : () => searchInternet(internetQuery)
-                }
-                disabled={mode === "internet" && !internetQuery.trim()}
-                className={`
+                    disabled={mode === "internet" && !internetQuery.trim()}
+                    className={`
                   px-4 py-2.5 font-semibold rounded-xl text-sm transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed shrink-0
                   ${
                     mode === "radio"
@@ -586,19 +589,19 @@ export function RequestModal({ isOpen, onClose }: RequestModalProps) {
                       : "bg-emerald-600 hover:bg-emerald-500 text-white"
                   }
                 `}
-              >
-                Buscar
-              </button>
-            </div>
+                  >
+                    Buscar
+                  </button>
+                </div>
 
-            {/* Letter buttons (radio mode only) */}
-            {mode === "radio" && (
-              <div className="flex flex-wrap gap-1">
-                {LETTERS.map((letter) => (
-                  <button
-                    key={letter}
-                    onClick={() => handleLetterClick(letter)}
-                    className={`
+                {/* Letter buttons (radio mode only) */}
+                {mode === "radio" && (
+                  <div className="flex flex-wrap gap-1">
+                    {LETTERS.map((letter) => (
+                      <button
+                        key={letter}
+                        onClick={() => handleLetterClick(letter)}
+                        className={`
                       w-7 h-7 rounded-lg text-xs font-bold transition-all active:scale-90
                       ${
                         activeLetter === letter
@@ -606,284 +609,288 @@ export function RequestModal({ isOpen, onClose }: RequestModalProps) {
                           : "bg-background/60 border border-white/8 text-gray-400 hover:border-primary/40 hover:text-primary"
                       }
                     `}
-                    aria-label={`Filtrar por ${letter}`}
-                    aria-pressed={activeLetter === letter}
-                  >
-                    {letter}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* ── Results ── */}
-          <div className="flex-1 overflow-y-auto">
-            {/* Download progress */}
-            {deezerDownloading && (
-              <div className="m-4 p-4 bg-background/60 border border-primary/20 rounded-xl">
-                <div className="flex items-center gap-3 mb-3">
-                  <Music
-                    className="text-primary animate-pulse shrink-0"
-                    size={18}
-                  />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-white truncate">
-                      {deezerDownloading.message}
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      {deezerDownloading.status}
-                    </p>
-                  </div>
-                  <span className="text-sm font-bold text-primary tabular-nums">
-                    {deezerDownloading.progress}%
-                  </span>
-                </div>
-                <div className="w-full bg-background rounded-full h-1.5 overflow-hidden">
-                  <div
-                    className="bg-primary h-full transition-all duration-300 ease-out rounded-full"
-                    style={{ width: `${deezerDownloading.progress}%` }}
-                  />
-                </div>
-              </div>
-            )}
-
-            {/* ── Radio results ── */}
-            {mode === "radio" && !deezerDownloading && (
-              <>
-                {loading && (
-                  <div className="flex items-center justify-center py-16">
-                    <Loader2 className="w-6 h-6 text-primary animate-spin" />
-                  </div>
-                )}
-                {!loading && !hasSearched && (
-                  <div className="flex flex-col items-center justify-center py-16 gap-3 text-gray-500">
-                    <Music className="w-10 h-10 opacity-20" />
-                    <p className="text-sm">
-                      Use a busca ou selecione uma letra acima
-                    </p>
-                  </div>
-                )}
-                {!loading && hasSearched && songs.length === 0 && (
-                  <div className="flex flex-col items-center justify-center py-12 gap-2 text-gray-500">
-                    <Music className="w-9 h-9 opacity-20" />
-                    <p className="text-sm">
-                      Nenhuma música encontrada na rádio
-                    </p>
-                    {query.trim() && (
-                      <button
-                        onClick={() => {
-                          setMode("internet");
-                          setInternetQuery(query);
-                          setTimeout(() => searchInternet(query), 50);
-                        }}
-                        className="mt-1 text-xs text-emerald-400 hover:text-emerald-300 underline underline-offset-2 transition-colors"
+                        aria-label={`Filtrar por ${letter}`}
+                        aria-pressed={activeLetter === letter}
                       >
-                        Buscar na internet
+                        {letter}
                       </button>
-                    )}
+                    ))}
                   </div>
                 )}
-                {!loading && hasSearched && songs.length > 0 && (
-                  <table className="w-full text-sm">
-                    <thead className="bg-background/80 sticky top-0 z-10">
-                      <tr className="border-b border-white/6">
-                        <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 w-12" />
-                        <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500">
-                          Artista
-                        </th>
-                        <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 hidden sm:table-cell">
-                          Música
-                        </th>
-                        <th className="px-4 py-2.5 text-center text-xs font-semibold text-gray-500 w-20">
-                          Ação
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {songs.map((song) => (
-                        <tr
-                          key={song.id}
-                          className="border-b border-white/5 hover:bg-white/3 transition-colors"
-                        >
-                          <td className="px-4 py-2.5">
-                            <div className="w-9 h-9 relative rounded-lg overflow-hidden shadow">
-                              <Image
-                                src={song.cover || "/images/logotipo.svg"}
-                                alt={song.title}
-                                fill
-                                sizes="36px"
-                                className="object-cover"
-                              />
-                            </div>
-                          </td>
-                          <td className="px-4 py-2.5">
-                            <div className="font-semibold text-white truncate max-w-32 sm:max-w-52">
-                              {song.artist}
-                            </div>
-                            <div className="text-xs text-gray-500 truncate max-w-32 sm:hidden">
-                              {song.title}
-                            </div>
-                          </td>
-                          <td className="px-4 py-2.5 hidden sm:table-cell">
-                            <div className="text-gray-300 truncate max-w-64">
-                              {song.title}
-                            </div>
-                          </td>
-                          <td className="px-4 py-2.5 text-center">
-                            <div className="inline-flex items-center gap-1">
-                              {isAuthenticated && (
-                                <button
-                                  onClick={() => setEditingSong(song)}
-                                  className="p-1.5 text-white/30 hover:text-primary transition rounded-lg hover:bg-white/5"
-                                  title="Editar"
-                                >
-                                  <Pencil className="w-3.5 h-3.5" />
-                                </button>
-                              )}
-                              <button
-                                onClick={() => handleRequest(song.id)}
-                                disabled={requesting === song.id}
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary hover:bg-primary/80 text-background font-semibold rounded-lg transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed text-xs"
-                              >
-                                {requesting === song.id ? (
-                                  <Loader2 className="w-3 h-3 animate-spin" />
-                                ) : (
-                                  <Music className="w-3 h-3" />
-                                )}
-                                {requesting === song.id ? "..." : "Pedir"}
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                )}
-              </>
-            )}
+              </div>
 
-            {/* ── Internet results ── */}
-            {mode === "internet" &&
-              !deezerDownloading &&
-              (deezerLoading ? (
-                <div className="flex items-center justify-center py-16">
-                  <Loader2 className="w-6 h-6 text-primary animate-spin" />
-                </div>
-              ) : !deezerSearched ? (
-                <div className="flex flex-col items-center justify-center py-16 gap-3 text-gray-500">
-                  <Globe className="w-10 h-10 opacity-20" />
-                  <p className="text-sm">
-                    Pesquise músicas que ainda não estão na rádio
-                  </p>
-                  <p className="text-xs text-gray-600">
-                    Após o envio, a equipe vai avaliar o pedido
-                  </p>
-                </div>
-              ) : deezerResults.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-12 gap-2 text-gray-500">
-                  <Globe className="w-9 h-9 opacity-20" />
-                  <p className="text-sm">Nenhum resultado encontrado</p>
-                  <p className="text-xs text-gray-600">
-                    Tente com outros termos
-                  </p>
-                </div>
-              ) : (
-                <div className="p-4 space-y-2">
-                  <p className="text-xs text-gray-500 mb-3">
-                    {deezerTotal} resultado{deezerTotal !== 1 ? "s" : ""}{" "}
-                    encontrado{deezerTotal !== 1 ? "s" : ""}
-                  </p>
-                  {deezerResults.map((track) => (
-                    <div
-                      key={track.id}
-                      className="flex items-center gap-3 p-3 bg-background/50 border border-white/6 rounded-xl hover:border-emerald-600/30 transition-colors"
-                    >
-                      <Image
-                        src={track.thumbnail}
-                        alt={track.title}
-                        width={44}
-                        height={44}
-                        className="rounded-lg object-cover shrink-0"
+              {/* ── Results ── */}
+              <div className="flex-1 overflow-y-auto">
+                {/* Download progress */}
+                {deezerDownloading && (
+                  <div className="m-4 p-4 bg-background/60 border border-primary/20 rounded-xl">
+                    <div className="flex items-center gap-3 mb-3">
+                      <Music
+                        className="text-primary animate-pulse shrink-0"
+                        size={18}
                       />
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-white truncate">
-                          {track.title}
+                        <p className="text-sm font-medium text-white truncate">
+                          {deezerDownloading.message}
                         </p>
-                        <p className="text-xs text-gray-400 truncate">
-                          {track.artist}
-                        </p>
-                        <p className="text-xs text-gray-600 mt-0.5">
-                          {formatDuration(track.duration)}
-                          {track.duration > MAX_DURATION_SECONDS && (
-                            <span className="text-red-400 ml-2">
-                              Excede 10 min
-                            </span>
-                          )}
+                        <p className="text-xs text-gray-500">
+                          {deezerDownloading.status}
                         </p>
                       </div>
-                      <button
-                        onClick={() => handleSelectDeezerTrack(track)}
-                        disabled={track.duration > MAX_DURATION_SECONDS}
-                        className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-700 hover:bg-emerald-600 disabled:opacity-40 disabled:cursor-not-allowed text-white font-semibold rounded-lg transition-all active:scale-95 shrink-0 text-xs"
-                      >
-                        <Download size={12} />
-                        <span className="hidden sm:inline">Enviar</span>
-                      </button>
+                      <span className="text-sm font-bold text-primary tabular-nums">
+                        {deezerDownloading.progress}%
+                      </span>
+                    </div>
+                    <div className="w-full bg-background rounded-full h-1.5 overflow-hidden">
+                      <div
+                        className="bg-primary h-full transition-all duration-300 ease-out rounded-full"
+                        style={{ width: `${deezerDownloading.progress}%` }}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* ── Radio results ── */}
+                {mode === "radio" && !deezerDownloading && (
+                  <>
+                    {loading && (
+                      <div className="flex items-center justify-center py-16">
+                        <Loader2 className="w-6 h-6 text-primary animate-spin" />
+                      </div>
+                    )}
+                    {!loading && !hasSearched && (
+                      <div className="flex flex-col items-center justify-center py-16 gap-3 text-gray-500">
+                        <Music className="w-10 h-10 opacity-20" />
+                        <p className="text-sm">
+                          Use a busca ou selecione uma letra acima
+                        </p>
+                      </div>
+                    )}
+                    {!loading && hasSearched && songs.length === 0 && (
+                      <div className="flex flex-col items-center justify-center py-12 gap-2 text-gray-500">
+                        <Music className="w-9 h-9 opacity-20" />
+                        <p className="text-sm">
+                          Nenhuma música encontrada na rádio
+                        </p>
+                        {query.trim() && (
+                          <button
+                            onClick={() => {
+                              setMode("internet");
+                              setInternetQuery(query);
+                              setTimeout(() => searchInternet(query), 50);
+                            }}
+                            className="mt-1 text-xs text-emerald-400 hover:text-emerald-300 underline underline-offset-2 transition-colors"
+                          >
+                            Buscar na internet
+                          </button>
+                        )}
+                      </div>
+                    )}
+                    {!loading && hasSearched && songs.length > 0 && (
+                      <table className="w-full text-sm">
+                        <thead className="bg-background/80 sticky top-0 z-10">
+                          <tr className="border-b border-white/6">
+                            <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 w-12" />
+                            <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500">
+                              Artista
+                            </th>
+                            <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 hidden sm:table-cell">
+                              Música
+                            </th>
+                            <th className="px-4 py-2.5 text-center text-xs font-semibold text-gray-500 w-20">
+                              Ação
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {songs.map((song) => (
+                            <tr
+                              key={song.id}
+                              className="border-b border-white/5 hover:bg-white/3 transition-colors"
+                            >
+                              <td className="px-4 py-2.5">
+                                <div className="w-9 h-9 relative rounded-lg overflow-hidden shadow">
+                                  <Image
+                                    src={song.cover || "/images/logotipo.svg"}
+                                    alt={song.title}
+                                    fill
+                                    sizes="36px"
+                                    className="object-cover"
+                                  />
+                                </div>
+                              </td>
+                              <td className="px-4 py-2.5">
+                                <div className="font-semibold text-white truncate max-w-32 sm:max-w-52">
+                                  {song.artist}
+                                </div>
+                                <div className="text-xs text-gray-500 truncate max-w-32 sm:hidden">
+                                  {song.title}
+                                </div>
+                              </td>
+                              <td className="px-4 py-2.5 hidden sm:table-cell">
+                                <div className="text-gray-300 truncate max-w-64">
+                                  {song.title}
+                                </div>
+                              </td>
+                              <td className="px-4 py-2.5 text-center">
+                                <div className="inline-flex items-center gap-1">
+                                  {isAuthenticated && (
+                                    <button
+                                      onClick={() => setEditingSong(song)}
+                                      className="p-1.5 text-white/30 hover:text-primary transition rounded-lg hover:bg-white/5"
+                                      title="Editar"
+                                    >
+                                      <Pencil className="w-3.5 h-3.5" />
+                                    </button>
+                                  )}
+                                  <button
+                                    onClick={() => handleRequest(song.id)}
+                                    disabled={requesting === song.id}
+                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary hover:bg-primary/80 text-background font-semibold rounded-lg transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed text-xs"
+                                  >
+                                    {requesting === song.id ? (
+                                      <Loader2 className="w-3 h-3 animate-spin" />
+                                    ) : (
+                                      <Music className="w-3 h-3" />
+                                    )}
+                                    {requesting === song.id ? "..." : "Pedir"}
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    )}
+                  </>
+                )}
+
+                {/* ── Internet results ── */}
+                {mode === "internet" &&
+                  !deezerDownloading &&
+                  (deezerLoading ? (
+                    <div className="flex items-center justify-center py-16">
+                      <Loader2 className="w-6 h-6 text-primary animate-spin" />
+                    </div>
+                  ) : !deezerSearched ? (
+                    <div className="flex flex-col items-center justify-center py-16 gap-3 text-gray-500">
+                      <Globe className="w-10 h-10 opacity-20" />
+                      <p className="text-sm">
+                        Pesquise músicas que ainda não estão na rádio
+                      </p>
+                      <p className="text-xs text-gray-600">
+                        Após o envio, a equipe vai avaliar o pedido
+                      </p>
+                    </div>
+                  ) : deezerResults.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-12 gap-2 text-gray-500">
+                      <Globe className="w-9 h-9 opacity-20" />
+                      <p className="text-sm">Nenhum resultado encontrado</p>
+                      <p className="text-xs text-gray-600">
+                        Tente com outros termos
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="p-4 space-y-2">
+                      <p className="text-xs text-gray-500 mb-3">
+                        {deezerTotal} resultado{deezerTotal !== 1 ? "s" : ""}{" "}
+                        encontrado{deezerTotal !== 1 ? "s" : ""}
+                      </p>
+                      {deezerResults.map((track) => (
+                        <div
+                          key={track.id}
+                          className="flex items-center gap-3 p-3 bg-background/50 border border-white/6 rounded-xl hover:border-emerald-600/30 transition-colors"
+                        >
+                          <Image
+                            src={track.thumbnail}
+                            alt={track.title}
+                            width={44}
+                            height={44}
+                            className="rounded-lg object-cover shrink-0"
+                          />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-semibold text-white truncate">
+                              {track.title}
+                            </p>
+                            <p className="text-xs text-gray-400 truncate">
+                              {track.artist}
+                            </p>
+                            <p className="text-xs text-gray-600 mt-0.5">
+                              {formatDuration(track.duration)}
+                              {track.duration > MAX_DURATION_SECONDS && (
+                                <span className="text-red-400 ml-2">
+                                  Excede 10 min
+                                </span>
+                              )}
+                            </p>
+                          </div>
+                          <button
+                            onClick={() => handleSelectDeezerTrack(track)}
+                            disabled={track.duration > MAX_DURATION_SECONDS}
+                            className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-700 hover:bg-emerald-600 disabled:opacity-40 disabled:cursor-not-allowed text-white font-semibold rounded-lg transition-all active:scale-95 shrink-0 text-xs"
+                          >
+                            <Download size={12} />
+                            <span className="hidden sm:inline">Enviar</span>
+                          </button>
+                        </div>
+                      ))}
                     </div>
                   ))}
+              </div>
+
+              {/* ── Pagination ── */}
+              {mode === "radio" && songs.length > 0 && pages > 1 && (
+                <div className="flex items-center justify-between px-5 py-3 border-t border-white/6 bg-background/30 shrink-0">
+                  <span className="text-xs text-gray-600">
+                    Página {page} de {pages} · {total} músicas
+                  </span>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => changeRadioPage(page - 1)}
+                      disabled={page === 1}
+                      className="px-3 py-1.5 text-xs bg-background/60 border border-white/8 rounded-lg hover:border-primary/30 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                    >
+                      Anterior
+                    </button>
+                    <button
+                      onClick={() => changeRadioPage(page + 1)}
+                      disabled={page === pages}
+                      className="px-3 py-1.5 text-xs bg-background/60 border border-white/8 rounded-lg hover:border-primary/30 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                    >
+                      Próxima
+                    </button>
+                  </div>
                 </div>
-              ))}
-          </div>
+              )}
 
-          {/* ── Pagination ── */}
-          {mode === "radio" && songs.length > 0 && pages > 1 && (
-            <div className="flex items-center justify-between px-5 py-3 border-t border-white/6 bg-background/30 shrink-0">
-              <span className="text-xs text-gray-600">
-                Página {page} de {pages} · {total} músicas
-              </span>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => changeRadioPage(page - 1)}
-                  disabled={page === 1}
-                  className="px-3 py-1.5 text-xs bg-background/60 border border-white/8 rounded-lg hover:border-primary/30 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                >
-                  Anterior
-                </button>
-                <button
-                  onClick={() => changeRadioPage(page + 1)}
-                  disabled={page === pages}
-                  className="px-3 py-1.5 text-xs bg-background/60 border border-white/8 rounded-lg hover:border-primary/30 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                >
-                  Próxima
-                </button>
-              </div>
-            </div>
-          )}
-
-          {mode === "internet" && deezerPages > 1 && (
-            <div className="flex items-center justify-between px-5 py-3 border-t border-white/6 bg-background/30 shrink-0">
-              <span className="text-xs text-gray-600">
-                Página {deezerPage} de {deezerPages}
-              </span>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => searchInternet(internetQuery, deezerPage - 1)}
-                  disabled={deezerPage === 1}
-                  className="px-3 py-1.5 text-xs bg-background/60 border border-white/8 rounded-lg hover:border-emerald-600/30 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                >
-                  Anterior
-                </button>
-                <button
-                  onClick={() => searchInternet(internetQuery, deezerPage + 1)}
-                  disabled={deezerPage === deezerPages}
-                  className="px-3 py-1.5 text-xs bg-background/60 border border-white/8 rounded-lg hover:border-emerald-600/30 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                >
-                  Próxima
-                </button>
-              </div>
-            </div>
-          )}
-        </>
+              {mode === "internet" && deezerPages > 1 && (
+                <div className="flex items-center justify-between px-5 py-3 border-t border-white/6 bg-background/30 shrink-0">
+                  <span className="text-xs text-gray-600">
+                    Página {deezerPage} de {deezerPages}
+                  </span>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() =>
+                        searchInternet(internetQuery, deezerPage - 1)
+                      }
+                      disabled={deezerPage === 1}
+                      className="px-3 py-1.5 text-xs bg-background/60 border border-white/8 rounded-lg hover:border-emerald-600/30 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                    >
+                      Anterior
+                    </button>
+                    <button
+                      onClick={() =>
+                        searchInternet(internetQuery, deezerPage + 1)
+                      }
+                      disabled={deezerPage === deezerPages}
+                      className="px-3 py-1.5 text-xs bg-background/60 border border-white/8 rounded-lg hover:border-emerald-600/30 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                    >
+                      Próxima
+                    </button>
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>

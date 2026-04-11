@@ -87,7 +87,9 @@ function AdminLiveButton() {
           body: JSON.stringify({ live: newLive, djName: newDjName || "" }),
         });
         if (!res.ok) throw new Error("Falha");
-        toast.success(newLive ? "Modo ao vivo ativado" : "Modo ao vivo desativado");
+        toast.success(
+          newLive ? "Modo ao vivo ativado" : "Modo ao vivo desativado",
+        );
       } catch (err) {
         toast.error(err instanceof Error ? err.message : "Erro");
       }
@@ -115,7 +117,11 @@ function AdminLiveButton() {
     <>
       <button
         onClick={handleClick}
-        title={live ? `Ao vivo${djName ? `: ${djName}` : ""} — clique para desativar` : "Ativar modo ao vivo"}
+        title={
+          live
+            ? `Ao vivo${djName ? `: ${djName}` : ""} — clique para desativar`
+            : "Ativar modo ao vivo"
+        }
         className={`w-8 h-8 flex items-center justify-center rounded-full transition ${
           live
             ? "bg-red-500 text-white animate-pulse hover:bg-red-600"
@@ -134,7 +140,9 @@ function AdminLiveButton() {
             aria-label="Fechar"
           />
           <div className="absolute right-0 top-full mt-2 bg-background-alt border border-primary/50 rounded-xl shadow-2xl z-50 p-3 min-w-52 animate-in fade-in slide-in-from-top-2 duration-200">
-            <p className="text-xs text-slate-300 mb-2">Nome do DJ (opcional):</p>
+            <p className="text-xs text-slate-300 mb-2">
+              Nome do DJ (opcional):
+            </p>
             <input
               type="text"
               value={name}

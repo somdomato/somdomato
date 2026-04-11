@@ -12,5 +12,5 @@ export function getLiveState(): { live: boolean; djName: string | null } {
 
 export function setLive(active: boolean, djName?: string): void {
   liveMode = active;
-  liveDjName = active ? (djName || null) : null;
+  liveDjName = active ? djName || null : null;
 }
