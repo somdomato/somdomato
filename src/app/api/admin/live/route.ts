@@ -25,7 +25,7 @@ export async function POST(request: Request) {
   await logAction({
     action: active ? "admin:live_on" : "admin:live_off",
     details: { djName: state.djName },
-    userId: session.id,
+    userId: Number(session.id),
   });
 
   return Response.json(state);

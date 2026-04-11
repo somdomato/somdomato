@@ -17,6 +17,8 @@ export type LogAction =
   | "request:removed"
   | "request:reordered"
   | "admin:skip"
+  | "admin:live_on"
+  | "admin:live_off"
   | "admin:login"
   | "admin:logout"
   | "user:request"
