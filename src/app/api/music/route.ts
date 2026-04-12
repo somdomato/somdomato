@@ -5,6 +5,12 @@ import { songs, requests, history } from "@/db/schema";
 import { getCurrentTimeSlot } from "@/lib/time";
 import { getBlockedSongIds } from "@/lib/protections";
 import { isLocalRequest } from "@/lib/localhost";
+import {
+  clearProspection,
+  setLastServedId,
+  setPendingSong,
+  consumePendingSong,
+} from "@/lib/prospection";
 import type { Song } from "@/types";
 
 async function checkFileExists(filePath: string) {
@@ -158,9 +164,8 @@ export async function GET(request: Request) {
         allowedInGeneral: requestResult.allowedInGeneral,
       } as Song & { genre: string; allowedInGeneral: number };
 
-      // Remover o pedido da fila e emitir evento de remoção
+      // Remover o pedido da fila (sem emitir evento — a UI atualiza via song:changed no on_track)
       await db.delete(requests).where(eq(requests.id, requestResult.requestId));
-      if (global.io) global.io.emit("request:removed", requestResult);
 
       // Verificar se o arquivo do pedido existe. Se não, pular para seleção aleatória.
       const requestFileExists = await checkFileExists(requestResult.path);
@@ -254,30 +259,45 @@ export async function GET(request: Request) {
     // Garantir um valor seguro para envio ao frontend (fallback se não tivermos capa)
     const safeCover = selectedSong.cover || "/images/logotipo.svg";
 
-    // Inserir no histórico e emitir evento socket diretamente aqui,
-    // pois o on_track do Liquidsoap pode não preservar os metadados annotate
-    try {
-      await db.insert(history).values({
-        songId: selectedSong.id,
-        genre,
-        wasRequested: wasFromRequest ? 1 : 0,
-      });
-
-      if (global.io) {
-        global.io.emit("song:changed", {
-          id: selectedSong.id,
-          title: selectedSong.title,
-          artist: selectedSong.artist,
-          cover: safeCover,
-          genre: (selectedSong as Song & { genre?: string }).genre,
-          playedAt: Date.now(),
-          playedOnMountpoint: genre,
-          wasRequested: wasFromRequest,
+    // Flush: se havia um pending anterior que nunca recebeu on_track, inserir histórico
+    const stale = consumePendingSong(genre);
+    if (stale) {
+      try {
+        await db.insert(history).values({
+          songId: stale.songId,
+          genre: stale.genre,
+          wasRequested: stale.wasRequested ? 1 : 0,
         });
+        if (global.io) {
+          global.io.emit("song:changed", {
+            id: stale.songId,
+            title: stale.title,
+            artist: stale.artist,
+            cover: stale.cover || "/images/logotipo.svg",
+            playedAt: stale.selectedAt,
+            playedOnMountpoint: stale.genre,
+            wasRequested: stale.wasRequested,
+          });
+        }
+      } catch (err) {
+        console.error("[music] Erro ao inserir histórico pendente:", err);
       }
-    } catch (err) {
-      console.error("[music] Erro ao inserir histórico:", err);
     }
+
+    // Registrar como pendente — histórico e eventos serão emitidos por /api/music/started
+    setPendingSong(genre, {
+      songId: selectedSong.id,
+      title: selectedSong.title,
+      artist: selectedSong.artist,
+      cover: safeCover,
+      genre,
+      wasRequested: wasFromRequest,
+      selectedAt: Date.now(),
+    });
+
+    // Atualizar prospecção: limpar cache e registrar último servido
+    clearProspection(genre);
+    setLastServedId(genre, selectedSong.id);
 
     return Response.json({ ...selectedSong, wasRequested: wasFromRequest });
   } catch (error) {

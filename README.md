@@ -289,17 +289,51 @@ O sistema suporta 6 mountpoints diferentes, cada um com sua própria seleção d
    - Música é inserida na tabela `requests` com `createdAt` preenchido
 
 2. **Seleção da Próxima Música** (`/api/music`)
-   - Liquidsoap consulta periodicamente `/api/music?genre=<genero>`
+   - Liquidsoap consulta `/api/music?genre=<genero>` quando precisa de uma nova faixa
    - API verifica se há pedidos pendentes (apenas para `genre=geral`)
-   - Se houver pedido: seleciona o mais antigo
+   - Se houver pedido: seleciona o mais antigo, remove da tabela `requests`
    - Se não houver: seleciona música aleatória via AutoDJ respeitando gênero
    - Para "geral": inclui músicas com `genre='geral'` ou `allowedInGeneral=1`
    - Para outros gêneros: inclui apenas músicas do gênero específico
-   - Música escolhida é removida de `requests` (se foi pedido)
-   - Registro é criado na tabela `history` com timestamp
-   - Evento `song:changed` é emitido via Socket.io
+   - **Nenhum evento Socket.io é emitido neste momento** (a música ainda não começou)
+   - A música é registrada como "pendente" aguardando confirmação de reprodução
+   - O cache de prospecção do gênero é limpo para recomputação
 
-3. **Blocos da Página Inicial**
+3. **Confirmação de Reprodução** (`/api/music/started`)
+   - Liquidsoap chama via `on_track` quando a música **realmente começa a tocar**
+   - Neste momento: registro é criado em `history`, evento `song:changed` é emitido
+   - **Esse é o ponto em que a UI atualiza**: "Últimas", "Próximas" e Player
+   - Se o callback `on_track` nunca disparar, o próximo `/api/music` insere o histórico pendente como safety net
+
+4. **Sistema de Prospecção de Próximas Músicas** (`src/lib/prospection.ts`)
+
+   O sistema mantém um cache em memória (Map) com a próxima música pré-selecionada para cada gênero.
+   Isso garante que o bloco "Próximas" mostre sempre a mesma música AutoDJ entre atualizações.
+
+   **Fluxo:**
+   ```
+   /api/songs/next (UI pede preview)
+     → Cache tem valor? → Retorna (estável!)
+     → Cache vazio? → Computa via selectRandomSong(), cacheia, retorna
+
+   /api/music (Liquidsoap pede próxima faixa)
+     → Limpa cache do gênero
+     → Registra songId servido como "último"
+
+   /api/music/started (Liquidsoap confirma reprodução)
+     → Emite song:changed → UI chama /api/songs/next → recomputa e cacheia
+   ```
+
+   **Estabilidade**: Entre dois `song:changed`, todas as chamadas a `/api/songs/next` retornam a mesma música.
+   O preview só muda quando a música atual de fato termina e a próxima começa a tocar.
+
+   **Pending (safety net)**: Quando `/api/music` serve uma música, ela é registrada como "pendente".
+   Se `/api/music/started` não for chamado (ex: crash do Liquidsoap), o próximo `/api/music` detecta
+   o pending e insere o histórico retroativamente.
+
+   **6 gêneros**: Cada gênero tem seu próprio slot no cache e no pending. São independentes.
+
+5. **Blocos da Página Inicial**
 
    **Bloco "Últimas"**
    - Mostra últimas 10 músicas tocadas
@@ -315,12 +349,12 @@ O sistema suporta 6 mountpoints diferentes, cada um com sua própria seleção d
    - Atualiza automaticamente via Socket.io
 
    **Bloco "Próximas"**
-   - Mostra fila de pedidos pendentes
-   - Fonte: tabela `requests` (ordenada do mais antigo ao mais novo)
-   - Se houver pedidos: lista até 10 pedidos
-   - Se não houver: mostra próxima música do AutoDJ
-   - Exibe: Capa, Música, Artista, Tempo na fila (ex: "há 2min")
-   - Atualiza automaticamente via Socket.io
+   - Para **Geral**: mostra pedidos pendentes (tabela `requests`) + próxima AutoDJ (prospecção)
+   - Para **outros gêneros**: mostra apenas próxima AutoDJ (prospecção)
+   - Pedidos só desaparecem da lista quando a música **começa a tocar** (evento `song:changed`)
+   - Preview AutoDJ é estável (cache de prospecção), não muda até próxima reprodução
+   - Exibe: Capa, Música, Artista, Tempo na fila (ex: "há 2min") ou badge "AutoDJ"
+   - Atualiza automaticamente via Socket.io (`song:changed` dispara refresh)
 
 ### Tabelas do Banco
 

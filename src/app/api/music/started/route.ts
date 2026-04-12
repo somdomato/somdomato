@@ -1,14 +1,15 @@
 import { db } from "@/db";
 import { eq } from "drizzle-orm";
-import { songs } from "@/db/schema";
+import { songs, history } from "@/db/schema";
 import { isLocalRequest } from "@/lib/localhost";
+import { consumePendingSong } from "@/lib/prospection";
 
 const DEFAULT_COVER = "/images/logotipo.svg";
 
 /**
  * Called by Liquidsoap's on_track callback when a song actually starts playing.
- * History is already inserted by GET /api/music, so this only emits the socket
- * event (as backup) and triggers async cover resolution.
+ * This is the moment we insert history and emit song:changed, so the UI only
+ * updates when the listener actually hears the new song.
  */
 export async function POST(request: Request) {
   if (!isLocalRequest(request)) {
@@ -19,7 +20,7 @@ export async function POST(request: Request) {
     const url = new URL(request.url);
     const songId = Number(url.searchParams.get("songId"));
     const genre = url.searchParams.get("genre") || "geral";
-    const wasRequested = url.searchParams.get("wasRequested") === "1";
+    const wasRequestedParam = url.searchParams.get("wasRequested") === "1";
 
     if (!songId || Number.isNaN(songId)) {
       return Response.json(
@@ -27,6 +28,13 @@ export async function POST(request: Request) {
         { status: 400 },
       );
     }
+
+    // Consumir o pending song — contém wasRequested authoritative do /api/music
+    const pending = consumePendingSong(genre);
+    const wasRequested =
+      pending && pending.songId === songId
+        ? pending.wasRequested
+        : wasRequestedParam;
 
     const [song] = await db
       .select()
@@ -40,6 +48,18 @@ export async function POST(request: Request) {
 
     const safeCover = song.cover || DEFAULT_COVER;
 
+    // Inserir no histórico — este é o momento real de reprodução
+    try {
+      await db.insert(history).values({
+        songId: song.id,
+        genre,
+        wasRequested: wasRequested ? 1 : 0,
+      });
+    } catch (err) {
+      console.error("[started] Erro ao inserir histórico:", err);
+    }
+
+    // Emitir song:changed — UI atualiza "Últimas", "Próximas" e Player
     if (global.io) {
       global.io.emit("song:changed", {
         id: song.id,

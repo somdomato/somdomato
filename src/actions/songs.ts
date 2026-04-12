@@ -3,7 +3,7 @@
 import { db } from "@/db";
 import { songs, requests, history } from "@/db/schema";
 import { eq, desc, asc } from "drizzle-orm";
-import { getNextSongToPlay } from "@/lib/rotation";
+import { getProspectedSong } from "@/lib/prospection";
 
 type TopEntry = {
   id: number;
@@ -113,9 +113,8 @@ export async function nextSongs(genre?: string) {
       .limit(10);
   }
 
-  // Sempre pegar próxima do AutoDJ para o gênero especificado
-  // Isso mostra o que o AutoDJ tocaria se não houvesse pedidos
-  const nextAutoDJ = await getNextSongToPlay(undefined, selectedGenre);
+  // Próxima do AutoDJ: usar cache de prospecção (estável entre chamadas)
+  const nextAutoDJ = await getProspectedSong(selectedGenre);
 
   const serialUpcoming = upcoming.map((u) => ({
     reqId: u.reqId,
@@ -133,7 +132,7 @@ export async function nextSongs(genre?: string) {
         title: nextAutoDJ.title,
         artist: nextAutoDJ.artist,
         cover: nextAutoDJ.cover || null,
-        requestedAt: nextAutoDJ.createdAt ? Number(nextAutoDJ.createdAt) : null,
+        requestedAt: null,
       }
     : null;
 

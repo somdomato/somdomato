@@ -61,16 +61,29 @@ O sistema suporta 6 mountpoints diferentes:
 - Evento Socket.io `request:added` notifica clientes
 
 #### 2. Seleção de Música (AutoDJ)
-- Liquidsoap consulta `/api/music?genre=<genero>` periodicamente
+- Liquidsoap consulta `/api/music?genre=<genero>` quando precisa de uma nova faixa
 - API verifica pedidos pendentes (apenas se `genre=geral`)
-- **Com pedido**: seleciona mais antigo, remove de `requests`
+- **Com pedido**: seleciona mais antigo, remove de `requests` (sem emitir eventos)
 - **Sem pedido**: seleciona aleatória respeitando horários/rotação/gênero
   - Para "geral": inclui `genre='geral'` OU `allowedInGeneral=1`
   - Para outros: apenas músicas do gênero específico
-- Insere em `history` com timestamp
-- Emite evento `song:changed` via Socket.io
+- **NÃO** insere em `history` nem emite `song:changed` aqui (a música ainda não tocou)
+- Registra a música como "pendente" e limpa o cache de prospecção do gênero
 
-#### 3. Blocos da Interface
+#### 3. Confirmação de Reprodução (`/api/music/started`)
+- Chamada pelo `on_track` do Liquidsoap quando a música realmente começa a tocar
+- Insere em `history` com timestamp real de reprodução
+- Emite evento `song:changed` via Socket.io (UI atualiza aqui)
+- Se o `on_track` falhar, o próximo `/api/music` insere o histórico pendente (safety net)
+
+#### 4. Sistema de Prospecção (`src/lib/prospection.ts`)
+- Cache em memória (`Map<genre, ProspectedSong>`) com 1 música pré-selecionada por gênero
+- **Estável**: entre dois `song:changed`, `/api/songs/next` sempre retorna a mesma música
+- **Lazy**: computada na primeira chamada de `/api/songs/next` após limpar
+- **Ciclo**: `/api/music` limpa → `/api/music/started` emite `song:changed` → UI chama `/api/songs/next` → recomputa
+- **Pending**: rastreia música servida ao Liquidsoap; se `on_track` não disparar, próximo `/api/music` insere histórico
+
+#### 5. Blocos da Interface
 
 **"Últimas" (Last.tsx)**
 - Fonte: tabela `history` (últimas 10 por gênero)
@@ -86,11 +99,13 @@ O sistema suporta 6 mountpoints diferentes:
 - Atualiza via Socket.io evento `song:changed`
 
 **"Próximas" (Next.tsx)**
-- Para **Geral**: mostra pedidos ou próxima do AutoDJ se vazia
-- Para **outros gêneros**: mostra apenas próxima do AutoDJ (sem pedidos)
-- Fonte: tabela `requests` para Geral, API para próxima do AutoDJ
-- Exibe: Capa, Música, Artista, **Tempo na fila** (ex: "há 2min")
-- Atualiza via Socket.io eventos `request:added`, `request:removed`, `song:changed`
+- Para **Geral**: mostra pedidos + próxima do AutoDJ (prospecção)
+- Para **outros gêneros**: mostra apenas próxima do AutoDJ (prospecção)
+- Fonte: tabela `requests` para pedidos, cache de prospecção para AutoDJ
+- **Pedidos só desaparecem quando a música começa a tocar** (evento `song:changed`)
+- **Preview AutoDJ é estável** (cache de prospecção, não muda até próxima reprodução)
+- Exibe: Capa, Música, Artista, **Tempo na fila** (ex: "há 2min") ou badge "AutoDJ"
+- Atualiza via Socket.io eventos `request:added`, `request:removed` (admin), `song:changed`
 - **Filtro por gênero**: Respeita gênero selecionado no player
 - API: `GET /api/songs/next?genre=<genero>`
 
@@ -273,6 +288,7 @@ cd ansible && ansible-playbook -i inventory.ini playbook.yml
 - Schema do banco: `src/db/schema.ts`
 - Servidor Socket.io: `src/server.ts`
 - Proxy (auth admin): `src/proxy.ts`
+- Sistema de prospecção: `src/lib/prospection.ts`
 - Configuração Liquidsoap: `ansible/etc/liquidsoap/`
 - Configuração Nginx (produção): `ansible/etc/nginx/`
 - Configuração Icecast: `ansible/etc/icecast/`
