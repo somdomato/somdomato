@@ -100,6 +100,14 @@
         group: "{{ app_group }}"
         mode: "0755"
 
+    - name: Criar subdiretório vinhetas
+      file:
+        path: "{{ music_dir }}/vinhetas"
+        state: directory
+        owner: "{{ app_user }}"
+        group: "{{ app_group }}"
+        mode: "0755"
+
     # =========================================================================
     # NGINX
     # =========================================================================

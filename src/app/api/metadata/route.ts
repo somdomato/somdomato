@@ -4,6 +4,7 @@ import { RADIO_CONFIG, GENRES, DEFAULT_SONG, isValidGenre } from "@/config";
 import { db } from "@/db";
 import { songs } from "@/db/schema";
 import { and, eq } from "drizzle-orm";
+import { getLiveState, setLive } from "@/lib/live";
 
 interface IcecastSource {
   listenurl: string;
@@ -81,23 +82,48 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ song: DEFAULT_SONG });
     }
 
+    // Auto-detectar modo ao vivo pelo título do mountpoint geral
+    const geralSource = sources.find((s) => s.listenurl?.endsWith("/geral"));
+    if (geralSource) {
+      const rawGeralTitle = geralSource.title || "";
+      const isLiveBroadcast = /ao\s*vivo/i.test(rawGeralTitle);
+      const currentLiveState = getLiveState();
+      if (isLiveBroadcast && !currentLiveState.live) {
+        setLive(true);
+        global.io?.emit("live:changed", getLiveState());
+      } else if (!isLiveBroadcast && currentLiveState.live) {
+        setLive(false);
+        global.io?.emit("live:changed", getLiveState());
+      }
+    }
+
     // Extrair título e artista
     let title: string = DEFAULT_SONG.title;
     let artist: string = DEFAULT_SONG.artist;
 
-    if (source.title) {
+    // Limpar "AOVIVO" / "AO VIVO" do título para exibição
+    let rawTitle = source.title || "";
+    if (/ao\s*vivo/i.test(rawTitle)) {
+      rawTitle = rawTitle
+        .replace(/ao\s*vivo/gi, "")
+        .replace(/^\s*[-–—]\s*/, "")
+        .replace(/\s*[-–—]\s*$/, "")
+        .trim();
+    }
+
+    if (rawTitle) {
       // Se tiver artista separado
       if (source.artist) {
-        title = source.title;
+        title = rawTitle;
         artist = source.artist;
       } else {
         // Tentar separar "Artista - Título"
-        const parts = source.title.split(" - ");
+        const parts = rawTitle.split(" - ");
         if (parts.length >= 2) {
           artist = parts[0].trim();
           title = parts.slice(1).join(" - ").trim();
         } else {
-          title = source.title;
+          title = rawTitle;
         }
       }
     }

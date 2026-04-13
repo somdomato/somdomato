@@ -36,12 +36,6 @@ export default function Carousel({
     );
   };
 
-  // const goToNext = () => {
-  //   setCurrentIndex((prevIndex) =>
-  //     prevIndex === images.length - 1 ? 0 : prevIndex + 1
-  //   );
-  // };
-
   const goToNext = useCallback(() => {
     setCurrentIndex((prevIndex) =>
       prevIndex === images.length - 1 ? 0 : prevIndex + 1,

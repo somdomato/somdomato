@@ -12,12 +12,13 @@ def next(genre) =
     result = process.read.lines("curl -s '#{api_url}'")
     json = list.hd(default="", result)
     
-    # Extrair path, title, artist, id e wasRequested do JSON
+    # Extrair path, title, artist, id, wasRequested e isJingle do JSON
     path_raw = list.hd(default="", process.read.lines("echo '#{json}' | jq -r '.path'"))
     title = list.hd(default="", process.read.lines("echo '#{json}' | jq -r '.title'"))
     artist = list.hd(default="", process.read.lines("echo '#{json}' | jq -r '.artist'"))
     song_id = list.hd(default="", process.read.lines("echo '#{json}' | jq -r '.id'"))
     was_requested = list.hd(default="0", process.read.lines("echo '#{json}' | jq -r 'if .wasRequested then \"1\" else \"0\" end'"))
+    is_jingle = list.hd(default="0", process.read.lines("echo '#{json}' | jq -r 'if .isJingle then \"1\" else \"0\" end'"))
     
     # Validar se recebemos dados válidos
     if path_raw == "" or path_raw == "null" then
@@ -37,7 +38,7 @@ def next(genre) =
       
       # Criar request com metadados usando annotate: no URI
       # IMPORTANTE: Não fazer URL encode - paths locais precisam estar sem encoding
-      uri = "annotate:title=\"#{title}\",artist=\"#{artist}\",song_id=\"#{song_id}\",was_requested=\"#{was_requested}\":#{path}"
+      uri = "annotate:title=\"#{title}\",artist=\"#{artist}\",song_id=\"#{song_id}\",was_requested=\"#{was_requested}\",is_jingle=\"#{is_jingle}\":#{path}"
       req = request.create(uri)
       
       # Registrar sucesso/falha e retornar o request (ou null)
@@ -60,10 +61,15 @@ end
 def notify_started(genre, m) =
   song_id = m["song_id"]
   was_requested = m["was_requested"]
-  if song_id != "" and song_id != "null" then
+  is_jingle = m["is_jingle"]
+  if song_id != "" and song_id != "null" and is_jingle != "1" then
     api_url = "http://nextjs:3000/api/music/started?songId=#{song_id}&genre=#{genre}&wasRequested=#{was_requested}"
     log("[#{genre}] Notificando início: songId=#{song_id}")
     ignore(process.read.lines("curl -s -X POST '#{api_url}'"))
+  else
+    if is_jingle == "1" then
+      log("[#{genre}] Vinheta tocando - skip notify")
+    end
   end
 end
 

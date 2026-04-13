@@ -11,12 +11,13 @@ def next()
     artist = list.hd(default="", process.read.lines("echo '#{json}' | jq -r '.artist'"))
     song_id = list.hd(default="", process.read.lines("echo '#{json}' | jq -r '.id'"))
     was_requested = list.hd(default="0", process.read.lines("echo '#{json}' | jq -r 'if .wasRequested then \"1\" else \"0\" end'"))
+    is_jingle = list.hd(default="0", process.read.lines("echo '#{json}' | jq -r 'if .isJingle then \"1\" else \"0\" end'"))
     
     log("Próxima música: #{path}")
     log("Título: #{title}")
     log("Artista: #{artist}")
     
-    uri = "annotate:title=\"#{title}\",artist=\"#{artist}\",song_id=\"#{song_id}\",was_requested=\"#{was_requested}\":#{path}"
+    uri = "annotate:title=\"#{title}\",artist=\"#{artist}\",song_id=\"#{song_id}\",was_requested=\"#{was_requested}\",is_jingle=\"#{is_jingle}\":#{path}"
     request.create(uri)
   end
   
@@ -27,10 +28,15 @@ end
 def notify_started(m) =
   song_id = m["song_id"]
   was_requested = m["was_requested"]
-  if song_id != "" and song_id != "null" then
+  is_jingle = m["is_jingle"]
+  if song_id != "" and song_id != "null" and is_jingle != "1" then
     api_url = "http://localhost:3000/api/music/started?songId=#{song_id}&genre=geral&wasRequested=#{was_requested}"
     log("Notificando início: songId=#{song_id}")
     ignore(process.read.lines("curl -s -X POST '#{api_url}'"))
+  else
+    if is_jingle == "1" then
+      log("Vinheta tocando - skip notify")
+    end
   end
 end
 

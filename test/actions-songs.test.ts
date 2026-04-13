@@ -60,13 +60,12 @@ vi.mock("@/db", async () => ({
   },
 }));
 
-vi.mock("@/lib/rotation", async () => ({
-  getNextSongToPlay: async () => ({
+vi.mock("@/lib/prospection", async () => ({
+  getProspectedSong: async () => ({
     id: 99,
     title: "Auto",
     artist: "DJ",
     cover: null,
-    createdAt: Date.now(),
   }),
 }));
 

@@ -52,33 +52,27 @@ export const AUTO_APPROVE_DELAY_MINUTES =
 export const slides = [
   {
     id: 1,
-    src: "https://cdn.somdomato.com/images/slides/ys.webp",
-    alt: "Yasmin Sensação",
-    title: "Yasmin Sensação",
-  },
-  {
-    id: 2,
     src: "https://cdn.somdomato.com/images/slides/jem.webp",
     alt: "Jorge & Mateus",
     title: "Jorge & Mateus",
     objectPosition: "center 20%",
   },
   {
-    id: 3,
+    id: 2,
     src: "https://cdn.somdomato.com/images/slides/hej.webp",
     alt: "Henrique & Juliano",
     title: "Henrique & Juliano",
     objectPosition: "center 20%",
   },
   {
-    id: 4,
+    id: 3,
     src: "https://cdn.somdomato.com/images/slides/mek.webp",
     alt: "Matheus & Kauan",
     title: "Matheus & Kauan",
     objectPosition: "center 20%",
   },
   {
-    id: 5,
+    id: 4,
     src: "https://cdn.somdomato.com/images/slides/par.webp",
     alt: "Paraná",
     title: "Paraná",

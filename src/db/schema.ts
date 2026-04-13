@@ -137,6 +137,29 @@ export const roles = sqliteTable("roles", {
 });
 
 // =============================================================================
+// VINHETAS (JINGLES)
+// =============================================================================
+
+export const jingles = sqliteTable("jingles", {
+  id: int().primaryKey({ autoIncrement: true }),
+  title: text().notNull(),
+  filename: text().notNull(),
+  path: text().notNull().unique(),
+  duration: int(), // Duração em segundos
+  active: int().default(1), // 1=ativo, 0=inativo
+  createdAt: int({ mode: "timestamp" }).$defaultFn(() => new Date()),
+});
+
+// =============================================================================
+// CONFIGURAÇÕES DO SISTEMA
+// =============================================================================
+
+export const settings = sqliteTable("settings", {
+  key: text().primaryKey(),
+  value: text().notNull(),
+});
+
+// =============================================================================
 // UPLOADS (ENVIOS DE USUÁRIOS)
 // =============================================================================
 

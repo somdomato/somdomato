@@ -10,7 +10,15 @@ import {
   setLastServedId,
   setPendingSong,
   consumePendingSong,
+  consumeProspectedSong,
 } from "@/lib/prospection";
+import {
+  getSongCounter,
+  incrementSongCounter,
+  resetSongCounter,
+  getJingleInterval,
+  getRandomJingle,
+} from "@/lib/jingles";
 import type { Song } from "@/types";
 
 async function checkFileExists(filePath: string) {
@@ -39,6 +47,29 @@ export async function GET(request: Request) {
       | "arrocha"
       | "romantico"
       | "forro";
+
+    // === JINGLE CHECK ===
+    // If enough songs have played since the last jingle, serve a jingle instead
+    const counter = getSongCounter(genre);
+    const interval = await getJingleInterval();
+    if (counter >= interval) {
+      const jingle = await getRandomJingle();
+      if (jingle) {
+        resetSongCounter(genre);
+        console.log(
+          `[${genre}] Servindo vinheta: "${jingle.title}" (após ${counter} músicas)`,
+        );
+        return Response.json({
+          id: jingle.id,
+          title: jingle.title,
+          artist: "Vinheta",
+          path: jingle.path,
+          cover: "/images/logotipo.svg",
+          isJingle: true,
+        });
+      }
+      // No active jingles available — proceed with normal song selection
+    }
 
     // Obter dados de músicas bloqueadas usando o helper - FILTRADO POR GÊNERO
     const blockedData = await getBlockedSongIds(genre);
@@ -179,30 +210,39 @@ export async function GET(request: Request) {
     }
 
     // Se não temos uma música selecionada por pedido (ou o arquivo do pedido faltou),
-    // buscar por uma música aleatória válida
+    // tentar usar a música prospectada (mesma que a UI mostrou), senão aleatória
     if (!selectedSong) {
-      // Filtrar músicas com arquivos inexistentes sem deletar do banco
-      const candidates = [...finalFilteredSongs];
-      selectedSong = null;
+      // 1. Tentar a música prospectada (garante consistência com bloco "Próximas")
+      const prospected = consumeProspectedSong(genre);
+      if (prospected) {
+        const match = finalFilteredSongs.find((s) => s.id === prospected.id);
+        if (match && (await checkFileExists(match.path))) {
+          selectedSong = match;
+        }
+      }
 
-      for (
-        let attempt = 0;
-        attempt < Math.min(candidates.length, 100);
-        attempt++
-      ) {
-        const randomIndex = Math.floor(Math.random() * candidates.length);
-        const candidate = candidates[randomIndex];
+      // 2. Fallback: selecionar aleatoriamente
+      if (!selectedSong) {
+        const candidates = [...finalFilteredSongs];
 
-        if (await checkFileExists(candidate.path)) {
-          selectedSong = candidate;
-          break;
-        } else {
-          console.warn(
-            `[music] Arquivo não encontrado: ${candidate.path} (songId=${candidate.id})`,
-          );
-          // Remover da lista de candidatos para não selecionar de novo
-          candidates.splice(randomIndex, 1);
-          if (candidates.length === 0) break;
+        for (
+          let attempt = 0;
+          attempt < Math.min(candidates.length, 100);
+          attempt++
+        ) {
+          const randomIndex = Math.floor(Math.random() * candidates.length);
+          const candidate = candidates[randomIndex];
+
+          if (await checkFileExists(candidate.path)) {
+            selectedSong = candidate;
+            break;
+          } else {
+            console.warn(
+              `[music] Arquivo não encontrado: ${candidate.path} (songId=${candidate.id})`,
+            );
+            candidates.splice(randomIndex, 1);
+            if (candidates.length === 0) break;
+          }
         }
       }
     }
@@ -298,6 +338,9 @@ export async function GET(request: Request) {
     // Atualizar prospecção: limpar cache e registrar último servido
     clearProspection(genre);
     setLastServedId(genre, selectedSong.id);
+
+    // Incrementar contador de músicas para vinhetas
+    incrementSongCounter(genre);
 
     return Response.json({ ...selectedSong, wasRequested: wasFromRequest });
   } catch (error) {

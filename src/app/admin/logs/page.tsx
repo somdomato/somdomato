@@ -24,6 +24,7 @@ import {
   User,
   Shield,
   Pencil,
+  Megaphone,
 } from "lucide-react";
 import { LogoutButton } from "@/components/LogoutButton";
 import { toast } from "sonner";
@@ -501,6 +502,13 @@ export default function LogsPage() {
             >
               <Upload size={18} />
               <span className="hidden sm:inline">Envios</span>
+            </Link>
+            <Link
+              href="/admin/vinhetas"
+              className="flex items-center gap-2 px-4 sm:px-6 py-3 border-b-2 border-transparent text-gray-400 hover:text-white transition-colors whitespace-nowrap text-sm"
+            >
+              <Megaphone size={18} />
+              <span className="hidden sm:inline">Vinhetas</span>
             </Link>
             <div className="flex items-center gap-2 px-4 sm:px-6 py-3 border-b-2 border-primary text-primary whitespace-nowrap text-sm">
               <ScrollText size={18} />

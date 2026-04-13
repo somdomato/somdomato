@@ -67,6 +67,17 @@ export async function getProspectedSong(
 }
 
 /**
+ * Consome e retorna a música prospectada para o gênero.
+ * Remove do cache após retornar.
+ * Usada por `/api/music` para servir a mesma música mostrada na UI.
+ */
+export function consumeProspectedSong(genre: string): ProspectedSong | null {
+  const cached = prospectionCache.get(genre);
+  if (cached) prospectionCache.delete(genre);
+  return cached || null;
+}
+
+/**
  * Limpa o cache de prospecção para um gênero.
  * Chamado quando `/api/music` seleciona uma nova música.
  */
