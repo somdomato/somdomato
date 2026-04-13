@@ -7,7 +7,6 @@ const KNOWN_MOUNTPOINTS = new Set([
   "modao",
   "arrocha",
   "romantico",
-  "forro",
 ]);
 
 function stripTrailingSlashes(value: string) {

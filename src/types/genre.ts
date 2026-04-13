@@ -3,8 +3,7 @@ export type Genre =
   | "gaucha"
   | "modao"
   | "arrocha"
-  | "romantico"
-  | "forro";
+  | "romantico";
 
 export const GENRES: { value: Genre; label: string }[] = [
   { value: "geral", label: "Geral" },
@@ -12,7 +11,6 @@ export const GENRES: { value: Genre; label: string }[] = [
   { value: "modao", label: "Modão" },
   { value: "arrocha", label: "Arrocha" },
   { value: "romantico", label: "Romântico" },
-  { value: "forro", label: "Forró" },
 ];
 
 export const GENRE_LABELS: Record<Genre, string> = {
@@ -21,5 +19,4 @@ export const GENRE_LABELS: Record<Genre, string> = {
   modao: "Modão",
   arrocha: "Arrocha",
   romantico: "Romântico",
-  forro: "Forró",
 };

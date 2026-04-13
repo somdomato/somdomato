@@ -45,8 +45,7 @@ export async function GET(request: Request) {
       | "gaucha"
       | "modao"
       | "arrocha"
-      | "romantico"
-      | "forro";
+      | "romantico";
 
     // === JINGLE CHECK ===
     // If enough songs have played since the last jingle, serve a jingle instead

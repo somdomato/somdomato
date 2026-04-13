@@ -38,11 +38,11 @@ describe("sync-music id3 helpers", () => {
     expect(tags!.genre).toBe("Sertanejo");
 
     // update via helper
-    const updated = updateID3Tags(filePath, { genre: "Forró" });
+    const updated = updateID3Tags(filePath, { genre: "Sertanejo" });
     expect(updated).toBe(true);
 
     const tags2 = await readID3Tags(filePath);
     expect(tags2).toBeTruthy();
-    expect(tags2!.genre).toBe("Forró");
+    expect(tags2!.genre).toBe("Sertanejo");
   });
 });

@@ -191,7 +191,7 @@ curl http://localhost:3000/api/metadata?genre=geral | jq
 
 ```bash
 # Testar todos os mountpoints
-for genre in geral gaucha modao arrocha romantico forro; do
+for genre in geral gaucha modao arrocha romantico; do
   echo "Testing $genre:"
   curl -I http://localhost:8080/$genre
 done

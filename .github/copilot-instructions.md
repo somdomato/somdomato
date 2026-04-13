@@ -42,11 +42,6 @@ O sistema suporta 6 mountpoints diferentes:
    - AutoDJ puro (sem pedidos)
    - URL: `/romantico`
 
-6. **Forró** - Forró e derivados
-   - Toca apenas `genre='forro'`
-   - AutoDJ puro (sem pedidos)
-   - URL: `/forro`
-
 **Troca de Gênero:**
 - Player possui dropdown (clique na capa) para trocar gêneros
 - Gênero é salvo no GenreContext e localStorage
@@ -122,7 +117,7 @@ songs {
   cover: text (URL da capa)
   timeSlots: int (bits: 1=madrugada, 2=manhã, 4=tarde, 8=noite, 15=todos)
   rotation: text ("inativo"|"leve"|"normal"|"pesado")
-  genre: text ("geral"|"gaucha"|"modao"|"arrocha"|"romantico"|"forro")
+  genre: text ("geral"|"gaucha"|"modao"|"arrocha"|"romantico")
   allowedInGeneral: int (0=não, 1=sim - permite tocar no Geral)
   createdAt: timestamp
 }
@@ -161,7 +156,6 @@ history {
 | Modão | modao |
 | Arrocha | arrocha |
 | Romântico | romantico |
-| Forró | forro |
 
 **Regra Crítica**: Gênero "Sertanejo" nas tags ID3 é **sempre** traduzido para "geral" no banco de dados.
 

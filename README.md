@@ -28,7 +28,7 @@
                     │         │              │     Liquidsoap       │     │
                     │         │              │  (via systemd)       │     │
                     │         │              │                      │     │
-                    │         │              │  ├─ AutoDJ (6 gên.)  │     │
+                    │         │              │  ├─ AutoDJ (5 gên.)  │     │
                     │         │              │  ├─ request.dynamic  │     │
                     │         │              │  ├─ Harbor :8010     │     │
                     │         │              │  └─ HTTP ctrl :8080  │     │
@@ -38,10 +38,10 @@
                     │         └──────────────│     Icecast2         │     │
                     │           proxy :8000  │  :8000 / :8443       │     │
                     │                       │                      │     │
-                    │                       │  6 mountpoints:      │     │
+                    │                       │  5 mountpoints:      │     │
                     │                       │  /geral /gaucha      │     │
                     │                       │  /modao /arrocha     │     │
-                    │                       │  /romantico /forro   │     │
+                    │                       │  /romantico    │     │
                     │                       └──────────────────────┘     │
                     │                                                     │
                     │  ┌──────────────────────────────────────────────┐   │
@@ -264,10 +264,6 @@ O sistema suporta 6 mountpoints diferentes, cada um com sua própria seleção d
    - Toca apenas músicas com `genre='romantico'`
    - AutoDJ puro (sem pedidos)
 
-6. **Forró** - Forró e derivados
-   - Toca apenas músicas com `genre='forro'`
-   - AutoDJ puro (sem pedidos)
-
 #### Troca de Gênero no Player
 
 - O player possui um dropdown (clique na capa) para trocar entre gêneros
@@ -359,7 +355,7 @@ O sistema suporta 6 mountpoints diferentes, cada um com sua própria seleção d
 ### Tabelas do Banco
 
 - **songs**: Cadastro de músicas (id, title, artist, path, cover, rotation, timeSlots, genre, allowedInGeneral)
-  - `genre`: Define o gênero da música (geral, gaucha, modao, arrocha, romantico, forro)
+  - `genre`: Define o gênero da música (geral, gaucha, modao, arrocha, romantico)
   - `allowedInGeneral`: Permite que música de outro gênero toque no Geral (0=não, 1=sim)
 - **requests**: Fila de pedidos (id, songId, createdAt, order)
 - **history**: Histórico de reprodução (id, songId, createdAt)
@@ -384,7 +380,6 @@ O sistema mantém sincronização entre 3 camadas:
 | Modão | modao |
 | Arrocha | arrocha |
 | Romântico | romantico |
-| Forró | forro |
 
 #### Comportamento do Script de Sincronização
 
@@ -415,7 +410,7 @@ Exemplo:
 
 - `GET /api/music?genre=<genero>` - Retorna próxima música a tocar para o gênero especificado (usado pelo Liquidsoap)
   - Padrão: `genre=geral` se não especificado
-  - Gêneros válidos: geral, gaucha, modao, arrocha, romantico, forro
+  - Gêneros válidos: geral, gaucha, modao, arrocha, romantico
 - `GET /api/requests` - Lista pedidos pendentes
 - `POST /api/admin/request` - Cria novo pedido
 - `DELETE /api/admin/request/:id` - Remove pedido da fila

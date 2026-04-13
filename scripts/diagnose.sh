@@ -44,7 +44,7 @@ echo ""
 # 4. Teste dos Streams
 echo -e "${BLUE}[4/6] Streams de Áudio${NC}"
 echo "----------------------"
-for genre in geral gaucha modao arrocha romantico forro; do
+for genre in geral gaucha modao arrocha romantico; do
     if timeout 2 curl -s http://localhost:8080/$genre > /dev/null 2>&1; then
         echo -e "${GREEN}✅${NC} /$genre"
     else

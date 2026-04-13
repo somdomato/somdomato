@@ -213,7 +213,6 @@ export function SongsTable() {
                 <option value="modao">Modão</option>
                 <option value="arrocha">Arrocha</option>
                 <option value="romantico">Romântico</option>
-                <option value="forro">Forró</option>
               </select>
             </div>
           </div>

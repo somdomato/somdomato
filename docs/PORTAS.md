@@ -83,7 +83,7 @@ server {
     }
     
     # Streams do Icecast
-    location ~ ^/(geral|gaucha|modao|arrocha|romantico|forro) {
+    location ~ ^/(geral|gaucha|modao|arrocha|romantico) {
         proxy_pass http://icecast:8000;
     }
     

@@ -50,7 +50,10 @@ export async function DELETE(_request: Request, context: RouteContext) {
       .limit(1);
 
     if (!jingle) {
-      return Response.json({ error: "Vinheta não encontrada" }, { status: 404 });
+      return Response.json(
+        { error: "Vinheta não encontrada" },
+        { status: 404 },
+      );
     }
 
     // Delete file from disk

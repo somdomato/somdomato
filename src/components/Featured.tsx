@@ -16,7 +16,7 @@ export default function Featured() {
               A Rádio Som do Mato
             </h2>
             <p className="text-slate-300 text-sm leading-relaxed mt-2">
-              Sertanejo, gaúcha, forró, arrocha e muito mais. Você escolhe a
+              Sertanejo, gaúcha, arrocha e muito mais. Você escolhe a
               música, nós tocamos ao vivo pra você.
             </p>
           </div>

@@ -2,7 +2,14 @@
 
 import Link from "next/link";
 import { SongsTable } from "@/components/SongsTable";
-import { Music, ListOrdered, Upload, ScrollText, Users, Megaphone } from "lucide-react";
+import {
+  Music,
+  ListOrdered,
+  Upload,
+  ScrollText,
+  Users,
+  Megaphone,
+} from "lucide-react";
 import { LogoutButton } from "@/components/LogoutButton";
 
 export default function AdminPage() {

@@ -91,27 +91,9 @@
         <public>1</public>
     </mount>
 
-    <!-- Mount Forró -->
-    <mount type="normal">
-        <mount-name>/forro</mount-name>
-        <charset>UTF-8</charset>
-        <stream-name>Som do Mato - Forró</stream-name>
-        <stream-description>Forró e derivados</stream-description>
-        <stream-url>https://somdomato.com</stream-url>
-        <genre>Forró</genre>
-        <bitrate>128</bitrate>
-        <public>1</public>
-    </mount>
-
     <listen-socket>
         <port>8000</port>
     </listen-socket>
-
-    <!-- <listen-socket>
-        <port>8010</port>
-        <mount-name>/aovivo</mount-name>
-        <charset>UTF-8</charset>
-    </listen-socket> -->
 
     <listen-socket>
         <port>8443</port>

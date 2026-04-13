@@ -67,7 +67,7 @@ $env:MUSIC_PATH = "C:\Users\Lucas\Music\sdm"
 
 - **Aplicação (HTTPS)**: https://localhost
 - **Aplicação (HTTP)**: http://localhost:8080 (redireciona para HTTPS)
-- **Streams**: https://localhost/geral, `/gaucha`, `/modao`, `/arrocha`, `/romantico`, `/forro`
+- **Streams**: https://localhost/geral, `/gaucha`, `/modao`, `/arrocha`, `/romantico`
 - **Admin Icecast**: https://localhost/admin (user: `admin`, pass: `hackme`)
 - **Icecast direto**: http://localhost:8000
 

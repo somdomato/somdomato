@@ -21,7 +21,10 @@ export async function GET(_request: Request, context: RouteContext) {
       .limit(1);
 
     if (!jingle) {
-      return Response.json({ error: "Vinheta não encontrada" }, { status: 404 });
+      return Response.json(
+        { error: "Vinheta não encontrada" },
+        { status: 404 },
+      );
     }
 
     if (!fs.existsSync(jingle.path)) {

@@ -60,11 +60,10 @@ async function evaluateWithGroq(track: TrackInfo): Promise<AIEvaluation> {
 
 Avalie se esta música deve ser aprovada para tocar na rádio. A rádio aceita:
 - Sertanejo (universitário, raiz, romântico)
-- Sertanejo gaúcho
-- Modão
+- Música gaúcha
+- Modão, moda de viola
 - Arrocha
-- Forró
-- Músicas românticas brasileiras
+- Sertanejo romântico
 
 NÃO aceita:
 - Funk, trap, rap
@@ -85,7 +84,7 @@ Responda APENAS com JSON válido no formato:
   "approved": true/false,
   "confidence": 0-100,
   "reason": "explicação curta em português",
-  "suggestedGenre": "geral|gaucha|modao|arrocha|romantico|forro",
+  "suggestedGenre": "geral|gaucha|modao|arrocha|romantico",
   "suggestedRotation": "leve|normal|pesado"
 }`;
 
@@ -124,7 +123,6 @@ Responda APENAS com JSON válido no formato:
     "modao",
     "arrocha",
     "romantico",
-    "forro",
   ];
   const validRotations = ["leve", "normal", "pesado"];
 
@@ -151,7 +149,6 @@ const SERTANEJO_PATTERNS = [
   "brazilian",
 ];
 
-const FORRO_PATTERNS = ["forró", "forro", "baião", "xote"];
 const ARROCHA_PATTERNS = ["arrocha", "swingueira", "pagode baiano"];
 
 function evaluateWithHeuristic(track: TrackInfo): AIEvaluation {
@@ -169,7 +166,6 @@ function evaluateWithHeuristic(track: TrackInfo): AIEvaluation {
   }
 
   const isSertanejo = SERTANEJO_PATTERNS.some((p) => genre.includes(p));
-  const isForro = FORRO_PATTERNS.some((p) => genre.includes(p));
   const isArrocha = ARROCHA_PATTERNS.some((p) => genre.includes(p));
 
   if (isSertanejo) {
@@ -178,16 +174,6 @@ function evaluateWithHeuristic(track: TrackInfo): AIEvaluation {
       confidence: 85,
       reason: `Gênero "${track.deezerGenre}" é compatível com a rádio (sertanejo)`,
       suggestedGenre: "geral",
-      suggestedRotation: "normal",
-    };
-  }
-
-  if (isForro) {
-    return {
-      approved: true,
-      confidence: 80,
-      reason: `Gênero "${track.deezerGenre}" é compatível com a rádio (forró)`,
-      suggestedGenre: "forro",
       suggestedRotation: "normal",
     };
   }

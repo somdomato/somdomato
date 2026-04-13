@@ -18,8 +18,7 @@ export type Genre =
   | "gaucha"
   | "modao"
   | "arrocha"
-  | "romantico"
-  | "forro";
+  | "romantico";
 
 // Verificação de autenticação via cookie com suporte a permissões
 export async function verifyAuth(requiredPermission?: Permission) {
@@ -274,7 +273,6 @@ export async function updateSong(
         modao: "Modão",
         arrocha: "Arrocha",
         romantico: "Romântico",
-        forro: "Forró",
       };
       tags.genre = genreToId3[data.genre];
     }

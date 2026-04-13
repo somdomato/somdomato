@@ -76,7 +76,10 @@ export async function POST(request: Request) {
       "audio/mp4",
       "audio/aac",
     ];
-    if (!allowedTypes.includes(file.type) && !file.name.match(/\.(mp3|wav|ogg|m4a|aac)$/i)) {
+    if (
+      !allowedTypes.includes(file.type) &&
+      !file.name.match(/\.(mp3|wav|ogg|m4a|aac)$/i)
+    ) {
       return Response.json(
         { error: "Formato de áudio não suportado" },
         { status: 400 },

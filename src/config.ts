@@ -24,7 +24,6 @@ export const GENRES = [
   { value: "modao", label: "Modão", mountpoint: "modao" },
   { value: "arrocha", label: "Arrocha", mountpoint: "arrocha" },
   { value: "romantico", label: "Romântico", mountpoint: "romantico" },
-  { value: "forro", label: "Forró", mountpoint: "forro" },
 ] as const;
 
 export type Genre = (typeof GENRES)[number]["value"];

@@ -123,7 +123,10 @@ export default function VinhetasPage() {
     }
   };
 
-  const handleToggleActive = async (id: number, currentActive: number | null) => {
+  const handleToggleActive = async (
+    id: number,
+    currentActive: number | null,
+  ) => {
     const newActive = currentActive === 1 ? 0 : 1;
     try {
       const res = await fetch(`/api/admin/jingles/${id}`, {
@@ -369,9 +372,7 @@ export default function VinhetasPage() {
                             onClick={() => handlePlay(jingle)}
                             className="p-1.5 text-gray-400 hover:text-primary transition-colors"
                             title={
-                              playingId === jingle.id
-                                ? "Pausar"
-                                : "Reproduzir"
+                              playingId === jingle.id ? "Pausar" : "Reproduzir"
                             }
                           >
                             {playingId === jingle.id ? (
@@ -390,9 +391,7 @@ export default function VinhetasPage() {
                                 ? "text-green-400 hover:text-red-400"
                                 : "text-red-400 hover:text-green-400"
                             }`}
-                            title={
-                              jingle.active === 1 ? "Desativar" : "Ativar"
-                            }
+                            title={jingle.active === 1 ? "Desativar" : "Ativar"}
                           >
                             {jingle.active === 1 ? (
                               <Power size={16} />

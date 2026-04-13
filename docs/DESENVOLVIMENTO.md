@@ -11,7 +11,7 @@ Este guia detalha o setup de desenvolvimento local com Nginx, Icecast, Liquidsoa
       ↓
 [Nginx :8080] ← Proxy Reverso
       ↓
-[Icecast :8000] → 6 Mountpoints (geral, gaucha, modao, arrocha, romantico, forro)
+[Icecast :8000] → 5 Mountpoints (geral, gaucha, modao, arrocha, romantico)
       ↑
 [Liquidsoap] → AutoDJ + Pedidos
 ```

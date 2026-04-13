@@ -334,7 +334,6 @@ export function EditSongModal({
                 <option value="modao">Modão</option>
                 <option value="arrocha">Arrocha</option>
                 <option value="romantico">Romântico</option>
-                <option value="forro">Forró</option>
               </select>
               <p className="text-xs text-gray-400 mt-1">
                 Define em qual mountpoint a música será tocada
