@@ -117,13 +117,7 @@ Responda APENAS com JSON válido no formato:
   const parsed = JSON.parse(content);
 
   // Validate and sanitize response
-  const validGenres = [
-    "geral",
-    "gaucha",
-    "modao",
-    "arrocha",
-    "romantico",
-  ];
+  const validGenres = ["geral", "gaucha", "modao", "arrocha", "romantico"];
   const validRotations = ["leve", "normal", "pesado"];
 
   return {

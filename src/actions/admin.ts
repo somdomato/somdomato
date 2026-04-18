@@ -13,12 +13,7 @@ import { logAction } from "@/lib/logging";
 
 // Tipos
 export type RotationType = "inativo" | "leve" | "normal" | "pesado";
-export type Genre =
-  | "geral"
-  | "gaucha"
-  | "modao"
-  | "arrocha"
-  | "romantico";
+export type Genre = "geral" | "gaucha" | "modao" | "arrocha" | "romantico";
 
 // Verificação de autenticação via cookie com suporte a permissões
 export async function verifyAuth(requiredPermission?: Permission) {

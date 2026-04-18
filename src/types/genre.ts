@@ -1,9 +1,4 @@
-export type Genre =
-  | "geral"
-  | "gaucha"
-  | "modao"
-  | "arrocha"
-  | "romantico";
+export type Genre = "geral" | "gaucha" | "modao" | "arrocha" | "romantico";
 
 export const GENRES: { value: Genre; label: string }[] = [
   { value: "geral", label: "Geral" },

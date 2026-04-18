@@ -19,7 +19,7 @@ export const VALID_GENRES = [
   "Sertanejo Gaúcho",
   "Modão",
   "Arrocha",
-  "Romântico"
+  "Romântico",
 ];
 
 // Mapeamento de gêneros ID3 para banco de dados
