@@ -41,12 +41,12 @@ export const readTags = (filePath: string) =>
 
 export async function upsertSongFromFile(filePath: string) {
   // resolve absolute path used in DB for consistency
-  const resolved = path.resolve(filePath);  
+  const resolved = path.resolve(filePath);
   // Skip jingles/vinhetas directory
-  if (resolved.includes('/vinhetas/') || resolved.includes('\\vinhetas\\')) {
-    return { skipped: true, reason: 'jingle' };
+  if (resolved.includes("/vinhetas/") || resolved.includes("\\vinhetas\\")) {
+    return { skipped: true, reason: "jingle" };
   }
-    // check if file is one of expected extensions
+  // check if file is one of expected extensions
   const ext = parse(resolved).ext.toLowerCase();
   if (![".mp3", ".flac", ".wav", ".m4a", ".ogg"].includes(ext))
     return { skipped: true, reason: "unsupported-ext" };
