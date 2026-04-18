@@ -1,7 +1,7 @@
 import { writeFile, mkdir, stat, unlink } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import path from "node:path";
-import * as NodeID3 from "node-id3";
+import NodeID3 from "node-id3";
 
 // ---------------------------------------------------------------------------
 // Helpers de nome
