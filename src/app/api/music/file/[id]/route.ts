@@ -29,10 +29,9 @@ function resolveMusicPath(storedPath: string): string {
 }
 
 export async function GET(
-  _request: Request,
+  request: Request,
   context: { params: Promise<{ id: string }> },
 ) {
-  // Ensure params is available regardless of framework promise behavior
   const p = await context.params;
   const id = Number(p.id);
 
@@ -73,20 +72,51 @@ export async function GET(
 
     try {
       const stat = await fsPromises.stat(filePath);
-      const stream = fs.createReadStream(filePath);
-      const headers = new Headers();
-      headers.set("Content-Type", "audio/mpeg");
-      headers.set("Content-Length", String(stat.size));
+      const fileSize = stat.size;
       const basename = path.basename(filePath);
       const asciiName = basename.replaceAll(/[^\x20-\x7E]/g, "_");
       const encodedName = encodeURIComponent(basename);
+
+      const headers = new Headers();
+      headers.set("Content-Type", "audio/mpeg");
       headers.set(
         "Content-Disposition",
         `inline; filename="${asciiName}"; filename*=UTF-8''${encodedName}`,
       );
       headers.set("Accept-Ranges", "bytes");
 
-      // Convert Node.js ReadStream to Web ReadableStream for Response body
+      // Handle Range requests (browsers use this for audio seeking)
+      const rangeHeader = request.headers.get("range");
+      if (rangeHeader) {
+        const match = rangeHeader.match(/bytes=(\d*)-(\d*)/);
+        if (match) {
+          const start = match[1] ? Number.parseInt(match[1], 10) : 0;
+          const end = match[2]
+            ? Number.parseInt(match[2], 10)
+            : fileSize - 1;
+
+          if (start >= fileSize || end >= fileSize || start > end) {
+            return new Response(null, {
+              status: 416,
+              headers: { "Content-Range": `bytes */${fileSize}` },
+            });
+          }
+
+          const chunkSize = end - start + 1;
+          const stream = fs.createReadStream(filePath, { start, end });
+          const { Readable } = await import("node:stream");
+          const body = Readable.toWeb(stream);
+
+          headers.set("Content-Range", `bytes ${start}-${end}/${fileSize}`);
+          headers.set("Content-Length", String(chunkSize));
+
+          return new Response(body as BodyInit, { status: 206, headers });
+        }
+      }
+
+      // Full file response
+      headers.set("Content-Length", String(fileSize));
+      const stream = fs.createReadStream(filePath);
       const { Readable } = await import("node:stream");
       const body = Readable.toWeb(stream);
 
