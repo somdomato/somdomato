@@ -108,6 +108,14 @@
         group: "{{ app_group }}"
         mode: "0755"
 
+    - name: Criar symlink public/music para servir arquivos de áudio
+      file:
+        src: "{{ music_dir }}"
+        dest: "{{ app_dir }}/public/music"
+        state: link
+        owner: "{{ app_user }}"
+        group: "{{ app_group }}"
+
     # =========================================================================
     # NGINX
     # =========================================================================

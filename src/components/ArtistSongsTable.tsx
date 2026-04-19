@@ -49,7 +49,9 @@ function MiniPlayer({ song, onStop }: { song: Song; onStop: () => void }) {
     audio.volume = volumeRef.current / 100;
     audioRef.current = audio;
 
-    const url = `/api/music/file/${song.id}`;
+    // Extract filename from path and serve directly via /music/
+    const filename = song.path.split("/").pop() || "";
+    const url = `/music/${encodeURIComponent(filename)}`;
     audio.src = url;
 
     const onLoadedMetadata = () => {

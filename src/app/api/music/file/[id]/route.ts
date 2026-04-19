@@ -91,9 +91,7 @@ export async function GET(
         const match = rangeHeader.match(/bytes=(\d*)-(\d*)/);
         if (match) {
           const start = match[1] ? Number.parseInt(match[1], 10) : 0;
-          const end = match[2]
-            ? Number.parseInt(match[2], 10)
-            : fileSize - 1;
+          const end = match[2] ? Number.parseInt(match[2], 10) : fileSize - 1;
 
           if (start >= fileSize || end >= fileSize || start > end) {
             return new Response(null, {

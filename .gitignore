@@ -57,3 +57,6 @@ docker/certs/
 # covers
 public/covers/**
 !public/covers/.gitkeep
+
+# Symlink to music files
+public/music

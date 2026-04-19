@@ -11,7 +11,7 @@ PROJECT_DIR=/var/www/$NAME
 cp -a "$PROJECT_DIR" "$TEMP_DIR"
 cd "$TEMP_DIR" || exit 1
 
-git clean -fxd -e .env -e public/covers -e drizzle/somdomato.db
+git clean -fxd -e .env -e public/covers -e drizzle/somdomato.db -e public/music
 cp .env .env.production 
 
 if ! grep -q "NEXT_SERVER_ACTIONS_ENCRYPTION_KEY" .env; then
@@ -45,4 +45,14 @@ pnpm run build || exit 1
 sudo /usr/bin/systemctl stop $SERVICE
 rm -rf "$PROJECT_DIR"
 mv "$TEMP_DIR" "$PROJECT_DIR"
+
+# Criar symlink para servir arquivos de música diretamente via /music/
+MUSIC_LINK="$PROJECT_DIR/public/music"
+MUSIC_PATH="/var/music/sdm"
+
+if [ ! -L "$MUSIC_LINK" ]; then
+  ln -s "$MUSIC_PATH" "$MUSIC_LINK"
+  echo "✓ Symlink criado: $MUSIC_LINK -> $MUSIC_PATH"
+fi
+
 sudo /usr/bin/systemctl start $SERVICE
