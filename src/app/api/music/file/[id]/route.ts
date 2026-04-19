@@ -4,7 +4,6 @@ import { eq } from "drizzle-orm";
 import fs from "node:fs";
 import fsPromises from "node:fs/promises";
 import path from "node:path";
-import { isLocalRequest } from "@/lib/localhost";
 
 // Known music path patterns to replace with MUSIC_PATH
 const KNOWN_MUSIC_PATHS = ["/var/music/sdm", "/home/lucas/music/sdm"];
@@ -31,14 +30,10 @@ function resolveMusicPath(storedPath: string): string {
 
 export async function GET(
   _request: Request,
-  context: { params: { id: string } | Promise<{ id: string }> },
+  context: { params: Promise<{ id: string }> },
 ) {
-  if (!isLocalRequest(_request)) {
-    return Response.json({ error: "Acesso restrito" }, { status: 403 });
-  }
-
   // Ensure params is available regardless of framework promise behavior
-  const p = await (context.params as Promise<{ id: string }> | { id: string });
+  const p = await context.params;
   const id = Number(p.id);
 
   try {
