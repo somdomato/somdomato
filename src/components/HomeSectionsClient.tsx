@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import Image from "next/image";
+import CoverImage from "@/components/CoverImage";
 import { socket } from "@/lib/socket";
 
 type TopEntry = {
@@ -193,7 +193,7 @@ export default function HomeSectionsClient({
                   <tr key={s.id} className="border-t">
                     <td className="py-2 pr-3 align-top">
                       <div className="w-9 h-9 relative rounded overflow-hidden">
-                        <Image
+                        <CoverImage
                           src={s.cover || "/images/logotipo.svg"}
                           width={36}
                           height={36}
@@ -233,7 +233,7 @@ export default function HomeSectionsClient({
                   <tr key={t.id} className="border-t">
                     <td className="py-2 pr-3 align-top">
                       <div className="w-9 h-9 relative rounded overflow-hidden">
-                        <Image
+                        <CoverImage
                           src={t.cover || "/images/logotipo.svg"}
                           width={36}
                           height={36}
@@ -264,13 +264,15 @@ export default function HomeSectionsClient({
         {upcoming.length === 0 ? (
           nextIfNoRequests ? (
             <div className="flex items-center gap-3">
-              <Image
-                src={nextIfNoRequests.cover || "/images/logotipo.svg"}
-                width={36}
-                height={36}
-                alt={nextIfNoRequests.title}
-                className="rounded object-cover"
-              />
+              <div className="w-9 h-9 relative rounded overflow-hidden">
+                <CoverImage
+                  src={nextIfNoRequests.cover || "/images/logotipo.svg"}
+                  width={36}
+                  height={36}
+                  alt={nextIfNoRequests.title}
+                  className="rounded object-cover"
+                />
+              </div>
               <div className="flex-1 min-w-0">
                 <div className="font-medium truncate">
                   {nextIfNoRequests.title}
@@ -295,7 +297,7 @@ export default function HomeSectionsClient({
                   <tr key={u.reqId} className="border-t">
                     <td className="py-2 pr-3 align-top">
                       <div className="w-9 h-9 relative rounded overflow-hidden">
-                        <Image
+                        <CoverImage
                           src={u.cover || "/images/logotipo.svg"}
                           width={36}
                           height={36}

@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import Image from "next/image";
+import CoverImage from "@/components/CoverImage";
 import { Search } from "lucide-react";
 
 interface Artist {
@@ -78,7 +78,7 @@ export default function ArtistsList({
                 onClick={() => onSelect(selectValue)}
                 className="group relative aspect-square rounded-xl overflow-hidden focus:outline-none focus:ring-2 focus:ring-primary/50"
               >
-                <Image
+                <CoverImage
                   src={a.cover || "/images/logotipo.svg"}
                   alt={displayName}
                   fill

@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import Image from "next/image";
+import CoverImage from "@/components/CoverImage";
 import { Music, Play, Pause, Volume2, VolumeX, Pencil } from "lucide-react";
 import { requestSong } from "@/actions/requests";
 import { useAudio } from "@/context/AudioContext";
@@ -364,7 +364,7 @@ export default function ArtistSongsTable({ artist }: { artist: string }) {
               onClick={() => handlePlay(s)}
               className="w-12 h-12 relative rounded-lg overflow-hidden shrink-0 group/cover"
             >
-              <Image
+              <CoverImage
                 src={s.cover || "/images/logotipo.svg"}
                 alt={s.title}
                 fill

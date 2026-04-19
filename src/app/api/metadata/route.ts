@@ -83,15 +83,14 @@ export async function GET(request: NextRequest) {
     }
 
     // Auto-detectar modo ao vivo pelo título do mountpoint geral
-    // Verificar TANTO o título quanto a ausência de artista separado:
-    // AutoDJ sempre envia title+artist via annotate do Liquidsoap,
-    // enquanto DJs ao vivo (BUTT) normalmente só definem o título.
-    // Isso evita falso positivo com músicas cujo título contém "Ao Vivo".
+    // DJ ao vivo (BUTT) define título começando com "AO VIVO" ou "AOVIVO"
+    // (ex: "AO VIVO - DJ Fulano"). Músicas do AutoDJ têm "Ao Vivo" no
+    // meio/fim do título (ex: "Artista - Música (Ao Vivo)").
+    // Usar ^ para só casar quando "ao vivo" está no INÍCIO do título.
     const geralSource = sources.find((s) => s.listenurl?.endsWith("/geral"));
     if (geralSource) {
-      const rawGeralTitle = geralSource.title || "";
-      const geralArtist = geralSource.artist || "";
-      const isLiveBroadcast = /ao\s*vivo/i.test(rawGeralTitle) && !geralArtist;
+      const rawGeralTitle = (geralSource.title || "").trim();
+      const isLiveBroadcast = /^ao\s*vivo/i.test(rawGeralTitle);
       const currentLiveState = getLiveState();
       if (isLiveBroadcast && !currentLiveState.live) {
         setLive(true);

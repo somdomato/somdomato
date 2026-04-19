@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import CoverImage from "@/components/CoverImage";
 import { useEffect, useState, useCallback } from "react";
 import {
   Play,
@@ -289,17 +289,19 @@ export default function Player({
       }
     >
       {/* Cover Image */}
-      <div className="shrink-0 relative">
-        <Image
+      <div
+        className={`shrink-0 relative overflow-hidden ${
+          hideExtras
+            ? "w-12 h-12 rounded-lg border border-primary/20 shadow-md"
+            : "w-8 h-8 sm:w-10 sm:h-10 rounded border border-primary/40"
+        }`}
+      >
+        <CoverImage
           src={cover}
           alt="Cover"
-          className={
-            hideExtras
-              ? "w-12 h-12 rounded-lg border border-primary/20 object-cover shadow-md"
-              : "w-8 h-8 sm:w-10 sm:h-10 rounded border border-primary/40 object-cover"
-          }
-          width={48}
-          height={48}
+          fill
+          sizes="48px"
+          className="object-cover"
         />
         {hideExtras && playing && !loading && (
           <div className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 flex items-end gap-[2px] h-2.5">

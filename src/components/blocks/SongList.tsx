@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import CoverImage from "@/components/CoverImage";
 
 type Item = {
   id: number | string;
@@ -41,7 +41,7 @@ export default function SongList({
               <tr key={key} className="border-t border-t-black/30">
                 <td className="py-2 pr-3 align-top">
                   <div className="w-9 h-9 relative rounded overflow-hidden">
-                    <Image
+                    <CoverImage
                       src={it.cover || "/images/logotipo.svg"}
                       width={36}
                       height={36}

@@ -7,6 +7,7 @@ import { useAudio } from "@/context/AudioContext";
 import { buildStreamUrl } from "@/config";
 import { GenreWarningModal } from "@/components/GenreWarningModal";
 import Image from "next/image";
+import CoverImage from "@/components/CoverImage";
 import {
   X,
   Search,
@@ -710,7 +711,7 @@ export function RequestModal({ isOpen, onClose }: RequestModalProps) {
                             >
                               <td className="px-4 py-2.5">
                                 <div className="w-9 h-9 relative rounded-lg overflow-hidden shadow">
-                                  <Image
+                                  <CoverImage
                                     src={song.cover || "/images/logotipo.svg"}
                                     alt={song.title}
                                     fill
