@@ -60,7 +60,7 @@ export default async function Home() {
             Bate-Papo
           </h3>
           <iframe
-            className="w-full rounded-lg border border-primary/10 flex-1 min-h-96"
+            className="w-full rounded-lg border border-primary/10 flex-1 min-h-150"
             src="https://irc.somdomato.com"
             title="Bate-Papo - Rádio Som do Mato"
             allowFullScreen
