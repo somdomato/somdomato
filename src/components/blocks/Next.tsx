@@ -29,8 +29,11 @@ export default function Next({
   const [autoDJ, setAutoDJ] = useState<UpcomingEntry | null>(
     initialNextIfNoRequests,
   );
+  const [mounted, setMounted] = useState(false);
   const [, setTick] = useState(0);
   const { currentGenre } = useGenre();
+
+  useEffect(() => setMounted(true), []);
   const { live, djName } = useLive();
   const isGeral = currentGenre === "geral";
 
@@ -150,7 +153,7 @@ export default function Next({
             return (
               <div className="flex items-center gap-2">
                 <span className="text-xs text-muted whitespace-nowrap">
-                  {formatRelativeTime(entry.requestedAt)}
+                  {mounted ? formatRelativeTime(entry.requestedAt) : ""}
                 </span>
                 <span className="text-xs px-2 py-0.5 bg-amber-500/20 text-amber-400 rounded whitespace-nowrap">
                   Pedido

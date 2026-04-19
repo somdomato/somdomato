@@ -19,8 +19,11 @@ type LatestEntry = {
 
 export default function Last({ data }: { data: LatestEntry[] }) {
   const [latest, setLatest] = useState<LatestEntry[]>(data);
+  const [mounted, setMounted] = useState(false);
   const [, setTick] = useState(0);
   const { currentGenre } = useGenre();
+
+  useEffect(() => setMounted(true), []);
 
   // Recarregar dados quando o gênero mudar
   useEffect(() => {
@@ -96,7 +99,7 @@ export default function Last({ data }: { data: LatestEntry[] }) {
           items={latest}
           keyField="historyId"
           renderRight={(item) =>
-            formatRelativeTime((item as LatestEntry).playedAt)
+            mounted ? formatRelativeTime((item as LatestEntry).playedAt) : ""
           }
         />
       )}

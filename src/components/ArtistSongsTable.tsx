@@ -29,11 +29,11 @@ function MiniPlayer({ song, onStop }: { song: Song; onStop: () => void }) {
   const [playing, setPlaying] = React.useState(false);
   const [duration, setDuration] = React.useState(0);
   const [currentTime, setCurrentTime] = React.useState(0);
-  const [volume, setVolume] = React.useState(() => {
-    if (typeof window === "undefined") return 80;
+  const [volume, setVolume] = React.useState(80);
+  React.useEffect(() => {
     const saved = localStorage.getItem("preview-volume");
-    return saved ? Number(saved) : 80;
-  });
+    if (saved) setVolume(Number(saved));
+  }, []);
   const [muted, setMuted] = React.useState(false);
   const [loading, setLoading] = React.useState(true);
   const seekRef = React.useRef<HTMLInputElement>(null);
