@@ -9,7 +9,7 @@ import {
 
 export default function Footer() {
   return (
-    <footer className="flex flex-col items-center sticky bottom-0 z-40 bg-background shadow-t-md border-t-2 border-black/50 p-4 text-center text-sm md:text-base">
+    <footer className="flex flex-col items-center fixed bottom-0 left-0 w-full z-40 bg-background shadow-t-md border-t-2 border-black/50 p-4 text-center text-sm md:text-base">
       <div className="flex gap-2 mb-2">
         <Link href="https://facebook.somdomato.com" target="_blank">
           <SiFacebook

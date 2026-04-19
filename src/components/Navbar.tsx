@@ -28,7 +28,7 @@ export default function Navbar() {
       {/* Botão Hamburger - Mobile */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="md:hidden flex items-center justify-center w-10 h-10 rounded-lg hover:bg-white/10 transition-colors"
+        className="md:hidden flex items-center justify-center w-8 h-8 rounded-lg hover:bg-white/10 transition-colors"
         aria-label="Menu"
       >
         {isOpen ? <X size={24} /> : <Menu size={24} />}
@@ -51,7 +51,7 @@ export default function Navbar() {
       {/* Menu Mobile - Dropdown */}
       {isOpen && (
         <nav
-          className="md:hidden absolute left-0 right-0 top-full border-y-2 border-black/50 py-2 shadow-xl z-50 menu-mobile-enter overflow-hidden"
+          className="md:hidden absolute left-0 right-0 top-full border-y-2 border-black py-2 shadow-xl z-50 menu-mobile-enter overflow-hidden"
           style={{
             background: `linear-gradient(rgba(44, 37, 37, 0.9), rgba(44, 37, 37, 0.9)), url('/images/wood.jpg')`,
             backgroundSize: "contain",

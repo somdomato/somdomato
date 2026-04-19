@@ -159,6 +159,21 @@ input[type="range"]::-moz-range-thumb {
     var(--background);
 }
 
+/* Equalizer animation for playing indicator */
+@keyframes equalizer {
+  0%,
+  100% {
+    height: 2px;
+  }
+  50% {
+    height: 10px;
+  }
+}
+
+.equalizer-bar {
+  animation: equalizer 0.8s ease-in-out infinite;
+}
+
 /* Animação do menu mobile */
 @keyframes slideDown {
   from {

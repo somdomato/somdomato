@@ -71,7 +71,10 @@ function AdminSkipButton() {
   );
 }
 
-export default function Player({ className = "" }: { className?: string }) {
+export default function Player({
+  className = "",
+  hideExtras = false,
+}: { className?: string; hideExtras?: boolean }) {
   const {
     playing,
     loading,
@@ -276,23 +279,51 @@ export default function Player({ className = "" }: { className?: string }) {
 
   return (
     <div
-      className={`flex items-center gap-2 max-w-xl bg-linear-to-r from-background-alt to-[#2c3b26] rounded-lg px-2 py-1 sm:px-2.5 sm:py-1.5 border border-primary/30 shadow-lg ${className}`}
+      className={
+        hideExtras
+          ? `flex items-center gap-3 bg-linear-to-r from-background-alt via-[#2c3b26] to-background-alt px-4 py-3 ${className}`
+          : `flex items-center gap-2 max-w-xl bg-linear-to-r from-background-alt to-[#2c3b26] rounded-lg px-2 py-1 sm:px-2.5 sm:py-1.5 border border-primary/30 shadow-lg ${className}`
+      }
     >
       {/* Cover Image */}
-      <div className="shrink-0">
+      <div className="shrink-0 relative">
         <Image
           src={cover}
           alt="Cover"
-          className="w-8 h-8 sm:w-10 sm:h-10 rounded border border-primary/40 object-cover"
-          width={40}
-          height={40}
+          className={
+            hideExtras
+              ? "w-12 h-12 rounded-lg border border-primary/20 object-cover shadow-md"
+              : "w-8 h-8 sm:w-10 sm:h-10 rounded border border-primary/40 object-cover"
+          }
+          width={48}
+          height={48}
         />
+        {hideExtras && playing && !loading && (
+          <div className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 flex items-end gap-[2px] h-2.5">
+            <span
+              className="w-[2px] rounded-full bg-primary equalizer-bar"
+              style={{ animationDelay: "0ms" }}
+            />
+            <span
+              className="w-[2px] rounded-full bg-primary equalizer-bar"
+              style={{ animationDelay: "0.2s" }}
+            />
+            <span
+              className="w-[2px] rounded-full bg-primary equalizer-bar"
+              style={{ animationDelay: "0.4s" }}
+            />
+          </div>
+        )}
       </div>
 
       {/* Metadata */}
       <div className="flex-1 min-w-0">
         <div
-          className="text-[11px] sm:text-xs font-medium text-white truncate leading-tight"
+          className={
+            hideExtras
+              ? "text-[13px] font-semibold text-white truncate leading-tight"
+              : "text-[11px] sm:text-xs font-medium text-white truncate leading-tight"
+          }
           title={title}
         >
           {title}
@@ -324,7 +355,11 @@ export default function Player({ className = "" }: { className?: string }) {
         ) : (
           <div className="flex items-center gap-1.5">
             <span
-              className="text-[10px] sm:text-xs text-slate-400 truncate"
+              className={
+                hideExtras
+                  ? "text-xs text-slate-300 truncate"
+                  : "text-[10px] sm:text-xs text-slate-400 truncate"
+              }
               title={artist}
             >
               {artist}
@@ -343,7 +378,7 @@ export default function Player({ className = "" }: { className?: string }) {
       </div>
 
       {/* Station Selector */}
-      {RADIO_CONFIG.multipleMounts && (
+      {RADIO_CONFIG.multipleMounts && !hideExtras && (
         <div className="relative">
           <button
             type="button"
@@ -420,13 +455,25 @@ export default function Player({ className = "" }: { className?: string }) {
         <button
           type="button"
           onClick={handlePlayPause}
-          className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center rounded-full bg-primary text-white hover:bg-primary/90 transition-all active:scale-95 shadow-md"
+          className={
+            hideExtras
+              ? "w-10 h-10 flex items-center justify-center rounded-full bg-primary text-white hover:bg-primary/90 transition-all active:scale-95 shadow-md shadow-primary/25"
+              : "w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center rounded-full bg-primary text-white hover:bg-primary/90 transition-all active:scale-95 shadow-md"
+          }
           aria-label={playing ? "Pausar" : "Reproduzir"}
         >
           {playing ? (
-            <Pause size={16} className="sm:w-4.5 sm:h-4.5" />
+            <Pause
+              size={hideExtras ? 20 : 16}
+              className={hideExtras ? "" : "sm:w-4.5 sm:h-4.5"}
+            />
           ) : (
-            <Play size={16} className="ml-0.5 sm:w-4.5 sm:h-4.5" />
+            <Play
+              size={hideExtras ? 20 : 16}
+              className={
+                hideExtras ? "ml-0.5" : "ml-0.5 sm:w-4.5 sm:h-4.5"
+              }
+            />
           )}
         </button>
 
@@ -462,7 +509,7 @@ export default function Player({ className = "" }: { className?: string }) {
         />
 
         {/* Compartilhar música */}
-        {shareLinks && (
+        {shareLinks && !hideExtras && (
           <div className="relative">
             <button
               type="button"
