@@ -4,6 +4,16 @@
 
 [![Deploy](https://github.com/somdomato/somdomato/actions/workflows/deploy.yml/badge.svg)](https://github.com/somdomato/somdomato/actions/workflows/deploy.yml)
 
+Streaming de audio para as massas.
+
+| sistema | url | descrição |
+| :--- | ---: | ---: |
+| Site | [somdomato.com](https://somdomato.com) | Web Rádio Som do Mato |
+| [Stream](https://github.com/somdomato/stream) | [radio.somdomato.com](https://radio.somdomato.com) | IceCast2 & LiquidSoap |
+| [Chat](https://github.com/somdomato/chat) | [chat.somdomato.com](https://chat.somdomato.com) | Ergo IRC Server & Gamja IRC Web Client |
+| [Mobile](https://github.com/somdomato/mobile) |  | Aplicativos iOS e Android da rádio |
+| [Infra](https://github.com/somdomato/infra) |  | Imagens e contêineres do Docker e Ansible Playbooks para desenvolvimento local |
+
 ## Arquitetura Completa (Produção)
 
 ```

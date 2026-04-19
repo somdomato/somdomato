@@ -50,10 +50,10 @@ export default function MobileShareButton() {
 
   const shareLinks = shareText
     ? {
-      whatsapp: `https://api.whatsapp.com/send?text=${encodeURIComponent(shareText)}`,
-      x: `https://x.com/intent/tweet?text=${encodeURIComponent(shareText)}`,
-      facebook: `https://www.facebook.com/sharer/sharer.php?quote=${encodeURIComponent(shareText)}&u=${encodeURIComponent("https://somdomato.com")}`,
-    }
+        whatsapp: `https://api.whatsapp.com/send?text=${encodeURIComponent(shareText)}`,
+        x: `https://x.com/intent/tweet?text=${encodeURIComponent(shareText)}`,
+        facebook: `https://www.facebook.com/sharer/sharer.php?quote=${encodeURIComponent(shareText)}&u=${encodeURIComponent("https://somdomato.com")}`,
+      }
     : null;
 
   if (!shareLinks) return null;
@@ -80,7 +80,9 @@ export default function MobileShareButton() {
           />
           <div className="absolute right-0 top-full mt-2 bg-background-alt border border-primary/50 rounded-xl shadow-2xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200 p-3 min-w-52">
             <div className="space-y-1">
-              <label className={`flex items-center gap-1 cursor-pointer ${shareMode === "current" ? "bg-white/5" : ""} p-2 rounded transition`}>
+              <label
+                className={`flex items-center gap-1 cursor-pointer ${shareMode === "current" ? "bg-white/5" : ""} p-2 rounded transition`}
+              >
                 <input
                   type="radio"
                   name="mobile-share-mode"
@@ -88,12 +90,9 @@ export default function MobileShareButton() {
                   checked={shareMode === "current"}
                   onChange={() => setShareMode("current")}
                   className="w-3 h-3 accent-primary hidden"
-                  
                 />
                 <div className="flex-1 min-w-0">
-                  <div className="text-[10px] text-slate-400">
-                    Música atual
-                  </div>
+                  <div className="text-[10px] text-slate-400">Música atual</div>
                   <div className="text-[10px] text-white font-medium truncate">
                     {title}
                   </div>
@@ -104,7 +103,9 @@ export default function MobileShareButton() {
               </label>
 
               {nextSong && (
-                <label className={`flex items-center gap-2 cursor-pointer hover:bg-white/5 p-2 rounded transition ${shareMode === "next" ? "bg-white/5" : ""}`}>
+                <label
+                  className={`flex items-center gap-2 cursor-pointer hover:bg-white/5 p-2 rounded transition ${shareMode === "next" ? "bg-white/5" : ""}`}
+                >
                   <input
                     type="radio"
                     name="mobile-share-mode"

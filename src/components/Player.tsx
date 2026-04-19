@@ -74,7 +74,10 @@ function AdminSkipButton() {
 export default function Player({
   className = "",
   hideExtras = false,
-}: { className?: string; hideExtras?: boolean }) {
+}: {
+  className?: string;
+  hideExtras?: boolean;
+}) {
   const {
     playing,
     loading,
@@ -470,9 +473,7 @@ export default function Player({
           ) : (
             <Play
               size={hideExtras ? 20 : 16}
-              className={
-                hideExtras ? "ml-0.5" : "ml-0.5 sm:w-4.5 sm:h-4.5"
-              }
+              className={hideExtras ? "ml-0.5" : "ml-0.5 sm:w-4.5 sm:h-4.5"}
             />
           )}
         </button>

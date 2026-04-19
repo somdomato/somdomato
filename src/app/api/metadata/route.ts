@@ -91,8 +91,7 @@ export async function GET(request: NextRequest) {
     if (geralSource) {
       const rawGeralTitle = geralSource.title || "";
       const geralArtist = geralSource.artist || "";
-      const isLiveBroadcast =
-        /ao\s*vivo/i.test(rawGeralTitle) && !geralArtist;
+      const isLiveBroadcast = /ao\s*vivo/i.test(rawGeralTitle) && !geralArtist;
       const currentLiveState = getLiveState();
       if (isLiveBroadcast && !currentLiveState.live) {
         setLive(true);
