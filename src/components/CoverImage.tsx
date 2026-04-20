@@ -12,6 +12,7 @@ import { useCallback, useState } from "react";
  */
 export default function CoverImage({
   onLoad,
+  onError,
   className,
   src,
   ...props
@@ -25,6 +26,15 @@ export default function CoverImage({
       if (typeof onLoad === "function") onLoad(e);
     },
     [onLoad, src],
+  );
+
+  const handleError = useCallback(
+    (e: React.SyntheticEvent<HTMLImageElement>) => {
+      // Mark as loaded to hide shimmer even on error
+      setLoadedSrc(src);
+      if (typeof onError === "function") onError(e);
+    },
+    [onError, src],
   );
 
   return (
@@ -44,6 +54,7 @@ export default function CoverImage({
           loaded ? "opacity-100" : "opacity-0"
         }`}
         onLoad={handleLoad}
+        onError={handleError}
       />
     </>
   );

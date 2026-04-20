@@ -2,6 +2,7 @@
 
 import React from "react";
 import CoverImage from "@/components/CoverImage";
+import Spinner from "@/components/Spinner";
 import { Music, Play, Pause, Volume2, VolumeX, Pencil } from "lucide-react";
 import { requestSong } from "@/actions/requests";
 import { useAudio } from "@/context/AudioContext";
@@ -91,7 +92,7 @@ function MiniPlayer({ song, onStop }: { song: Song; onStop: () => void }) {
       audio.pause();
       audio.src = "";
     };
-  }, [song.id]);
+  }, [song.path]);
 
   // Sync volume
   React.useEffect(() => {
@@ -314,19 +315,8 @@ export default function ArtistSongsTable({ artist }: { artist: string }) {
 
   if (loading) {
     return (
-      <div className="space-y-3">
-        {["s1", "s2", "s3", "s4", "s5"].map((id) => (
-          <div
-            key={id}
-            className="flex items-center gap-3 p-3 rounded-xl bg-white/5 animate-pulse"
-          >
-            <div className="w-12 h-12 rounded-lg bg-white/10 shrink-0" />
-            <div className="flex-1 space-y-2">
-              <div className="h-3.5 bg-white/10 rounded w-3/4" />
-              <div className="h-3 bg-white/10 rounded w-1/2" />
-            </div>
-          </div>
-        ))}
+      <div className="flex items-center justify-center py-12">
+        <Spinner className="w-6 h-6" label="Carregando músicas..." />
       </div>
     );
   }

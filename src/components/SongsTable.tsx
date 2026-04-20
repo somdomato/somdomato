@@ -250,7 +250,9 @@ export function SongsTable() {
           {/* Tabela */}
           <div className="overflow-x-auto bg-background-alt rounded-lg shadow-lg">
             {loading ? (
-              <div className="p-8 text-center">Carregando...</div>
+              <div className="flex items-center justify-center p-8">
+                <div className="border-2 border-white/10 border-t-primary rounded-full animate-spin w-6 h-6" />
+              </div>
             ) : (
               <table className="w-full">
                 <thead>

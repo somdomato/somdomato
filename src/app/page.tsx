@@ -3,7 +3,7 @@ import Carousel from "@/components/Carousel";
 import LastSongs from "@/components/blocks/Last";
 import TopSongs from "@/components/blocks/Top";
 import NextSongs from "@/components/blocks/Next";
-import MiniStats from "@/components/blocks/MiniStats";
+//import MiniStats from "@/components/blocks/MiniStats";
 import { lastSongs, nextSongs, topSongs } from "@/actions/songs";
 import { slides as images } from "@/config";
 

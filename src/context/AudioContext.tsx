@@ -154,14 +154,26 @@ export const AudioProvider = ({ children }: { children: React.ReactNode }) => {
       setLoading(false);
     };
 
+    const handleError = () => {
+      setLoading(false);
+    };
+
+    const handleStalled = () => {
+      setLoading(false);
+    };
+
     audio.addEventListener("canplaythrough", handleCanPlayThrough);
     audio.addEventListener("waiting", handleWaiting);
     audio.addEventListener("playing", handlePlaying);
+    audio.addEventListener("error", handleError);
+    audio.addEventListener("stalled", handleStalled);
 
     return () => {
       audio.removeEventListener("canplaythrough", handleCanPlayThrough);
       audio.removeEventListener("waiting", handleWaiting);
       audio.removeEventListener("playing", handlePlaying);
+      audio.removeEventListener("error", handleError);
+      audio.removeEventListener("stalled", handleStalled);
     };
   }, [playing]);
 

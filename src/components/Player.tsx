@@ -334,28 +334,9 @@ export default function Player({
           {title}
         </div>
         {loading && playing ? (
-          <div className="flex items-center gap-1 text-[10px] text-primary animate-pulse">
+          <div className="flex items-center gap-1.5 text-[10px] text-primary">
+            <div className="w-3 h-3 border-[1.5px] border-primary/30 border-t-primary rounded-full animate-spin" />
             <span>Carregando</span>
-            <span className="inline-flex">
-              <span
-                className="animate-bounce"
-                style={{ animationDelay: "0ms" }}
-              >
-                .
-              </span>
-              <span
-                className="animate-bounce"
-                style={{ animationDelay: "150ms" }}
-              >
-                .
-              </span>
-              <span
-                className="animate-bounce"
-                style={{ animationDelay: "300ms" }}
-              >
-                .
-              </span>
-            </span>
           </div>
         ) : (
           <div className="flex items-center gap-1.5">

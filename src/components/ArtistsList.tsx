@@ -2,6 +2,7 @@
 
 import React from "react";
 import CoverImage from "@/components/CoverImage";
+import Spinner from "@/components/Spinner";
 import { Search } from "lucide-react";
 
 interface Artist {
@@ -36,13 +37,8 @@ export default function ArtistsList({
 
   if (loading) {
     return (
-      <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-2">
-        {["a", "b", "c", "d", "e", "f", "g", "h"].map((id) => (
-          <div
-            key={id}
-            className="aspect-square rounded-xl bg-white/5 animate-pulse"
-          />
-        ))}
+      <div className="flex items-center justify-center py-12">
+        <Spinner className="w-6 h-6" label="Carregando artistas..." />
       </div>
     );
   }
