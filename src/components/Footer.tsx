@@ -9,7 +9,7 @@ import {
 
 export default function Footer() {
   return (
-    <footer className="flex flex-col items-center fixed bottom-0 left-0 w-full z-40 bg-background shadow-t-md border-t-2 border-black/50 p-4 text-center text-sm md:text-base">
+    <footer className="flex flex-col items-center bg-background shadow-t-md border-t-2 border-black/50 p-4 text-center text-sm md:text-base">
       <div className="flex gap-2 mb-2">
         <Link href="https://facebook.somdomato.com" target="_blank">
           <SiFacebook
@@ -37,10 +37,7 @@ export default function Footer() {
         </Link>
       </div>
       <div>
-        &copy; 2011-2026 Rádio Som do Mato. <br />
-        Por{" "}
-        <Heart className="cursor-pointer inline-block w-4 h-4 text-red-500 mx-1 hover:scale-175 hover:drop-shadow-sm hover:drop-shadow-red-600 transition ease-in-out duration-300" />{" "}
-        a música sertaneja.
+        &copy; 2011-{new Date().getFullYear()} Rádio Som do Mato.
       </div>
     </footer>
   );
