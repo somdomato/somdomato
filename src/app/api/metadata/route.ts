@@ -5,6 +5,7 @@ import { db } from "@/db";
 import { songs } from "@/db/schema";
 import { and, eq } from "drizzle-orm";
 import { getLiveState, setLive } from "@/lib/live";
+import { isJingleMetadata } from "@/lib/song-visibility";
 
 interface IcecastSource {
   listenurl: string;
@@ -90,13 +91,23 @@ export async function GET(request: NextRequest) {
     const geralSource = sources.find((s) => s.listenurl?.endsWith("/geral"));
     if (geralSource) {
       const rawGeralTitle = (geralSource.title || "").trim();
-      const isLiveBroadcast = /^ao\s*vivo/i.test(rawGeralTitle);
+      const isLiveBroadcast = /^ao\s*vivo\b/i.test(rawGeralTitle);
+      const liveDjName = isLiveBroadcast
+        ? rawGeralTitle.replace(/^ao\s*vivo\b\s*[-:–—]?\s*/i, "").trim()
+        : "";
       const currentLiveState = getLiveState();
       if (isLiveBroadcast && !currentLiveState.live) {
-        setLive(true);
+        setLive(true, liveDjName || undefined);
         global.io?.emit("live:changed", getLiveState());
       } else if (!isLiveBroadcast && currentLiveState.live) {
         setLive(false);
+        global.io?.emit("live:changed", getLiveState());
+      } else if (
+        isLiveBroadcast &&
+        currentLiveState.live &&
+        (currentLiveState.djName || "") !== liveDjName
+      ) {
+        setLive(true, liveDjName || undefined);
         global.io?.emit("live:changed", getLiveState());
       }
     }
@@ -105,14 +116,14 @@ export async function GET(request: NextRequest) {
     let title: string = DEFAULT_SONG.title;
     let artist: string = DEFAULT_SONG.artist;
 
-    // Limpar "AOVIVO" / "AO VIVO" do título para exibição
-    let rawTitle = source.title || "";
-    if (/ao\s*vivo/i.test(rawTitle)) {
-      rawTitle = rawTitle
-        .replace(/ao\s*vivo/gi, "")
-        .replace(/^\s*[-–—]\s*/, "")
-        .replace(/\s*[-–—]\s*$/, "")
+    // Preservar títulos de músicas como "(Ao Vivo)" e só normalizar quando
+    // for o padrão de locução ao vivo no início do texto.
+    let rawTitle = (source.title || "").trim();
+    if (/^ao\s*vivo\b/i.test(rawTitle)) {
+      const withoutLivePrefix = rawTitle
+        .replace(/^ao\s*vivo\b\s*[-:–—]?\s*/i, "")
         .trim();
+      rawTitle = withoutLivePrefix || rawTitle;
     }
 
     if (rawTitle) {
@@ -130,6 +141,18 @@ export async function GET(request: NextRequest) {
           title = rawTitle;
         }
       }
+    }
+
+    if (isJingleMetadata({ title, artist })) {
+      return NextResponse.json({
+        song: {
+          title: DEFAULT_SONG.title,
+          artist: DEFAULT_SONG.artist,
+          cover: DEFAULT_SONG.cover,
+        },
+        listeners: source.listeners || 0,
+        genre: genreInfo.label,
+      });
     }
 
     // Buscar cover e id do banco de dados pelo título e artista

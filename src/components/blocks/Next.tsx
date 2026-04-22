@@ -8,6 +8,7 @@ import SongBlock from "./SongBlock";
 import SongList from "./SongList";
 import { CircleArrowRight } from "lucide-react";
 import { formatRelativeTime } from "@/lib/format";
+import { isJingleMetadata } from "@/lib/song-visibility";
 
 type UpcomingEntry = {
   reqId: number;
@@ -72,6 +73,9 @@ export default function Next({
 
       if (req && typeof req === "object" && "reqId" in req) {
         const r = req as UpcomingEntry;
+        if (isJingleMetadata({ title: r.title, artist: r.artist })) {
+          return;
+        }
         setRequests((prev) => {
           if (prev.some((p) => p.reqId === r.reqId)) return prev;
           return [...prev, { ...r, cover: r.cover ?? null }].slice(-10);

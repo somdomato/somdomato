@@ -19,6 +19,7 @@ import { buildStreamUrl, RADIO_CONFIG } from "@/config";
 import { toast } from "sonner";
 import { useAuth } from "@/components/AdminAuth";
 import { socket } from "@/lib/socket";
+import { isJingleMetadata } from "@/lib/song-visibility";
 
 type ListenersData = {
   current: number;
@@ -184,6 +185,10 @@ export default function Player({
       playedOnMountpoint?: string;
     }) => {
       fetchNextSong();
+      if (isJingleMetadata({ title: data.title, artist: data.artist })) {
+        return;
+      }
+
       // Atualizar capa instantaneamente via socket (sem esperar poll de 10s)
       if (
         data.playedOnMountpoint === currentGenre &&

@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { Heart } from "lucide-react";
 import {
   SiFacebook,
   SiX,
@@ -36,9 +35,7 @@ export default function Footer() {
           />
         </Link>
       </div>
-      <div>
-        &copy; 2011-{new Date().getFullYear()} Rádio Som do Mato.
-      </div>
+      <div>&copy; 2011-{new Date().getFullYear()} Rádio Som do Mato.</div>
     </footer>
   );
 }

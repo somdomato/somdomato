@@ -5,6 +5,7 @@ import { socket } from "@/lib/socket";
 import SongBlock from "./SongBlock";
 import SongList from "./SongList";
 import { Trophy } from "lucide-react";
+import { isJingleMetadata } from "@/lib/song-visibility";
 
 type TopEntry = {
   id: number;
@@ -25,6 +26,10 @@ export default function Top({ data }: { data: TopEntry[] }) {
       cover?: string | null;
       wasRequested?: boolean;
     }) => {
+      if (isJingleMetadata({ title: song.title, artist: song.artist })) {
+        return;
+      }
+
       // Só contar músicas que foram PEDIDAS (não AutoDJ)
       if (!song.wasRequested) {
         return;

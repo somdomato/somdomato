@@ -4,6 +4,7 @@ import { db } from "@/db";
 import { songs, requests, history } from "@/db/schema";
 import { eq, desc, asc } from "drizzle-orm";
 import { getProspectedSong } from "@/lib/prospection";
+import { isJingleMetadata } from "@/lib/song-visibility";
 
 type TopEntry = {
   id: number;
@@ -32,16 +33,19 @@ export async function lastSongs(genre?: string) {
     .innerJoin(songs, eq(history.songId, songs.id))
     .where(eq(history.genre, selectedGenre))
     .orderBy(desc(history.id))
-    .limit(10);
+    .limit(30);
 
-  return latest.map((s) => ({
-    historyId: s.historyId,
-    id: s.id,
-    title: s.title,
-    artist: s.artist,
-    cover: s.cover || null,
-    playedAt: s.playedAt ? Number(s.playedAt) : null,
-  }));
+  return latest
+    .filter((s) => !isJingleMetadata({ title: s.title, artist: s.artist }))
+    .slice(0, 10)
+    .map((s) => ({
+      historyId: s.historyId,
+      id: s.id,
+      title: s.title,
+      artist: s.artist,
+      cover: s.cover || null,
+      playedAt: s.playedAt ? Number(s.playedAt) : null,
+    }));
 }
 
 export async function topSongs() {
@@ -58,7 +62,9 @@ export async function topSongs() {
     .where(eq(history.wasRequested, 1));
 
   const map = new Map<number, TopEntry>();
-  for (const row of requestedHistory) {
+  for (const row of requestedHistory.filter(
+    (entry) => !isJingleMetadata({ title: entry.title, artist: entry.artist }),
+  )) {
     const entry = map.get(row.id);
     if (entry) entry.count += 1;
     else
@@ -110,30 +116,35 @@ export async function nextSongs(genre?: string) {
       .from(requests)
       .innerJoin(songs, eq(requests.songId, songs.id))
       .orderBy(asc(requests.order), asc(requests.createdAt))
-      .limit(10);
+      .limit(30);
   }
 
   // Próxima do AutoDJ: usar cache de prospecção (estável entre chamadas)
   const nextAutoDJ = await getProspectedSong(selectedGenre);
 
-  const serialUpcoming = upcoming.map((u) => ({
-    reqId: u.reqId,
-    id: u.id,
-    title: u.title,
-    artist: u.artist,
-    cover: u.cover || null,
-    requestedAt: u.requestedAt ? Number(u.requestedAt) : null,
-  }));
+  const serialUpcoming = upcoming
+    .filter((u) => !isJingleMetadata({ title: u.title, artist: u.artist }))
+    .slice(0, 10)
+    .map((u) => ({
+      reqId: u.reqId,
+      id: u.id,
+      title: u.title,
+      artist: u.artist,
+      cover: u.cover || null,
+      requestedAt: u.requestedAt ? Number(u.requestedAt) : null,
+    }));
 
   const serialNext = nextAutoDJ
-    ? {
-        reqId: -1,
-        id: nextAutoDJ.id,
-        title: nextAutoDJ.title,
-        artist: nextAutoDJ.artist,
-        cover: nextAutoDJ.cover || null,
-        requestedAt: null,
-      }
+    ? isJingleMetadata({ title: nextAutoDJ.title, artist: nextAutoDJ.artist })
+      ? null
+      : {
+          reqId: -1,
+          id: nextAutoDJ.id,
+          title: nextAutoDJ.title,
+          artist: nextAutoDJ.artist,
+          cover: nextAutoDJ.cover || null,
+          requestedAt: null,
+        }
     : null;
 
   return { upcoming: serialUpcoming, nextIfNoRequests: serialNext };

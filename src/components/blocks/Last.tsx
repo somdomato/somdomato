@@ -7,6 +7,7 @@ import SongBlock from "./SongBlock";
 import SongList from "./SongList";
 import { CircleArrowLeft } from "lucide-react";
 import { formatRelativeTime } from "@/lib/format";
+import { isJingleMetadata } from "@/lib/song-visibility";
 
 type LatestEntry = {
   historyId?: number;
@@ -53,6 +54,10 @@ export default function Last({ data }: { data: LatestEntry[] }) {
       playedAt?: number;
       playedOnMountpoint?: string;
     }) => {
+      if (isJingleMetadata({ title: song.title, artist: song.artist })) {
+        return;
+      }
+
       // Filtrar pelo mountpoint onde a música foi TOCADA
       // playedOnMountpoint indica em qual mountpoint a música foi tocada
       const mountpoint = song.playedOnMountpoint || song.genre || "geral";

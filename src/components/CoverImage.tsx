@@ -1,10 +1,10 @@
 "use client";
 
 import Image, { type ImageProps } from "next/image";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 /**
- * Drop-in replacement for next/image that shows a shimmer skeleton
+ * Drop-in replacement for next/image that shows a circular loader
  * until the image is fully loaded, then fades it in.
  *
  * Requirements:
@@ -17,38 +17,70 @@ export default function CoverImage({
   src,
   ...props
 }: ImageProps) {
-  const [loadedSrc, setLoadedSrc] = useState<ImageProps["src"] | null>(null);
-  const loaded = loadedSrc === src;
+  const srcKey = useMemo(() => {
+    if (typeof src === "string") return src;
+    if (src && typeof src === "object" && "src" in src) {
+      return src.src;
+    }
+    return String(src);
+  }, [src]);
+
+  const [loaded, setLoaded] = useState(false);
+  const imageRef = useRef<HTMLImageElement | null>(null);
+
+  useEffect(() => {
+    if (!srcKey) {
+      setLoaded(true);
+      return;
+    }
+
+    setLoaded(false);
+
+    // Handles cached images that may skip the load callback timing.
+    const img = imageRef.current;
+    if (img?.complete) {
+      setLoaded(true);
+    }
+  }, [srcKey]);
+
+  const handleRef = useCallback((node: HTMLImageElement | null) => {
+    imageRef.current = node;
+    if (node?.complete) {
+      setLoaded(true);
+    }
+  }, []);
 
   const handleLoad = useCallback(
     (e: React.SyntheticEvent<HTMLImageElement>) => {
-      setLoadedSrc(src);
+      setLoaded(true);
       if (typeof onLoad === "function") onLoad(e);
     },
-    [onLoad, src],
+    [onLoad],
   );
 
   const handleError = useCallback(
     (e: React.SyntheticEvent<HTMLImageElement>) => {
-      // Mark as loaded to hide shimmer even on error
-      setLoadedSrc(src);
+      // Mark as loaded to hide loader even on error.
+      setLoaded(true);
       if (typeof onError === "function") onError(e);
     },
-    [onError, src],
+    [onError],
   );
 
   return (
     <>
       <div
         aria-hidden
-        className={`absolute inset-0 rounded-[inherit] bg-white/[0.06] transition-opacity duration-300 ${
+        className={`pointer-events-none absolute inset-0 z-10 flex items-center justify-center rounded-[inherit] bg-black/25 transition-opacity duration-300 ${
           loaded ? "opacity-0 pointer-events-none" : "opacity-100"
         }`}
       >
-        <div className="absolute inset-0 rounded-[inherit] shimmer" />
+        <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
       </div>
       <Image
+        key={srcKey}
         {...props}
+        ref={handleRef}
         src={src}
         className={`${className ?? ""} transition-opacity duration-300 ${
           loaded ? "opacity-100" : "opacity-0"
