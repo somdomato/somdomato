@@ -101,31 +101,43 @@ end
 # Play handler - injeta musica especifica
 def play_handler(_, req) =
   log("Play especifico recebido via HTTP")
-  
+
   # Extrai dados do request
   body = req.data("")
-  
+
   # Parse do JSON para pegar path, title, artist
   path = list.hd(default="", process.read.lines("echo '#{body}' | jq -r '.path'"))
   title = list.hd(default="", process.read.lines("echo '#{body}' | jq -r '.title'"))
   artist = list.hd(default="", process.read.lines("echo '#{body}' | jq -r '.artist'"))
-  
+
   log("Injetando musica: #{path}")
   log("Titulo: #{title}, Artista: #{artist}")
-  
-  # Cria a requisicao anotada
-  uri_annotate = "annotate:title=\"#{title}\",artist=\"#{artist}\":#{path}"
-  request_obj = request.create(uri_annotate)
-  
-  # Adiciona na fila manual
-  queue.push(request_obj)
-  
-  # Pula a musica atual para tocar a injetada imediatamente
-  autodj_geral.skip()
-  
-  ignore(req.status_code(200))
-  ignore(req.content_type("text/plain"))
-  ignore(req.html("OK"))
+
+  if path == "" or path == "null" then
+    log("ERRO play_handler: path vazio ou null no body recebido")
+    ignore(req.status_code(400))
+    ignore(req.content_type("text/plain"))
+    ignore(req.html("path invalido"))
+  else
+    # Cria a requisicao anotada
+    uri_annotate = "annotate:title=\"#{title}\",artist=\"#{artist}\":#{path}"
+    request_obj = request.create(uri_annotate)
+
+    if request_obj == null() then
+      log("ERRO play_handler: request.create retornou null para #{uri_annotate}")
+      ignore(req.status_code(500))
+      ignore(req.content_type("text/plain"))
+      ignore(req.html("falha ao criar request"))
+    else
+      log("Request criada com sucesso, adicionando na fila")
+      queue.push(request_obj)
+      # Pula a faixa atual do geral para a queue entrar imediatamente
+      autodj_geral.skip()
+      ignore(req.status_code(200))
+      ignore(req.content_type("text/plain"))
+      ignore(req.html("OK"))
+    end
+  end
 end
 
 harbor.http.register(
