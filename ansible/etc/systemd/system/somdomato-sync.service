@@ -7,7 +7,7 @@ Type=oneshot
 User=nginx
 Group=nginx
 WorkingDirectory=/var/www/somdomato
-ExecStart=/var/www/somdomato/scripts/sync-music.sh
+ExecStart=/var/www/somdomato/src/scripts/sync-music.sh
 StandardOutput=journal
 StandardError=journal
 

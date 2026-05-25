@@ -1,11 +1,11 @@
 import Featured from "@/components/Featured";
-import Carousel from "@/components/Carousel";
+//import Carousel from "@/components/Carousel";
 import LastSongs from "@/components/blocks/Last";
 import TopSongs from "@/components/blocks/Top";
 import NextSongs from "@/components/blocks/Next";
 //import MiniStats from "@/components/blocks/MiniStats";
 import { lastSongs, nextSongs, topSongs } from "@/actions/songs";
-import { slides as images } from "@/config";
+//import { slides as images } from "@/config";
 
 export default async function Home() {
   const last = (await lastSongs("geral")) ?? [];
@@ -16,14 +16,14 @@ export default async function Home() {
   return (
     <div className="flex flex-col w-full max-w-7xl mx-auto px-4 lg:px-6 py-4 gap-5">
       {/* Hero: Carousel com controles */}
-      <section className="w-full">
+      {/*<section className="w-full">
         <Carousel
           images={images}
           autoplay={true}
           interval={5000}
           showControls={true}
         />
-      </section>
+      </section>*/}
 
       {/* Destaque: info + CTAs */}
       <section className="w-full">

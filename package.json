@@ -20,39 +20,32 @@
     "test:watch": "vitest --watch"
   },
   "dependencies": {
-    "@icons-pack/react-simple-icons": "^13.8.0",
-    "@libsql/client": "^0.17.0",
+    "@icons-pack/react-simple-icons": "^13.13.0",
+    "@libsql/client": "^0.17.3",
     "bcryptjs": "^3.0.3",
-    "dotenv": "^17.2.3",
+    "dotenv": "^17.4.2",
     "drizzle-orm": "^0.45.2",
     "lucide-react": "^0.562.0",
-    "next": "16.2.4",
+    "next": "16.2.6",
     "node-id3": "^0.2.9",
-    "react": "19.2.5",
-    "react-dom": "19.2.5",
+    "react": "19.2.6",
+    "react-dom": "19.2.6",
     "socket.io": "^4.8.3",
     "socket.io-client": "^4.8.3",
     "sonner": "^2.0.7"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.2.0",
-    "@tailwindcss/postcss": "^4",
-    "@types/node": "^20",
-    "@types/react": "19.2.14",
+    "@biomejs/biome": "2.4.15",
+    "@tailwindcss/postcss": "^4.3.0",
+    "@types/node": "^20.19.41",
+    "@types/react": "19.2.15",
     "@types/react-dom": "19.2.3",
     "cross-env": "^10.1.0",
     "drizzle-kit": "^0.31.10",
-    "tailwindcss": "^4",
-    "tsx": "^4.21.0",
-    "typescript": "^5",
+    "tailwindcss": "^4.3.0",
+    "tsx": "^4.22.3",
+    "typescript": "^5.9.3",
     "vitest": "^1.6.1"
   },
-  "packageManager": "pnpm@10.33.0",
-  "pnpm": {
-    "overrides": {
-      "esbuild": ">=0.25.0",
-      "@types/react": "19.2.14",
-      "@types/react-dom": "19.2.3"
-    }
-  }
+  "packageManager": "pnpm@10.33.0"
 }

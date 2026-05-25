@@ -3,7 +3,7 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import NodeID3 from "node-id3";
-import { readID3Tags, updateID3Tags } from "../scripts/sync-music";
+import { readID3Tags, updateID3Tags } from "../src/scripts/sync-music";
 
 describe("sync-music id3 helpers", () => {
   const tmpDir = path.join(os.tmpdir(), "somdomato-tests");

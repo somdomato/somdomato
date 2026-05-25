@@ -29,7 +29,7 @@ export async function signIn(
     where: eq(users.email, email),
   });
 
-  if (!user || !user.password || !user.salt) {
+  if (!user?.password || !user?.salt) {
     return { error: "Email ou senha incorretos", email };
   }
 
