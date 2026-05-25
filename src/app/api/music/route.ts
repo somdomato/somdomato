@@ -11,6 +11,7 @@ import {
   setPendingSong,
   consumePendingSong,
   consumeProspectedSong,
+  getPendingSong,
 } from "@/lib/prospection";
 import {
   getSongCounter,
@@ -194,35 +195,47 @@ export async function GET(request: Request) {
         allowedInGeneral: requestResult.allowedInGeneral,
       } as Song & { genre: string; allowedInGeneral: number };
 
-      // Remover o pedido da fila (sem emitir evento — a UI atualiza via song:changed no on_track)
-      await db.delete(requests).where(eq(requests.id, requestResult.requestId));
-
-      // Verificar se o arquivo do pedido existe. Se não, pular para seleção aleatória.
+      // Verificar se o arquivo do pedido existe antes de remover da fila.
       const requestFileExists = await checkFileExists(requestResult.path);
       if (!requestFileExists) {
         console.warn(
-          `[music] Arquivo do pedido não encontrado: ${requestResult.path} (songId=${requestResult.id})`,
+          `[music] Arquivo do pedido não encontrado: ${requestResult.path} (songId=${requestResult.id}) — pedido descartado`,
         );
+        await db
+          .delete(requests)
+          .where(eq(requests.id, requestResult.requestId));
         selectedSong = null;
         wasFromRequest = false;
+      } else {
+        // Remover o pedido da fila (sem emitir evento — a UI atualiza via song:changed no on_track)
+        await db
+          .delete(requests)
+          .where(eq(requests.id, requestResult.requestId));
       }
     }
 
     // Se não temos uma música selecionada por pedido (ou o arquivo do pedido faltou),
     // tentar usar a música prospectada (mesma que a UI mostrou), senão aleatória
     if (!selectedSong) {
+      // ID da música atualmente pendente (pre-fetchada mas on_track ainda não disparou)
+      // — deve ser excluída para evitar que a mesma música toque duas vezes seguidas
+      const pendingSong = getPendingSong(genre);
+      const pendingSongId = pendingSong?.songId;
+
       // 1. Tentar a música prospectada (garante consistência com bloco "Próximas")
       const prospected = consumeProspectedSong(genre);
-      if (prospected) {
+      if (prospected && prospected.id !== pendingSongId) {
         const match = finalFilteredSongs.find((s) => s.id === prospected.id);
         if (match && (await checkFileExists(match.path))) {
           selectedSong = match;
         }
       }
 
-      // 2. Fallback: selecionar aleatoriamente
+      // 2. Fallback: selecionar aleatoriamente, excluindo a música pendente atual
       if (!selectedSong) {
-        const candidates = [...finalFilteredSongs];
+        const candidates = finalFilteredSongs.filter(
+          (s) => s.id !== pendingSongId,
+        );
 
         for (
           let attempt = 0;

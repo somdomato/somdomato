@@ -3,8 +3,6 @@ import { songs, history } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import fs from "node:fs/promises";
 import { resolveSongCover, validateCoverForDb } from "@/lib/cover";
-import util from "node:util";
-import { exec } from "node:child_process";
 
 export async function POST(request: Request) {
   try {
@@ -59,7 +57,6 @@ export async function POST(request: Request) {
       console.error("Erro ao garantir capa:", err);
     }
 
-    // emit socket event
     const selectedSong = {
       id: s.id,
       title: s.title,
@@ -72,6 +69,37 @@ export async function POST(request: Request) {
       allowedInGeneral: s.allowedInGeneral,
     };
 
+    // Injetar música no Liquidsoap via endpoint HTTP (harbor.http na porta 8080)
+    const controlUrl =
+      process.env.LIQUIDSOAP_CONTROL_URL || "http://localhost:8080";
+    try {
+      const liqRes = await fetch(`${controlUrl}/play`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          path: s.path,
+          title: s.title,
+          artist: s.artist,
+        }),
+      });
+      if (!liqRes.ok) {
+        const text = await liqRes.text();
+        console.error("Liquidsoap /play retornou erro:", text);
+        return new Response(
+          JSON.stringify({ error: "Liquidsoap recusou a injeção" }),
+          { status: 502 },
+        );
+      }
+      console.log("Música injetada no Liquidsoap com sucesso");
+    } catch (err) {
+      console.error("Falha ao conectar com Liquidsoap:", err);
+      return new Response(
+        JSON.stringify({ error: "Não foi possível conectar ao Liquidsoap" }),
+        { status: 502 },
+      );
+    }
+
+    // Emitir evento de socket após confirmação do Liquidsoap
     if (global.io)
       global.io.emit("song:changed", {
         id: selectedSong.id,
@@ -84,143 +112,6 @@ export async function POST(request: Request) {
         playedOnMountpoint: selectedSong.genre || "geral",
         wasRequested: false,
       });
-
-    // try to call liquidsoap control endpoint to skip immediately (optional)
-    // const controlUrl = process.env.LIQUIDSOAP_CONTROL_URL || "http://localhost:8080/skip";
-    // if (controlUrl) {
-    //   try {
-    //     await fetch(`${controlUrl}/skip`, { method: "POST" }).catch((e) => console.error("liquidsoap skip call failed", e));
-    //   } catch (err) {
-    //     console.error("Error calling liquidsoap control endpoint:", err);
-    //   }
-    // }
-
-    // const controlUrl = process.env.LIQUIDSOAP_CONTROL_URL || "http://localhost:8080";
-    // if (controlUrl) {
-    //   try {
-    //     // Envia os dados da música para o Liquidsoap
-    //     await fetch(`${controlUrl}/play`, {
-    //       method: "POST",
-    //       headers: { "Content-Type": "application/json" },
-    //       body: JSON.stringify({
-    //         path: s.path,
-    //         title: s.title,
-    //         artist: s.artist,
-    //       }),
-    //     }).catch((e) => console.error("liquidsoap play call failed", e));
-    //   } catch (err) {
-    //     console.error("Error calling liquidsoap control endpoint:", err);
-    //   }
-    // }
-
-    // const controlUrl = process.env.LIQUIDSOAP_CONTROL_URL || "http://localhost:8080";
-    // if (controlUrl) {
-    //   try {
-    //     // Escapar aspas para o comando telnet
-    //     const escapedPath = s.path.replace(/"/g, '\\"');
-    //     const escapedTitle = s.title.replace(/"/g, '\\"');
-    //     const escapedArtist = s.artist.replace(/"/g, '\\"');
-
-    //     const uri = `annotate:title="${escapedTitle}",artist="${escapedArtist}":${escapedPath}`;
-
-    //     // Usar telnet para controlar o Liquidsoap
-    //     const execPromise = util.promisify(exec);
-
-    //     // Push da música na fila
-    //     await execPromise(`echo 'request_queue.push ${uri}' | nc localhost 1234`);
-
-    //     // Skip da música atual para tocar a injetada
-    //     await execPromise(`echo 'request_queue.skip' | nc localhost 1234`);
-
-    //     console.log("Música injetada via telnet com sucesso");
-    //   } catch (err) {
-    //     console.error("Error calling liquidsoap telnet:", err);
-    //   }
-    // }
-
-    // const controlUrl = process.env.LIQUIDSOAP_CONTROL_URL || "http://localhost:8080";
-    // if (controlUrl) {
-    //   try {
-    //     // Escapar aspas para o comando telnet
-    //     const escapedPath = s.path.replace(/"/g, '\\"');
-    //     const escapedTitle = s.title.replace(/"/g, '\\"');
-    //     const escapedArtist = s.artist.replace(/"/g, '\\"');
-
-    //     const uri = `annotate:title="${escapedTitle}",artist="${escapedArtist}":${escapedPath}`;
-
-    //     // Usar telnet para controlar o Liquidsoap
-    //     const execPromise = util.promisify(exec);
-
-    //     console.log("Tentando tocar:", {
-    //       path: s.path,
-    //       title: s.title,
-    //       artist: s.artist,
-    //     });
-
-    //     // Push da música na fila
-    //     await execPromise(`echo 'request_queue.push ${uri}' | nc localhost 1234`);
-
-    //     // Skip da música atual do output Icecast para forçar mudança
-    //     await execPromise(`echo 'output.icecast.skip' | nc localhost 1234`);
-
-    //     console.log("Música injetada via telnet com sucesso");
-    //   } catch (err) {
-    //     console.error("Error calling liquidsoap telnet:", err);
-    //   }
-    // }
-
-    // const controlUrl = process.env.LIQUIDSOAP_CONTROL_URL || "http://localhost:8080";
-    // if (controlUrl) {
-    //   try {
-    //     // Escapar apenas aspas duplas
-    //     const escapedTitle = s.title.replace(/"/g, '\\"');
-    //     const escapedArtist = s.artist.replace(/"/g, '\\"');
-    //     const escapedPath = s.path.replace(/"/g, '\\"');
-
-    //     const uri = `annotate:title="${escapedTitle}",artist="${escapedArtist}":${escapedPath}`;
-
-    //     // Usar telnet para controlar o Liquidsoap
-    //     const execPromise = util.promisify(exec);
-
-    //     // Apenas faz skip para forçar a troca - a request_queue já tem prioridade
-    //     await execPromise(`echo 'output.icecast.skip' | nc -w 2 localhost 1234`);
-
-    //     // Pequeno delay
-    //     await new Promise((resolve) => setTimeout(resolve, 100));
-
-    //     // Push da música na fila DEPOIS do skip
-    //     await execPromise(`echo 'request_queue.push ${uri}' | nc -w 2 localhost 1234`);
-
-    //     console.log("Música injetada via telnet com sucesso");
-    //   } catch (err) {
-    //     console.error("Error calling liquidsoap telnet:", err);
-    //   }
-    // }
-
-    const controlUrl =
-      process.env.LIQUIDSOAP_CONTROL_URL || "http://localhost:8080";
-    if (controlUrl) {
-      try {
-        // Escapar apenas aspas duplas
-        const escapedTitle = s.title.replace(/"/g, '\\"');
-        const escapedArtist = s.artist.replace(/"/g, '\\"');
-        const escapedPath = s.path.replace(/"/g, '\\"');
-
-        const uri = `annotate:title="${escapedTitle}",artist="${escapedArtist}":${escapedPath}`;
-
-        // Usar telnet para controlar o Liquidsoap
-        const execPromise = util.promisify(exec);
-
-        // Combinar os dois comandos em uma única chamada
-        const commands = `request_queue.push ${uri}\noutput.icecast.skip`;
-
-        await execPromise(`echo -e '${commands}' | nc -w 2 localhost 1234`);
-
-        console.log("Música injetada via telnet com sucesso");
-      } catch (err) {
-        console.error("Error calling liquidsoap telnet:", err);
-      }
-    }
 
     return new Response(JSON.stringify({ success: true, song: selectedSong }), {
       status: 200,

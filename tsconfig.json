@@ -30,7 +30,9 @@
     "**/*.tsx",
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts",
-    "**/*.mts"
+    "**/*.mts",
+    "/tmp/somdomato-next/types/**/*.ts",
+    "/tmp/somdomato-next/dev/types/**/*.ts"
   ],
   "exclude": ["node_modules"]
 }

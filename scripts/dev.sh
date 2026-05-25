@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-SESSION="pvt"
+SESSION="sdm"
 
 if tmux has-session -t "$SESSION" 2>/dev/null; then
   tmux attach-session -t "$SESSION"

@@ -60,3 +60,6 @@ public/covers/**
 
 # Symlink to music files
 public/music
+
+# other
+tmp

@@ -52,7 +52,7 @@ function AdminSkipButton() {
     <button
       onClick={handle}
       title="Skip (admin)"
-      className="w-8 h-8 flex items-center justify-center rounded-full bg-yellow-500 text-black hover:opacity-90 transition"
+      className="w-7 h-7 flex items-center justify-center rounded-full bg-primary text-black hover:bg-primary-alt transition"
     >
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -289,16 +289,16 @@ export default function Player({
     <div
       className={
         hideExtras
-          ? `flex items-center gap-3 bg-linear-to-r from-background-alt via-[#2c3b26] to-background-alt px-4 py-3 ${className}`
-          : `flex items-center gap-2 max-w-xl bg-linear-to-r from-background-alt to-[#2c3b26] rounded-lg px-2 py-1 sm:px-2.5 sm:py-1.5 border border-primary/30 shadow-lg ${className}`
+          ? `flex items-center gap-3 bg-black/30 px-3 py-2.5 ${className}`
+          : `flex items-center gap-1.5 max-w-xl bg-black/20 rounded-lg px-2 py-1 sm:px-2.5 sm:py-1.5 border border-white/10 ${className}`
       }
     >
       {/* Cover Image */}
       <div
         className={`shrink-0 relative overflow-hidden ${
           hideExtras
-            ? "w-12 h-12 rounded-lg border border-primary/20 shadow-md"
-            : "w-8 h-8 sm:w-10 sm:h-10 rounded border border-primary/40"
+            ? "w-11 h-11 rounded-lg"
+            : "w-9 h-9 sm:w-10 sm:h-10 rounded-md"
         }`}
       >
         <CoverImage
@@ -331,16 +331,16 @@ export default function Player({
         <div
           className={
             hideExtras
-              ? "text-[13px] font-semibold text-white truncate leading-tight"
-              : "text-[11px] sm:text-xs font-medium text-white truncate leading-tight"
+              ? "text-xs font-semibold text-white truncate leading-tight"
+              : "text-[10px] sm:text-[11px] font-medium text-white/90 truncate leading-tight"
           }
           title={title}
         >
           {title}
         </div>
         {loading && playing ? (
-          <div className="flex items-center gap-1.5 text-[10px] text-primary">
-            <div className="w-3 h-3 border-[1.5px] border-primary/30 border-t-primary rounded-full animate-spin" />
+          <div className="flex items-center gap-1.5 text-[10px] text-white/50">
+            <div className="w-3 h-3 border-[1.5px] border-white/20 border-t-white/60 rounded-full animate-spin" />
             <span>Carregando</span>
           </div>
         ) : (
@@ -348,8 +348,8 @@ export default function Player({
             <span
               className={
                 hideExtras
-                  ? "text-xs text-slate-300 truncate"
-                  : "text-[10px] sm:text-xs text-slate-400 truncate"
+                  ? "text-[11px] text-white/60 truncate"
+                  : "text-[9px] sm:text-[10px] text-white/50 truncate"
               }
               title={artist}
             >
@@ -357,10 +357,10 @@ export default function Player({
             </span>
             {listeners.current > 0 && (
               <span
-                className="flex items-center gap-0.5 text-[10px] text-emerald-400 bg-emerald-500/20 px-1 py-0.5 rounded leading-none"
+                className="flex items-center gap-0.5 text-[9px] text-white/35 leading-none"
                 title={`Pico: ${listeners.peak}`}
               >
-                <Users size={9} />
+                <Users size={8} />
                 {listeners.current}
               </span>
             )}
@@ -374,18 +374,18 @@ export default function Player({
           <button
             type="button"
             onClick={() => setShowGenreDropdown(!showGenreDropdown)}
-            className="flex items-center gap-1 px-2 py-1 rounded-lg bg-primary/20 hover:bg-primary/30 border border-primary/40 transition-all group"
+            className="flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-white/6 hover:bg-white/10 border border-white/10 transition-all group"
             title="Trocar estação"
           >
             <Radio
-              size={12}
-              className="text-primary group-hover:scale-110 transition-transform"
+              size={10}
+              className="text-white/50 group-hover:text-white/70 transition-colors"
             />
-            <span className="text-[11px] sm:text-xs font-medium text-white max-w-14 sm:max-w-none truncate">
+            <span className="text-[10px] sm:text-[11px] text-white/70 max-w-12 sm:max-w-none truncate">
               {currentGenreLabel}
             </span>
             <svg
-              className={`w-3 h-3 text-primary transition-transform duration-200 ${showGenreDropdown ? "rotate-180" : ""}`}
+              className={`w-2.5 h-2.5 text-white/40 transition-transform duration-200 ${showGenreDropdown ? "rotate-180" : ""}`}
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -408,21 +408,21 @@ export default function Player({
                 onClick={() => setShowGenreDropdown(false)}
                 aria-label="Fechar"
               />
-              <div className="absolute right-0 min-w-38 sm:left-1/2 sm:-translate-x-1/2 top-full mt-2 bg-background-alt border border-primary/50 rounded-xl shadow-2xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
-                <div className="p-1 space-y-1">
+              <div className="absolute right-0 min-w-38 sm:left-1/2 sm:-translate-x-1/2 top-full mt-1.5 bg-black/80 backdrop-blur-sm border border-white/10 rounded-lg shadow-xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+                <div className="p-1 space-y-0.5">
                   {GENRES.map((genre) => (
                     <button
                       key={genre.value}
                       type="button"
                       onClick={() => handleGenreChange(genre)}
-                      className={`w-full px-3 py-2.5 text-left text-xs rounded-lg hover:bg-primary/20 transition-colors flex items-center gap-2.5 ${currentGenre === genre.value ? "bg-primary/15 text-primary font-semibold" : "text-white"}`}
+                      className={`w-full px-2.5 py-2 text-left text-[11px] rounded-md transition-colors flex items-center gap-2 ${currentGenre === genre.value ? "bg-white/10 text-white font-medium" : "text-white/60 hover:text-white hover:bg-white/6"}`}
                     >
                       <Radio
-                        size={14}
+                        size={11}
                         className={`shrink-0 ${
                           currentGenre === genre.value
                             ? "text-primary"
-                            : "text-slate-400"
+                            : "text-white/30"
                         }`}
                       />
                       <span>{genre.label}</span>
@@ -448,21 +448,15 @@ export default function Player({
           onClick={handlePlayPause}
           className={
             hideExtras
-              ? "w-10 h-10 flex items-center justify-center rounded-full bg-primary text-white hover:bg-primary/90 transition-all active:scale-95 shadow-md shadow-primary/25"
-              : "w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center rounded-full bg-primary text-white hover:bg-primary/90 transition-all active:scale-95 shadow-md"
+              ? "w-9 h-9 flex items-center justify-center rounded-full bg-primary text-black hover:bg-primary-alt transition-all active:scale-95"
+              : "w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center rounded-full bg-primary text-black hover:bg-primary-alt transition-all active:scale-95"
           }
           aria-label={playing ? "Pausar" : "Reproduzir"}
         >
           {playing ? (
-            <Pause
-              size={hideExtras ? 20 : 16}
-              className={hideExtras ? "" : "sm:w-4.5 sm:h-4.5"}
-            />
+            <Pause size={hideExtras ? 16 : 13} />
           ) : (
-            <Play
-              size={hideExtras ? 20 : 16}
-              className={hideExtras ? "ml-0.5" : "ml-0.5 sm:w-4.5 sm:h-4.5"}
-            />
+            <Play size={hideExtras ? 16 : 13} className="ml-0.5" />
           )}
         </button>
 
@@ -471,20 +465,20 @@ export default function Player({
           type="button"
           onClick={handleReload}
           disabled={!playing}
-          className="hidden sm:flex w-7 h-7 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition disabled:opacity-30 disabled:cursor-not-allowed"
+          className="hidden sm:flex w-6 h-6 items-center justify-center rounded-full text-white/40 hover:text-white/70 hover:bg-white/8 transition disabled:opacity-25 disabled:cursor-not-allowed"
           aria-label="Recarregar stream"
         >
-          <RotateCw size={13} />
+          <RotateCw size={12} />
         </button>
 
         {/* Volume */}
         <button
           type="button"
           onClick={() => toggleMute()}
-          className="hidden sm:flex w-7 h-7 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition"
+          className="hidden sm:flex w-6 h-6 items-center justify-center rounded-full text-white/40 hover:text-white/70 hover:bg-white/8 transition"
           aria-label={muted ? "Ativar som" : "Silenciar"}
         >
-          {muted ? <VolumeX size={13} /> : <Volume2 size={13} />}
+          {muted ? <VolumeX size={12} /> : <Volume2 size={12} />}
         </button>
         <input
           type="range"
@@ -503,11 +497,11 @@ export default function Player({
             <button
               type="button"
               onClick={() => setShowShareDropdown(!showShareDropdown)}
-              className="hidden sm:flex w-7 h-7 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition"
+              className="hidden sm:flex w-6 h-6 items-center justify-center rounded-full text-white/40 hover:text-white/70 hover:bg-white/8 transition"
               aria-label="Compartilhar música"
               title="Compartilhar música"
             >
-              <Share2 size={13} />
+              <Share2 size={12} />
             </button>
 
             {showShareDropdown && (

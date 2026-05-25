@@ -1,4 +1,5 @@
-@import "tailwindcss";
+@import "tailwindcss" source(none);
+@source "../";
 
 :root {
   --foreground: #ffffff;
@@ -172,6 +173,11 @@ input[type="range"]::-moz-range-thumb {
 
 .equalizer-bar {
   animation: equalizer 0.8s ease-in-out infinite;
+}
+
+/* Background de madeira — usa variável CSS definida em layout.tsx */
+.bg-wood {
+  background-image: var(--bg-wood);
 }
 
 /* Animação do menu mobile */

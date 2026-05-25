@@ -3,7 +3,7 @@
 import { db } from "@/db";
 import { songs, requests, history } from "@/db/schema";
 import { eq, desc, asc } from "drizzle-orm";
-import { getProspectedSong } from "@/lib/prospection";
+import { getProspectedSong, getPendingSong } from "@/lib/prospection";
 import { isJingleMetadata } from "@/lib/song-visibility";
 
 type TopEntry = {
@@ -117,6 +117,25 @@ export async function nextSongs(genre?: string) {
       .innerJoin(songs, eq(requests.songId, songs.id))
       .orderBy(asc(requests.order), asc(requests.createdAt))
       .limit(30);
+  }
+
+  // Se há um pedido pre-fetchado (deletado do banco mas ainda não tocando),
+  // inseri-lo no topo da lista para evitar que suma do bloco "Próximas"
+  if (selectedGenre === "geral") {
+    const pending = getPendingSong(selectedGenre);
+    if (
+      pending?.wasRequested &&
+      !upcoming.some((u) => u.id === pending.songId)
+    ) {
+      upcoming.unshift({
+        reqId: -2,
+        id: pending.songId,
+        title: pending.title,
+        artist: pending.artist,
+        cover: pending.cover || null,
+        requestedAt: null,
+      });
+    }
   }
 
   // Próxima do AutoDJ: usar cache de prospecção (estável entre chamadas)

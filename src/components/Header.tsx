@@ -11,7 +11,12 @@ export default function Header() {
   return (
     <header className="sticky top-0 z-50 border-b-2 border-black/50">
       {/* Background com fallback */}
-      <div className="absolute inset-0 -z-20 bg-background bg-[url('/images/wood.jpg')] bg-repeat-x bg-top bg-contain" />
+      <div
+        className="absolute inset-0 -z-20 bg-background bg-wood bg-repeat-x bg-top bg-contain"
+        style={
+          { "--bg-wood": "url('/images/wood.jpg')" } as React.CSSProperties
+        }
+      />
 
       {/* Overlay escuro */}
       <div className="absolute inset-0 -z-10 bg-background/90" />
