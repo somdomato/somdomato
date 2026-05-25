@@ -78,21 +78,21 @@ export default function MobileGenreSelector() {
             onClick={() => setShowDropdown(false)}
             aria-label="Fechar"
           />
-          <div className="absolute left-0 min-w-40 top-full mt-2 bg-background-alt border border-primary/50 rounded-xl shadow-2xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+          <div className="absolute left-0 min-w-40 top-full mt-2 bg-black/80 backdrop-blur-sm border border-white/10 rounded-lg shadow-xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
             <div className="p-1 space-y-0.5">
               {GENRES.map((genre) => (
                 <button
                   key={genre.value}
                   type="button"
                   onClick={() => handleGenreChange(genre)}
-                  className={`w-full px-3 py-2.5 text-left text-xs rounded-lg hover:bg-primary/20 transition-colors flex items-center gap-2.5 ${currentGenre === genre.value ? "bg-primary/15 text-primary font-semibold" : "text-white"}`}
+                  className={`w-full px-2.5 py-2 text-left text-[11px] rounded-md transition-colors flex items-center gap-2 ${currentGenre === genre.value ? "bg-white/10 text-white font-medium" : "text-white/60 hover:text-white hover:bg-white/6"}`}
                 >
                   <Radio
-                    size={14}
+                    size={11}
                     className={`shrink-0 ${
                       currentGenre === genre.value
                         ? "text-primary"
-                        : "text-slate-400"
+                        : "text-white/30"
                     }`}
                   />
                   <span>{genre.label}</span>

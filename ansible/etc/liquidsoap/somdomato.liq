@@ -83,7 +83,7 @@ autodj_romantico.on_track(fun (m) -> notify_started("romantico", m))
 queue = request.queue(id="manual_queue")
 
 # Skip handler HTTP
-def skip_handler(_, req) =
+def skip_handler(_http_req, req) =
   log("Skip recebido via HTTP")
   
   # Pula a faixa atual em todos os mountpoints
@@ -99,11 +99,13 @@ def skip_handler(_, req) =
 end
 
 # Play handler - injeta musica especifica
-def play_handler(_, req) =
+# http_req = record com {data, headers, method, uri} (request info)
+# req = objeto para construir a resposta HTTP
+def play_handler(http_req, req) =
   log("Play especifico recebido via HTTP")
 
-  # Extrai dados do request
-  body = req.data("")
+  # O body do POST está em http_req.data() (primeiro argumento), não em req.data()
+  body = http_req.data()
 
   # Parse do JSON para pegar path, title, artist
   path = list.hd(default="", process.read.lines("echo '#{body}' | jq -r '.path'"))

@@ -465,7 +465,7 @@ export default function Player({
           type="button"
           onClick={handleReload}
           disabled={!playing}
-          className="hidden sm:flex w-6 h-6 items-center justify-center rounded-full text-white/40 hover:text-white/70 hover:bg-white/8 transition disabled:opacity-25 disabled:cursor-not-allowed"
+          className={`${hideExtras ? "flex" : "hidden sm:flex"} w-6 h-6 items-center justify-center rounded-full text-white/40 hover:text-white/70 hover:bg-white/8 transition disabled:opacity-25 disabled:cursor-not-allowed`}
           aria-label="Recarregar stream"
         >
           <RotateCw size={12} />
