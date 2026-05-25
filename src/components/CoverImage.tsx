@@ -41,6 +41,12 @@ export default function CoverImage({
     if (img?.complete) {
       setLoaded(true);
     }
+
+    // NS_BINDING_ABORTED (and similar browser aborts) don't fire React's
+    // onLoad/onError — add a native listener so the spinner never gets stuck.
+    const handleAbort = () => setLoaded(true);
+    img?.addEventListener("abort", handleAbort);
+    return () => img?.removeEventListener("abort", handleAbort);
   }, [srcKey]);
 
   const handleRef = useCallback((node: HTMLImageElement | null) => {
