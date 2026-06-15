@@ -76,7 +76,7 @@ export default function Featured() {
             <div className="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center">
               <Radio className="w-5 h-5 text-emerald-400" />
             </div>
-            <span className="font-semibold text-sm text-white">6 Estações</span>
+            <span className="font-semibold text-sm text-white">5 Estações</span>
             <span className="text-xs text-slate-400 text-center leading-tight">
               Geral, Gaúcha, Modão e mais
             </span>

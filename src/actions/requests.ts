@@ -8,6 +8,8 @@ import { isLive } from "@/lib/live";
 import { revalidatePath } from "next/cache";
 import { logAction } from "@/lib/logging";
 import { syncRequestsInQueue } from "@/lib/queue";
+import { ADMIN_ROLES, type Role } from "@/lib/permissions";
+import { getUserFromSession } from "@/lib/session";
 
 interface SearchSongsParams {
   query?: string;
@@ -83,14 +85,22 @@ export async function requestSong(songId: number) {
       return { success: false, message: "Música não encontrada" };
     }
 
-    // Verificar repetições usando o sistema de proteções
-    const check = await checkMusicRepetition(songId);
+    // Admins logados podem ignorar as restrições de repetição
+    const { cookies } = await import("next/headers");
+    const cookieStore = await cookies();
+    const session = getUserFromSession(cookieStore);
+    const isAdmin = !!session && ADMIN_ROLES.includes(session.role as Role);
 
-    if (check.isRepeated) {
-      return {
-        success: false,
-        message: check.message || "Esta música não pode ser pedida agora",
-      };
+    if (!isAdmin) {
+      // Verificar repetições usando o sistema de proteções
+      const check = await checkMusicRepetition(songId);
+
+      if (check.isRepeated) {
+        return {
+          success: false,
+          message: check.message || "Esta música não pode ser pedida agora",
+        };
+      }
     }
 
     // Pegar a última ordem
