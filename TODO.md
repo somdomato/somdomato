@@ -1,5 +1,5 @@
-- O diálogo de compartilhar música não é responsivo(ele ultrapassa os limites da tela).
-
 - O bloco "Top 10" deve atualizar o número de pedidos automaticamente(via socket.io) assim que um pedido é feito.
 
-- Quando eu navego de qualquer página(/artistas por exemplo) para a rota principal (/) tem um scroll automatico que desce para o chat, remova-o.
+- Em /artistas quando eu clico em um artista crie uma rota separada para o artista com /artistas/[nome_sanitizado_do_artista]
+
+- Em /admin na aba músicas crie mais dois "Pesos" 1. Ultraleve 2. Ultrapesada

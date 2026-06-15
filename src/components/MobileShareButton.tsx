@@ -78,7 +78,7 @@ export default function MobileShareButton() {
             onClick={() => setShowDropdown(false)}
             aria-label="Fechar"
           />
-          <div className="absolute right-0 top-full mt-2 bg-background-alt border border-primary/50 rounded-xl shadow-2xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200 p-3 min-w-52">
+          <div className="absolute right-0 top-full mt-2 bg-background-alt border border-primary/50 rounded-xl shadow-2xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200 p-3 w-52 max-w-[calc(100vw-1.5rem)]">
             <div className="space-y-1">
               <label
                 className={`flex items-center gap-1 cursor-pointer ${shareMode === "current" ? "bg-white/5" : ""} p-2 rounded transition`}

@@ -1,6 +1,13 @@
 "use client";
 
-import { createContext, useContext, useEffect, useRef, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { buildStreamUrl, DEFAULT_SONG, DEFAULT_GENRE } from "@/config";
 
 interface AudioContextType {
@@ -26,6 +33,24 @@ interface AudioContextType {
 }
 
 const AudioContext = createContext<AudioContextType | undefined>(undefined);
+
+// Monta a artwork do MediaSession a partir da capa atual, com fallback
+// para o logo da rádio quando a capa não foi encontrada.
+const buildArtwork = (cover: string): MediaImage[] => {
+  if (!cover || cover === DEFAULT_SONG.cover) {
+    return [{ src: "/images/ogp.png", sizes: "256x256", type: "image/png" }];
+  }
+
+  const ext = cover.split(".").pop()?.toLowerCase();
+  const type =
+    ext === "png" ? "image/png" : ext === "webp" ? "image/webp" : "image/jpeg";
+
+  return [
+    { src: cover, sizes: "96x96", type },
+    { src: cover, sizes: "256x256", type },
+    { src: cover, sizes: "512x512", type },
+  ];
+};
 
 export const AudioProvider = ({ children }: { children: React.ReactNode }) => {
   const audioRef = useRef<HTMLAudioElement>(null);
@@ -54,13 +79,7 @@ export const AudioProvider = ({ children }: { children: React.ReactNode }) => {
         title,
         artist,
         album: "Rádio Som do Mato",
-        artwork: [
-          {
-            src: "https://somdomato.com/images/ogp.png",
-            sizes: "any",
-            type: "image/png",
-          },
-        ],
+        artwork: buildArtwork(cover),
       });
     }
 
@@ -72,49 +91,69 @@ export const AudioProvider = ({ children }: { children: React.ReactNode }) => {
 
   const updateCover = (newCover: string) => {
     setCover(newCover);
-  };
 
-  const play = async (streamUrl?: string) => {
-    if (!audioRef.current) return;
-
-    // Immediately set playing state for instant UI feedback
-    setPlaying(true);
-    setLoading(true);
-
-    try {
-      const source = streamUrl || currentSource;
-      const srcWithTs = `${source}?t=${Date.now()}`;
-
-      // Pausar antes de trocar source
-      audioRef.current.pause();
-      audioRef.current.src = srcWithTs;
-      audioRef.current.volume = volume / 100;
-      audioRef.current.muted = muted;
-
-      await audioRef.current.play();
-      // Loading will be set to false when canplaythrough fires
-
-      // Atualizar fonte atual se trocar explicitamente
-      if (streamUrl) {
-        setCurrentSource(streamUrl);
-      }
-    } catch (error) {
-      if (error instanceof DOMException && error.name === "AbortError") {
-        return;
-      }
-      console.error("Erro ao reproduzir áudio:", error);
-      setPlaying(false);
-      setLoading(false);
+    if ("mediaSession" in navigator && navigator.mediaSession.metadata) {
+      const current = navigator.mediaSession.metadata;
+      navigator.mediaSession.metadata = new MediaMetadata({
+        title: current.title,
+        artist: current.artist,
+        album: current.album,
+        artwork: buildArtwork(newCover),
+      });
     }
   };
 
-  const pause = () => {
+  const play = useCallback(
+    async (streamUrl?: string) => {
+      if (!audioRef.current) return;
+
+      // Immediately set playing state for instant UI feedback
+      setPlaying(true);
+      setLoading(true);
+
+      try {
+        const source = streamUrl || currentSource;
+        const srcWithTs = `${source}?t=${Date.now()}`;
+
+        // Pausar antes de trocar source
+        audioRef.current.pause();
+        audioRef.current.src = srcWithTs;
+        audioRef.current.volume = volume / 100;
+        audioRef.current.muted = muted;
+
+        await audioRef.current.play();
+        // Loading will be set to false when canplaythrough fires
+
+        if ("mediaSession" in navigator) {
+          navigator.mediaSession.playbackState = "playing";
+        }
+
+        // Atualizar fonte atual se trocar explicitamente
+        if (streamUrl) {
+          setCurrentSource(streamUrl);
+        }
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") {
+          return;
+        }
+        console.error("Erro ao reproduzir áudio:", error);
+        setPlaying(false);
+        setLoading(false);
+      }
+    },
+    [currentSource, volume, muted],
+  );
+
+  const pause = useCallback(() => {
     if (audioRef.current) {
       audioRef.current.pause();
       setPlaying(false);
       setLoading(false);
+      if ("mediaSession" in navigator) {
+        navigator.mediaSession.playbackState = "paused";
+      }
     }
-  };
+  }, []);
 
   const toggleMute = (force?: boolean) => {
     const next = typeof force === "boolean" ? force : !muted;
@@ -136,6 +175,23 @@ export const AudioProvider = ({ children }: { children: React.ReactNode }) => {
       audioRef.current.muted = muted;
     }
   }, [volume, muted]);
+
+  // Permitir controlar play/pause pela tela de bloqueio / notificação do sistema
+  useEffect(() => {
+    if (!("mediaSession" in navigator)) return;
+
+    navigator.mediaSession.setActionHandler("play", () => {
+      play();
+    });
+    navigator.mediaSession.setActionHandler("pause", () => {
+      pause();
+    });
+
+    return () => {
+      navigator.mediaSession.setActionHandler("play", null);
+      navigator.mediaSession.setActionHandler("pause", null);
+    };
+  }, [play, pause]);
 
   // Handle audio events for loading state
   useEffect(() => {
