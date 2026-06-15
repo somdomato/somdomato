@@ -1,0 +1,16 @@
+[Unit]
+Description=Recover missing/broken song covers
+After=network.target
+
+[Service]
+Type=oneshot
+User=nginx
+Group=nginx
+Environment=NODE_ENV=production
+WorkingDirectory=/var/www/somdomato
+ExecStart=/home/nginx/.local/share/pnpm/pnpm run recover-covers
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

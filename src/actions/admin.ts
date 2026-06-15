@@ -495,6 +495,20 @@ export async function deleteSong(id: number) {
   return { success: true };
 }
 
+/**
+ * Tenta recuperar capas ausentes/quebradas para um lote de músicas
+ * (disco → ID3 → Deezer). Usado pelo botão "Recuperar capas" no admin.
+ */
+export async function recoverCovers() {
+  await verifyAuth("songs:edit_tags");
+
+  const { recoverMissingCovers } = await import("@/lib/cover");
+  const result = await recoverMissingCovers({ limit: 50 });
+
+  revalidatePath("/admin");
+  return result;
+}
+
 // ===== ACTIONS DE PEDIDOS =====
 
 export async function getRequests(page = 1, limit = 10) {

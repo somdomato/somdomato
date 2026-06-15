@@ -357,3 +357,91 @@ export async function deleteArtistCover(
     console.warn(`[cover] Não foi possível remover ${filePath}:`, e);
   }
 }
+
+// ---------------------------------------------------------------------------
+// Recuperação em lote (job periódico + acionamento manual via admin)
+// ---------------------------------------------------------------------------
+
+const DEFAULT_COVER = "/images/logotipo.svg";
+
+/**
+ * Varre as músicas com capa ausente/quebrada e tenta resolver novamente,
+ * seguindo a mesma ordem de prioridade de `resolveSongCover` (disco → ID3 →
+ * Deezer). Atualiza `coverCheckedAt` em todas as músicas verificadas, mesmo
+ * quando não há capa disponível, para evitar repetir chamadas ao Deezer com
+ * muita frequência.
+ *
+ * Emite `song:cover` via socket quando uma capa é recuperada.
+ */
+export async function recoverMissingCovers(opts?: {
+  /** Máximo de músicas processadas nesta execução (default: sem limite) */
+  limit?: number;
+  /** Pular músicas verificadas há menos de N dias (default: 7) */
+  staleAfterDays?: number;
+}): Promise<{ checked: number; recovered: number; stillMissing: number }> {
+  const { limit, staleAfterDays = 7 } = opts ?? {};
+
+  const { db } = await import("@/db");
+  const { songs } = await import("@/db/schema");
+  const { eq, or, isNull, lt, and } = await import("drizzle-orm");
+
+  const staleThreshold = new Date(
+    Date.now() - staleAfterDays * 24 * 60 * 60 * 1000,
+  );
+
+  const candidates = await db
+    .select()
+    .from(songs)
+    .where(
+      and(
+        or(
+          isNull(songs.cover),
+          eq(songs.cover, ""),
+          eq(songs.cover, DEFAULT_COVER),
+        ),
+        or(
+          isNull(songs.coverCheckedAt),
+          lt(songs.coverCheckedAt, staleThreshold),
+        ),
+      ),
+    )
+    .limit(limit ?? -1);
+
+  let checked = 0;
+  let recovered = 0;
+  let stillMissing = 0;
+
+  for (const song of candidates) {
+    checked++;
+
+    const resolved = await resolveSongCover({
+      mp3Path: song.path,
+      artist: song.artist,
+      title: song.title,
+    });
+    const verified = await validateCoverForDb(resolved);
+
+    if (verified) {
+      await db
+        .update(songs)
+        .set({ cover: verified, coverCheckedAt: new Date() })
+        .where(eq(songs.id, song.id));
+      recovered++;
+
+      if (global.io) {
+        global.io.emit("song:cover", { songId: song.id, cover: verified });
+      }
+    } else {
+      await db
+        .update(songs)
+        .set({ coverCheckedAt: new Date() })
+        .where(eq(songs.id, song.id));
+      stillMissing++;
+    }
+
+    // Pequeno intervalo entre tentativas para respeitar rate limit do Deezer
+    await new Promise((r) => setTimeout(r, 300));
+  }
+
+  return { checked, recovered, stillMissing };
+}

@@ -10,6 +10,7 @@ import {
   CopyX,
   ArrowUp,
   ArrowDown,
+  ImageIcon,
 } from "lucide-react";
 import { toast } from "sonner";
 import { DuplicatesPanel } from "@/components/DuplicatesPanel";
@@ -67,6 +68,7 @@ export function SongsTable() {
   const [sortColumn, setSortColumn] = useState<keyof Song>("artist");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
   const [permissions, setPermissions] = useState<string[]>([]);
+  const [recoveringCovers, setRecoveringCovers] = useState(false);
 
   useEffect(() => {
     fetch("/api/auth/me")
@@ -132,6 +134,26 @@ export function SongsTable() {
     }
   };
 
+  const handleRecoverCovers = async () => {
+    setRecoveringCovers(true);
+    try {
+      const res = await fetch("/api/admin/songs/recover-covers", {
+        method: "POST",
+      });
+      if (!res.ok) throw new Error("failed to recover covers");
+      const data = await res.json();
+      toast.success(
+        `Capas: ${data.recovered} recuperadas de ${data.checked} verificadas`,
+      );
+      loadSongs();
+    } catch (error) {
+      toast.error("Erro ao recuperar capas");
+      console.error(error);
+    } finally {
+      setRecoveringCovers(false);
+    }
+  };
+
   const getTimeSlotsText = (slots: number | null) => {
     if (!slots) return "Nenhum";
     if ((slots & 15) === 15) return "Todos";
@@ -160,8 +182,18 @@ export function SongsTable() {
 
   return (
     <div className="space-y-4">
-      {/* Toggle duplicatas */}
-      <div className="flex justify-end">
+      {/* Toggle duplicatas e recuperação de capas */}
+      <div className="flex justify-end gap-2">
+        {permissions.includes("songs:edit_tags") && (
+          <button
+            onClick={handleRecoverCovers}
+            disabled={recoveringCovers}
+            className="flex items-center gap-2 px-4 py-2 rounded-md border text-sm font-medium transition-colors bg-background border-primary/30 text-gray-300 hover:bg-primary/10 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <ImageIcon size={16} />
+            {recoveringCovers ? "Recuperando..." : "Recuperar capas"}
+          </button>
+        )}
         <button
           onClick={() => setShowDuplicates((v) => !v)}
           className={`flex items-center gap-2 px-4 py-2 rounded-md border text-sm font-medium transition-colors ${

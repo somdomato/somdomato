@@ -16,6 +16,8 @@
     "format": "biome format --write",
     "check": "tsc --noEmit",
     "update": "tsx ./scripts/sync-music.ts",
+    "migrate-legacy-covers": "tsx src/scripts/migrate-legacy-covers.ts",
+    "recover-covers": "tsx src/scripts/recover-covers.ts",
     "test": "vitest",
     "test:watch": "vitest --watch"
   },

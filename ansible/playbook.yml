@@ -251,6 +251,8 @@
         - somdomato-godeez.path
         - somdomato-remote-sync.service
         - somdomato-remote-sync.path
+        - somdomato-recover-covers.service
+        - somdomato-recover-covers.timer
       notify: Reload systemd
 
     - name: Habilitar e iniciar serviços principais
@@ -272,6 +274,7 @@
       loop:
         - somdomato-sync.path
         - somdomato-godeez.path
+        - somdomato-recover-covers.timer
         - somdomato-remote-sync.path
 
     # =========================================================================

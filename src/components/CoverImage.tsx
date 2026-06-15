@@ -3,9 +3,15 @@
 import Image, { type ImageProps } from "next/image";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
+const DEFAULT_FALLBACK = "/images/logotipo.svg";
+const LOAD_TIMEOUT_MS = 8000;
+
 /**
  * Drop-in replacement for next/image that shows a circular loader
  * until the image is fully loaded, then fades it in.
+ *
+ * If the image fails to load or doesn't finish within LOAD_TIMEOUT_MS,
+ * falls back to `fallbackSrc` instead of leaving the spinner stuck.
  *
  * Requirements:
  * - Parent element MUST have `position: relative` and `overflow: hidden`.
@@ -15,8 +21,9 @@ export default function CoverImage({
   onError,
   className,
   src,
+  fallbackSrc = DEFAULT_FALLBACK,
   ...props
-}: ImageProps) {
+}: ImageProps & { fallbackSrc?: string }) {
   const srcKey = useMemo(() => {
     if (typeof src === "string") return src;
     if (src && typeof src === "object" && "src" in src) {
@@ -25,10 +32,32 @@ export default function CoverImage({
     return String(src);
   }, [src]);
 
+  const [currentSrc, setCurrentSrc] = useState(srcKey);
   const [loaded, setLoaded] = useState(false);
   const imageRef = useRef<HTMLImageElement | null>(null);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const clearLoadTimeout = useCallback(() => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+  }, []);
+
+  // Marca como carregado e, em caso de falha, troca para a capa padrão
+  // (em vez de deixar o spinner girando indefinidamente).
+  const handleFailure = useCallback(() => {
+    clearLoadTimeout();
+    setCurrentSrc((current) => {
+      if (current !== fallbackSrc) return fallbackSrc;
+      setLoaded(true);
+      return current;
+    });
+  }, [fallbackSrc, clearLoadTimeout]);
 
   useEffect(() => {
+    setCurrentSrc(srcKey);
+
     if (!srcKey) {
       setLoaded(true);
       return;
@@ -46,8 +75,17 @@ export default function CoverImage({
     // onLoad/onError — add a native listener so the spinner never gets stuck.
     const handleAbort = () => setLoaded(true);
     img?.addEventListener("abort", handleAbort);
-    return () => img?.removeEventListener("abort", handleAbort);
-  }, [srcKey]);
+
+    // Safety net: if neither load nor error fires within the timeout
+    // (slow network, stale optimizer cache, etc.), fall back to the
+    // default cover so the spinner never spins forever.
+    timeoutRef.current = setTimeout(handleFailure, LOAD_TIMEOUT_MS);
+
+    return () => {
+      img?.removeEventListener("abort", handleAbort);
+      clearLoadTimeout();
+    };
+  }, [srcKey, handleFailure, clearLoadTimeout]);
 
   const handleRef = useCallback((node: HTMLImageElement | null) => {
     imageRef.current = node;
@@ -58,19 +96,19 @@ export default function CoverImage({
 
   const handleLoad = useCallback(
     (e: React.SyntheticEvent<HTMLImageElement>) => {
+      clearLoadTimeout();
       setLoaded(true);
       if (typeof onLoad === "function") onLoad(e);
     },
-    [onLoad],
+    [onLoad, clearLoadTimeout],
   );
 
   const handleError = useCallback(
     (e: React.SyntheticEvent<HTMLImageElement>) => {
-      // Mark as loaded to hide loader even on error.
-      setLoaded(true);
+      handleFailure();
       if (typeof onError === "function") onError(e);
     },
-    [onError],
+    [onError, handleFailure],
   );
 
   return (
@@ -84,10 +122,10 @@ export default function CoverImage({
         <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
       </div>
       <Image
-        key={srcKey}
+        key={currentSrc}
         {...props}
         ref={handleRef}
-        src={src}
+        src={currentSrc}
         className={`${className ?? ""} transition-opacity duration-300 ${
           loaded ? "opacity-100" : "opacity-0"
         }`}
