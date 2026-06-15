@@ -63,9 +63,7 @@ export default function SongList({
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="font-medium truncate">{it.title}</div>
-                  <div className="text-xs text-muted truncate">
-                    {it.artist}
-                  </div>
+                  <div className="text-xs text-muted truncate">{it.artist}</div>
                 </div>
                 {hasRight && (
                   <div
