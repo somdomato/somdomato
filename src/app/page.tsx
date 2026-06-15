@@ -64,6 +64,7 @@ export default async function Home() {
               src="https://irc.somdomato.com"
               title="Bate-Papo - Rádio Som do Mato"
               allowFullScreen
+              loading="lazy"
             />
           </div>
         </div>
