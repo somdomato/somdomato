@@ -59,9 +59,9 @@ export default async function Home() {
             </span>
             Bate-Papo
           </h3>
-          <div className="w-full max-w-full overflow-hidden rounded-lg border border-primary/10 flex-1 min-h-150">
+          <div className="relative w-full max-w-full overflow-hidden rounded-lg border border-primary/10 flex-1 min-h-150">
             <iframe
-              className="block w-full h-full"
+              className="absolute inset-0 w-full h-full"
               src="https://irc.somdomato.com"
               title="Bate-Papo - Rádio Som do Mato"
               allowFullScreen
