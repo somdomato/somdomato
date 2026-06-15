@@ -41,9 +41,34 @@ export interface QueueEntry {
 
 type SongRow = typeof songs.$inferSelect;
 
-const queues = new Map<string, QueueEntry[]>();
-const seeded = new Set<string>();
-const lastServed = new Map<string, number>();
+// Server Actions e Route Handlers podem ser empacotados em bundles
+// separados pelo Next.js, cada um com sua própria instância deste módulo.
+// Para garantir que `requestSong` (Server Action) e `/api/music`/`/api/songs/next`
+// (Route Handlers) compartilhem o mesmo estado de fila, guardamos os Maps em
+// `globalThis` — mesmo padrão usado para `global.io` (src/socket.d.ts).
+declare global {
+  var __queueState:
+    | {
+        queues: Map<string, QueueEntry[]>;
+        seeded: Set<string>;
+        lastServed: Map<string, number>;
+      }
+    | undefined;
+}
+
+if (!globalThis.__queueState) {
+  globalThis.__queueState = {
+    queues: new Map<string, QueueEntry[]>(),
+    seeded: new Set<string>(),
+    lastServed: new Map<string, number>(),
+  };
+}
+
+const queueState = globalThis.__queueState;
+
+const queues = queueState.queues;
+const seeded = queueState.seeded;
+const lastServed = queueState.lastServed;
 
 /**
  * Retorna uma cópia da fila atual do gênero (até QUEUE_SIZE+ itens se houver overflow).
