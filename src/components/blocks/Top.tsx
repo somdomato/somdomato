@@ -19,44 +19,38 @@ export default function Top({ data }: { data: TopEntry[] }) {
   const [top, setTop] = useState<TopEntry[]>(data);
 
   useEffect(() => {
-    const onSongChanged = (song: {
+    const onRequestAdded = (req: {
       id: number;
       title: string;
       artist: string;
       cover?: string | null;
-      wasRequested?: boolean;
     }) => {
-      if (isJingleMetadata({ title: song.title, artist: song.artist })) {
-        return;
-      }
-
-      // Só contar músicas que foram PEDIDAS (não AutoDJ)
-      if (!song.wasRequested) {
+      if (isJingleMetadata({ title: req.title, artist: req.artist })) {
         return;
       }
 
       setTop((prev) => {
-        const found = prev.find((p) => p.id === song.id);
+        const found = prev.find((p) => p.id === req.id);
         if (found) {
           return prev
-            .map((p) => (p.id === song.id ? { ...p, count: p.count + 1 } : p))
+            .map((p) => (p.id === req.id ? { ...p, count: p.count + 1 } : p))
             .sort((a, b) => b.count - a.count)
             .slice(0, 10);
         }
         const added: TopEntry = {
-          id: song.id,
-          title: song.title,
-          artist: song.artist,
-          cover: song.cover || null,
+          id: req.id,
+          title: req.title,
+          artist: req.artist,
+          cover: req.cover || null,
           count: 1,
         };
         return [added, ...prev].sort((a, b) => b.count - a.count).slice(0, 10);
       });
     };
 
-    socket.on("song:changed", onSongChanged);
+    socket.on("request:added", onRequestAdded);
     return () => {
-      socket.off("song:changed", onSongChanged);
+      socket.off("request:added", onRequestAdded);
     };
   }, []);
 
@@ -65,7 +59,7 @@ export default function Top({ data }: { data: TopEntry[] }) {
       {top.length === 0 ? (
         <div className="text-muted text-sm">Nenhum pedido ainda.</div>
       ) : (
-        <SongList items={top} renderRight={(t) => `${t.count}x`} />
+        <SongList items={top} numbered renderRight={(t) => `${t.count}x`} />
       )}
     </SongBlock>
   );

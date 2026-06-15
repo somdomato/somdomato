@@ -17,11 +17,13 @@ export default function SongList({
   keyField = "id",
   renderRight,
   rightColClass = "w-24",
+  numbered = false,
 }: {
   items: Item[];
   keyField?: string;
   renderRight?: (item: Item) => React.ReactNode;
   rightColClass?: string;
+  numbered?: boolean;
 }) {
   const hasRight = !!renderRight;
 
@@ -29,16 +31,22 @@ export default function SongList({
     <div className="overflow-hidden">
       <table className="w-full text-sm table-fixed">
         <colgroup>
+          {numbered && <col className="w-8" />}
           <col className="w-10" />
           <col />
           {hasRight && <col className={rightColClass} />}
         </colgroup>
         <tbody>
-          {items.map((it) => {
+          {items.map((it, index) => {
             const rawKey = (it as Record<string, unknown>)[keyField];
             const key = String(rawKey ?? it.id);
             return (
               <tr key={key} className="border-t border-t-black/30">
+                {numbered && (
+                  <td className="py-2 pr-1 align-middle text-center text-sm font-bold text-primary">
+                    {index + 1}º
+                  </td>
+                )}
                 <td className="py-2 pr-3 align-top">
                   <div className="w-9 h-9 relative rounded overflow-hidden">
                     <CoverImage
