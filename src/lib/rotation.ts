@@ -11,7 +11,7 @@ import { and, ne, eq, sql } from "drizzle-orm";
 export type RotationType = "inativo" | "leve" | "normal" | "pesado";
 
 // Pesos de rotação: quanto maior, mais chance de tocar
-const ROTATION_WEIGHTS = {
+export const ROTATION_WEIGHTS = {
   inativo: 0, // Nunca toca automaticamente
   leve: 1,
   normal: 3,

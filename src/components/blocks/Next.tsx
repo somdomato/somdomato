@@ -17,34 +17,28 @@ type UpcomingEntry = {
   artist: string;
   cover: string | null;
   requestedAt?: number | null;
+  source: "request" | "autodj";
 };
 
-export default function Next({
-  data,
-  initialNextIfNoRequests,
-}: {
-  data: UpcomingEntry[];
-  initialNextIfNoRequests: UpcomingEntry | null;
-}) {
-  const [requests, setRequests] = useState<UpcomingEntry[]>(data);
-  const [autoDJ, setAutoDJ] = useState<UpcomingEntry | null>(
-    initialNextIfNoRequests,
-  );
+export default function Next({ data }: { data: UpcomingEntry[] }) {
+  const [items, setItems] = useState<UpcomingEntry[]>(data);
   const [mounted, setMounted] = useState(false);
   const [, setTick] = useState(0);
   const { currentGenre } = useGenre();
 
   useEffect(() => setMounted(true), []);
   const { live, djName } = useLive();
-  const isGeral = currentGenre === "geral";
 
   const fetchUpcoming = useCallback(async () => {
     try {
       const res = await fetch(`/api/songs/next?genre=${currentGenre}`);
       if (!res.ok) return;
       const json = await res.json();
-      setRequests(json.upcoming || []);
-      setAutoDJ(json.nextIfNoRequests || null);
+      const upcoming: UpcomingEntry[] = (json.upcoming || []).filter(
+        (u: UpcomingEntry) =>
+          !isJingleMetadata({ title: u.title, artist: u.artist }),
+      );
+      setItems(upcoming);
     } catch (err) {
       console.warn("fetchUpcoming failed:", err);
     }
@@ -55,48 +49,18 @@ export default function Next({
   }, [fetchUpcoming]);
 
   useEffect(() => {
-    const onRequestRemoved = (req: {
-      requestId?: number;
-      id?: number;
-      reqId?: number;
-    }) => {
-      const reqId = req?.requestId ?? req?.id ?? req?.reqId;
-      if (reqId == null) {
-        fetchUpcoming();
-        return;
-      }
-      setRequests((prev) => prev.filter((u) => u.reqId !== reqId));
-    };
-
-    const onRequestAdded = (req: unknown) => {
-      if (!isGeral) return;
-
-      if (req && typeof req === "object" && "reqId" in req) {
-        const r = req as UpcomingEntry;
-        if (isJingleMetadata({ title: r.title, artist: r.artist })) {
-          return;
-        }
-        setRequests((prev) => {
-          if (prev.some((p) => p.reqId === r.reqId)) return prev;
-          return [...prev, { ...r, cover: r.cover ?? null }].slice(-10);
-        });
-        return;
-      }
-      fetchUpcoming();
-    };
-
     socket.on("song:changed", fetchUpcoming);
-    socket.on("request:removed", onRequestRemoved);
-    socket.on("request:added", onRequestAdded);
+    socket.on("request:removed", fetchUpcoming);
+    socket.on("request:added", fetchUpcoming);
     socket.on("requests:updated", fetchUpcoming);
 
     return () => {
       socket.off("song:changed", fetchUpcoming);
-      socket.off("request:removed", onRequestRemoved);
-      socket.off("request:added", onRequestAdded);
+      socket.off("request:removed", fetchUpcoming);
+      socket.off("request:added", fetchUpcoming);
       socket.off("requests:updated", fetchUpcoming);
     };
-  }, [fetchUpcoming, isGeral]);
+  }, [fetchUpcoming]);
 
   // Atualizar tempos relativos a cada minuto
   useEffect(() => {
@@ -104,18 +68,7 @@ export default function Next({
     return () => clearInterval(interval);
   }, []);
 
-  // Montar lista: AutoDJ primeiro, depois pedidos (só no geral)
-  const items: UpcomingEntry[] = [];
-
-  if (autoDJ) {
-    items.push({ ...autoDJ, reqId: -1, requestedAt: null });
-  }
-
-  if (isGeral) {
-    items.push(...requests);
-  }
-
-  const hasRequests = items.some((i) => i.reqId !== -1);
+  const hasRequests = items.some((i) => i.source === "request");
 
   return (
     <SongBlock icon={CircleArrowRight} title="Próximas">
@@ -141,12 +94,12 @@ export default function Next({
       ) : (
         <SongList
           items={items}
-          keyField="reqId"
+          keyField="id"
           rightColClass={hasRequests ? "w-36" : "w-24"}
           renderRight={(item) => {
             const entry = item as UpcomingEntry;
 
-            if (entry.reqId === -1) {
+            if (entry.source === "autodj") {
               return (
                 <span className="text-xs px-2 py-0.5 bg-primary/20 text-primary rounded">
                   AutoDJ

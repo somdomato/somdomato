@@ -60,13 +60,22 @@ vi.mock("@/db", async () => ({
   },
 }));
 
-vi.mock("@/lib/prospection", async () => ({
-  getProspectedSong: async () => ({
-    id: 99,
-    title: "Auto",
-    artist: "DJ",
-    cover: null,
-  }),
+vi.mock("@/lib/queue", async () => ({
+  ensureQueue: async () => {},
+  getQueue: (genre: string) =>
+    genre === "modao"
+      ? [
+          {
+            id: 99,
+            title: "Auto",
+            artist: "DJ",
+            cover: null,
+            genre: "modao",
+            allowedInGeneral: 0,
+            source: "autodj" as const,
+          },
+        ]
+      : [],
 }));
 
 import { lastSongs, nextSongs } from "@/actions/songs";
@@ -80,9 +89,10 @@ describe("actions/songs", () => {
     expect(first.title).toBeTruthy();
   });
 
-  it("nextSongs returns autodj for non-geral", async () => {
+  it("nextSongs returns autodj queue entry for non-geral", async () => {
     const res = await nextSongs("modao");
-    expect(res.nextIfNoRequests).toBeTruthy();
-    expect(res.nextIfNoRequests!.id).toBe(99);
+    expect(res.nextIfNoRequests).toBeNull();
+    expect(res.upcoming[0]?.id).toBe(99);
+    expect(res.upcoming[0]?.source).toBe("autodj");
   });
 });

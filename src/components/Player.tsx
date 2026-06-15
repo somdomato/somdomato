@@ -153,7 +153,7 @@ export default function Player({
       const res = await fetch(`/api/songs/next?genre=${currentGenre}`);
       if (!res.ok) return;
       const data = await res.json();
-      const next = data.upcoming?.[0] || data.nextIfNoRequests || null;
+      const next = data.upcoming?.[0] || null;
       setNextSong(next ? { title: next.title, artist: next.artist } : null);
     } catch {
       // silencioso

@@ -1,9 +1,9 @@
 "use server";
 
 import { db } from "@/db";
-import { songs, requests, history } from "@/db/schema";
-import { eq, desc, asc } from "drizzle-orm";
-import { getProspectedSong, getPendingSong } from "@/lib/prospection";
+import { songs, history } from "@/db/schema";
+import { eq, desc } from "drizzle-orm";
+import { ensureQueue, getQueue } from "@/lib/queue";
 import { isJingleMetadata } from "@/lib/song-visibility";
 
 type TopEntry = {
@@ -92,79 +92,20 @@ export async function topSongs() {
 export async function nextSongs(genre?: string) {
   const selectedGenre = genre || "geral";
 
-  // Apenas o gênero "geral" aceita pedidos
-  let upcoming: Array<{
-    reqId: number;
-    id: number;
-    title: string;
-    artist: string;
-    cover: string | null;
-    requestedAt: Date | null;
-  }> = [];
+  await ensureQueue(selectedGenre);
 
-  if (selectedGenre === "geral") {
-    // Próximas: pedidos pendentes (apenas para geral)
-    upcoming = await db
-      .select({
-        reqId: requests.id,
-        id: songs.id,
-        title: songs.title,
-        artist: songs.artist,
-        cover: songs.cover,
-        requestedAt: requests.createdAt,
-      })
-      .from(requests)
-      .innerJoin(songs, eq(requests.songId, songs.id))
-      .orderBy(asc(requests.order), asc(requests.createdAt))
-      .limit(30);
-  }
-
-  // Se há um pedido pre-fetchado (deletado do banco mas ainda não tocando),
-  // inseri-lo no topo da lista para evitar que suma do bloco "Próximas"
-  if (selectedGenre === "geral") {
-    const pending = getPendingSong(selectedGenre);
-    if (
-      pending?.wasRequested &&
-      !upcoming.some((u) => u.id === pending.songId)
-    ) {
-      upcoming.unshift({
-        reqId: -2,
-        id: pending.songId,
-        title: pending.title,
-        artist: pending.artist,
-        cover: pending.cover || null,
-        requestedAt: null,
-      });
-    }
-  }
-
-  // Próxima do AutoDJ: usar cache de prospecção (estável entre chamadas)
-  const nextAutoDJ = await getProspectedSong(selectedGenre);
-
-  const serialUpcoming = upcoming
-    .filter((u) => !isJingleMetadata({ title: u.title, artist: u.artist }))
+  const upcoming = getQueue(selectedGenre)
+    .filter((e) => !isJingleMetadata({ title: e.title, artist: e.artist }))
     .slice(0, 10)
-    .map((u) => ({
-      reqId: u.reqId,
-      id: u.id,
-      title: u.title,
-      artist: u.artist,
-      cover: u.cover || null,
-      requestedAt: u.requestedAt ? Number(u.requestedAt) : null,
+    .map((e) => ({
+      reqId: e.source === "request" ? (e.requestId as number) : -e.id,
+      id: e.id,
+      title: e.title,
+      artist: e.artist,
+      cover: e.cover || null,
+      requestedAt: e.requestedAt ?? null,
+      source: e.source,
     }));
 
-  const serialNext = nextAutoDJ
-    ? isJingleMetadata({ title: nextAutoDJ.title, artist: nextAutoDJ.artist })
-      ? null
-      : {
-          reqId: -1,
-          id: nextAutoDJ.id,
-          title: nextAutoDJ.title,
-          artist: nextAutoDJ.artist,
-          cover: nextAutoDJ.cover || null,
-          requestedAt: null,
-        }
-    : null;
-
-  return { upcoming: serialUpcoming, nextIfNoRequests: serialNext };
+  return { upcoming, nextIfNoRequests: null };
 }

@@ -1,18 +1,10 @@
 import { db } from "@/db";
-import { asc, eq, and, sql, notInArray } from "drizzle-orm";
-import fs from "node:fs/promises";
+import { eq } from "drizzle-orm";
 import { songs, requests, history } from "@/db/schema";
-import { getCurrentTimeSlot } from "@/lib/time";
-import { getBlockedSongIds } from "@/lib/protections";
+import { checkFileExists } from "@/lib/file";
 import { isLocalRequest } from "@/lib/localhost";
-import {
-  clearProspection,
-  setLastServedId,
-  setPendingSong,
-  consumePendingSong,
-  consumeProspectedSong,
-  getPendingSong,
-} from "@/lib/prospection";
+import { setPendingSong, consumePendingSong } from "@/lib/prospection";
+import { ensureQueue, popNext } from "@/lib/queue";
 import {
   getSongCounter,
   incrementSongCounter,
@@ -22,15 +14,6 @@ import {
 } from "@/lib/jingles";
 import type { Song } from "@/types";
 
-async function checkFileExists(filePath: string) {
-  try {
-    await fs.access(filePath, fs.constants.F_OK);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
 export async function GET(request: Request) {
   if (!isLocalRequest(request)) {
     return Response.json({ error: "Acesso restrito" }, { status: 403 });
@@ -38,8 +21,6 @@ export async function GET(request: Request) {
 
   try {
     const url = new URL(request.url);
-    const notificationParam = url.searchParams.get("notify");
-    const includeNotification = notificationParam === "true";
     const genreParam = url.searchParams.get("genre") || "geral";
     const genre = genreParam as
       | "geral"
@@ -71,192 +52,46 @@ export async function GET(request: Request) {
       // No active jingles available — proceed with normal song selection
     }
 
-    // Obter dados de músicas bloqueadas usando o helper - FILTRADO POR GÊNERO
-    const blockedData = await getBlockedSongIds(genre);
-    const blockedSongIds = blockedData.songIds;
-    const blockedArtists = blockedData.artists;
+    // === SELEÇÃO VIA FILA (AutoDJ + Pedidos) ===
+    await ensureQueue(genre);
 
-    // Buscar músicas disponíveis no horário atual e do gênero especificado
-    const currentTimeSlot = getCurrentTimeSlot();
-
-    // Para o Geral: buscar músicas do gênero "geral" OU músicas com allowedInGeneral=1
-    // Para outros gêneros: buscar apenas do gênero específico
-    let genreCondition: ReturnType<typeof sql>;
-    if (genre === "geral") {
-      genreCondition = sql`(${songs.genre} = 'geral' OR ${songs.allowedInGeneral} = 1)`;
-    } else {
-      genreCondition = sql`${songs.genre} = ${genre}`;
-    }
-
-    const availableSongs = await db
-      .select()
-      .from(songs)
-      .where(
-        and(
-          sql`(${songs.timeSlots} & ${currentTimeSlot}) > 0`,
-          genreCondition,
-          blockedSongIds.length > 0
-            ? notInArray(songs.id, blockedSongIds)
-            : sql`1=1`,
-        ),
-      );
-
-    // Filtrar músicas de artistas que tocaram recentemente
-    const filteredSongs = availableSongs.filter(
-      (song) => !blockedArtists.includes(song.artist),
-    );
-
-    // FALLBACK: Se não houver músicas do gênero específico, buscar do "geral"
-    let finalFilteredSongs = filteredSongs;
-
-    if (filteredSongs.length === 0 && genre !== "geral") {
-      console.log(
-        `[${genre}] Nenhuma música disponível, fazendo fallback para 'geral'`,
-      );
-
-      // Buscar proteções do geral
-      const generalBlockedData = await getBlockedSongIds("geral");
-      const generalBlockedSongIds = generalBlockedData.songIds;
-      const generalBlockedArtists = generalBlockedData.artists;
-
-      // Buscar músicas do geral
-      const generalSongs = await db
-        .select()
-        .from(songs)
-        .where(
-          and(
-            sql`(${songs.timeSlots} & ${currentTimeSlot}) > 0`,
-            sql`(${songs.genre} = 'geral' OR ${songs.allowedInGeneral} = 1)`,
-            generalBlockedSongIds.length > 0
-              ? notInArray(songs.id, generalBlockedSongIds)
-              : sql`1=1`,
-          ),
-        );
-
-      finalFilteredSongs = generalSongs.filter(
-        (song) => !generalBlockedArtists.includes(song.artist),
-      );
-    }
-
-    if (finalFilteredSongs.length === 0) {
-      const notification = includeNotification
-        ? {
-            type: "warning" as const,
-            title: "Nenhuma música disponível",
-            message:
-              "Todas as músicas permitidas para este horário foram tocadas recentemente.",
-          }
-        : null;
-
-      return Response.json({ music: null, notification });
-    }
-
-    let selectedSong: Song | null = null;
-
-    // Apenas o gênero "geral" aceita pedidos
-    let requestResult = null;
-    if (genre === "geral") {
-      const results = await db
-        .select({
-          id: songs.id,
-          title: songs.title,
-          artist: songs.artist,
-          path: songs.path,
-          cover: songs.cover,
-          timeSlots: songs.timeSlots,
-          createdAt: songs.createdAt,
-          requestId: requests.id,
-          genre: songs.genre,
-          allowedInGeneral: songs.allowedInGeneral,
-        })
-        .from(requests)
-        .orderBy(asc(requests.id))
-        .where(eq(requests.songId, songs.id))
-        .limit(1)
-        .innerJoin(songs, eq(songs.id, requests.songId));
-
-      requestResult = results[0] || null;
-    }
-
-    // Track se foi um pedido ou AutoDJ
+    let selectedSong:
+      | (Song & { genre: string; allowedInGeneral: number })
+      | null = null;
     let wasFromRequest = false;
 
-    if (requestResult) {
-      wasFromRequest = true;
-      selectedSong = {
-        id: requestResult.id,
-        title: requestResult.title,
-        artist: requestResult.artist,
-        path: requestResult.path,
-        cover: requestResult.cover,
-        timeSlots: requestResult.timeSlots,
-        createdAt: requestResult.createdAt,
-        genre: requestResult.genre,
-        allowedInGeneral: requestResult.allowedInGeneral,
-      } as Song & { genre: string; allowedInGeneral: number };
+    for (let attempt = 0; attempt < 20; attempt++) {
+      const entry = popNext(genre);
+      if (!entry) break;
 
-      // Verificar se o arquivo do pedido existe antes de remover da fila.
-      const requestFileExists = await checkFileExists(requestResult.path);
-      if (!requestFileExists) {
+      if (entry.source === "request" && entry.requestId !== undefined) {
+        // Remover o pedido da fila do banco (sem emitir evento — a UI
+        // atualiza via song:changed no on_track)
+        await db.delete(requests).where(eq(requests.id, entry.requestId));
+      }
+
+      const fileExists = await checkFileExists(entry.path);
+      if (!fileExists) {
         console.warn(
-          `[music] Arquivo do pedido não encontrado: ${requestResult.path} (songId=${requestResult.id}) — pedido descartado`,
+          `[music] Arquivo não encontrado: ${entry.path} (songId=${entry.id}) — descartado`,
         );
-        await db
-          .delete(requests)
-          .where(eq(requests.id, requestResult.requestId));
-        selectedSong = null;
-        wasFromRequest = false;
-      } else {
-        // Remover o pedido da fila (sem emitir evento — a UI atualiza via song:changed no on_track)
-        await db
-          .delete(requests)
-          .where(eq(requests.id, requestResult.requestId));
-      }
-    }
-
-    // Se não temos uma música selecionada por pedido (ou o arquivo do pedido faltou),
-    // tentar usar a música prospectada (mesma que a UI mostrou), senão aleatória
-    if (!selectedSong) {
-      // ID da música atualmente pendente (pre-fetchada mas on_track ainda não disparou)
-      // — deve ser excluída para evitar que a mesma música toque duas vezes seguidas
-      const pendingSong = getPendingSong(genre);
-      const pendingSongId = pendingSong?.songId;
-
-      // 1. Tentar a música prospectada (garante consistência com bloco "Próximas")
-      const prospected = consumeProspectedSong(genre);
-      if (prospected && prospected.id !== pendingSongId) {
-        const match = finalFilteredSongs.find((s) => s.id === prospected.id);
-        if (match && (await checkFileExists(match.path))) {
-          selectedSong = match;
-        }
+        await ensureQueue(genre);
+        continue;
       }
 
-      // 2. Fallback: selecionar aleatoriamente, excluindo a música pendente atual
-      if (!selectedSong) {
-        const candidates = finalFilteredSongs.filter(
-          (s) => s.id !== pendingSongId,
-        );
-
-        for (
-          let attempt = 0;
-          attempt < Math.min(candidates.length, 100);
-          attempt++
-        ) {
-          const randomIndex = Math.floor(Math.random() * candidates.length);
-          const candidate = candidates[randomIndex];
-
-          if (await checkFileExists(candidate.path)) {
-            selectedSong = candidate;
-            break;
-          } else {
-            console.warn(
-              `[music] Arquivo não encontrado: ${candidate.path} (songId=${candidate.id})`,
-            );
-            candidates.splice(randomIndex, 1);
-            if (candidates.length === 0) break;
-          }
-        }
-      }
+      selectedSong = {
+        id: entry.id,
+        title: entry.title,
+        artist: entry.artist,
+        path: entry.path,
+        cover: entry.cover,
+        timeSlots: null,
+        createdAt: null,
+        genre: entry.genre,
+        allowedInGeneral: entry.allowedInGeneral,
+      };
+      wasFromRequest = entry.source === "request";
+      break;
     }
 
     if (!selectedSong) {
@@ -346,10 +181,6 @@ export async function GET(request: Request) {
       wasRequested: wasFromRequest,
       selectedAt: Date.now(),
     });
-
-    // Atualizar prospecção: limpar cache e registrar último servido
-    clearProspection(genre);
-    setLastServedId(genre, selectedSong.id);
 
     // Incrementar contador de músicas para vinhetas
     incrementSongCounter(genre);

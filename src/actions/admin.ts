@@ -10,6 +10,7 @@ import NodeID3 from "node-id3";
 import { normalizeString } from "@/db/utils";
 import { ADMIN_ROLES, type Permission, type Role } from "@/lib/permissions";
 import { logAction } from "@/lib/logging";
+import { syncRequestsInQueue } from "@/lib/queue";
 
 // Tipos
 export type RotationType = "inativo" | "leve" | "normal" | "pesado";
@@ -461,6 +462,8 @@ export async function deleteSong(id: number) {
   await db.delete(history).where(eq(history.songId, id));
   await db.delete(likes).where(eq(likes.songId, id));
 
+  await syncRequestsInQueue("geral");
+
   // Deletar do banco
   await db.delete(songs).where(eq(songs.id, id));
 
@@ -542,6 +545,8 @@ export async function addRequest(songId: number) {
     order: newOrder,
   });
 
+  await syncRequestsInQueue("geral");
+
   // Emitir evento request:added para atualizar clientes em tempo real (se aplicável)
   try {
     const created = await db
@@ -600,6 +605,8 @@ export async function deleteRequest(id: number) {
 
   await db.delete(requests).where(eq(requests.id, id));
 
+  await syncRequestsInQueue("geral");
+
   // Emitir evento para atualizar clientes em tempo real
   try {
     const g = global as unknown as {
@@ -657,6 +664,8 @@ export async function reorderRequests(requestId: number, newOrder: number) {
     .update(requests)
     .set({ order: newOrder })
     .where(eq(requests.id, requestId));
+
+  await syncRequestsInQueue("geral");
 
   // Notificar clientes que a lista de pedidos mudou (refetch no cliente)
   try {

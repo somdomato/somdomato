@@ -10,8 +10,7 @@ import { lastSongs, nextSongs, topSongs } from "@/actions/songs";
 export default async function Home() {
   const last = (await lastSongs("geral")) ?? [];
   const top = (await topSongs()) ?? [];
-  const { upcoming: next = [], nextIfNoRequests = null } =
-    (await nextSongs("geral")) ?? {};
+  const { upcoming: next = [] } = (await nextSongs("geral")) ?? {};
 
   return (
     <div className="flex flex-col w-full max-w-7xl mx-auto px-4 lg:px-6 py-4 gap-5">
@@ -35,7 +34,7 @@ export default async function Home() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <LastSongs data={last} />
           <TopSongs data={top} />
-          <NextSongs data={next} initialNextIfNoRequests={nextIfNoRequests} />
+          <NextSongs data={next} />
         </div>
       </section>
 

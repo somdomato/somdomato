@@ -7,6 +7,7 @@ import { checkMusicRepetition } from "@/lib/protections";
 import { isLive } from "@/lib/live";
 import { revalidatePath } from "next/cache";
 import { logAction } from "@/lib/logging";
+import { syncRequestsInQueue } from "@/lib/queue";
 
 interface SearchSongsParams {
   query?: string;
@@ -107,6 +108,10 @@ export async function requestSong(songId: number) {
       songId,
       order: newOrder,
     });
+
+    // Inserir o pedido na fila em memória (posição 2 em diante, após a
+    // música em execução, empurrando os itens AutoDJ para o final)
+    await syncRequestsInQueue("geral");
 
     // Buscar o pedido criado (join com songs) para emitir via socket
     const created = await db
