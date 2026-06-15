@@ -17,11 +17,12 @@
  */
 
 import { db } from "@/db";
-import { songs, requests } from "@/db/schema";
+import { songs, requests, history, likes } from "@/db/schema";
 import { and, asc, eq, notInArray, sql } from "drizzle-orm";
 import { getCurrentTimeSlot } from "@/lib/time";
 import { getBlockedSongIds } from "@/lib/protections";
 import { checkFileExists } from "@/lib/file";
+import { logAction } from "@/lib/logging";
 import { ROTATION_WEIGHTS, type RotationType } from "@/lib/rotation";
 
 export const QUEUE_SIZE = 10;
@@ -78,6 +79,35 @@ export function getQueue(genre: string): QueueEntry[] {
 }
 
 /**
+ * Remove uma música do banco (e registros relacionados em `requests`,
+ * `history` e `likes`) quando seu arquivo não é mais encontrado em disco.
+ * Não tenta apagar o arquivo, que já está ausente.
+ */
+export async function removeMissingSong(song: {
+  id: number;
+  title: string;
+  artist: string;
+}): Promise<void> {
+  await db.delete(requests).where(eq(requests.songId, song.id));
+  await db.delete(history).where(eq(history.songId, song.id));
+  await db.delete(likes).where(eq(likes.songId, song.id));
+  await db.delete(songs).where(eq(songs.id, song.id));
+
+  await syncRequestsInQueue("geral");
+
+  await logAction({
+    action: "song:deleted",
+    targetType: "song",
+    targetId: song.id,
+    details: {
+      title: song.title,
+      artist: song.artist,
+      reason: "missing_file",
+    },
+  });
+}
+
+/**
  * Remove e retorna o primeiro item da fila (próxima música a tocar).
  * Operação síncrona — segura sob concorrência.
  */
@@ -123,8 +153,9 @@ export async function ensureQueue(genre: string): Promise<void> {
 
     if (!(await checkFileExists(song.path))) {
       console.warn(
-        `[queue] Arquivo não encontrado: ${song.path} (songId=${song.id})`,
+        `[queue] Arquivo não encontrado: ${song.path} (songId=${song.id}) — removendo do banco`,
       );
+      await removeMissingSong(song);
       continue;
     }
 

@@ -4,7 +4,7 @@ import { songs, requests, history } from "@/db/schema";
 import { checkFileExists } from "@/lib/file";
 import { isLocalRequest } from "@/lib/localhost";
 import { setPendingSong, consumePendingSong } from "@/lib/prospection";
-import { ensureQueue, popNext } from "@/lib/queue";
+import { ensureQueue, popNext, removeMissingSong } from "@/lib/queue";
 import {
   getSongCounter,
   incrementSongCounter,
@@ -74,8 +74,9 @@ export async function GET(request: Request) {
       const fileExists = await checkFileExists(entry.path);
       if (!fileExists) {
         console.warn(
-          `[music] Arquivo não encontrado: ${entry.path} (songId=${entry.id}) — descartado`,
+          `[music] Arquivo não encontrado: ${entry.path} (songId=${entry.id}) — removendo do banco`,
         );
+        await removeMissingSong(entry);
         await ensureQueue(genre);
         continue;
       }

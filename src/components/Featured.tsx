@@ -14,17 +14,20 @@ const requestSteps = [
   {
     icon: Search,
     title: "Encontre a música",
-    description: "Pesquise no catálogo da rádio pelo nome da música ou artista.",
+    description:
+      "Pesquise no catálogo da rádio pelo nome da música ou artista.",
   },
   {
     icon: Download,
     title: "Não encontrou? Tudo bem",
-    description: "Digite o nome e a rádio busca e adiciona a música automaticamente.",
+    description:
+      "Digite o nome e a rádio busca e adiciona a música automaticamente.",
   },
   {
     icon: ListMusic,
     title: "Ela entra na fila",
-    description: "Seu pedido é confirmado e toca em seguida na programação ao vivo.",
+    description:
+      "Seu pedido é confirmado e toca em seguida na programação ao vivo.",
   },
 ];
 
@@ -54,8 +57,8 @@ export default function Featured() {
 
             <p className="mt-3 max-w-xl text-sm leading-relaxed text-slate-300 sm:text-base">
               Escolha uma música do nosso catálogo. Se ela ainda não estiver na
-              rádio, basta digitar o nome: o sistema busca, adiciona e coloca seu
-              pedido na fila automaticamente.
+              rádio, basta digitar o nome: o sistema busca, adiciona e coloca
+              seu pedido na fila automaticamente.
             </p>
           </div>
 
@@ -130,8 +133,8 @@ export default function Featured() {
               <Sparkles className="h-3.5 w-3.5 text-amber-300" />
             </div>
             <p className="m-0 text-xs leading-relaxed text-amber-100/80 sm:text-sm">
-              Até uma música que ainda não existe na rádio pode virar seu próximo
-              pedido.
+              Até uma música que ainda não existe na rádio pode virar seu
+              próximo pedido.
             </p>
           </div>
         </div>
