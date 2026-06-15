@@ -12,3 +12,7 @@ ignoredBuiltDependencies:
 
 onlyBuiltDependencies:
   - esbuild
+
+allowBuilds:
+  esbuild: true
+  sharp: false
