@@ -2,7 +2,7 @@ packages:
   - .
 
 overrides:
-  esbuild: ">=0.25.0"
+  esbuild: ">=0.28.1"
   "@types/react": "19.2.15"
   "@types/react-dom": "19.2.3"
 
