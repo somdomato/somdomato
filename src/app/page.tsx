@@ -1,3 +1,4 @@
+import ChatEmbed from "@/components/ChatEmbed";
 import Featured from "@/components/Featured";
 //import Carousel from "@/components/Carousel";
 import LastSongs from "@/components/blocks/Last";
@@ -58,15 +59,7 @@ export default async function Home() {
             </span>
             Bate-Papo
           </h3>
-          <div className="relative w-full max-w-full overflow-hidden rounded-lg border border-primary/10 flex-1 min-h-150">
-            <iframe
-              className="absolute inset-0 w-full h-full"
-              src="https://irc.somdomato.com"
-              title="Bate-Papo - Rádio Som do Mato"
-              allowFullScreen
-              loading="lazy"
-            />
-          </div>
+          <ChatEmbed />
         </div>
       </section>
     </div>

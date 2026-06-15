@@ -13,7 +13,13 @@ import { logAction } from "@/lib/logging";
 import { syncRequestsInQueue } from "@/lib/queue";
 
 // Tipos
-export type RotationType = "inativo" | "leve" | "normal" | "pesado";
+export type RotationType =
+  | "inativo"
+  | "ultraleve"
+  | "leve"
+  | "normal"
+  | "pesado"
+  | "ultrapesada";
 export type Genre = "geral" | "gaucha" | "modao" | "arrocha" | "romantico";
 
 // Verificação de autenticação via cookie com suporte a permissões

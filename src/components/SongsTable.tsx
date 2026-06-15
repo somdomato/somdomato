@@ -171,12 +171,16 @@ export function SongsTable() {
     switch (rotation) {
       case "inativo":
         return "text-gray-500";
+      case "ultraleve":
+        return "text-cyan-400";
       case "leve":
         return "text-blue-400";
       case "normal":
         return "text-green-400";
       case "pesado":
         return "text-orange-400";
+      case "ultrapesada":
+        return "text-red-400";
       default:
         return "text-white";
     }

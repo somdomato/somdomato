@@ -8,14 +8,22 @@ import { db } from "@/db";
 import { songs } from "@/db/schema";
 import { and, ne, eq, sql } from "drizzle-orm";
 
-export type RotationType = "inativo" | "leve" | "normal" | "pesado";
+export type RotationType =
+  | "inativo"
+  | "ultraleve"
+  | "leve"
+  | "normal"
+  | "pesado"
+  | "ultrapesada";
 
 // Pesos de rotação: quanto maior, mais chance de tocar
 export const ROTATION_WEIGHTS = {
   inativo: 0, // Nunca toca automaticamente
-  leve: 1,
-  normal: 3,
-  pesado: 5,
+  ultraleve: 1,
+  leve: 2,
+  normal: 4,
+  pesado: 6,
+  ultrapesada: 8,
 } as const;
 
 /**

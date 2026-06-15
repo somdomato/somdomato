@@ -85,7 +85,7 @@ Responda APENAS com JSON válido no formato:
   "confidence": 0-100,
   "reason": "explicação curta em português",
   "suggestedGenre": "geral|gaucha|modao|arrocha|romantico",
-  "suggestedRotation": "leve|normal|pesado"
+  "suggestedRotation": "ultraleve|leve|normal|pesado|ultrapesada"
 }`;
 
   const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
@@ -118,7 +118,13 @@ Responda APENAS com JSON válido no formato:
 
   // Validate and sanitize response
   const validGenres = ["geral", "gaucha", "modao", "arrocha", "romantico"];
-  const validRotations = ["leve", "normal", "pesado"];
+  const validRotations = [
+    "ultraleve",
+    "leve",
+    "normal",
+    "pesado",
+    "ultrapesada",
+  ];
 
   return {
     approved: Boolean(parsed.approved),

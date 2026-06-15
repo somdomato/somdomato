@@ -643,12 +643,22 @@ export default function UploadsPage() {
                 <legend className="block text-xs font-medium text-gray-400 mb-1.5">
                   Rotação
                 </legend>
-                <div className="grid grid-cols-4 gap-1.5">
+                <div className="grid grid-cols-3 gap-1.5">
                   {[
                     { value: "inativo", label: "Inativo", desc: "Não toca" },
+                    {
+                      value: "ultraleve",
+                      label: "Ultraleve",
+                      desc: "Toca raramente",
+                    },
                     { value: "leve", label: "Leve", desc: "Toca pouco" },
                     { value: "normal", label: "Normal", desc: "Padrão" },
                     { value: "pesado", label: "Pesado", desc: "Toca mais" },
+                    {
+                      value: "ultrapesada",
+                      label: "Ultrapesada",
+                      desc: "Toca muito mais",
+                    },
                   ].map((opt) => (
                     <button
                       key={opt.value}

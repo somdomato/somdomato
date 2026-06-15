@@ -307,9 +307,13 @@ export function EditSongModal({
                 <option value="inativo">
                   Inativo (não toca automaticamente)
                 </option>
+                <option value="ultraleve">Ultraleve (toca raramente)</option>
                 <option value="leve">Leve (toca menos)</option>
                 <option value="normal">Normal</option>
                 <option value="pesado">Pesado (toca mais)</option>
+                <option value="ultrapesada">
+                  Ultrapesada (toca muito mais)
+                </option>
               </select>
               <p className="text-xs text-gray-400 mt-1">
                 Define a frequência que a música toca na rotação automática
