@@ -21,7 +21,7 @@ export function LiveProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     // Buscar estado inicial
-    fetch("/api/admin/live")
+    fetch("/api/live")
       .then((r) => r.json())
       .then((data) => setState(data))
       .catch(() => {});

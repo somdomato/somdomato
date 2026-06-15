@@ -2,10 +2,6 @@ import { getLiveState, setLive } from "@/lib/live";
 import { verifyAuth } from "@/actions/admin";
 import { logAction } from "@/lib/logging";
 
-export async function GET() {
-  return Response.json(getLiveState());
-}
-
 export async function POST(request: Request) {
   const session = await verifyAuth();
 
