@@ -84,11 +84,11 @@ export async function ensureQueue(genre: string): Promise<void> {
 
   if (queue.length >= QUEUE_SIZE) return;
 
-  const candidates = await pickAutoDjCandidates(genre);
-
   const excludeIds = new Set<number>(queue.map((e) => e.id));
   const last = lastServed.get(genre);
   if (last !== undefined) excludeIds.add(last);
+
+  const candidates = await pickAutoDjCandidates(genre, excludeIds);
 
   const pool = candidates.filter((s) => !excludeIds.has(s.id));
 
@@ -169,7 +169,10 @@ export async function syncRequestsInQueue(genre: string): Promise<void> {
  * respeitando proteções (histórico/artistas recentes). Faz fallback para o
  * pool do "geral" se não houver nada disponível no gênero específico.
  */
-async function pickAutoDjCandidates(genre: string): Promise<SongRow[]> {
+async function pickAutoDjCandidates(
+  genre: string,
+  excludeIds: Set<number>,
+): Promise<SongRow[]> {
   const blockedData = await getBlockedSongIds(genre);
   const currentTimeSlot = getCurrentTimeSlot();
 
@@ -197,7 +200,13 @@ async function pickAutoDjCandidates(genre: string): Promise<SongRow[]> {
     (song) => !blockedData.artists.includes(song.artist),
   );
 
-  if (filteredSongs.length === 0 && genre !== "geral") {
+  // Pool "usável" considerando exclusões (fila atual + última música servida).
+  // Gêneros com poucas músicas (ex: 1 única em "modao") podem ficar sem
+  // candidatos válidos mesmo com filteredSongs não-vazio — nesse caso,
+  // cair para o pool do "geral" também.
+  const usableSongs = filteredSongs.filter((song) => !excludeIds.has(song.id));
+
+  if (usableSongs.length === 0 && genre !== "geral") {
     const generalBlockedData = await getBlockedSongIds("geral");
 
     const generalSongs = await db
