@@ -45,7 +45,7 @@ export default function MobileShareButton() {
         : null;
 
   const shareText = songToShare
-    ? `🎶 ${shareMode === "current" ? "Toca agora" : "Já já toca"} "${songToShare.title}" de ${songToShare.artist} na Som do Mato! Vem ouvir ao vivo e sentir a emoção do sertanejo! 🤠🔥\n\nhttps://somdomato.com`
+    ? `🎶 ${shareMode === "current" ? "Tocando agora" : "Já já toca"} "*${songToShare.artist} - ${songToShare.title}*" na Rádio Som do Mato!\n\nVem ouvir e sentir a emoção do sertanejo! 🤠🔥\n\nhttps://somdomato.com`
     : null;
 
   const shareLinks = shareText

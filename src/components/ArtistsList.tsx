@@ -11,6 +11,13 @@ interface Artist {
   count?: number;
 }
 
+function normalizeForSearch(s?: string | null) {
+  return (s || "")
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .toLowerCase();
+}
+
 export default function ArtistsList({
   onSelect,
 }: {
@@ -31,8 +38,8 @@ export default function ArtistsList({
 
   const filtered = React.useMemo(() => {
     if (!search.trim()) return artists;
-    const q = search.toLowerCase();
-    return artists.filter((a) => (a.artist || "").toLowerCase().includes(q));
+    const q = normalizeForSearch(search);
+    return artists.filter((a) => normalizeForSearch(a.artist).includes(q));
   }, [artists, search]);
 
   if (loading) {

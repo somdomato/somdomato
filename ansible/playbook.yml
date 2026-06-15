@@ -26,13 +26,13 @@
     # SISTEMA BASE
     # =========================================================================
     - name: Atualizar pacotes do sistema
-      apt:
-        update_cache: yes
+      ansible.builtin.apt:
+        update_cache: true
         upgrade: dist
         cache_valid_time: 3600
 
     - name: Instalar dependências base
-      apt:
+      ansible.builtin.apt:
         name:
           - curl
           - ca-certificates
@@ -47,18 +47,24 @@
     # =========================================================================
     # NODE.JS
     # =========================================================================
+    - name: Baixar script de setup do NodeSource
+      ansible.builtin.get_url:
+        url: "https://deb.nodesource.com/setup_{{ node_version }}.x"
+        dest: /tmp/nodesource_setup.sh
+        mode: '0755'
+
     - name: Adicionar repositório NodeSource
-      shell: curl -fsSL https://deb.nodesource.com/setup_{{ node_version }}.x | bash -
+      ansible.builtin.command: /tmp/nodesource_setup.sh
       args:
         creates: /etc/apt/sources.list.d/nodesource.list
 
     - name: Instalar Node.js
-      apt:
+      ansible.builtin.apt:
         name: nodejs
         state: present
 
     - name: Habilitar corepack e instalar pnpm
-      shell: |
+      ansible.builtin.shell: |
         corepack enable
         corepack prepare pnpm@latest --activate
       args:
@@ -68,16 +74,16 @@
     # USUÁRIOS E DIRETÓRIOS
     # =========================================================================
     - name: Criar usuário da aplicação
-      user:
+      ansible.builtin.user:
         name: "{{ app_user }}"
         group: "{{ app_group }}"
-        system: yes
-        create_home: yes
+        system: true
+        create_home: true
         home: "/home/{{ app_user }}"
         shell: /bin/bash
 
     - name: Criar diretório da aplicação
-      file:
+      ansible.builtin.file:
         path: "{{ app_dir }}"
         state: directory
         owner: "{{ app_user }}"
@@ -85,7 +91,7 @@
         mode: "0755"
 
     - name: Criar diretório de músicas
-      file:
+      ansible.builtin.file:
         path: "{{ music_dir }}"
         state: directory
         owner: "{{ app_user }}"
@@ -93,7 +99,7 @@
         mode: "0755"
 
     - name: Criar subdiretório uploads
-      file:
+      ansible.builtin.file:
         path: "{{ music_dir }}/uploads"
         state: directory
         owner: "{{ app_user }}"
@@ -101,7 +107,7 @@
         mode: "0755"
 
     - name: Criar subdiretório vinhetas
-      file:
+      ansible.builtin.file:
         path: "{{ music_dir }}/vinhetas"
         state: directory
         owner: "{{ app_user }}"
@@ -109,7 +115,7 @@
         mode: "0755"
 
     - name: Criar symlink public/music para servir arquivos de áudio
-      file:
+      ansible.builtin.file:
         src: "{{ music_dir }}"
         dest: "{{ app_dir }}/public/music"
         state: link
@@ -120,39 +126,39 @@
     # NGINX
     # =========================================================================
     - name: Instalar Nginx
-      apt:
+      ansible.builtin.apt:
         name: nginx
         state: present
 
     - name: Copiar configuração Nginx - somdomato.com
-      copy:
+      ansible.builtin.copy:
         src: etc/nginx/sites.d/somdomato.com.conf
         dest: /etc/nginx/sites-available/somdomato.com.conf
         mode: "0644"
       notify: Reload Nginx
 
     - name: Copiar configuração Nginx - radio.somdomato.com
-      copy:
+      ansible.builtin.copy:
         src: etc/nginx/sites.d/radio.somdomato.com.conf
         dest: /etc/nginx/sites-available/radio.somdomato.com.conf
         mode: "0644"
       notify: Reload Nginx
 
     - name: Copiar configuração Nginx - cdn.somdomato.com
-      copy:
+      ansible.builtin.copy:
         src: etc/nginx/sites.d/cdn.somdomato.com.conf
         dest: /etc/nginx/sites-available/cdn.somdomato.com.conf
         mode: "0644"
       notify: Reload Nginx
 
     - name: Criar diretório conf.d para Nginx
-      file:
+      ansible.builtin.file:
         path: /etc/nginx/conf.d
         state: directory
         mode: "0755"
 
     - name: Copiar snippets de configuração Nginx
-      copy:
+      ansible.builtin.copy:
         src: "etc/nginx/conf.d/{{ item }}"
         dest: "/etc/nginx/conf.d/{{ item }}"
         mode: "0644"
@@ -164,7 +170,7 @@
       notify: Reload Nginx
 
     - name: Habilitar sites Nginx (symlinks)
-      file:
+      ansible.builtin.file:
         src: "/etc/nginx/sites-available/{{ item }}"
         dest: "/etc/nginx/sites-enabled/{{ item }}"
         state: link
@@ -175,7 +181,7 @@
       notify: Reload Nginx
 
     - name: Remover site default do Nginx
-      file:
+      ansible.builtin.file:
         path: /etc/nginx/sites-enabled/default
         state: absent
       notify: Reload Nginx
@@ -184,12 +190,12 @@
     # ICECAST2
     # =========================================================================
     - name: Instalar Icecast2
-      apt:
+      ansible.builtin.apt:
         name: icecast2
         state: present
 
     - name: Criar diretório de logs Icecast
-      file:
+      ansible.builtin.file:
         path: /var/log/icecast2
         state: directory
         owner: icecast2
@@ -197,7 +203,7 @@
         mode: "0755"
 
     - name: Copiar configuração Icecast2
-      copy:
+      ansible.builtin.copy:
         src: etc/icecast/somdomato.xml
         dest: /etc/icecast2/somdomato.xml
         owner: icecast2
@@ -209,12 +215,12 @@
     # LIQUIDSOAP
     # =========================================================================
     - name: Instalar Liquidsoap
-      apt:
+      ansible.builtin.apt:
         name: liquidsoap
         state: present
 
     - name: Criar diretórios Liquidsoap
-      file:
+      ansible.builtin.file:
         path: "{{ item }}"
         state: directory
         owner: liquidsoap
@@ -225,7 +231,7 @@
         - /var/lib/liquidsoap
 
     - name: Copiar script Liquidsoap
-      copy:
+      ansible.builtin.copy:
         src: etc/liquidsoap/somdomato.liq
         dest: /etc/liquidsoap/somdomato.liq
         owner: liquidsoap
@@ -237,7 +243,7 @@
     # SYSTEMD SERVICES
     # =========================================================================
     - name: Copiar services do systemd
-      copy:
+      ansible.builtin.copy:
         src: "etc/systemd/system/{{ item }}"
         dest: "/etc/systemd/system/{{ item }}"
         mode: "0644"
@@ -251,49 +257,46 @@
         - somdomato-godeez.path
         - somdomato-remote-sync.service
         - somdomato-remote-sync.path
-        - somdomato-recover-covers.service
-        - somdomato-recover-covers.timer
       notify: Reload systemd
 
     - name: Habilitar e iniciar serviços principais
-      systemd:
+      ansible.builtin.systemd:
         name: "{{ item }}"
-        enabled: yes
+        enabled: true
         state: started
-        daemon_reload: yes
+        daemon_reload: true
       loop:
         - icecast2-somdomato.service
         - somdomato.service
         - liquidsoap-somdomato.service
 
     - name: Habilitar watchers de sincronização
-      systemd:
+      ansible.builtin.systemd:
         name: "{{ item }}"
-        enabled: yes
+        enabled: true
         state: started
       loop:
         - somdomato-sync.path
         - somdomato-godeez.path
-        - somdomato-recover-covers.timer
         - somdomato-remote-sync.path
 
     # =========================================================================
     # SSL (Let's Encrypt)
     # =========================================================================
     - name: Instalar Certbot
-      apt:
+      ansible.builtin.apt:
         name:
           - certbot
           - python3-certbot-nginx
         state: present
 
     - name: Verificar se certificado existe
-      stat:
+      ansible.builtin.stat:
         path: "/etc/letsencrypt/live/{{ domain }}/fullchain.pem"
       register: ssl_cert
 
     - name: Obter certificado SSL (primeira vez)
-      command: >
+      ansible.builtin.command: >
         certbot certonly --nginx
         -d {{ domain }}
         -d www.{{ domain }}
@@ -302,26 +305,27 @@
         --non-interactive --agree-tos
         --email sistematico@gmail.com
       when: not ssl_cert.stat.exists
+      changed_when: false
 
     # =========================================================================
     # HANDLERS
     # =========================================================================
   handlers:
     - name: Reload Nginx
-      systemd:
+      ansible.builtin.systemd:
         name: nginx
         state: reloaded
 
     - name: Restart Icecast
-      systemd:
+      ansible.builtin.systemd:
         name: icecast2-somdomato
         state: restarted
 
     - name: Restart Liquidsoap
-      systemd:
+      ansible.builtin.systemd:
         name: liquidsoap-somdomato
         state: restarted
 
     - name: Reload systemd
-      systemd:
-        daemon_reload: yes
+      ansible.builtin.systemd:
+        daemon_reload: true

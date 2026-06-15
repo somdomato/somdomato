@@ -68,7 +68,9 @@ export function SongsTable() {
   const [sortColumn, setSortColumn] = useState<keyof Song>("artist");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
   const [permissions, setPermissions] = useState<string[]>([]);
-  const [recoveringCovers, setRecoveringCovers] = useState(false);
+  const [recoveringCoverId, setRecoveringCoverId] = useState<number | null>(
+    null,
+  );
 
   useEffect(() => {
     fetch("/api/auth/me")
@@ -134,23 +136,23 @@ export function SongsTable() {
     }
   };
 
-  const handleRecoverCovers = async () => {
-    setRecoveringCovers(true);
+  const handleRecoverCover = async (id: number) => {
+    setRecoveringCoverId(id);
     try {
-      const res = await fetch("/api/admin/songs/recover-covers", {
+      const res = await fetch(`/api/admin/songs/${id}/recover-cover`, {
         method: "POST",
       });
-      if (!res.ok) throw new Error("failed to recover covers");
+      if (!res.ok) throw new Error("failed to recover cover");
       const data = await res.json();
       toast.success(
-        `Capas: ${data.recovered} recuperadas de ${data.checked} verificadas`,
+        data.recovered ? "Capa recuperada!" : "Nenhuma capa encontrada",
       );
       loadSongs();
     } catch (error) {
-      toast.error("Erro ao recuperar capas");
+      toast.error("Erro ao recuperar capa");
       console.error(error);
     } finally {
-      setRecoveringCovers(false);
+      setRecoveringCoverId(null);
     }
   };
 
@@ -182,18 +184,8 @@ export function SongsTable() {
 
   return (
     <div className="space-y-4">
-      {/* Toggle duplicatas e recuperação de capas */}
+      {/* Toggle duplicatas */}
       <div className="flex justify-end gap-2">
-        {permissions.includes("songs:edit_tags") && (
-          <button
-            onClick={handleRecoverCovers}
-            disabled={recoveringCovers}
-            className="flex items-center gap-2 px-4 py-2 rounded-md border text-sm font-medium transition-colors bg-background border-primary/30 text-gray-300 hover:bg-primary/10 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <ImageIcon size={16} />
-            {recoveringCovers ? "Recuperando..." : "Recuperar capas"}
-          </button>
-        )}
         <button
           onClick={() => setShowDuplicates((v) => !v)}
           className={`flex items-center gap-2 px-4 py-2 rounded-md border text-sm font-medium transition-colors ${
@@ -385,6 +377,25 @@ export function SongsTable() {
                               title="Editar"
                             >
                               <Pencil size={18} />
+                            </button>
+                          )}
+
+                          {/* Recuperar capa (disco → ID3 → Deezer) */}
+                          {permissions.includes("songs:edit_tags") && (
+                            <button
+                              onClick={() => handleRecoverCover(song.id)}
+                              disabled={recoveringCoverId === song.id}
+                              className="p-2 text-purple-400 hover:text-purple-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                              title="Recuperar capa"
+                            >
+                              <ImageIcon
+                                size={18}
+                                className={
+                                  recoveringCoverId === song.id
+                                    ? "animate-pulse"
+                                    : ""
+                                }
+                              />
                             </button>
                           )}
 

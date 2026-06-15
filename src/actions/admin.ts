@@ -496,17 +496,33 @@ export async function deleteSong(id: number) {
 }
 
 /**
- * Tenta recuperar capas ausentes/quebradas para um lote de músicas
- * (disco → ID3 → Deezer). Usado pelo botão "Recuperar capas" no admin.
+ * Tenta recuperar a capa de uma música (disco → ID3 → Deezer). Se nada for
+ * encontrado, usa a capa padrão. Usado pelo botão "Recuperar capa" no admin.
  */
-export async function recoverCovers() {
+export async function recoverSongCover(id: number) {
   await verifyAuth("songs:edit_tags");
 
-  const { recoverMissingCovers } = await import("@/lib/cover");
-  const result = await recoverMissingCovers({ limit: 50 });
+  const song = await db.select().from(songs).where(eq(songs.id, id)).get();
+  if (!song) throw new Error("Música não encontrada");
+
+  const { resolveSongCover, validateCoverForDb } = await import("@/lib/cover");
+
+  const resolved = await resolveSongCover({
+    mp3Path: song.path,
+    artist: song.artist,
+    title: song.title,
+  });
+  const verified = await validateCoverForDb(resolved);
+  const cover = verified ?? "/images/logotipo.svg";
+
+  await db.update(songs).set({ cover }).where(eq(songs.id, id));
+
+  if (global.io) {
+    global.io.emit("song:cover", { songId: id, cover });
+  }
 
   revalidatePath("/admin");
-  return result;
+  return { cover, recovered: !!verified };
 }
 
 // ===== ACTIONS DE PEDIDOS =====

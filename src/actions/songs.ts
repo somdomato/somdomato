@@ -4,6 +4,7 @@ import { db } from "@/db";
 import { songs, history } from "@/db/schema";
 import { eq, desc } from "drizzle-orm";
 import { ensureQueue, getQueue } from "@/lib/queue";
+import { getPendingSong } from "@/lib/prospection";
 import { isJingleMetadata } from "@/lib/song-visibility";
 
 type TopEntry = {
@@ -94,9 +95,8 @@ export async function nextSongs(genre?: string) {
 
   await ensureQueue(selectedGenre);
 
-  const upcoming = getQueue(selectedGenre)
+  const queueEntries = getQueue(selectedGenre)
     .filter((e) => !isJingleMetadata({ title: e.title, artist: e.artist }))
-    .slice(0, 10)
     .map((e) => ({
       reqId: e.source === "request" ? (e.requestId as number) : -e.id,
       id: e.id,
@@ -107,5 +107,29 @@ export async function nextSongs(genre?: string) {
       source: e.source,
     }));
 
-  return { upcoming, nextIfNoRequests: null };
+  // O Liquidsoap pré-busca a próxima música via /api/music antes da atual
+  // terminar, removendo-a da fila imediatamente (ver lib/queue.ts). Essa
+  // música "pendente" é, na prática, a próxima a tocar — incluí-la aqui
+  // evita que ela desapareça do bloco "Próximas" durante essa antecedência.
+  const pending = getPendingSong(selectedGenre);
+  const upcoming =
+    pending &&
+    !isJingleMetadata({ title: pending.title, artist: pending.artist })
+      ? [
+          {
+            reqId: -pending.songId,
+            id: pending.songId,
+            title: pending.title,
+            artist: pending.artist,
+            cover: pending.cover,
+            requestedAt: pending.requestedAt ?? null,
+            source: (pending.wasRequested ? "request" : "autodj") as
+              | "request"
+              | "autodj",
+          },
+          ...queueEntries,
+        ]
+      : queueEntries;
+
+  return { upcoming: upcoming.slice(0, 10), nextIfNoRequests: null };
 }

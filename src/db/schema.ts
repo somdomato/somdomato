@@ -20,8 +20,7 @@ export const songs = sqliteTable("songs", {
   artist: text().notNull(),
   album: text(), // Álbum da música
   path: text().notNull().unique(),
-  cover: text().default("/images/logotipo.svg"), // Nova coluna para URL da capa
-  coverCheckedAt: int({ mode: "timestamp" }), // Última tentativa de resolução de capa
+  cover: text().default("/images/logotipo.svg"), // URL da capa
   timeSlots: int().default(15), // Sistema de bits: 0=nenhum, 1=madrugada, 2=manhã, 4=tarde, 8=noite, 15=todos
   rotation: text().default("normal"), // inativo, leve, normal, pesado
   genre: text().default("geral"), // geral, gaucha, modao, arrocha, romantico

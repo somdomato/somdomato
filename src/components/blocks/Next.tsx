@@ -108,7 +108,7 @@ export default function Next({ data }: { data: UpcomingEntry[] }) {
             }
 
             return (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center justify-end gap-2">
                 <span className="text-xs text-muted whitespace-nowrap">
                   {mounted ? formatRelativeTime(entry.requestedAt) : ""}
                 </span>

@@ -59,6 +59,7 @@ export async function GET(request: Request) {
       | (Song & { genre: string; allowedInGeneral: number })
       | null = null;
     let wasFromRequest = false;
+    let requestedAt: number | null = null;
 
     for (let attempt = 0; attempt < 20; attempt++) {
       const entry = popNext(genre);
@@ -91,6 +92,7 @@ export async function GET(request: Request) {
         allowedInGeneral: entry.allowedInGeneral,
       };
       wasFromRequest = entry.source === "request";
+      requestedAt = entry.requestedAt ?? null;
       break;
     }
 
@@ -179,6 +181,7 @@ export async function GET(request: Request) {
       cover: safeCover,
       genre,
       wasRequested: wasFromRequest,
+      requestedAt,
       selectedAt: Date.now(),
     });
 
