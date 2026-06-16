@@ -19,6 +19,7 @@ export interface PendingSong {
   cover: string | null;
   genre: string;
   wasRequested: boolean;
+  requestId?: number | null;
   requestedAt?: number | null;
   selectedAt: number;
 }

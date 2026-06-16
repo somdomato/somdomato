@@ -60,6 +60,7 @@ export async function GET(request: Request) {
       | null = null;
     let wasFromRequest = false;
     let requestedAt: number | null = null;
+    let selectedRequestId: number | null = null;
 
     for (let attempt = 0; attempt < 20; attempt++) {
       const entry = popNext(genre);
@@ -94,6 +95,7 @@ export async function GET(request: Request) {
       };
       wasFromRequest = entry.source === "request";
       requestedAt = entry.requestedAt ?? null;
+      selectedRequestId = entry.requestId ?? null;
       break;
     }
 
@@ -182,6 +184,7 @@ export async function GET(request: Request) {
       cover: safeCover,
       genre,
       wasRequested: wasFromRequest,
+      requestId: selectedRequestId,
       requestedAt,
       selectedAt: Date.now(),
     });

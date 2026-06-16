@@ -1,7 +1,6 @@
 "use client";
 
-const chatUrl =
-  process.env.NEXT_PUBLIC_CHAT_URL ?? "https://irc.somdomato.com";
+const chatUrl = process.env.NEXT_PUBLIC_CHAT_URL ?? "https://irc.somdomato.com";
 
 export default function ChatEmbed() {
   return (
