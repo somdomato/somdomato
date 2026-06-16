@@ -94,7 +94,7 @@ export default function Next({ data }: { data: UpcomingEntry[] }) {
       ) : (
         <SongList
           items={items}
-          keyField="id"
+          keyField="reqId"
           rightColClass={hasRequests ? "w-36" : "w-24"}
           renderRight={(item) => {
             const entry = item as UpcomingEntry;

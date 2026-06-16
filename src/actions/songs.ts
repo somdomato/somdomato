@@ -98,7 +98,7 @@ export async function nextSongs(genre?: string) {
   const queueEntries = getQueue(selectedGenre)
     .filter((e) => !isJingleMetadata({ title: e.title, artist: e.artist }))
     .map((e) => ({
-      reqId: e.source === "request" ? (e.requestId as number) : -e.id,
+      reqId: e.source === "request" ? (e.requestId as number) : null,
       id: e.id,
       title: e.title,
       artist: e.artist,
@@ -112,12 +112,12 @@ export async function nextSongs(genre?: string) {
   // música "pendente" é, na prática, a próxima a tocar — incluí-la aqui
   // evita que ela desapareça do bloco "Próximas" durante essa antecedência.
   const pending = getPendingSong(selectedGenre);
-  const upcoming =
+  const raw =
     pending &&
     !isJingleMetadata({ title: pending.title, artist: pending.artist })
       ? [
           {
-            reqId: -pending.songId,
+            reqId: pending.wasRequested ? (pending.requestId as number) : null,
             id: pending.songId,
             title: pending.title,
             artist: pending.artist,
@@ -131,5 +131,12 @@ export async function nextSongs(genre?: string) {
         ]
       : queueEntries;
 
-  return { upcoming: upcoming.slice(0, 10), nextIfNoRequests: null };
+  // Assign unique reqIds: real requestId for request entries, position-based
+  // negative index for autodj (song ids repeat, position does not).
+  const upcoming = raw.slice(0, 10).map((e, i) => ({
+    ...e,
+    reqId: e.reqId ?? -(i + 1),
+  }));
+
+  return { upcoming, nextIfNoRequests: null };
 }

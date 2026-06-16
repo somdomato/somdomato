@@ -40,8 +40,8 @@ export default async function Home() {
       </section>
 
       {/* Chat + Estatísticas lado a lado */}
-      <section className="w-full">
-        <div className="bg-background-alt border-2 border-primary/20 rounded-xl p-4 h-full flex flex-col">
+      <section className="-mx-4 lg:mx-0 w-auto lg:w-full">
+        <div className="bg-background-alt border-2 border-primary/20 rounded-none lg:rounded-xl px-0 lg:px-4 py-4 h-full flex flex-col">
           <h3 className="flex items-center gap-2 font-semibold text-base mb-3 m-0 pb-2.5 border-b border-black/30">
             <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-primary/20">
               <svg
