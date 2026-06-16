@@ -55,10 +55,9 @@ export default function SongList({
                 <div className="w-9 h-9 relative rounded overflow-hidden shrink-0">
                   <CoverImage
                     src={it.cover || "/images/logotipo.svg"}
-                    width={36}
-                    height={36}
+                    fill
                     alt={it.title}
-                    className="rounded object-cover"
+                    className="object-cover"
                   />
                 </div>
                 <div className="flex-1 min-w-0">

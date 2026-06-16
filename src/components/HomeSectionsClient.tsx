@@ -195,10 +195,9 @@ export default function HomeSectionsClient({
                       <div className="w-9 h-9 relative rounded overflow-hidden">
                         <CoverImage
                           src={s.cover || "/images/logotipo.svg"}
-                          width={36}
-                          height={36}
+                          fill
                           alt={s.title}
-                          className="rounded object-cover"
+                          className="object-cover"
                         />
                       </div>
                     </td>
@@ -235,10 +234,9 @@ export default function HomeSectionsClient({
                       <div className="w-9 h-9 relative rounded overflow-hidden">
                         <CoverImage
                           src={t.cover || "/images/logotipo.svg"}
-                          width={36}
-                          height={36}
+                          fill
                           alt={t.title}
-                          className="rounded object-cover"
+                          className="object-cover"
                         />
                       </div>
                     </td>
@@ -267,10 +265,9 @@ export default function HomeSectionsClient({
               <div className="w-9 h-9 relative rounded overflow-hidden">
                 <CoverImage
                   src={nextIfNoRequests.cover || "/images/logotipo.svg"}
-                  width={36}
-                  height={36}
+                  fill
                   alt={nextIfNoRequests.title}
-                  className="rounded object-cover"
+                  className="object-cover"
                 />
               </div>
               <div className="flex-1 min-w-0">
@@ -299,10 +296,9 @@ export default function HomeSectionsClient({
                       <div className="w-9 h-9 relative rounded overflow-hidden">
                         <CoverImage
                           src={u.cover || "/images/logotipo.svg"}
-                          width={36}
-                          height={36}
+                          fill
                           alt={u.title}
-                          className="rounded object-cover"
+                          className="object-cover"
                         />
                       </div>
                     </td>

@@ -4,10 +4,16 @@ ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update && apt-get install -y \
     icecast2 \
+    media-types \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-RUN mkdir -p /var/log/icecast2
+# icecast2 user/group is created by the package; ensure log dir is writable
+RUN mkdir -p /var/log/icecast2 \
+    && chown icecast2:icecast /var/log/icecast2
+
+# Run as icecast2 — same as production (icecast2 refuses to run as root)
+USER icecast2
 
 EXPOSE 8000
 

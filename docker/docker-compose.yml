@@ -1,3 +1,5 @@
+name: somdomato
+
 services:
   nextjs:
     container_name: somdomato-nextjs
@@ -6,6 +8,7 @@ services:
       dockerfile: docker/Dockerfile.nextjs
     env_file:
       - ../.env
+      - .env
     volumes:
       - type: bind
         source: ..

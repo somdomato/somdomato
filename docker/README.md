@@ -54,6 +54,16 @@ $env:MUSIC_PATH = "C:\Users\Lucas\Music\sdm"
 - **macOS**: `MUSIC_PATH=/Users/lucas/Music/sdm`
 - **Windows**: `MUSIC_PATH=C:\Users\Lucas\Music\sdm` ou `MUSIC_PATH=/c/Users/Lucas/Music/sdm` (Git Bash)
 
+## Primeiro uso — inicializar o banco
+
+Após subir os containers pela primeira vez (ou após resetar os volumes), aplique o schema do banco dentro do container Next.js:
+
+```bash
+docker compose -f docker/docker-compose.yml exec nextjs pnpm run push
+```
+
+Sem isso, a API `/api/music` falha com `no such table: settings` e o Liquidsoap não consegue buscar músicas, deixando todos os streams mudos.
+
 ## Serviços
 
 | Serviço    | Porta(s)       | Descrição                         |
@@ -67,7 +77,7 @@ $env:MUSIC_PATH = "C:\Users\Lucas\Music\sdm"
 
 - **Aplicação (HTTPS)**: https://localhost
 - **Aplicação (HTTP)**: http://localhost:8080 (redireciona para HTTPS)
-- **Streams**: https://localhost/geral, `/gaucha`, `/modao`, `/arrocha`, `/romantico`
+- **Streams**: https://localhost/radio/geral, `/radio/gaucha`, `/radio/modao`, `/radio/arrocha`, `/radio/romantico`
 - **Admin Icecast**: https://localhost/admin (user: `admin`, pass: `hackme`)
 - **Icecast direto**: http://localhost:8000
 
@@ -131,6 +141,21 @@ Para transmitir ao vivo, conecte-se em:
 - **Password**: `hackme`
 
 ## Troubleshooting
+
+### Rádio muda mas não toca / Liquidsoap repete "Nenhuma música retornada pela API"
+
+O banco não foi inicializado. Aplique o schema:
+
+```bash
+docker compose -f docker/docker-compose.yml exec nextjs pnpm run push
+```
+
+Confirme que a API responde:
+
+```bash
+docker exec somdomato-liquidsoap curl -s "http://nextjs:3000/api/music?genre=geral"
+# Deve retornar JSON com title, artist, path — não {"error":...}
+```
 
 ### Liquidsoap não conecta ao Next.js
 

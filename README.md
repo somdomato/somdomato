@@ -207,6 +207,62 @@ docker compose up -d --build
 > ```
 > Sem isso, o valor padrão `http://localhost:8080` (proxy via Nginx) continua funcionando.
 
+### Confiar no certificado SSL (sem aviso no navegador)
+
+O `generate-certs.sh` usa **mkcert** quando disponível, gerando um certificado assinado por uma CA local que o navegador pode confiar automaticamente.
+
+#### macOS (Chrome, Safari, Edge)
+
+Chrome no macOS usa o Keychain do sistema. Basta instalar a CA do mkcert uma única vez:
+
+```bash
+mkcert -install
+```
+
+Reinicie o Chrome. `https://localhost` e `https://radio.localhost` abrirão sem aviso.
+
+Para verificar onde está a CA instalada:
+
+```bash
+mkcert -CAROOT
+# ex: /Users/lucas/Library/Application Support/mkcert
+```
+
+#### Linux
+
+```bash
+mkcert -install   # instala no NSS (usado pelo Chrome/Chromium e Firefox)
+```
+
+#### Windows
+
+```powershell
+mkcert -install   # instala no Certificates Store do Windows (usado pelo Chrome/Edge)
+```
+
+#### Sem mkcert (openssl fallback)
+
+Se o `generate-certs.sh` usou openssl (mkcert não estava instalado), o navegador sempre mostrará aviso de certificado auto-assinado. Para eliminar o aviso, instale o mkcert e regenere:
+
+```bash
+# macOS
+brew install mkcert
+
+# Linux
+sudo apt install mkcert   # ou: brew install mkcert
+
+# Windows
+choco install mkcert      # ou: scoop install mkcert
+```
+
+Depois regenere os certificados:
+
+```bash
+rm -rf docker/certs
+bash docker/generate-certs.sh
+mkcert -install
+```
+
 ### Comandos via Makefile
 
 ```bash

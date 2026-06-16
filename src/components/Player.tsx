@@ -1,7 +1,7 @@
 "use client";
 
 import CoverImage from "@/components/CoverImage";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import {
   Play,
   Pause,
@@ -107,6 +107,7 @@ export default function Player({
     artist: string;
   } | null>(null);
   const [shareMode, setShareMode] = useState<"current" | "next">("next");
+  const lastSocketSongUpdate = useRef<number>(0);
 
   const currentGenreLabel =
     GENRES.find((g) => g.value === currentGenre)?.label || "Geral";
@@ -138,7 +139,8 @@ export default function Player({
       const response = await fetch(`/api/metadata?genre=${currentGenre}`);
       if (response.ok) {
         const data = await response.json();
-        if (data.song) {
+        // Ignorar se o socket atualizou a música nos últimos 5s para evitar race condition
+        if (data.song && Date.now() - lastSocketSongUpdate.current > 5000) {
           setSong(data.song);
         }
       }
@@ -195,6 +197,7 @@ export default function Player({
         data.title &&
         data.artist
       ) {
+        lastSocketSongUpdate.current = Date.now();
         setSong({
           id: data.id,
           title: data.title,
