@@ -91,40 +91,46 @@ O Docker replica o ambiente de produção para desenvolvimento:
   ┌──────────────────────────────────────────────────────────────┐
   │                    Docker Compose                            │
   │                                                              │
-  │   ┌──────────────┐     ┌─────────────────────────────────┐   │
-  │   │    Nginx     │────►│    Next.js (dev mode)           │   │
-  │   │  :443 (SSL)  │     │    :3000 (interno)              │   │
-  │   │  :8080 (HTTP)│     │                                  │   │
-  │   │              │     │  Debian Trixie + Node 24         │   │
-  │   │  Cert auto-  │     │  pnpm dev (hot reload)          │   │
-  │   │  assinado    │     │  Volume bind: código fonte       │   │
-  │   └──────┬───────┘     └──────────────┬──────────────────┘   │
-  │          │                            │                      │
-  │          │                            │ http://nextjs:3000   │
-  │          │                            ▼                      │
-  │          │              ┌─────────────────────────────────┐   │
-  │          │              │      Liquidsoap                 │   │
-  │          │              │      :8081 (HTTP ctrl)          │   │
-  │          │              │                                  │   │
-  │          │              │  Debian Trixie                   │   │
-  │          │              │  Consulta API via Docker DNS     │   │
-  │          │              └──────────────┬──────────────────┘   │
-  │          │                            │                      │
-  │          │              ┌─────────────▼──────────────────┐   │
-  │          └──────────────│      Icecast2                  │   │
-  │            proxy :8000  │      :8000                     │   │
-  │                         │                                 │   │
-  │                         │  6 mountpoints                  │   │
-  │                         └─────────────────────────────────┘   │
-  │                                                              │
-  │   Rede Docker: somdomato-radio-network                       │
-  │   Volumes: node_modules, .next cache, /var/music/sdm (bind)  │
-  └──────────────────────────────────────────────────────────────┘
+  │   ┌────────────────────┐   ┌──────────────────────────────┐  │
+  │   │  Nginx             │──►│  Next.js (dev mode)          │  │
+  │   │  Debian Trixie     │   │  :3000 (interno)             │  │
+  │   │  :443  localhost   │   │                              │  │
+  │   │  :8080 (HTTP→HTTPS)│   │  Debian Trixie + Node 24     │  │
+  │   │                    │   │  pnpm dev (hot reload)       │  │
+  │   │  localhost         │   │  Volume bind: código fonte   │  │
+  │   │  radio.localhost   │   │  /_next/static servido       │  │
+  │   │  (virtual hosts)   │   │  diretamente pelo Nginx      │  │
+  │   └──────────┬─────────┘   └──────────────┬───────────────┘  │
+  │              │                            │                   │
+  │              │                            │ /api/music        │
+  │              │                            ▼                   │
+  │              │              ┌─────────────────────────────┐   │
+  │              │              │  Liquidsoap                 │   │
+  │              │              │  :8081 (HTTP ctrl)          │   │
+  │              │              │                             │   │
+  │              │              │  Debian Trixie              │   │
+  │              │              │  Consulta API via Docker DNS│   │
+  │              │              └──────────────┬──────────────┘   │
+  │              │                            │                   │
+  │              │              ┌─────────────▼──────────────┐    │
+  │              └──────────────│  Icecast2                  │    │
+  │               radio.local   │  Debian Trixie             │    │
+  │               proxy :8000   │  :8000                     │    │
+  │                             │                            │    │
+  │                             │  5 mountpoints: /geral     │    │
+  │                             │  /gaucha /modao /arrocha   │    │
+  │                             │  /romantico                │    │
+  │                             └────────────────────────────┘    │
+  │                                                               │
+  │   Rede Docker: somdomato-radio-network                        │
+  │   Volumes: node_modules, .next cache, /var/music/sdm (bind)   │
+  └───────────────────────────────────────────────────────────────┘
 
   Acesso local:
-  ├─ https://localhost       → Nginx (SSL) → Next.js
-  ├─ https://localhost/geral → Nginx → Icecast (stream)
-  └─ http://localhost:8000   → Icecast (direto)
+  ├─ https://localhost            → Nginx → Next.js
+  ├─ https://radio.localhost      → Nginx → Icecast (produção-like)
+  ├─ http://localhost:8080        → HTTP → redireciona HTTPS
+  └─ http://localhost:8000        → Icecast (direto)
 ```
 
 ## Desenvolvimento
@@ -184,53 +190,68 @@ docker compose up -d --build
 
 ### Acessos em Desenvolvimento
 
-| URL                          | Serviço                    |
-|------------------------------|----------------------------|
-| https://localhost            | Aplicação (via Nginx SSL)  |
-| http://localhost:8080        | Aplicação (HTTP, redireciona) |
-| https://localhost/geral      | Stream Geral (via Nginx)   |
-| https://localhost/admin      | Admin Icecast              |
-| http://localhost:8000        | Icecast direto             |
+| URL                          | Serviço                                       |
+|------------------------------|-----------------------------------------------|
+| https://localhost            | Aplicação (Nginx SSL → Next.js)               |
+| https://radio.localhost      | Streams Icecast (espelha `radio.somdomato.com`) |
+| http://localhost:8080        | HTTP → redireciona para HTTPS                 |
+| https://radio.localhost/json | Metadados JSON do Icecast                     |
+| http://localhost:8000        | Icecast direto (sem proxy)                    |
 
 **Credenciais Icecast**: user `admin`, senha `hackme`
 
-### Comandos Docker
+> `radio.localhost` usa o certificado `*.localhost` gerado pelo `generate-certs.sh` (mkcert ou openssl). Para apontar os streams da UI para este virtual host, defina no `.env`:
+> ```
+> NEXT_PUBLIC_RADIO_SOURCE=https://radio.localhost
+> NEXT_PUBLIC_RADIO_METADATA=https://radio.localhost/json
+> ```
+> Sem isso, o valor padrão `http://localhost:8080` (proxy via Nginx) continua funcionando.
+
+### Comandos via Makefile
 
 ```bash
-# Iniciar
-cd docker && docker compose up -d --build
+# Setup inicial (gera certs + .env + build + up)
+make setup
 
-# Ver logs (todos)
-docker compose logs -f
+# Ciclo de vida
+make up              # sobe todos os serviços
+make down            # para e remove containers
+make build           # reconstrói todas as imagens
+make restart         # reinicia tudo
+make ps              # lista containers em execução
 
-# Ver logs de um serviço
-docker compose logs -f nextjs
-docker compose logs -f liquidsoap
+# Logs (segue)
+make logs            # todos os serviços
+make logs-nextjs     # apenas Next.js
+make logs-nginx      # apenas Nginx
+make logs-icecast    # apenas Icecast
+make logs-liquidsoap # apenas Liquidsoap
 
-# Reiniciar serviço
-docker compose restart liquidsoap
+# Shells interativos
+make nextjs-shell
+make nginx-shell
+make icecast-shell
+make liquidsoap-shell
 
-# Parar
-docker compose down
+# Restart individual
+make nextjs-restart
+make nginx-restart
+make icecast-restart
+make liquidsoap-restart
 
-# Limpar tudo (volumes inclusos)
-docker compose down -v
+# Ver todos os comandos disponíveis
+make help
 ```
 
-### Via Makefile (monorepo)
-
-Se estiver trabalhando no monorepo (`sdm/`), use o Makefile da raiz para simular a VPS1 completa — Next.js + Nginx + Icecast + Liquidsoap (com os configs do repo `stream/`):
+### Comandos Docker diretos
 
 ```bash
-# Na raiz do monorepo (pasta sdm/)
-export MUSIC_PATH=/home/lucas/music/sdm
-make vps1       # sobe VPS1 completa
-make site       # sobe apenas este repo (compose original)
-make logs-vps1  # logs de todos os serviços da VPS1
-make down-vps1  # para a VPS1
-```
+# Subir com build (da pasta docker/)
+docker compose up -d --build
 
-> O `make vps1` usa `stream/docker/icecast.docker.xml` e `stream/docker/somdomato.docker.liq` em vez dos configs deste repo — espelhando o fato de que na produção os dois repos coexistem na mesma VPS.
+# Rebuildar do zero
+docker compose down -v && docker compose build --no-cache && docker compose up -d
+```
 
 ### Desenvolvimento sem Docker (Next.js local)
 
@@ -504,10 +525,13 @@ pnpm test
 │   └── server.ts             # Servidor customizado (Socket.io)
 ├── docker/
 │   ├── docker-compose.yml    # Orquestração local (4 serviços)
-│   ├── Dockerfile.nextjs     # Imagem Next.js (Debian Trixie + Node 24)
+│   ├── Dockerfile.nextjs     # Imagem Next.js (Debian Trixie + Node 24 + pnpm)
+│   ├── Dockerfile.nginx      # Imagem Nginx (Debian Trixie — espelha produção)
+│   ├── Dockerfile.icecast    # Imagem Icecast2 (Debian Trixie — espelha produção)
 │   ├── Dockerfile.liquidsoap # Imagem Liquidsoap (Debian Trixie)
-│   ├── nginx.dev.conf        # Nginx com SSL auto-assinado
-│   └── generate-certs.sh     # Gera certificados SSL para dev
+│   ├── nginx.dev.conf        # 2 virtual hosts: localhost + radio.localhost
+│   ├── .env.example          # Variáveis para o docker-compose (MUSIC_PATH)
+│   └── generate-certs.sh     # Gera certificados SSL (mkcert ou openssl)
 ├── ansible/
 │   ├── playbook.yml          # Playbook Ansible para provisioning VPS
 │   ├── inventory.ini         # Inventário de hosts

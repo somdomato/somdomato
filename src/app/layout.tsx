@@ -6,6 +6,7 @@ import { Toaster } from "sonner";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import PageTracker from "@/components/PageTracker";
+import BackToTop from "@/components/BackToTop";
 import type { Metadata } from "next";
 import "./globals.css";
 
@@ -57,6 +58,7 @@ export default function RootLayout({
                 <Header />
                 <main className="flex-1">{children}</main>
                 <Footer />
+                <BackToTop />
                 {modal}
               </div>
             </LiveProvider>

@@ -1,0 +1,14 @@
+FROM debian:trixie-slim
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && apt-get install -y \
+    icecast2 \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN mkdir -p /var/log/icecast2
+
+EXPOSE 8000
+
+CMD ["icecast2", "-c", "/etc/icecast2/icecast.xml"]

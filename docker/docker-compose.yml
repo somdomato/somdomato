@@ -34,18 +34,27 @@ services:
 
   nginx:
     container_name: somdomato-nginx
-    image: nginx:alpine
+    build:
+      context: .
+      dockerfile: Dockerfile.nginx
     ports:
       - "443:443"
       - "8080:80"
     volumes:
       - type: bind
         source: ./nginx.dev.conf
-        target: /etc/nginx/conf.d/default.conf
+        target: /etc/nginx/conf.d/somdomato.conf
         read_only: true
       - type: bind
         source: ./certs
         target: /etc/nginx/certs
+        read_only: true
+      # Static assets served directly by nginx (mirrors production)
+      - nextjs_cache:/app/.next:ro
+      # Error pages (mirrors /var/www/somdomato/errors in production)
+      - type: bind
+        source: ../errors
+        target: /app/errors
         read_only: true
     depends_on:
       nextjs:
@@ -58,15 +67,11 @@ services:
 
   icecast:
     container_name: somdomato-icecast
-    image: moul/icecast
+    build:
+      context: .
+      dockerfile: Dockerfile.icecast
     ports:
       - "8000:8000"
-    environment:
-      - ICECAST_SOURCE_PASSWORD=hackme
-      - ICECAST_ADMIN_PASSWORD=hackme
-      - ICECAST_PASSWORD=hackme
-      - ICECAST_RELAY_PASSWORD=hackme
-      - ICECAST_HOSTNAME=localhost
     volumes:
       - type: bind
         source: ../ansible/etc/icecast/somdomato-docker.xml

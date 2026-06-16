@@ -1,0 +1,13 @@
+FROM debian:trixie-slim
+
+RUN apt-get update && apt-get install -y \
+    nginx \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Remove default site (same as production — default is disabled there too)
+RUN rm -f /etc/nginx/sites-enabled/default
+
+EXPOSE 80 443
+
+CMD ["nginx", "-g", "daemon off;"]
