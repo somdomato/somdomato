@@ -21,7 +21,7 @@ const requestSteps = [
     icon: Download,
     title: "Não encontrou? Tudo bem",
     description:
-      "Digite o nome e a rádio busca e adiciona a música automaticamente.",
+      "Digite o nome e a rádio busca e adiciona a música automaticamente, após isso a música já pode ser pedida.",
   },
   {
     icon: ListMusic,
@@ -116,10 +116,9 @@ export default function Featured() {
                       0{index + 1}
                     </span>
                   </div>
-
-                  <h4 className="m-0 text-sm font-semibold text-white">
+                  <div className="m-0 text-sm font-semibold text-white">
                     {step.title}
-                  </h4>
+                  </div>
                   <p className="m-0 mt-1.5 text-xs leading-relaxed text-slate-400">
                     {step.description}
                   </p>
@@ -128,14 +127,13 @@ export default function Featured() {
             })}
           </div>
 
-          <div className="flex items-start gap-3 rounded-xl border border-amber-400/20 bg-amber-500/10 px-4 py-3">
+          <div className="flex items-center gap-3 rounded-xl border border-amber-400/20 bg-amber-500/10 px-4 py-3">
             <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-amber-400/15">
               <Sparkles className="h-3.5 w-3.5 text-amber-300" />
             </div>
-            <p className="m-0 text-xs leading-relaxed text-amber-100/80 sm:text-sm">
-              Até uma música que ainda não existe na rádio pode virar seu
-              próximo pedido.
-            </p>
+            <div className="m-0 text-xs leading-relaxed text-amber-100/80 sm:text-sm">
+              Até uma música que ainda não existe na rádio pode virar seu próximo pedido.
+            </div>
           </div>
         </div>
       </div>

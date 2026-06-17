@@ -1,5 +1,4 @@
-@import "tailwindcss" source(none);
-@source "../";
+@import "tailwindcss";
 
 :root {
   --foreground: #ffffff;
@@ -29,10 +28,6 @@ body {
   color: var(--foreground);
   font-family: var(--font-nunito), Arial, Helvetica, sans-serif;
 }
-
-/* iframe {
-  @apply border-0 ring-0 w-full rounded-lg;
-} */
 
 button {
   @apply cursor-pointer;

@@ -56,6 +56,7 @@ export default function SongList({
                   <CoverImage
                     src={it.cover || "/images/logotipo.svg"}
                     fill
+                    sizes="36px"
                     alt={it.title}
                     className="object-cover"
                   />

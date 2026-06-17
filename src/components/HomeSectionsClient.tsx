@@ -196,6 +196,7 @@ export default function HomeSectionsClient({
                         <CoverImage
                           src={s.cover || "/images/logotipo.svg"}
                           fill
+                          sizes="36px"
                           alt={s.title}
                           className="object-cover"
                         />
@@ -235,6 +236,7 @@ export default function HomeSectionsClient({
                         <CoverImage
                           src={t.cover || "/images/logotipo.svg"}
                           fill
+                          sizes="36px"
                           alt={t.title}
                           className="object-cover"
                         />
@@ -266,6 +268,7 @@ export default function HomeSectionsClient({
                 <CoverImage
                   src={nextIfNoRequests.cover || "/images/logotipo.svg"}
                   fill
+                  sizes="36px"
                   alt={nextIfNoRequests.title}
                   className="object-cover"
                 />
@@ -297,6 +300,7 @@ export default function HomeSectionsClient({
                         <CoverImage
                           src={u.cover || "/images/logotipo.svg"}
                           fill
+                          sizes="36px"
                           alt={u.title}
                           className="object-cover"
                         />
