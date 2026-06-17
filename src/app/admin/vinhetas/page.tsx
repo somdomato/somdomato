@@ -9,6 +9,7 @@ import {
   ScrollText,
   Users,
   Megaphone,
+  BarChart3,
   Trash2,
   Plus,
   Loader2,
@@ -256,6 +257,13 @@ export default function VinhetasPage() {
             >
               <Users size={18} />
               <span className="hidden sm:inline">Usuários</span>
+            </Link>
+            <Link
+              href="/admin/estatisticas"
+              className="flex items-center gap-2 px-4 sm:px-6 py-3 border-b-2 border-transparent text-gray-400 hover:text-white transition-colors whitespace-nowrap text-sm"
+            >
+              <BarChart3 size={18} />
+              <span className="hidden sm:inline">Estatísticas</span>
             </Link>
           </div>
         </div>
