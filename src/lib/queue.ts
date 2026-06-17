@@ -222,24 +222,28 @@ export async function syncRequestsInQueue(genre: string): Promise<void> {
   queues.set(genre, [...requestEntries, ...autodjEntries]);
 }
 
-async function fetchGenrePool(genre: string): Promise<{
+async function fetchGenrePool(
+  genre: string,
+  ignoreTimeSlot: boolean,
+): Promise<{
   availableSongs: SongRow[];
   blockedData: { songIds: number[]; artists: string[] };
 }> {
   const blockedData = await getBlockedSongIds(genre);
-  const currentTimeSlot = getCurrentTimeSlot();
 
   const genreCondition =
     genre === "geral"
       ? sql`(${songs.genre} = 'geral' OR ${songs.allowedInGeneral} = 1)`
       : sql`${songs.genre} = ${genre}`;
 
+  const timeSlotCondition = ignoreTimeSlot
+    ? sql`1=1`
+    : sql`(${songs.timeSlots} & ${getCurrentTimeSlot()}) > 0`;
+
   const availableSongs = await db
     .select()
     .from(songs)
-    .where(
-      and(sql`(${songs.timeSlots} & ${currentTimeSlot}) > 0`, genreCondition),
-    );
+    .where(and(timeSlotCondition, genreCondition));
 
   return { availableSongs, blockedData };
 }
@@ -267,71 +271,85 @@ function applyProtections(
 }
 
 /**
- * Busca o pool de músicas disponíveis para o gênero no horário atual,
- * relaxando progressivamente as proteções (artista recente, depois histórico)
- * quando a biblioteca é pequena demais para preencher `needed` vagas só com
- * proteção total — sem isso, a fila (e o bloco "Próximas") fica permanentemente
- * abaixo de QUEUE_SIZE. Faz fallback para o pool do "geral" se mesmo assim não
- * houver candidatos suficientes no gênero específico.
+ * Tenta preencher `needed` vagas para um pool já buscado, subindo a escada de
+ * relaxamento de proteções (none -> artists -> all) só até onde for
+ * necessário.
+ */
+function relaxUntilEnough(
+  availableSongs: SongRow[],
+  blockedData: { songIds: number[]; artists: string[] },
+  excludeIds: Set<number>,
+  needed: number,
+): SongRow[] {
+  let pool = applyProtections(availableSongs, blockedData, excludeIds, "none");
+  if (pool.length >= needed) return pool;
+
+  const relaxedArtists = applyProtections(
+    availableSongs,
+    blockedData,
+    excludeIds,
+    "artists",
+  );
+  if (relaxedArtists.length > pool.length) pool = relaxedArtists;
+  if (pool.length >= needed) return pool;
+
+  const relaxedAll = applyProtections(
+    availableSongs,
+    blockedData,
+    excludeIds,
+    "all",
+  );
+  if (relaxedAll.length > pool.length) pool = relaxedAll;
+
+  return pool;
+}
+
+/**
+ * Busca o pool de músicas disponíveis para o gênero, relaxando
+ * progressivamente as restrições quando a biblioteca é pequena demais para
+ * preencher `needed` vagas — sem isso, a fila (e o bloco "Próximas") fica
+ * permanentemente abaixo de QUEUE_SIZE. Ordem de relaxamento:
+ * 1. Gênero + horário atual, com proteções de histórico/artista.
+ * 2. Mesmo pool, relaxando as proteções (artista recente, depois histórico).
+ * 3. Ignora o filtro de horário (último recurso: tocar fora do horário ideal
+ *    é melhor do que a fila ficar incompleta).
+ * 4. Repete os passos acima caindo para o pool do "geral", se o gênero
+ *    específico ainda não tiver candidatos suficientes.
  */
 async function pickAutoDjCandidates(
   genre: string,
   excludeIds: Set<number>,
   needed: number,
 ): Promise<SongRow[]> {
-  const { availableSongs, blockedData } = await fetchGenrePool(genre);
+  const tryGenre = async (g: string): Promise<SongRow[]> => {
+    const inSlot = await fetchGenrePool(g, false);
+    let pool = relaxUntilEnough(
+      inSlot.availableSongs,
+      inSlot.blockedData,
+      excludeIds,
+      needed,
+    );
+    if (pool.length >= needed) return pool;
 
-  let pool = applyProtections(availableSongs, blockedData, excludeIds, "none");
-  if (pool.length < needed) {
-    const relaxed = applyProtections(
-      availableSongs,
-      blockedData,
+    const anySlot = await fetchGenrePool(g, true);
+    const relaxed = relaxUntilEnough(
+      anySlot.availableSongs,
+      anySlot.blockedData,
       excludeIds,
-      "artists",
+      needed,
     );
     if (relaxed.length > pool.length) pool = relaxed;
-  }
-  if (pool.length < needed) {
-    const relaxed = applyProtections(
-      availableSongs,
-      blockedData,
-      excludeIds,
-      "all",
-    );
-    if (relaxed.length > pool.length) pool = relaxed;
-  }
+
+    return pool;
+  };
+
+  let pool = await tryGenre(genre);
 
   // Gêneros com poucas músicas (ex: 1 única em "modao") podem ficar sem
   // candidatos suficientes mesmo sem nenhuma proteção — cai para o pool do
   // "geral" também, repetindo a mesma escada de relaxamento.
   if (pool.length < needed && genre !== "geral") {
-    const general = await fetchGenrePool("geral");
-
-    let generalPool = applyProtections(
-      general.availableSongs,
-      general.blockedData,
-      excludeIds,
-      "none",
-    );
-    if (generalPool.length < needed) {
-      const relaxed = applyProtections(
-        general.availableSongs,
-        general.blockedData,
-        excludeIds,
-        "artists",
-      );
-      if (relaxed.length > generalPool.length) generalPool = relaxed;
-    }
-    if (generalPool.length < needed) {
-      const relaxed = applyProtections(
-        general.availableSongs,
-        general.blockedData,
-        excludeIds,
-        "all",
-      );
-      if (relaxed.length > generalPool.length) generalPool = relaxed;
-    }
-
+    const generalPool = await tryGenre("geral");
     if (generalPool.length > pool.length) pool = generalPool;
   }
 
