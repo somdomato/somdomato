@@ -37,7 +37,7 @@ export default function Navbar() {
       label: "Pedidos",
       icon: Music,
       videoSrc:
-        "https://cdn.somdomato.com/videos/optimized/287510_small_button.webm",
+        "https://cdn.somdomato.com/videos/optimized/7353400-uhd_3840_2160_24fps_button.webm",
     },
     {
       href: "/artistas",
