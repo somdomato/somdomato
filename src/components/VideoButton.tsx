@@ -30,6 +30,8 @@ export function VideoButton({
         focus-visible:outline-none
         focus-visible:ring-2
         focus-visible:ring-primary
+        border-3 border-transparent focus-visible:border-black/70
+        hover:border-black/60
         ${className}
       `}
     >
