@@ -2,7 +2,16 @@
 
 import { db } from "@/db";
 import { pageViews } from "@/db/schema";
-import { gte, count, countDistinct } from "drizzle-orm";
+import { gte, count, countDistinct, sql } from "drizzle-orm";
+
+export type ChartRange = "all" | "year" | "month" | "week" | "day" | "hour";
+
+export type ChartPoint = {
+  bucket: string;
+  label: string;
+  clicks: number;
+  uniqueVisits: number;
+};
 
 export type StatsData = {
   totalClicks: number;
@@ -178,4 +187,104 @@ export async function getMiniStats(): Promise<MiniStatsData> {
     visitsToday,
     visitsLastHour,
   };
+}
+
+/**
+ * Configuração de bucket por período do gráfico
+ */
+function getChartRangeConfig(range: ChartRange) {
+  const now = new Date();
+
+  switch (range) {
+    case "year":
+      return {
+        start: new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000),
+        format: "%Y-%m",
+        formatLabel: (bucket: string) => {
+          const [y, m] = bucket.split("-");
+          return `${MONTHS_PT[Number(m) - 1]}/${y.slice(2)}`;
+        },
+      };
+    case "month":
+      return {
+        start: new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000),
+        format: "%Y-%m-%d",
+        formatLabel: (bucket: string) => {
+          const [, m, d] = bucket.split("-");
+          return `${d}/${m}`;
+        },
+      };
+    case "week":
+      return {
+        start: new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000),
+        format: "%Y-%m-%d",
+        formatLabel: (bucket: string) => {
+          const [, m, d] = bucket.split("-");
+          return `${d}/${m}`;
+        },
+      };
+    case "day":
+      return {
+        start: new Date(now.getTime() - 24 * 60 * 60 * 1000),
+        format: "%Y-%m-%d %H:00",
+        formatLabel: (bucket: string) => bucket.slice(-5),
+      };
+    case "hour":
+      return {
+        start: new Date(now.getTime() - 60 * 60 * 1000),
+        format: "%Y-%m-%d %H:%M",
+        formatLabel: (bucket: string) => bucket.slice(-5),
+      };
+    default:
+      return {
+        start: null,
+        format: "%Y-%m",
+        formatLabel: (bucket: string) => {
+          const [y, m] = bucket.split("-");
+          return `${MONTHS_PT[Number(m) - 1]}/${y.slice(2)}`;
+        },
+      };
+  }
+}
+
+const MONTHS_PT = [
+  "Jan",
+  "Fev",
+  "Mar",
+  "Abr",
+  "Mai",
+  "Jun",
+  "Jul",
+  "Ago",
+  "Set",
+  "Out",
+  "Nov",
+  "Dez",
+];
+
+/**
+ * Obtém dados de visitas/cliques agregados por período para os gráficos
+ */
+export async function getChartData(range: ChartRange): Promise<ChartPoint[]> {
+  const { start, format, formatLabel } = getChartRangeConfig(range);
+
+  const bucketExpr = sql<string>`strftime(${format}, ${pageViews.createdAt}, 'unixepoch')`;
+
+  const rows = await db
+    .select({
+      bucket: bucketExpr,
+      clicks: count(),
+      uniqueVisits: countDistinct(pageViews.ip),
+    })
+    .from(pageViews)
+    .where(start ? gte(pageViews.createdAt, start) : undefined)
+    .groupBy(bucketExpr)
+    .orderBy(bucketExpr);
+
+  return rows.map((row) => ({
+    bucket: row.bucket,
+    label: formatLabel(row.bucket),
+    clicks: row.clicks,
+    uniqueVisits: row.uniqueVisits,
+  }));
 }

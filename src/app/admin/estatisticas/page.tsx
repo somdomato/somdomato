@@ -16,6 +16,7 @@ import {
   Globe,
 } from "lucide-react";
 import { LogoutButton } from "@/components/LogoutButton";
+import { StatsCharts } from "@/components/blocks/StatsCharts";
 
 function StatCard({
   icon: Icon,
@@ -250,6 +251,9 @@ export default async function AdminEstatisticasPage() {
             color="primary"
           />
         </div>
+
+        {/* Gráficos de Visitas e Cliques */}
+        <StatsCharts />
 
         {/* Tabela de Cliques por Página */}
         <PageClicksTable clicksByPage={stats.clicksByPage} />

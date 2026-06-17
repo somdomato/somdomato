@@ -166,6 +166,7 @@
         - cache.conf
         - deny.conf
         - nextjs.conf
+        - geoip.conf
         - sdm-errors.conf
       notify: Reload Nginx
 
