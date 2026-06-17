@@ -18,7 +18,7 @@
 
 import { db } from "@/db";
 import { songs, requests, history, likes } from "@/db/schema";
-import { and, asc, eq, notInArray, sql } from "drizzle-orm";
+import { and, asc, eq, sql } from "drizzle-orm";
 import { getCurrentTimeSlot } from "@/lib/time";
 import { getBlockedSongIds } from "@/lib/protections";
 import { checkFileExists } from "@/lib/file";
@@ -143,9 +143,11 @@ export async function ensureQueue(genre: string): Promise<void> {
   const last = lastServed.get(genre);
   if (last !== undefined) excludeIds.add(last);
 
-  const candidates = await pickAutoDjCandidates(genre, excludeIds);
-
-  const pool = candidates.filter((s) => !excludeIds.has(s.id));
+  const pool = await pickAutoDjCandidates(
+    genre,
+    excludeIds,
+    QUEUE_SIZE - queue.length,
+  );
 
   while (queue.length < QUEUE_SIZE && pool.length > 0) {
     const song = weightedPickAndRemove(pool);
@@ -220,70 +222,113 @@ export async function syncRequestsInQueue(genre: string): Promise<void> {
   queues.set(genre, [...requestEntries, ...autodjEntries]);
 }
 
-/**
- * Busca o pool de músicas disponíveis para o gênero no horário atual,
- * respeitando proteções (histórico/artistas recentes). Faz fallback para o
- * pool do "geral" se não houver nada disponível no gênero específico.
- */
-async function pickAutoDjCandidates(
-  genre: string,
-  excludeIds: Set<number>,
-): Promise<SongRow[]> {
+async function fetchGenrePool(genre: string): Promise<{
+  availableSongs: SongRow[];
+  blockedData: { songIds: number[]; artists: string[] };
+}> {
   const blockedData = await getBlockedSongIds(genre);
   const currentTimeSlot = getCurrentTimeSlot();
 
-  let genreCondition: ReturnType<typeof sql>;
-  if (genre === "geral") {
-    genreCondition = sql`(${songs.genre} = 'geral' OR ${songs.allowedInGeneral} = 1)`;
-  } else {
-    genreCondition = sql`${songs.genre} = ${genre}`;
-  }
+  const genreCondition =
+    genre === "geral"
+      ? sql`(${songs.genre} = 'geral' OR ${songs.allowedInGeneral} = 1)`
+      : sql`${songs.genre} = ${genre}`;
 
   const availableSongs = await db
     .select()
     .from(songs)
-    .where(
-      and(
-        sql`(${songs.timeSlots} & ${currentTimeSlot}) > 0`,
-        genreCondition,
-        blockedData.songIds.length > 0
-          ? notInArray(songs.id, blockedData.songIds)
-          : sql`1=1`,
-      ),
+    .where(and(sql`(${songs.timeSlots} & ${currentTimeSlot}) > 0`, genreCondition));
+
+  return { availableSongs, blockedData };
+}
+
+/**
+ * Aplica as proteções de repetição a um pool, com 3 níveis de rigor:
+ * - "none": respeita histórico de músicas e artistas recentes (padrão).
+ * - "artists": ignora a proteção de artista recente.
+ * - "all": ignora toda proteção de repetição (mantém apenas timeSlot/gênero
+ *   e `excludeIds`, que evita duplicar a fila atual/última música servida).
+ */
+function applyProtections(
+  availableSongs: SongRow[],
+  blockedData: { songIds: number[]; artists: string[] },
+  excludeIds: Set<number>,
+  relax: "none" | "artists" | "all",
+): SongRow[] {
+  return availableSongs.filter((song) => {
+    if (excludeIds.has(song.id)) return false;
+    if (relax === "all") return true;
+    if (blockedData.songIds.includes(song.id)) return false;
+    if (relax === "artists") return true;
+    return !blockedData.artists.includes(song.artist);
+  });
+}
+
+/**
+ * Busca o pool de músicas disponíveis para o gênero no horário atual,
+ * relaxando progressivamente as proteções (artista recente, depois histórico)
+ * quando a biblioteca é pequena demais para preencher `needed` vagas só com
+ * proteção total — sem isso, a fila (e o bloco "Próximas") fica permanentemente
+ * abaixo de QUEUE_SIZE. Faz fallback para o pool do "geral" se mesmo assim não
+ * houver candidatos suficientes no gênero específico.
+ */
+async function pickAutoDjCandidates(
+  genre: string,
+  excludeIds: Set<number>,
+  needed: number,
+): Promise<SongRow[]> {
+  const { availableSongs, blockedData } = await fetchGenrePool(genre);
+
+  let pool = applyProtections(availableSongs, blockedData, excludeIds, "none");
+  if (pool.length < needed) {
+    const relaxed = applyProtections(
+      availableSongs,
+      blockedData,
+      excludeIds,
+      "artists",
     );
-
-  let filteredSongs = availableSongs.filter(
-    (song) => !blockedData.artists.includes(song.artist),
-  );
-
-  // Pool "usável" considerando exclusões (fila atual + última música servida).
-  // Gêneros com poucas músicas (ex: 1 única em "modao") podem ficar sem
-  // candidatos válidos mesmo com filteredSongs não-vazio — nesse caso,
-  // cair para o pool do "geral" também.
-  const usableSongs = filteredSongs.filter((song) => !excludeIds.has(song.id));
-
-  if (usableSongs.length === 0 && genre !== "geral") {
-    const generalBlockedData = await getBlockedSongIds("geral");
-
-    const generalSongs = await db
-      .select()
-      .from(songs)
-      .where(
-        and(
-          sql`(${songs.timeSlots} & ${currentTimeSlot}) > 0`,
-          sql`(${songs.genre} = 'geral' OR ${songs.allowedInGeneral} = 1)`,
-          generalBlockedData.songIds.length > 0
-            ? notInArray(songs.id, generalBlockedData.songIds)
-            : sql`1=1`,
-        ),
-      );
-
-    filteredSongs = generalSongs.filter(
-      (song) => !generalBlockedData.artists.includes(song.artist),
-    );
+    if (relaxed.length > pool.length) pool = relaxed;
+  }
+  if (pool.length < needed) {
+    const relaxed = applyProtections(availableSongs, blockedData, excludeIds, "all");
+    if (relaxed.length > pool.length) pool = relaxed;
   }
 
-  return filteredSongs;
+  // Gêneros com poucas músicas (ex: 1 única em "modao") podem ficar sem
+  // candidatos suficientes mesmo sem nenhuma proteção — cai para o pool do
+  // "geral" também, repetindo a mesma escada de relaxamento.
+  if (pool.length < needed && genre !== "geral") {
+    const general = await fetchGenrePool("geral");
+
+    let generalPool = applyProtections(
+      general.availableSongs,
+      general.blockedData,
+      excludeIds,
+      "none",
+    );
+    if (generalPool.length < needed) {
+      const relaxed = applyProtections(
+        general.availableSongs,
+        general.blockedData,
+        excludeIds,
+        "artists",
+      );
+      if (relaxed.length > generalPool.length) generalPool = relaxed;
+    }
+    if (generalPool.length < needed) {
+      const relaxed = applyProtections(
+        general.availableSongs,
+        general.blockedData,
+        excludeIds,
+        "all",
+      );
+      if (relaxed.length > generalPool.length) generalPool = relaxed;
+    }
+
+    if (generalPool.length > pool.length) pool = generalPool;
+  }
+
+  return pool;
 }
 
 /**

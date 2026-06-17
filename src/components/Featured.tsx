@@ -132,7 +132,8 @@ export default function Featured() {
               <Sparkles className="h-3.5 w-3.5 text-amber-300" />
             </div>
             <div className="m-0 text-xs leading-relaxed text-amber-100/80 sm:text-sm">
-              Até uma música que ainda não existe na rádio pode virar seu próximo pedido.
+              Até uma música que ainda não existe na rádio pode virar seu
+              próximo pedido.
             </div>
           </div>
         </div>

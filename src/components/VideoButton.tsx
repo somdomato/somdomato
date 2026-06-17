@@ -8,7 +8,6 @@ type VideoButtonProps = {
   videoSrc: string;
   children: ReactNode;
   icon?: ComponentType<SVGProps<SVGSVGElement>>;
-  onClick?: () => void;
   className?: string;
 };
 
@@ -17,60 +16,66 @@ export function VideoButton({
   videoSrc,
   children,
   icon: Icon,
-  onClick,
   className = "",
 }: VideoButtonProps) {
   return (
     <Link
       href={href}
-      onClick={onClick}
       className={`
-        group relative isolate flex min-h-11 items-center gap-2
+        group relative flex min-h-11 items-center gap-2
         overflow-hidden rounded-lg px-4 py-2
         font-semibold text-white
-        transition-[transform,color,background-color] duration-300
+        transition-transform duration-300
         hover:scale-[1.02]
         focus-visible:outline-none
         focus-visible:ring-2
         focus-visible:ring-primary
-        focus-visible:ring-offset-2
-        focus-visible:ring-offset-black
         ${className}
       `}
     >
-      <video
-        src={videoSrc}
-        autoPlay
-        muted
-        loop
-        playsInline
-        preload="metadata"
+      {/* Fundo com vídeo e máscaras */}
+      <span
+        aria-hidden="true"
         className="
-          pointer-events-none absolute inset-0 -z-20
-          h-full w-full object-cover object-center
+          pointer-events-none absolute inset-0
           opacity-100
           transition-opacity duration-700 ease-out
           md:opacity-0
           md:group-hover:opacity-100
           md:group-focus-visible:opacity-100
         "
-      />
+      >
+        <video
+          src={videoSrc}
+          autoPlay
+          muted
+          loop
+          playsInline
+          preload="auto"
+          className="
+            absolute inset-0
+            h-full w-full
+            object-cover object-center
+          "
+        />
 
-      <span
-        aria-hidden="true"
-        className="
-          pointer-events-none absolute inset-0 -z-10
-          bg-black/50 opacity-100
-          transition-opacity duration-700 ease-out
-          md:opacity-0
-          md:group-hover:opacity-100
-          md:group-focus-visible:opacity-100
-        "
-      />
+        {/* Máscara marrom */}
+        <span className="absolute inset-0 bg-[#3b2418]/35" />
 
-      {Icon && <Icon className="size-5 shrink-0" aria-hidden="true" />}
+        {/* Vinheta */}
+        <span
+          className="
+            absolute inset-0
+            bg-[radial-gradient(ellipse_at_center,transparent_25%,rgba(20,10,5,0.25)_60%,rgba(8,4,2,0.85)_100%)]
+          "
+        />
+      </span>
 
-      <span className="relative z-10">{children}</span>
+      {/* Conteúdo acima do fundo */}
+      <span className="relative z-10 flex items-center gap-2">
+        {Icon && <Icon className="size-5 shrink-0" aria-hidden="true" />}
+        <span>{children}</span>
+      </span>
     </Link>
   );
 }

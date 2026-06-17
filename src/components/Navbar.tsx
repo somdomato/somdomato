@@ -30,19 +30,19 @@ export default function Navbar() {
       href: "/",
       label: "Início",
       icon: Home,
-      videoSrc: "https://cdn.somdomato.com/videos/287510_small.mp4",
+      videoSrc: "https://cdn.somdomato.com/videos/optimized/287510_button.webm",
     },
     {
       href: "/pedidos",
       label: "Pedidos",
       icon: Music,
-      videoSrc: "https://cdn.somdomato.com/videos/pedidos_small.mp4",
+      videoSrc: "https://cdn.somdomato.com/videos/optimized/7353111_button.webm",
     },
     {
       href: "/artistas",
       label: "Artistas",
       icon: Users,
-      videoSrc: "https://cdn.somdomato.com/videos/artistas_small.mp4",
+      videoSrc: "https://cdn.somdomato.com/videos/optimized/11997585_3840_2160_60fps_button.webm",
     },
   ];
 
@@ -51,7 +51,7 @@ export default function Navbar() {
       href: "/admin",
       label: "Painel",
       icon: LayoutDashboard,
-      videoSrc: "https://cdn.somdomato.com/videos/painel_small.mp4",
+      videoSrc: "https://cdn.somdomato.com/videos/optimized/12280443_3840_2160_25fps_button.webm",
     });
   }
 
@@ -113,7 +113,6 @@ export default function Navbar() {
                 href={href}
                 icon={icon}
                 videoSrc={videoSrc}
-                onClick={() => setIsOpen(false)}
                 className="
                   min-h-14 gap-3
                   active:scale-[0.98]
