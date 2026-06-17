@@ -6,7 +6,7 @@ export default function ChatEmbed() {
   return (
     <div className="relative w-full max-w-full rounded-lg border border-primary/10 flex-1 min-h-140">
       <iframe
-        className="absolute inset-0 w-full h-full"
+        className="absolute inset-0 w-full h-full outline-none rounded-md"
         src={chatUrl}
         title="Bate-Papo - Rádio Som do Mato"
         allowFullScreen

@@ -40,26 +40,30 @@ export default async function Home() {
       </section>
 
       {/* Chat + Estatísticas lado a lado */}
-      <section className="-mx-4 lg:mx-0 w-auto lg:w-full">
-        <div className="bg-background-alt border-2 border-primary/20 rounded-none lg:rounded-xl px-0 lg:px-4 py-4 h-full flex flex-col">
-          <h3 className="flex items-center gap-2 font-semibold text-base mb-3 m-0 pb-2.5 border-b border-black/30">
-            <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-primary/20">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="w-4 h-4 text-primary"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-              </svg>
-            </span>
-            Bate-Papo
-          </h3>
-          <ChatEmbed />
+      <section className="w-full">
+        <div className="bg-background-alt border-2 border-primary/20 rounded-xl pt-4 pb-0 md:pt-4 md:pb-4 h-full flex flex-col">
+          <div className="px-2 md:px-4 h-full flex flex-col">
+            <h3 className="flex items-center gap-2 font-semibold text-base mb-3 m-0 pb-2.5 border-b border-black/30">
+              <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-primary/20">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="w-4 h-4 text-primary"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                </svg>
+              </span>
+              Bate-Papo
+            </h3>
+          </div>
+          <div className="px-0 md:px-4 h-full flex flex-col">
+            <ChatEmbed />
+          </div>
         </div>
       </section>
     </div>
