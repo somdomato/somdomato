@@ -237,7 +237,9 @@ async function fetchGenrePool(genre: string): Promise<{
   const availableSongs = await db
     .select()
     .from(songs)
-    .where(and(sql`(${songs.timeSlots} & ${currentTimeSlot}) > 0`, genreCondition));
+    .where(
+      and(sql`(${songs.timeSlots} & ${currentTimeSlot}) > 0`, genreCondition),
+    );
 
   return { availableSongs, blockedData };
 }
@@ -290,7 +292,12 @@ async function pickAutoDjCandidates(
     if (relaxed.length > pool.length) pool = relaxed;
   }
   if (pool.length < needed) {
-    const relaxed = applyProtections(availableSongs, blockedData, excludeIds, "all");
+    const relaxed = applyProtections(
+      availableSongs,
+      blockedData,
+      excludeIds,
+      "all",
+    );
     if (relaxed.length > pool.length) pool = relaxed;
   }
 
