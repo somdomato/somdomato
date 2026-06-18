@@ -30,7 +30,7 @@ export default function Navbar() {
       href: "/",
       label: "Início",
       icon: Home,
-      videoSrc: "https://cdn.somdomato.com/videos/optimized/287510_button.webm",
+      videoSrc: "https://cdn.somdomato.com/videos/optimized/7353106-uhd_3840_2160_24fps_button.webm",
     },
     {
       href: "/pedidos",

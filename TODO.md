@@ -1,3 +1,5 @@
+- Da mesma forma que existem vídeos no fundo dos botões crie um vídeo que fica tocando ininterruptamente no fundo do logo e nome do site.
+
 - Salve a contagem de reprodução no banco de dados para cada música e mostre essa contagem em "Últimas".
 
 - Quando troco de Stream/Rádio há uma confusão no bloco "Próximas" e no bloco "Últimas", de alguma forma aparecem músicas que não tocaram, preciso de um sistema mais robusto, "single source of truth" de gerenciar essa fila(passado e futuro, de todas as streams), talvez salvar no banco de dados(lembrando que pedidos são tocados logo em seguida depois da música atual!!)?
