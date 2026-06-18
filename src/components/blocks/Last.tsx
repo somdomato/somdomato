@@ -44,14 +44,16 @@ export default function Last({ data }: { data: LatestEntry[] }) {
   }, [currentGenre]);
 
   useEffect(() => {
+    // `song:changed` é emitido quando uma música COMEÇA a tocar (vira
+    // "current" no banco) — ela ainda não foi tocada, então NÃO deve entrar
+    // em "Últimas" aqui. Em vez de inserir a música recebida no evento,
+    // refazemos a busca no servidor: nesse momento o banco já rebaixou a
+    // música anterior para "played" (ver `setCurrent` em lib/queue.ts), que
+    // é a que de fato deve aparecer no topo de "Últimas".
     const onSongChanged = (song: {
-      id: number;
       title: string;
       artist: string;
-      cover?: string | null;
       genre?: string;
-      allowedInGeneral?: number;
-      playedAt?: number;
       playedOnMountpoint?: string;
     }) => {
       if (isJingleMetadata({ title: song.title, artist: song.artist })) {
@@ -59,24 +61,17 @@ export default function Last({ data }: { data: LatestEntry[] }) {
       }
 
       // Filtrar pelo mountpoint onde a música foi TOCADA
-      // playedOnMountpoint indica em qual mountpoint a música foi tocada
       const mountpoint = song.playedOnMountpoint || song.genre || "geral";
-
       if (mountpoint !== currentGenre) {
         return;
       }
 
-      const now = Date.now();
-      const entry: LatestEntry = {
-        historyId: now,
-        id: song.id,
-        title: song.title,
-        artist: song.artist,
-        cover: song.cover || null,
-        playedAt: song.playedAt || now,
-      };
-
-      setLatest((prev) => [entry, ...prev].slice(0, 10));
+      fetch(`/api/songs/last?genre=${currentGenre}`)
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => {
+          if (data) setLatest(data);
+        })
+        .catch((err) => console.warn("Erro ao buscar últimas músicas:", err));
     };
 
     socket.on("song:changed", onSongChanged);
