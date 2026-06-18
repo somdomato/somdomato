@@ -6,7 +6,7 @@ import {
   uniqueIndex,
 } from "drizzle-orm/sqlite-core";
 import { relations, sql } from "drizzle-orm";
-import { DEFAULT_COVER } from "@/lib/cover-constants";
+import { DEFAULT_COVER } from "../lib/cover-constants.ts";
 
 export const users = sqliteTable("users", {
   id: int().primaryKey({ autoIncrement: true }),
