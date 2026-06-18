@@ -299,8 +299,8 @@ export default function Player({
       {/* Cover Image */}
       <div
         className={`shrink-0 relative overflow-hidden ${hideExtras
-            ? "w-11 h-11 rounded-lg"
-            : "w-9 h-9 sm:w-10 sm:h-10 rounded-md"
+          ? "w-11 h-11 rounded-lg"
+          : "w-9 h-9 sm:w-10 sm:h-10 rounded-md"
           }`}
       >
         <CoverImage
@@ -359,12 +359,12 @@ export default function Player({
             </span>
             {listeners.current > 0 && (
               <div className="relative w-fit">
-                <p className="peer"><Users size={8} /> {listeners.current}</p>
+                <div className="peer flex items-center gap-1 text-xs"><Users size={8} /> {listeners.current}</div>
                 <span
-                  className="top-full -translate-y-1.5 left-1/2 absolute
-                    text-stone-50 text-xs bg-stone-800 opacity-0 px-2 py-1 rounded-md w-max
-                    -translate-y-0.5 peer-hover:-translate-y-0.5 peer-hover:opacity-100 transition-all"
-                  >
+                  className="top-full -translate-y-1.5 peer-hover:-translate-y-0.5 left-1/2 -translate-x-1/2
+                    absolute text-stone-50 text-xs bg-stone-800 opacity-0 px-2 py-1 rounded-md w-max
+                    peer-hover:opacity-100 transition-all"
+                >
                   Ouvintes: {listeners.current} Pico: {listeners.peak}
                 </span>
               </div>
@@ -432,8 +432,8 @@ export default function Player({
                       <Radio
                         size={11}
                         className={`shrink-0 ${currentGenre === genre.value
-                            ? "text-primary"
-                            : "text-white/30"
+                          ? "text-primary"
+                          : "text-white/30"
                           }`}
                       />
                       <span>{genre.label}</span>
