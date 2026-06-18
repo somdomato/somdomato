@@ -9,8 +9,9 @@ import {
   Volume2,
   VolumeX,
   Radio,
-  Users,
   Share2,
+  TrendingUp,
+  UsersRound
 } from "lucide-react";
 import { SiWhatsapp, SiX, SiFacebook } from "@icons-pack/react-simple-icons";
 import { useAudio } from "@/context/AudioContext";
@@ -282,10 +283,10 @@ export default function Player({
 
   const shareLinks = shareText
     ? {
-      whatsapp: `https://api.whatsapp.com/send?text=${encodeURIComponent(shareText)}`,
-      x: `https://x.com/intent/tweet?text=${encodeURIComponent(shareText)}`,
-      facebook: `https://www.facebook.com/sharer/sharer.php?quote=${encodeURIComponent(shareText)}&u=${encodeURIComponent("https://somdomato.com")}`,
-    }
+        whatsapp: `https://api.whatsapp.com/send?text=${encodeURIComponent(shareText)}`,
+        x: `https://x.com/intent/tweet?text=${encodeURIComponent(shareText)}`,
+        facebook: `https://www.facebook.com/sharer/sharer.php?quote=${encodeURIComponent(shareText)}&u=${encodeURIComponent("https://somdomato.com")}`,
+      }
     : null;
 
   return (
@@ -298,10 +299,11 @@ export default function Player({
     >
       {/* Cover Image */}
       <div
-        className={`shrink-0 relative overflow-hidden ${hideExtras
-          ? "w-11 h-11 rounded-lg"
-          : "w-9 h-9 sm:w-10 sm:h-10 rounded-md"
-          }`}
+        className={`shrink-0 relative overflow-hidden ${
+          hideExtras
+            ? "w-11 h-11 rounded-lg"
+            : "w-9 h-9 sm:w-10 sm:h-10 rounded-md"
+        }`}
       >
         <CoverImage
           src={cover}
@@ -359,22 +361,19 @@ export default function Player({
             </span>
             {listeners.current > 0 && (
               <div className="relative w-fit">
-                <div className="peer flex items-center gap-1 text-xs"><Users size={8} /> {listeners.current}</div>
+                <div className="peer flex items-center gap-1 text-[0.8em] cursor-pointer">
+                  <UsersRound size={8} className="text-white/50" /> {listeners.current}
+                  <TrendingUp size={8} className="text-white/50" /> {listeners.peak}
+                </div>
                 <span
-                  className="top-full -translate-y-1.5 peer-hover:-translate-y-0.5 left-1/2 -translate-x-1/2
-                    absolute text-stone-50 text-xs bg-stone-800 opacity-0 px-2 py-1 rounded-md w-max
-                    peer-hover:opacity-100 transition-all"
+                  className="bottom-full -translate-y-0.5 peer-hover:-translate-y-1.5
+                    absolute w-max left-1/2 -translate-x-1/2
+                    text-stone-50 text-sm bg-stone-800 opacity-0 p-2
+                    peer-hover:opacity-100 transition-all rounded-md"
                 >
                   Ouvintes: {listeners.current} Pico: {listeners.peak}
                 </span>
               </div>
-              // <span
-              //   className="flex items-center gap-0.5 text-[9px] text-white/35 leading-none"
-              //   title={`Pico: ${listeners.peak}`}
-              // >
-              //   <Users size={8} />
-              //   {listeners.current}
-              // </span>
             )}
           </div>
         )}
@@ -431,10 +430,11 @@ export default function Player({
                     >
                       <Radio
                         size={11}
-                        className={`shrink-0 ${currentGenre === genre.value
-                          ? "text-primary"
-                          : "text-white/30"
-                          }`}
+                        className={`shrink-0 ${
+                          currentGenre === genre.value
+                            ? "text-primary"
+                            : "text-white/30"
+                        }`}
                       />
                       <span>{genre.label}</span>
                       {/* {currentGenre === genre.value && (

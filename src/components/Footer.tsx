@@ -1,5 +1,7 @@
 import Link from "next/link";
 import {
+  SiWhatsapp,
+  SiTelegram,
   SiFacebook,
   SiX,
   SiInstagram,
@@ -9,17 +11,29 @@ import {
 export default function Footer() {
   return (
     <footer className="flex flex-col items-center bg-background shadow-t-md border-t-2 border-black/50 p-4 text-center text-sm md:text-base">
-      <div className="flex gap-2 mb-2">
+      <div className="flex gap-2.5 mb-2">
         <Link href="https://facebook.somdomato.com" target="_blank">
           <SiFacebook
             size="20"
             className="text-white/80 hover:text-[#1877f2] transitions-colors duration-450"
           />
         </Link>
+        <Link href="https://whatsapp.somdomato.com" target="_blank">
+          <SiWhatsapp
+            size="20"
+            className="text-white/80 hover:text-[#25D366] transitions-colors duration-450"
+          />
+        </Link>
+        <Link href="https://telegram.somdomato.com" target="_blank">
+          <SiTelegram
+            size="20"
+            className="text-white/80 hover:text-[#0088cc] transitions-colors duration-450"
+          />
+        </Link>
         <Link href="https://x.somdomato.com" target="_blank">
           <SiX
             size="20"
-            className="text-white/80 hover:text-[#1da1f2] transitions-colors duration-450"
+            className="text-white/80 hover:text-[#000000] transitions-colors duration-450"
           />
         </Link>
         <Link href="https://instagram.somdomato.com" target="_blank">
