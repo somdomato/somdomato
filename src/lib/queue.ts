@@ -196,9 +196,13 @@ export async function popNext(genre: string): Promise<QueueEntry | undefined> {
  * Não faz nada se a fila já tiver QUEUE_SIZE ou mais itens.
  */
 export async function ensureQueue(genre: string): Promise<void> {
-  if (genre === "geral") {
-    await syncRequestsInQueue("geral");
-  }
+  // NÃO chamar syncRequestsInQueue aqui: ensureQueue é invocada a cada poll
+  // do Liquidsoap e a cada refetch de "Próximas" — rebuildar o bloco de
+  // pedidos nessa frequência cria uma janela onde leitores concorrentes
+  // (getQueue/nextSongs) veem a fila de pedidos vazia ou duplicada no meio
+  // do delete+insert. A sincronização já acontece nos pontos de mutação de
+  // `requests` (requestSong, addRequest, deleteRequest, reorderRequests,
+  // removeMissingSong) e na inicialização do servidor (src/server.ts).
 
   const scheduled = await db
     .select({ id: queueEntries.id, songId: queueEntries.songId })
@@ -266,58 +270,65 @@ export async function ensureQueue(genre: string): Promise<void> {
 export async function syncRequestsInQueue(genre: string): Promise<void> {
   if (genre !== "geral") return;
 
-  // Remove o bloco de pedidos "scheduled" anterior — será reconstruído.
-  await db
-    .delete(queueEntries)
-    .where(
-      and(
-        eq(queueEntries.genre, genre),
-        eq(queueEntries.status, "scheduled"),
-        eq(queueEntries.source, "request"),
-      ),
-    );
+  // Tudo dentro de uma única transação: sem isso, leitores concorrentes
+  // (getQueue/nextSongs/popNext) podiam ver a fila de pedidos momentaneamente
+  // vazia entre o DELETE e os INSERTs, ou duplicada se duas chamadas
+  // rodassem entrelaçadas — essa era a causa de pedidos "desaparecendo" e
+  // músicas saindo de ordem.
+  await db.transaction(async (tx) => {
+    // Remove o bloco de pedidos "scheduled" anterior — será reconstruído.
+    await tx
+      .delete(queueEntries)
+      .where(
+        and(
+          eq(queueEntries.genre, genre),
+          eq(queueEntries.status, "scheduled"),
+          eq(queueEntries.source, "request"),
+        ),
+      );
 
-  const pending = await db
-    .select({
-      requestId: requests.id,
-      songId: songs.id,
-      requestedAt: requests.createdAt,
-    })
-    .from(requests)
-    .innerJoin(songs, eq(requests.songId, songs.id))
-    .orderBy(asc(requests.order), asc(requests.createdAt));
+    const pending = await tx
+      .select({
+        requestId: requests.id,
+        songId: songs.id,
+        requestedAt: requests.createdAt,
+      })
+      .from(requests)
+      .innerJoin(songs, eq(requests.songId, songs.id))
+      .orderBy(asc(requests.order), asc(requests.createdAt));
 
-  if (pending.length === 0) return;
+    if (pending.length === 0) return;
 
-  // Pedidos sempre ocupam posições negativas — sempre antes de qualquer
-  // linha "scheduled" do AutoDJ (posições >= 0).
-  const total = pending.length;
-  for (let i = 0; i < total; i++) {
-    const r = pending[i];
-    await db.insert(queueEntries).values({
-      genre,
-      songId: r.songId,
-      status: "scheduled",
-      source: "request",
-      requestId: r.requestId,
-      requestedAt: r.requestedAt,
-      position: -(total - i),
-    });
-  }
+    // Pedidos sempre ocupam posições negativas — sempre antes de qualquer
+    // linha "scheduled" do AutoDJ (posições >= 0).
+    const total = pending.length;
+    for (let i = 0; i < total; i++) {
+      const r = pending[i];
+      await tx.insert(queueEntries).values({
+        genre,
+        songId: r.songId,
+        status: "scheduled",
+        source: "request",
+        requestId: r.requestId,
+        requestedAt: r.requestedAt,
+        position: -(total - i),
+      });
+    }
 
-  // Pedido tem prioridade sobre AutoDJ: remove duplicatas AutoDJ "scheduled"
-  // da mesma música.
-  const requestSongIds = pending.map((p) => p.songId);
-  await db
-    .delete(queueEntries)
-    .where(
-      and(
-        eq(queueEntries.genre, genre),
-        eq(queueEntries.status, "scheduled"),
-        eq(queueEntries.source, "autodj"),
-        inArray(queueEntries.songId, requestSongIds),
-      ),
-    );
+    // Pedido tem prioridade sobre AutoDJ: remove duplicatas AutoDJ "scheduled"
+    // da mesma música.
+    const requestSongIds = pending.map((p) => p.songId);
+    await tx
+      .delete(queueEntries)
+      .where(
+        and(
+          eq(queueEntries.genre, genre),
+          eq(queueEntries.status, "scheduled"),
+          eq(queueEntries.source, "autodj"),
+          inArray(queueEntries.songId, requestSongIds),
+        ),
+      );
+  });
 }
 
 /**
