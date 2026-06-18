@@ -518,72 +518,35 @@ async function fetchGenrePool(
 }
 
 /**
- * Aplica as proteções de repetição a um pool, com 3 níveis de rigor:
- * - "none": respeita histórico de músicas e artistas recentes (padrão).
- * - "artists": ignora a proteção de artista recente.
- * - "all": ignora toda proteção de repetição (mantém apenas timeSlot/gênero
- *   e `excludeIds`, que evita duplicar a fila atual/última música servida).
+ * Aplica as proteções de repetição a um pool. As travas (música recente no
+ * histórico, artista recente, `excludeIds`) NUNCA são ignoradas pelo
+ * AutoDJ — só um admin tocando uma música manualmente (`/api/admin/play`)
+ * pode pular essas proteções. Se o catálogo for pequeno demais para
+ * respeitar as travas, o resultado é uma fila parcialmente preenchida (ver
+ * `pickAutoDjCandidates`), nunca uma repetição silenciosa.
  */
 function applyProtections(
   availableSongs: SongRow[],
   blockedData: { songIds: number[]; artists: string[] },
   excludeIds: Set<number>,
-  relax: "none" | "artists" | "all",
 ): SongRow[] {
   return availableSongs.filter((song) => {
     if (excludeIds.has(song.id)) return false;
-    if (relax === "all") return true;
     if (blockedData.songIds.includes(song.id)) return false;
-    if (relax === "artists") return true;
     return !blockedData.artists.includes(song.artist);
   });
 }
 
 /**
- * Tenta preencher `needed` vagas para um pool já buscado, subindo a escada de
- * relaxamento de proteções (none -> artists -> all) só até onde for
- * necessário.
- */
-function relaxUntilEnough(
-  availableSongs: SongRow[],
-  blockedData: { songIds: number[]; artists: string[] },
-  excludeIds: Set<number>,
-  needed: number,
-): SongRow[] {
-  let pool = applyProtections(availableSongs, blockedData, excludeIds, "none");
-  if (pool.length >= needed) return pool;
-
-  const relaxedArtists = applyProtections(
-    availableSongs,
-    blockedData,
-    excludeIds,
-    "artists",
-  );
-  if (relaxedArtists.length > pool.length) pool = relaxedArtists;
-  if (pool.length >= needed) return pool;
-
-  const relaxedAll = applyProtections(
-    availableSongs,
-    blockedData,
-    excludeIds,
-    "all",
-  );
-  if (relaxedAll.length > pool.length) pool = relaxedAll;
-
-  return pool;
-}
-
-/**
- * Busca o pool de músicas disponíveis para o gênero, relaxando
- * progressivamente as restrições quando a biblioteca é pequena demais para
- * preencher `needed` vagas — sem isso, a fila (e o bloco "Próximas") fica
- * permanentemente abaixo de QUEUE_SIZE. Ordem de relaxamento:
- * 1. Gênero + horário atual, com proteções de histórico/artista.
- * 2. Mesmo pool, relaxando as proteções (artista recente, depois histórico).
- * 3. Ignora o filtro de horário (último recurso: tocar fora do horário ideal
- *    é melhor do que a fila ficar incompleta).
- * 4. Repete os passos acima caindo para o pool do "geral", se o gênero
- *    específico ainda não tiver candidatos suficientes.
+ * Busca o pool de músicas disponíveis para o gênero SEM nunca relaxar as
+ * proteções de repetição (música recente / artista recente). A única coisa
+ * que se amplia quando o catálogo é pequeno demais é o filtro de horário
+ * (timeSlot) e, por fim, cair para o pool do "geral" — nenhuma dessas duas
+ * ampliações afeta a garantia de não-repetição.
+ *
+ * Se mesmo assim não houver candidatos suficientes para preencher `needed`
+ * vagas, retorna o que for possível (a fila fica parcialmente preenchida) e
+ * registra um aviso — sinal de que o catálogo do gênero precisa crescer.
  */
 async function pickAutoDjCandidates(
   genre: string,
@@ -592,22 +555,20 @@ async function pickAutoDjCandidates(
 ): Promise<SongRow[]> {
   const tryGenre = async (g: string): Promise<SongRow[]> => {
     const inSlot = await fetchGenrePool(g, false);
-    let pool = relaxUntilEnough(
+    let pool = applyProtections(
       inSlot.availableSongs,
       inSlot.blockedData,
       excludeIds,
-      needed,
     );
     if (pool.length >= needed) return pool;
 
     const anySlot = await fetchGenrePool(g, true);
-    const relaxed = relaxUntilEnough(
+    const relaxedTimeSlot = applyProtections(
       anySlot.availableSongs,
       anySlot.blockedData,
       excludeIds,
-      needed,
     );
-    if (relaxed.length > pool.length) pool = relaxed;
+    if (relaxedTimeSlot.length > pool.length) pool = relaxedTimeSlot;
 
     return pool;
   };
@@ -615,11 +576,19 @@ async function pickAutoDjCandidates(
   let pool = await tryGenre(genre);
 
   // Gêneros com poucas músicas (ex: 1 única em "modao") podem ficar sem
-  // candidatos suficientes mesmo sem nenhuma proteção — cai para o pool do
-  // "geral" também, repetindo a mesma escada de relaxamento.
+  // candidatos suficientes mesmo respeitando as travas — cai para o pool do
+  // "geral" também (sem relaxar proteções).
   if (pool.length < needed && genre !== "geral") {
     const generalPool = await tryGenre("geral");
     if (generalPool.length > pool.length) pool = generalPool;
+  }
+
+  if (pool.length < needed) {
+    console.warn(
+      `[queue] [${genre}] Catálogo insuficiente para preencher a fila sem repetir música/artista recente ` +
+        `(${pool.length}/${needed} candidatos disponíveis). A fila ficará parcialmente preenchida até o ` +
+        `histórico liberar mais opções — considere adicionar mais músicas a este gênero.`,
+    );
   }
 
   return pool;
