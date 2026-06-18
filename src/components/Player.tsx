@@ -11,7 +11,7 @@ import {
   Radio,
   Share2,
   TrendingUp,
-  UsersRound
+  UsersRound,
 } from "lucide-react";
 import { SiWhatsapp, SiX, SiFacebook } from "@icons-pack/react-simple-icons";
 import { useAudio } from "@/context/AudioContext";
@@ -361,9 +361,11 @@ export default function Player({
             </span>
             {listeners.current > 0 && (
               <div className="relative w-fit">
-                <div className="peer flex items-center gap-1 text-[0.8em] cursor-pointer">
-                  <UsersRound size={8} className="text-white/50" /> {listeners.current}
-                  <TrendingUp size={8} className="text-white/50" /> {listeners.peak}
+                <div className="peer flex items-center gap-1 text-[0.6em] cursor-pointer">
+                  <UsersRound size={8} className="text-white/50" />{" "}
+                  {listeners.current}
+                  <TrendingUp size={8} className="text-white/50" />{" "}
+                  {listeners.peak}
                 </div>
                 <span
                   className="bottom-full -translate-y-0.5 peer-hover:-translate-y-1.5
