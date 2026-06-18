@@ -1,5 +1,5 @@
 import ChatEmbed from "@/components/ChatEmbed";
-import Featured from "@/components/Featured";
+//import Featured from "@/components/Featured";
 //import Carousel from "@/components/Carousel";
 import LastSongs from "@/components/blocks/Last";
 import TopSongs from "@/components/blocks/Top";
@@ -26,20 +26,11 @@ export default async function Home() {
       </section>*/}
 
       {/* Destaque: info + CTAs */}
-      <section className="w-full">
+      {/* <section className="w-full">
         <Featured />
-      </section>
+      </section> */}
 
-      {/* Conteúdo principal: últimas, top e próximas */}
-      <section className="w-full">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <LastSongs data={last} />
-          <TopSongs data={top} />
-          <NextSongs data={next} />
-        </div>
-      </section>
-
-      {/* Chat + Estatísticas lado a lado */}
+      {/* Chat */}
       <section className="w-full">
         <div className="bg-background-alt border-2 border-primary/20 rounded-xl pt-4 pb-0 md:pt-4 md:pb-4 h-full flex flex-col">
           <div className="px-2 md:px-4 h-full flex flex-col">
@@ -64,6 +55,15 @@ export default async function Home() {
           <div className="px-0 md:px-4 h-full flex flex-col">
             <ChatEmbed />
           </div>
+        </div>
+      </section>
+
+      {/* Conteúdo principal: últimas, top e próximas */}
+      <section className="w-full">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <LastSongs data={last} />
+          <TopSongs data={top} />
+          <NextSongs data={next} />
         </div>
       </section>
     </div>

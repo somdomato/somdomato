@@ -8,7 +8,7 @@ import Footer from "@/components/Footer";
 import PageTracker from "@/components/PageTracker";
 import BackToTop from "@/components/BackToTop";
 import type { Metadata } from "next";
-import "./globals.css";
+import "../styles/main.css";
 
 const nunito = Nunito({ subsets: ["latin"], preload: false });
 
