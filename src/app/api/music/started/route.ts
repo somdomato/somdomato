@@ -1,10 +1,7 @@
-import { db } from "@/db";
-import { eq } from "drizzle-orm";
-import { songs } from "@/db/schema";
 import { isLocalRequest } from "@/lib/localhost";
 import { setCurrent } from "@/lib/queue";
-
-const DEFAULT_COVER = "/images/logotipo.svg";
+import { DEFAULT_COVER } from "@/lib/cover-constants";
+import { resolveAndPersistCover } from "@/lib/cover";
 
 /**
  * Called by Liquidsoap's on_track callback when a song actually starts playing.
@@ -79,7 +76,9 @@ export async function POST(request: Request) {
 
 /**
  * Resolve a capa da música de forma assíncrona e atualiza o banco.
- * Emite `song:cover` via socket para que os clientes atualizem sem reload.
+ * `resolveAndPersistCover` já é idempotente em relação a corridas (não
+ * sobrescreve uma capa já definida por outra chamada) e emite `song:cover`
+ * via socket para que os clientes atualizem sem reload.
  */
 async function triggerCoverResolution(
   songId: number,
@@ -87,26 +86,5 @@ async function triggerCoverResolution(
   artist: string,
   title: string,
 ): Promise<void> {
-  const { resolveSongCover, verifyCoverOnDisk } = await import("@/lib/cover");
-
-  const coverUrl = await resolveSongCover({ mp3Path, artist, title });
-  // Verificar se o arquivo realmente existe no disco antes de salvar
-  const verified = coverUrl ? await verifyCoverOnDisk(coverUrl) : null;
-  const cover = verified ?? DEFAULT_COVER;
-
-  // Verificar novamente antes de salvar: outra instância pode ter resolvido
-  const [current] = await db
-    .select({ cover: songs.cover })
-    .from(songs)
-    .where(eq(songs.id, songId))
-    .limit(1);
-
-  if (current?.cover && current.cover !== DEFAULT_COVER) return;
-
-  await db.update(songs).set({ cover }).where(eq(songs.id, songId));
-
-  // Notificar clientes sobre a nova capa via socket
-  if (global.io && verified) {
-    global.io.emit("song:cover", { songId, cover });
-  }
+  await resolveAndPersistCover({ songId, mp3Path, artist, title });
 }

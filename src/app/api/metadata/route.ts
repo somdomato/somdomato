@@ -6,6 +6,7 @@ import { songs } from "@/db/schema";
 import { and, eq } from "drizzle-orm";
 import { getLiveState, setLive } from "@/lib/live";
 import { isJingleMetadata } from "@/lib/song-visibility";
+import { DEFAULT_COVER } from "@/lib/cover-constants";
 
 interface IcecastSource {
   listenurl: string;
@@ -167,7 +168,7 @@ export async function GET(request: NextRequest) {
           .limit(1);
         if (match) {
           id = match.id;
-          if (match.cover && match.cover !== "/images/logotipo.svg") {
+          if (match.cover && match.cover !== DEFAULT_COVER) {
             cover = match.cover;
           }
         }

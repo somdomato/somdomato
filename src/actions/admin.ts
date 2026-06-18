@@ -11,6 +11,7 @@ import { normalizeString } from "@/db/utils";
 import { ADMIN_ROLES, type Permission, type Role } from "@/lib/permissions";
 import { logAction } from "@/lib/logging";
 import { syncRequestsInQueue } from "@/lib/queue";
+import { DEFAULT_COVER } from "@/lib/cover-constants";
 
 // Tipos
 export type RotationType =
@@ -325,7 +326,7 @@ export async function updateSong(
 
   // Se solicitarem reset da capa, incluir no objeto de atualização para evitar set vazio
   if (data.resetCover) {
-    updateFields.cover = "/images/logotipo.svg";
+    updateFields.cover = DEFAULT_COVER;
   }
 
   if (Object.keys(updateFields).length > 0) {
@@ -338,7 +339,7 @@ export async function updateSong(
       // Garantir DB com capa padrão (já setado acima, mas confirmar)
       await db
         .update(songs)
-        .set({ cover: "/images/logotipo.svg" })
+        .set({ cover: DEFAULT_COVER })
         .where(eq(songs.id, id));
 
       // Remover imagem embutida no ID3 preservando as demais tags
@@ -364,8 +365,7 @@ export async function updateSong(
       const {
         resolveSongCover,
         validateCoverForDb,
-        coverPublicPath,
-        checkExistingCover,
+        migrateCoverForArtistRename,
       } = await import("@/lib/cover");
 
       const artistName = (data.artist as string) ?? song.artist;
@@ -373,40 +373,25 @@ export async function updateSong(
       // Se o artista mudou, migrar/copiar o arquivo de capa para o novo slug
       let coverHandled = false;
       if (data.artist && data.artist !== song.artist) {
-        const { existsSync } = await import("node:fs");
-        const { copyFile } = await import("node:fs/promises");
-        const oldCoverPath = coverPublicPath(song.artist);
-        const newCoverPath = coverPublicPath(data.artist);
-        if (existsSync(oldCoverPath) && !existsSync(newCoverPath)) {
-          try {
-            // Verificar se outras músicas ainda usam o artista antigo
-            const othersWithOldArtist = await db
-              .select({ id: songs.id })
-              .from(songs)
-              .where(eq(songs.artist, song.artist))
-              .limit(2);
-            const othersExist = othersWithOldArtist.some((s) => s.id !== id);
-            if (othersExist) {
-              await copyFile(oldCoverPath, newCoverPath);
-            } else {
-              const { rename } = await import("node:fs/promises");
-              await rename(oldCoverPath, newCoverPath);
-            }
-          } catch (e) {
-            console.warn("[cover] Erro ao migrar capa para novo artista:", e);
-          }
-        }
-        // Atualizar cover para o novo slug se a capa existe
-        const newCoverUrl = await checkExistingCover(data.artist);
-        if (newCoverUrl) {
-          const verified = await validateCoverForDb(newCoverUrl);
-          if (verified) {
-            await db
-              .update(songs)
-              .set({ cover: verified })
-              .where(eq(songs.id, id));
-            coverHandled = true;
-          }
+        // Verificar se outras músicas ainda usam o artista antigo
+        const othersWithOldArtist = await db
+          .select({ id: songs.id })
+          .from(songs)
+          .where(eq(songs.artist, song.artist))
+          .limit(2);
+        const othersExist = othersWithOldArtist.some((s) => s.id !== id);
+
+        const migrated = await migrateCoverForArtistRename(
+          song.artist,
+          data.artist,
+          othersExist,
+        );
+        if (migrated) {
+          await db
+            .update(songs)
+            .set({ cover: migrated })
+            .where(eq(songs.id, id));
+          coverHandled = true;
         }
       }
 
@@ -512,24 +497,18 @@ export async function recoverSongCover(id: number) {
   const song = await db.select().from(songs).where(eq(songs.id, id)).get();
   if (!song) throw new Error("Música não encontrada");
 
-  const { resolveSongCover, validateCoverForDb } = await import("@/lib/cover");
+  const { resolveAndPersistCover } = await import("@/lib/cover");
 
-  const resolved = await resolveSongCover({
+  const { cover, resolved } = await resolveAndPersistCover({
+    songId: id,
     mp3Path: song.path,
     artist: song.artist,
     title: song.title,
+    force: true,
   });
-  const verified = await validateCoverForDb(resolved);
-  const cover = verified ?? "/images/logotipo.svg";
-
-  await db.update(songs).set({ cover }).where(eq(songs.id, id));
-
-  if (global.io) {
-    global.io.emit("song:cover", { songId: id, cover });
-  }
 
   revalidatePath("/admin");
-  return { cover, recovered: !!verified };
+  return { cover, recovered: resolved };
 }
 
 // ===== ACTIONS DE PEDIDOS =====

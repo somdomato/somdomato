@@ -1,7 +1,21 @@
-import { writeFile, mkdir, stat, unlink, readFile } from "node:fs/promises";
+import {
+  writeFile,
+  mkdir,
+  stat,
+  unlink,
+  readFile,
+  copyFile,
+  rename,
+} from "node:fs/promises";
 import { existsSync } from "node:fs";
 import path from "node:path";
 import NodeID3 from "node-id3";
+import { db } from "@/db";
+import { eq } from "drizzle-orm";
+import { songs } from "@/db/schema";
+import { DEFAULT_COVER } from "./cover-constants";
+
+export { DEFAULT_COVER };
 
 /** Verifica magic bytes de JPEG/PNG. */
 function isValidImageBuffer(buffer: Buffer): boolean {
@@ -81,7 +95,7 @@ export async function verifyCoverOnDisk(
   coverUrl: string,
   publicDir = path.join(process.cwd(), "public"),
 ): Promise<string | null> {
-  if (!coverUrl || coverUrl === "/images/logotipo.svg") return null;
+  if (!coverUrl || coverUrl === DEFAULT_COVER) return null;
   const filePath = path.join(publicDir, coverUrl.replace(/^\/+/, ""));
   if (!existsSync(filePath)) return null;
   try {
@@ -330,7 +344,7 @@ export async function resolveSongCover(opts: {
 export async function validateCoverForDb(
   coverUrl: string | null | undefined,
 ): Promise<string | null> {
-  if (!coverUrl || coverUrl === "/images/logotipo.svg") return null;
+  if (!coverUrl || coverUrl === DEFAULT_COVER) return null;
   return verifyCoverOnDisk(coverUrl);
 }
 
@@ -354,4 +368,94 @@ export async function deleteArtistCover(
   } catch (e) {
     console.warn(`[cover] Não foi possível remover ${filePath}:`, e);
   }
+}
+
+// ---------------------------------------------------------------------------
+// Resolução + persistência centralizada (gate único de escrita no banco)
+// ---------------------------------------------------------------------------
+
+/**
+ * Resolve a capa de uma música (pipeline completo de `resolveSongCover`) e
+ * grava o resultado na tabela `songs`, emitindo `song:cover` via socket.
+ *
+ * Por padrão (`force: false`) é idempotente em relação a corridas: se a capa
+ * atual no banco já não for o placeholder, assume que outra chamada (ou um
+ * admin) já resolveu/definiu a capa e não sobrescreve. Use `force: true`
+ * quando o usuário pediu explicitamente uma nova busca (botão "Recuperar
+ * capa" no admin).
+ */
+export async function resolveAndPersistCover(opts: {
+  songId: number;
+  mp3Path: string;
+  artist: string;
+  title: string;
+  fallbackUrl?: string;
+  force?: boolean;
+}): Promise<{ cover: string; resolved: boolean }> {
+  const { songId, mp3Path, artist, title, fallbackUrl, force = false } = opts;
+
+  if (!force) {
+    const [current] = await db
+      .select({ cover: songs.cover })
+      .from(songs)
+      .where(eq(songs.id, songId))
+      .limit(1);
+    if (current?.cover && current.cover !== DEFAULT_COVER) {
+      return { cover: current.cover, resolved: true };
+    }
+  }
+
+  const resolved = await resolveSongCover({
+    mp3Path,
+    artist,
+    title,
+    fallbackUrl,
+  });
+  const verified = await validateCoverForDb(resolved);
+  const cover = verified ?? DEFAULT_COVER;
+
+  await db.update(songs).set({ cover }).where(eq(songs.id, songId));
+
+  if (global.io) {
+    global.io.emit("song:cover", { songId, cover });
+  }
+
+  return { cover, resolved: !!verified };
+}
+
+// ---------------------------------------------------------------------------
+// Migração de capa ao renomear artista
+// ---------------------------------------------------------------------------
+
+/**
+ * Move (ou copia, se outras músicas ainda usam o artista antigo) o arquivo
+ * de capa do slug antigo para o novo slug, ao renomear o artista de uma
+ * música no admin. Retorna a URL verificada da nova capa, ou `null` se não
+ * havia capa para migrar ou a migração falhou.
+ */
+export async function migrateCoverForArtistRename(
+  oldArtist: string,
+  newArtist: string,
+  oldArtistHasOtherSongs: boolean,
+): Promise<string | null> {
+  const oldCoverPath = coverPublicPath(oldArtist);
+  const newCoverPath = coverPublicPath(newArtist);
+
+  if (!existsSync(oldCoverPath) || existsSync(newCoverPath)) {
+    return checkExistingCover(newArtist);
+  }
+
+  try {
+    if (oldArtistHasOtherSongs) {
+      await copyFile(oldCoverPath, newCoverPath);
+    } else {
+      await rename(oldCoverPath, newCoverPath);
+    }
+  } catch (e) {
+    console.warn("[cover] Erro ao migrar capa para novo artista:", e);
+    return null;
+  }
+
+  const newCoverUrl = await checkExistingCover(newArtist);
+  return validateCoverForDb(newCoverUrl);
 }

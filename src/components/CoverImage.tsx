@@ -2,8 +2,9 @@
 
 import Image, { type ImageProps } from "next/image";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { DEFAULT_COVER } from "@/lib/cover-constants";
 
-const DEFAULT_FALLBACK = "/images/logotipo.svg";
+const DEFAULT_FALLBACK = DEFAULT_COVER;
 const LOAD_TIMEOUT_MS = 8000;
 
 /**

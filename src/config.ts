@@ -1,3 +1,5 @@
+import { DEFAULT_COVER } from "@/lib/cover-constants";
+
 // =============================================================================
 // RADIO CONFIGURATION
 // =============================================================================
@@ -32,7 +34,7 @@ export const DEFAULT_GENRE: Genre = "geral";
 export const DEFAULT_SONG = {
   title: "Rádio Som do Mato",
   artist: "A mais sertaneja",
-  cover: "/images/logotipo.svg",
+  cover: DEFAULT_COVER,
 } as const;
 
 // =============================================================================

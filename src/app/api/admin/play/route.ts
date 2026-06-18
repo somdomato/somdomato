@@ -3,6 +3,7 @@ import { songs } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import fs from "node:fs/promises";
 import { resolveSongCover, validateCoverForDb } from "@/lib/cover";
+import { DEFAULT_COVER } from "@/lib/cover-constants";
 import { setCurrent } from "@/lib/queue";
 
 export async function POST(request: Request) {
@@ -55,7 +56,7 @@ export async function POST(request: Request) {
             .set({ cover: verified })
             .where(eq(songs.id, s.id));
         }
-        resolvedCover = verified;
+        resolvedCover = verified ?? DEFAULT_COVER;
       } else {
         resolvedCover = valid;
       }

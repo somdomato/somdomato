@@ -6,6 +6,7 @@ import {
   uniqueIndex,
 } from "drizzle-orm/sqlite-core";
 import { relations, sql } from "drizzle-orm";
+import { DEFAULT_COVER } from "@/lib/cover-constants";
 
 export const users = sqliteTable("users", {
   id: int().primaryKey({ autoIncrement: true }),
@@ -26,7 +27,7 @@ export const songs = sqliteTable("songs", {
   artist: text().notNull(),
   album: text(), // Álbum da música
   path: text().notNull().unique(),
-  cover: text().default("/images/logotipo.svg"), // URL da capa
+  cover: text().default(DEFAULT_COVER), // URL da capa
   timeSlots: int().default(15), // Sistema de bits: 0=nenhum, 1=madrugada, 2=manhã, 4=tarde, 8=noite, 15=todos
   rotation: text().default("normal"), // inativo, ultraleve, leve, normal, pesado, ultrapesada
   genre: text().default("geral"), // geral, gaucha, modao, arrocha, romantico

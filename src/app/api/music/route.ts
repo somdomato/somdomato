@@ -3,6 +3,7 @@ import { eq } from "drizzle-orm";
 import { songs, requests } from "@/db/schema";
 import { checkFileExists } from "@/lib/file";
 import { isLocalRequest } from "@/lib/localhost";
+import { DEFAULT_COVER } from "@/lib/cover-constants";
 import {
   ensureQueue,
   popNext,
@@ -49,7 +50,7 @@ export async function GET(request: Request) {
           title: jingle.title,
           artist: "Vinheta",
           path: jingle.path,
-          cover: "/images/logotipo.svg",
+          cover: DEFAULT_COVER,
           isJingle: true,
         });
       }
@@ -143,7 +144,7 @@ export async function GET(request: Request) {
             .where(eq(songs.id, selectedSong.id));
           selectedSong.cover = verified;
         } else {
-          selectedSong.cover = null;
+          selectedSong.cover = DEFAULT_COVER;
         }
       }
     } catch (err) {
@@ -161,7 +162,7 @@ export async function GET(request: Request) {
         id: stale.songId,
         title: stale.title,
         artist: stale.artist,
-        cover: stale.cover || "/images/logotipo.svg",
+        cover: stale.cover || DEFAULT_COVER,
         playedAt: stale.selectedAt,
         playedOnMountpoint: stale.genre,
         wasRequested: stale.wasRequested,
