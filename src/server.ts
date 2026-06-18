@@ -2,7 +2,6 @@ import { createServer } from "node:http";
 import next from "next";
 import { Server } from "socket.io";
 import { restorePendingAutoApprovals } from "./lib/upload.ts";
-import { syncRequestsInQueue } from "./lib/queue.ts";
 
 const dev = process.env.NODE_ENV !== "production";
 const hostname = dev ? "localhost" : "somdomato.com";
@@ -25,10 +24,4 @@ app.prepare().then(() => {
 
   // Restore any pending auto-approvals from before server restart
   restorePendingAutoApprovals();
-
-  // Garante que pedidos já existentes em `requests` (de antes do restart, ou
-  // ainda não sincronizados) estejam refletidos em `queue_entries`.
-  syncRequestsInQueue("geral").catch((err) =>
-    console.error("[startup] Erro ao sincronizar pedidos na fila:", err),
-  );
 });
