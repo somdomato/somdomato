@@ -1,5 +1,5 @@
 import { db } from "@/db";
-import { songs, history, requests } from "@/db/schema";
+import { songs, history, requests, queueEntries } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import fs from "node:fs/promises";
 import path from "node:path";
@@ -139,6 +139,7 @@ async function syncDatabase() {
 
       // Deletar dependências primeiro para evitar erro de foreign key
       try {
+        await db.delete(queueEntries).where(eq(queueEntries.songId, song.id));
         await db.delete(history).where(eq(history.songId, song.id));
         await db.delete(requests).where(eq(requests.songId, song.id));
         await db.delete(songs).where(eq(songs.id, song.id));

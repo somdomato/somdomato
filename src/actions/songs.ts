@@ -1,10 +1,9 @@
 "use server";
 
 import { db } from "@/db";
-import { songs, history } from "@/db/schema";
-import { eq, desc } from "drizzle-orm";
+import { songs, queueEntries } from "@/db/schema";
+import { and, eq, desc } from "drizzle-orm";
 import { ensureQueue, getQueue } from "@/lib/queue";
-import { getPendingSong } from "@/lib/prospection";
 import { isJingleMetadata } from "@/lib/song-visibility";
 
 type TopEntry = {
@@ -19,21 +18,26 @@ export async function lastSongs(genre?: string) {
   // Últimas 10 músicas do mountpoint especificado (padrão: "geral")
   const selectedGenre = genre || "geral";
 
-  // Filtrar pelo gênero (mountpoint) onde a música foi TOCADA (history.genre)
+  // status="played" exclui por construção a música "current" (status
+  // diferente) — não precisa de filtro manual para não mostrar a atual aqui.
   const latest = await db
     .select({
-      historyId: history.id,
+      historyId: queueEntries.id,
       id: songs.id,
       title: songs.title,
       artist: songs.artist,
       cover: songs.cover,
-      playedAt: history.createdAt,
-      historyGenre: history.genre,
+      playedAt: queueEntries.endedAt,
     })
-    .from(history)
-    .innerJoin(songs, eq(history.songId, songs.id))
-    .where(eq(history.genre, selectedGenre))
-    .orderBy(desc(history.id))
+    .from(queueEntries)
+    .innerJoin(songs, eq(queueEntries.songId, songs.id))
+    .where(
+      and(
+        eq(queueEntries.genre, selectedGenre),
+        eq(queueEntries.status, "played"),
+      ),
+    )
+    .orderBy(desc(queueEntries.id))
     .limit(30);
 
   return latest
@@ -50,7 +54,7 @@ export async function lastSongs(genre?: string) {
 }
 
 export async function topSongs() {
-  // Top 10 músicas mais PEDIDAS (apenas wasRequested=1, não conta AutoDJ)
+  // Top 10 músicas mais PEDIDAS (apenas pedidos efetivamente tocados, não conta AutoDJ)
   const requestedHistory = await db
     .select({
       id: songs.id,
@@ -58,9 +62,14 @@ export async function topSongs() {
       artist: songs.artist,
       cover: songs.cover,
     })
-    .from(history)
-    .innerJoin(songs, eq(history.songId, songs.id))
-    .where(eq(history.wasRequested, 1));
+    .from(queueEntries)
+    .innerJoin(songs, eq(queueEntries.songId, songs.id))
+    .where(
+      and(
+        eq(queueEntries.source, "request"),
+        eq(queueEntries.status, "played"),
+      ),
+    );
 
   const map = new Map<number, TopEntry>();
   for (const row of requestedHistory.filter(
@@ -95,7 +104,10 @@ export async function nextSongs(genre?: string) {
 
   await ensureQueue(selectedGenre);
 
-  const queueEntries = getQueue(selectedGenre)
+  // getQueue já inclui a música "pending" (servida ao Liquidsoap, aguardando
+  // confirmação via on_track) na primeira posição — ela só vira "current"
+  // (e some daqui) quando o on_track de fato confirmar.
+  const raw = (await getQueue(selectedGenre))
     .filter((e) => !isJingleMetadata({ title: e.title, artist: e.artist }))
     .map((e) => ({
       reqId: e.source === "request" ? (e.requestId as number) : null,
@@ -106,30 +118,6 @@ export async function nextSongs(genre?: string) {
       requestedAt: e.requestedAt ?? null,
       source: e.source,
     }));
-
-  // O Liquidsoap pré-busca a próxima música via /api/music antes da atual
-  // terminar, removendo-a da fila imediatamente (ver lib/queue.ts). Essa
-  // música "pendente" é, na prática, a próxima a tocar — incluí-la aqui
-  // evita que ela desapareça do bloco "Próximas" durante essa antecedência.
-  const pending = getPendingSong(selectedGenre);
-  const raw =
-    pending &&
-    !isJingleMetadata({ title: pending.title, artist: pending.artist })
-      ? [
-          {
-            reqId: pending.wasRequested ? (pending.requestId as number) : null,
-            id: pending.songId,
-            title: pending.title,
-            artist: pending.artist,
-            cover: pending.cover,
-            requestedAt: pending.requestedAt ?? null,
-            source: (pending.wasRequested ? "request" : "autodj") as
-              | "request"
-              | "autodj",
-          },
-          ...queueEntries,
-        ]
-      : queueEntries;
 
   // Assign unique reqIds: real requestId for request entries, position-based
   // negative index for autodj (song ids repeat, position does not).

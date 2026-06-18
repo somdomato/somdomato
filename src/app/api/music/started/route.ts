@@ -1,8 +1,8 @@
 import { db } from "@/db";
 import { eq } from "drizzle-orm";
-import { songs, history } from "@/db/schema";
+import { songs } from "@/db/schema";
 import { isLocalRequest } from "@/lib/localhost";
-import { consumePendingSong } from "@/lib/prospection";
+import { setCurrent } from "@/lib/queue";
 
 const DEFAULT_COVER = "/images/logotipo.svg";
 
@@ -29,57 +29,45 @@ export async function POST(request: Request) {
       );
     }
 
-    // Consumir o pending song — contém wasRequested authoritative do /api/music
-    const pending = consumePendingSong(genre);
-    const wasRequested =
-      pending && pending.songId === songId
-        ? pending.wasRequested
-        : wasRequestedParam;
+    // Promove a linha "pending" correspondente para "current" no banco —
+    // este é o momento real de reprodução. Rebaixa a "current" anterior
+    // (se houver) para "played" na mesma transação.
+    const confirmed = await setCurrent({
+      genre,
+      songId,
+      wasRequestedFallback: wasRequestedParam,
+    });
 
-    const [song] = await db
-      .select()
-      .from(songs)
-      .where(eq(songs.id, songId))
-      .limit(1);
-
-    if (!song) {
+    if (!confirmed) {
       return Response.json({ error: "Song not found" }, { status: 404 });
     }
 
-    const safeCover = song.cover || DEFAULT_COVER;
-
-    // Inserir no histórico — este é o momento real de reprodução
-    try {
-      await db.insert(history).values({
-        songId: song.id,
-        genre,
-        wasRequested: wasRequested ? 1 : 0,
-      });
-    } catch (err) {
-      console.error("[started] Erro ao inserir histórico:", err);
-    }
+    const safeCover = confirmed.cover || DEFAULT_COVER;
 
     // Emitir song:changed — UI atualiza "Últimas", "Próximas" e Player
     if (global.io) {
       global.io.emit("song:changed", {
-        id: song.id,
-        title: song.title,
-        artist: song.artist,
+        id: confirmed.songId,
+        title: confirmed.title,
+        artist: confirmed.artist,
         cover: safeCover,
-        genre: song.genre,
-        allowedInGeneral: song.allowedInGeneral,
+        genre: confirmed.genre,
+        allowedInGeneral: confirmed.allowedInGeneral,
         playedAt: Date.now(),
         playedOnMountpoint: genre,
-        wasRequested,
+        wasRequested: confirmed.wasRequested,
       });
     }
 
     // Disparar resolução de capa de forma assíncrona (fire-and-forget).
     // Só executa quando a capa é o padrão — protege capas definidas pelo admin.
-    if (!song.cover || song.cover === DEFAULT_COVER) {
-      triggerCoverResolution(song.id, song.path, song.artist, song.title).catch(
-        (e) => console.error("[cover] Erro na resolução assíncrona:", e),
-      );
+    if (!confirmed.cover || confirmed.cover === DEFAULT_COVER) {
+      triggerCoverResolution(
+        confirmed.songId,
+        confirmed.path,
+        confirmed.artist,
+        confirmed.title,
+      ).catch((e) => console.error("[cover] Erro na resolução assíncrona:", e));
     }
 
     return Response.json({ success: true });

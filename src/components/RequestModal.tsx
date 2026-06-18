@@ -558,7 +558,7 @@ export function RequestModal({ isOpen, onClose }: RequestModalProps) {
                           e.key === "Enter" && handleRadioSearch()
                         }
                         placeholder="Buscar por artista ou título..."
-                        className="w-full pl-9 pr-3 py-2.5 bg-background/70 border border-primary/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/40 text-sm placeholder:text-gray-600 transition-colors"
+                        className="w-full pl-9 pr-9 py-2.5 bg-background/70 border border-primary/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/40 text-sm placeholder:text-gray-600 transition-colors"
                       />
                     ) : (
                       <input
@@ -571,8 +571,25 @@ export function RequestModal({ isOpen, onClose }: RequestModalProps) {
                           e.key === "Enter" && searchInternet(internetQuery)
                         }
                         placeholder="Buscar por artista ou título..."
-                        className="w-full pl-9 pr-3 py-2.5 bg-background/70 border border-emerald-600/25 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-600/40 text-sm placeholder:text-gray-600 transition-colors"
+                        className="w-full pl-9 pr-9 py-2.5 bg-background/70 border border-emerald-600/25 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-600/40 text-sm placeholder:text-gray-600 transition-colors"
                       />
+                    )}
+                    {(mode === "radio" ? query : internetQuery) && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (mode === "radio") {
+                            setQuery("");
+                            setActiveLetter(null);
+                          } else {
+                            setInternetQuery("");
+                          }
+                        }}
+                        aria-label="Limpar busca"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
                     )}
                   </div>
                   <button

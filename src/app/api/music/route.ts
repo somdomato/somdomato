@@ -1,10 +1,14 @@
 import { db } from "@/db";
 import { eq } from "drizzle-orm";
-import { songs, requests, history } from "@/db/schema";
+import { songs, requests } from "@/db/schema";
 import { checkFileExists } from "@/lib/file";
 import { isLocalRequest } from "@/lib/localhost";
-import { setPendingSong, consumePendingSong } from "@/lib/prospection";
-import { ensureQueue, popNext, removeMissingSong } from "@/lib/queue";
+import {
+  ensureQueue,
+  popNext,
+  removeMissingSong,
+  flushStalePending,
+} from "@/lib/queue";
 import {
   getSongCounter,
   incrementSongCounter,
@@ -59,11 +63,10 @@ export async function GET(request: Request) {
       | (Song & { genre: string; allowedInGeneral: number })
       | null = null;
     let wasFromRequest = false;
-    let requestedAt: number | null = null;
-    let selectedRequestId: number | null = null;
+    let selectedQueueEntryId: number | null = null;
 
     for (let attempt = 0; attempt < 20; attempt++) {
-      const entry = popNext(genre);
+      const entry = await popNext(genre);
       if (!entry) break;
 
       if (entry.source === "request" && entry.requestId !== undefined) {
@@ -94,8 +97,7 @@ export async function GET(request: Request) {
         allowedInGeneral: entry.allowedInGeneral,
       };
       wasFromRequest = entry.source === "request";
-      requestedAt = entry.requestedAt ?? null;
-      selectedRequestId = entry.requestId ?? null;
+      selectedQueueEntryId = entry.queueEntryId;
       break;
     }
 
@@ -148,46 +150,26 @@ export async function GET(request: Request) {
       console.error("Erro ao processar capa da música:", err);
     }
 
-    // Garantir um valor seguro para envio ao frontend (fallback se não tivermos capa)
-    const safeCover = selectedSong.cover || "/images/logotipo.svg";
-
-    // Flush: se havia um pending anterior que nunca recebeu on_track, inserir histórico
-    const stale = consumePendingSong(genre);
-    if (stale) {
-      try {
-        await db.insert(history).values({
-          songId: stale.songId,
-          genre: stale.genre,
-          wasRequested: stale.wasRequested ? 1 : 0,
-        });
-        if (global.io) {
-          global.io.emit("song:changed", {
-            id: stale.songId,
-            title: stale.title,
-            artist: stale.artist,
-            cover: stale.cover || "/images/logotipo.svg",
-            playedAt: stale.selectedAt,
-            playedOnMountpoint: stale.genre,
-            wasRequested: stale.wasRequested,
-          });
-        }
-      } catch (err) {
-        console.error("[music] Erro ao inserir histórico pendente:", err);
-      }
+    // Flush: se havia um pending anterior (de uma chamada passada) que nunca
+    // recebeu on_track, marca-o como "skipped" (nunca virou "current") em
+    // vez de deixá-lo travado em "pending" para sempre.
+    const stale = selectedQueueEntryId
+      ? await flushStalePending(genre, selectedQueueEntryId)
+      : null;
+    if (stale && global.io) {
+      global.io.emit("song:changed", {
+        id: stale.songId,
+        title: stale.title,
+        artist: stale.artist,
+        cover: stale.cover || "/images/logotipo.svg",
+        playedAt: stale.selectedAt,
+        playedOnMountpoint: stale.genre,
+        wasRequested: stale.wasRequested,
+      });
     }
 
-    // Registrar como pendente — histórico e eventos serão emitidos por /api/music/started
-    setPendingSong(genre, {
-      songId: selectedSong.id,
-      title: selectedSong.title,
-      artist: selectedSong.artist,
-      cover: safeCover,
-      genre,
-      wasRequested: wasFromRequest,
-      requestId: selectedRequestId,
-      requestedAt,
-      selectedAt: Date.now(),
-    });
+    // A linha já está marcada como "pending" no banco (ver popNext) —
+    // /api/music/started promove para "current" e emite song:changed.
 
     // Incrementar contador de músicas para vinhetas
     incrementSongCounter(genre);

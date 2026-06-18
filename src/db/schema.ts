@@ -1,5 +1,11 @@
-import { int, sqliteTable, text } from "drizzle-orm/sqlite-core";
-import { relations } from "drizzle-orm";
+import {
+  index,
+  int,
+  sqliteTable,
+  text,
+  uniqueIndex,
+} from "drizzle-orm/sqlite-core";
+import { relations, sql } from "drizzle-orm";
 
 export const users = sqliteTable("users", {
   id: int().primaryKey({ autoIncrement: true }),
@@ -35,10 +41,14 @@ export const requests = sqliteTable("requests", {
   songId: int()
     .notNull()
     .references(() => songs.id),
+  genre: text().notNull().default("geral"), // Stream em que o pedido vale (hoje sempre "geral")
   order: int().notNull().default(0), // Ordem dos pedidos
   createdAt: int({ mode: "timestamp" }).$defaultFn(() => new Date()),
 });
 
+// Tabela legada — substituída por `queueEntries` (status "played") como fonte
+// de verdade do histórico. Mantida apenas para não perder dados antigos;
+// nenhum código novo lê ou escreve aqui.
 export const history = sqliteTable("history", {
   id: int().primaryKey({ autoIncrement: true }),
   songId: int()
@@ -48,6 +58,56 @@ export const history = sqliteTable("history", {
   wasRequested: int().default(0), // 1 se foi pedido pelo usuário, 0 se foi AutoDJ
   createdAt: int({ mode: "timestamp" }).$defaultFn(() => new Date()),
 });
+
+/**
+ * Timeline única (por stream) de reprodução: passado, presente e futuro.
+ * Substitui a fila em memória (`globalThis.__queueState`) e o cache de
+ * pending (`lib/prospection.ts`) — agora a fila sobrevive a restart/deploy e
+ * é compartilhada entre todas as instâncias do processo Node.
+ *
+ * Ciclo de vida de uma linha:
+ *   scheduled -> pending -> current -> played
+ *                                    -> skipped (nunca confirmado via on_track)
+ *
+ * - scheduled: na fila, ainda não foi servida ao Liquidsoap.
+ * - pending: servida ao Liquidsoap (`/api/music`), aguardando confirmação
+ *   de reprodução real via `on_track` (`/api/music/started`).
+ * - current: confirmada como a música tocando agora nesse mountpoint.
+ * - played: foi tocada e já foi substituída pela próxima `current`.
+ * - skipped: ficou pendente, mas uma nova seleção a tornou obsoleta antes de
+ *   qualquer confirmação (on_track nunca chegou).
+ *
+ * O índice único parcial garante, no nível do banco, que cada gênero tenha
+ * no máximo uma linha "current" por vez — é essa garantia que faz "Últimas"
+ * nunca incluir a música atual (status diferente) sem precisar de filtro
+ * manual na UI.
+ */
+export const queueEntries = sqliteTable(
+  "queue_entries",
+  {
+    id: int().primaryKey({ autoIncrement: true }),
+    genre: text().notNull().default("geral"), // mountpoint/stream
+    songId: int()
+      .notNull()
+      .references(() => songs.id),
+    status: text().notNull(), // scheduled | pending | current | played | skipped
+    source: text().notNull().default("autodj"), // autodj | request | admin
+    requestId: int(), // snapshot do id em `requests` (a linha pode já ter sido apagada)
+    requestedAt: int({ mode: "timestamp" }), // snapshot de requests.createdAt
+    position: int(), // ordem entre linhas "scheduled"/"pending"; irrelevante depois
+    scheduledAt: int({ mode: "timestamp" }).$defaultFn(() => new Date()),
+    startedAt: int({ mode: "timestamp" }), // confirmado pelo on_track
+    endedAt: int({ mode: "timestamp" }), // quando virou played/skipped
+  },
+  (table) => [
+    index("queue_entries_genre_status_idx").on(table.genre, table.status),
+    index("queue_entries_genre_position_idx").on(table.genre, table.position),
+    index("queue_entries_genre_ended_idx").on(table.genre, table.endedAt),
+    uniqueIndex("queue_entries_one_current_idx")
+      .on(table.genre)
+      .where(sql`${table.status} = 'current'`),
+  ],
+);
 
 export const likes = sqliteTable("likes", {
   id: int().primaryKey({ autoIncrement: true }),
@@ -63,6 +123,14 @@ export const songsRelations = relations(songs, ({ many }) => ({
   requests: many(requests),
   history: many(history),
   likes: many(likes),
+  queueEntries: many(queueEntries),
+}));
+
+export const queueEntriesRelations = relations(queueEntries, ({ one }) => ({
+  song: one(songs, {
+    fields: [queueEntries.songId],
+    references: [songs.id],
+  }),
 }));
 
 export const requestsRelations = relations(requests, ({ one }) => ({

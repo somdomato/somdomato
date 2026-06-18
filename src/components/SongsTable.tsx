@@ -11,6 +11,7 @@ import {
   ArrowUp,
   ArrowDown,
   ImageIcon,
+  X,
 } from "lucide-react";
 import { toast } from "sonner";
 import { DuplicatesPanel } from "@/components/DuplicatesPanel";
@@ -222,8 +223,21 @@ export function SongsTable() {
                   setSearchQuery(e.target.value);
                   setPage(1);
                 }}
-                className="w-full pl-10 pr-4 py-2 bg-background border border-primary/30 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                className="w-full pl-10 pr-9 py-2 bg-background border border-primary/30 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
               />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearchQuery("");
+                    setPage(1);
+                  }}
+                  aria-label="Limpar busca"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-200"
+                >
+                  <X size={18} />
+                </button>
+              )}
             </div>
 
             <div className="relative">

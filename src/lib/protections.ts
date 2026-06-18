@@ -1,6 +1,6 @@
 import { db } from "@/db";
-import { requests, songs, history } from "@/db/schema";
-import { eq, desc } from "drizzle-orm";
+import { requests, songs, queueEntries } from "@/db/schema";
+import { and, eq, desc } from "drizzle-orm";
 import { LAST_SONGS_HISTORY_LIMIT } from "@/config";
 
 export interface RepetitionCheckResult {
@@ -30,10 +30,12 @@ export async function checkMusicRepetition(
   // 1. Verificar se a música está nas últimas N do histórico do geral
   // (pedidos só tocam no mountpoint "geral", então filtramos por ele)
   const lastSongs = await db
-    .select({ songId: history.songId })
-    .from(history)
-    .where(eq(history.genre, "geral"))
-    .orderBy(desc(history.id))
+    .select({ songId: queueEntries.songId })
+    .from(queueEntries)
+    .where(
+      and(eq(queueEntries.genre, "geral"), eq(queueEntries.status, "played")),
+    )
+    .orderBy(desc(queueEntries.id))
     .limit(LAST_SONGS_HISTORY_LIMIT);
   const lastSongIds = lastSongs.map((h) => h.songId);
 
@@ -64,10 +66,12 @@ export async function checkMusicRepetition(
     .select({
       artist: songs.artist,
     })
-    .from(history)
-    .innerJoin(songs, eq(history.songId, songs.id))
-    .where(eq(history.genre, "geral"))
-    .orderBy(desc(history.id))
+    .from(queueEntries)
+    .innerJoin(songs, eq(queueEntries.songId, songs.id))
+    .where(
+      and(eq(queueEntries.genre, "geral"), eq(queueEntries.status, "played")),
+    )
+    .orderBy(desc(queueEntries.id))
     .limit(10);
 
   // 4. Verificar artistas dos pedidos pendentes
@@ -103,10 +107,12 @@ export async function getBlockedSongIds(genre: string = "geral"): Promise<{
 }> {
   // Histórico das últimas N músicas DESTE GÊNERO
   const lastSongs = await db
-    .select({ songId: history.songId })
-    .from(history)
-    .where(eq(history.genre, genre))
-    .orderBy(desc(history.id))
+    .select({ songId: queueEntries.songId })
+    .from(queueEntries)
+    .where(
+      and(eq(queueEntries.genre, genre), eq(queueEntries.status, "played")),
+    )
+    .orderBy(desc(queueEntries.id))
     .limit(LAST_SONGS_HISTORY_LIMIT);
 
   // Requests pendentes (apenas para geral)
@@ -122,10 +128,12 @@ export async function getBlockedSongIds(genre: string = "geral"): Promise<{
     .select({
       artist: songs.artist,
     })
-    .from(history)
-    .innerJoin(songs, eq(history.songId, songs.id))
-    .where(eq(history.genre, genre))
-    .orderBy(desc(history.id))
+    .from(queueEntries)
+    .innerJoin(songs, eq(queueEntries.songId, songs.id))
+    .where(
+      and(eq(queueEntries.genre, genre), eq(queueEntries.status, "played")),
+    )
+    .orderBy(desc(queueEntries.id))
     .limit(10);
 
   // Artistas dos requests pendentes (apenas para geral)

@@ -1,3 +1,7 @@
+- Salve a contagem de reprodução no banco de dados para cada música e mostre essa contagem em "Últimas".
+
+- Quando troco de Stream/Rádio há uma confusão no bloco "Próximas" e no bloco "Últimas", de alguma forma aparecem músicas que não tocaram, preciso de um sistema mais robusto, "single source of truth" de gerenciar essa fila(passado e futuro, de todas as streams), talvez salvar no banco de dados(lembrando que pedidos são tocados logo em seguida depois da música atual!!)?
+
 - Em /admin/estatisticas mostre um relatório completo de TODAS as visitas em tempo real(usando socket.io) quantas sessões ativas e não ativas, logue informações como: IP, Agente, Browser, Sistema Operacional, Dispositivo, Local(cidade, estado, país), o geoip2 da maxmind está configurado no nginx em /geoip altere os arquivos do ansible para que o geoip passe essas informações ao next.js. Permita definir um tempo para manter o log das visitas através de um drop down com: 
 
 - Para sempre, 
@@ -15,8 +19,7 @@
 Essa expiração NÃO vale para a contagem de cliques e visitas nas páginas! Apenas para os usuários e suas informações.
 Planeje tudo muito bem, e me pergunte se tiver dúvidas.
 
-- Dependendo das condições e conectividade do cliente o som da rádio trava um pouco(talvez buffering incorreto do Icecast2 + Liquidsoap?), você consegue alterar para uma experiência melhor? Documente
-  todas as alterações em um arquivo CHANGELOG.md (como estavam e como ficaram).
+- Em /admin/estatisticas "Tudo" deve vir pré-selecionado
 
 - Em /artistas quando eu clico em um artista crie uma rota separada para o artista com /artistas/[nome_sanitizado_do_artista]
 

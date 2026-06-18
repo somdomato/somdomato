@@ -1,8 +1,9 @@
 import { db } from "@/db";
-import { songs, history } from "@/db/schema";
+import { songs } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import fs from "node:fs/promises";
 import { resolveSongCover, validateCoverForDb } from "@/lib/cover";
+import { setCurrent } from "@/lib/queue";
 
 export async function POST(request: Request) {
   try {
@@ -29,8 +30,13 @@ export async function POST(request: Request) {
       });
     }
 
-    // insert into history
-    await db.insert(history).values({ songId: s.id }).returning();
+    // Registrar como "current" no banco (rebaixa a current anterior do
+    // mesmo gênero para "played" na mesma transação)
+    await setCurrent({
+      genre: s.genre || "geral",
+      songId: s.id,
+      source: "admin",
+    });
 
     // ensure cover is present in DB (best-effort)
     let resolvedCover = s.cover ?? null;
