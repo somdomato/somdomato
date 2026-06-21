@@ -9,6 +9,8 @@ import { eq } from "drizzle-orm";
 import { AUTO_APPROVE_DELAY_MINUTES } from "@/config";
 import { evaluateTrack, enqueue } from "@/lib/ai";
 import { logAction } from "@/lib/logging";
+import { getUserFromSession } from "@/lib/session";
+import { ADMIN_ROLES } from "@/lib/permissions";
 
 const UPLOADS_DIR = process.env.UPLOADS_DIR || "/var/music/sdm/uploads";
 const MAX_UPLOADS_PER_HOUR = 5;
@@ -99,8 +101,10 @@ export async function POST(request: NextRequest) {
 
       try {
         const clientIp = getClientIp(request);
+        const session = getUserFromSession(request.cookies);
+        const isAdmin = !!session && ADMIN_ROLES.includes(session.role);
 
-        if (isRateLimited(clientIp)) {
+        if (!isAdmin && isRateLimited(clientIp)) {
           send({
             error: "Limite de envios atingido. Máximo de 5 músicas por hora.",
             done: true,
@@ -283,7 +287,7 @@ export async function POST(request: NextRequest) {
         }
 
         // Record this upload for rate limiting
-        recordUpload(clientIp);
+        if (!isAdmin) recordUpload(clientIp);
 
         // Save to database
         const [uploadRecord] = await db
