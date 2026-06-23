@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useState, useEffect, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { EditSongModal } from "@/components/EditSongModal";
 import {
   Pencil,
@@ -32,6 +33,36 @@ const TIME_SLOT_OPTIONS = [
   { bit: 4, label: "Tarde (12:00 - 18:00)" },
   { bit: 8, label: "Noite (18:00 - 00:00)" },
 ];
+
+interface DropdownMenuProps {
+  anchorEl: HTMLElement;
+  onClose: () => void;
+  children: React.ReactNode;
+}
+
+function DropdownMenu({ anchorEl, onClose, children }: DropdownMenuProps) {
+  const rect = anchorEl.getBoundingClientRect();
+  const top = rect.bottom + 4;
+  const left = rect.left;
+
+  return createPortal(
+    <>
+      <button
+        type="button"
+        aria-label="Fechar menu"
+        className="fixed inset-0 z-40 cursor-default"
+        onClick={onClose}
+      />
+      <div
+        style={{ position: "fixed", top, left }}
+        className="z-50 bg-background-alt border border-primary/30 rounded-md shadow-lg overflow-hidden"
+      >
+        {children}
+      </div>
+    </>,
+    document.body,
+  );
+}
 
 async function fetchSongs(
   page: number,
@@ -89,8 +120,14 @@ export function SongsTable() {
   const [recoveringCoverId, setRecoveringCoverId] = useState<number | null>(
     null,
   );
-  const [rotationMenuId, setRotationMenuId] = useState<number | null>(null);
-  const [timeSlotsMenuId, setTimeSlotsMenuId] = useState<number | null>(null);
+  const [rotationMenu, setRotationMenu] = useState<{
+    songId: number;
+    anchor: HTMLElement;
+  } | null>(null);
+  const [timeSlotsMenu, setTimeSlotsMenu] = useState<{
+    songId: number;
+    anchor: HTMLElement;
+  } | null>(null);
   const [savingFieldId, setSavingFieldId] = useState<number | null>(null);
 
   useEffect(() => {
@@ -178,7 +215,7 @@ export function SongsTable() {
   };
 
   const handleChangeRotation = async (song: Song, rotation: RotationType) => {
-    setRotationMenuId(null);
+    setRotationMenu(null);
     if (rotation === (song.rotation || "normal")) return;
     setSavingFieldId(song.id);
     try {
@@ -431,16 +468,18 @@ export function SongsTable() {
                             </span>
                           )}
                       </td>
-                      <td className="px-4 py-3 text-sm relative">
+                      <td className="px-4 py-3 text-sm">
                         <button
                           type="button"
                           disabled={
                             !permissions.includes("songs:edit_tags") ||
                             savingFieldId === song.id
                           }
-                          onClick={() =>
-                            setRotationMenuId((cur) =>
-                              cur === song.id ? null : song.id,
+                          onClick={(e) =>
+                            setRotationMenu((cur) =>
+                              cur?.songId === song.id
+                                ? null
+                                : { songId: song.id, anchor: e.currentTarget },
                             )
                           }
                           className={`font-semibold disabled:cursor-default ${getRotationColor(song.rotation)} ${
@@ -451,15 +490,12 @@ export function SongsTable() {
                         >
                           {song.rotation || "normal"}
                         </button>
-                        {rotationMenuId === song.id && (
-                          <>
-                            <button
-                              type="button"
-                              aria-label="Fechar menu"
-                              className="fixed inset-0 z-20 cursor-default"
-                              onClick={() => setRotationMenuId(null)}
-                            />
-                            <div className="absolute left-0 top-full mt-1 z-30 bg-background-alt border border-primary/30 rounded-md shadow-lg overflow-hidden min-w-36">
+                        {rotationMenu?.songId === song.id && (
+                          <DropdownMenu
+                            anchorEl={rotationMenu.anchor}
+                            onClose={() => setRotationMenu(null)}
+                          >
+                            <div className="min-w-36">
                               {ROTATION_OPTIONS.map((opt) => (
                                 <button
                                   key={opt.value}
@@ -477,19 +513,21 @@ export function SongsTable() {
                                 </button>
                               ))}
                             </div>
-                          </>
+                          </DropdownMenu>
                         )}
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-400 relative">
+                      <td className="px-4 py-3 text-sm text-gray-400">
                         <button
                           type="button"
                           disabled={
                             !permissions.includes("songs:edit_tags") ||
                             savingFieldId === song.id
                           }
-                          onClick={() =>
-                            setTimeSlotsMenuId((cur) =>
-                              cur === song.id ? null : song.id,
+                          onClick={(e) =>
+                            setTimeSlotsMenu((cur) =>
+                              cur?.songId === song.id
+                                ? null
+                                : { songId: song.id, anchor: e.currentTarget },
                             )
                           }
                           className={`disabled:cursor-default ${
@@ -500,15 +538,12 @@ export function SongsTable() {
                         >
                           {getTimeSlotsText(song.timeSlots)}
                         </button>
-                        {timeSlotsMenuId === song.id && (
-                          <>
-                            <button
-                              type="button"
-                              aria-label="Fechar menu"
-                              className="fixed inset-0 z-20 cursor-default"
-                              onClick={() => setTimeSlotsMenuId(null)}
-                            />
-                            <div className="absolute left-0 top-full mt-1 z-30 bg-background-alt border border-primary/30 rounded-md shadow-lg p-2 min-w-56">
+                        {timeSlotsMenu?.songId === song.id && (
+                          <DropdownMenu
+                            anchorEl={timeSlotsMenu.anchor}
+                            onClose={() => setTimeSlotsMenu(null)}
+                          >
+                            <div className="p-2 min-w-56">
                               {TIME_SLOT_OPTIONS.map(({ bit, label }) => (
                                 <label
                                   key={bit}
@@ -530,7 +565,7 @@ export function SongsTable() {
                                 </label>
                               ))}
                             </div>
-                          </>
+                          </DropdownMenu>
                         )}
                       </td>
                       <td className="px-4 py-3">
