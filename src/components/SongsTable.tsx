@@ -15,6 +15,23 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { DuplicatesPanel } from "@/components/DuplicatesPanel";
+import { updateSong, type RotationType } from "@/actions/admin";
+
+const ROTATION_OPTIONS: { value: RotationType; label: string }[] = [
+  { value: "inativo", label: "Inativo" },
+  { value: "ultraleve", label: "Ultraleve" },
+  { value: "leve", label: "Leve" },
+  { value: "normal", label: "Normal" },
+  { value: "pesado", label: "Pesado" },
+  { value: "ultrapesada", label: "Ultrapesada" },
+];
+
+const TIME_SLOT_OPTIONS = [
+  { bit: 1, label: "Madrugada (00:00 - 06:00)" },
+  { bit: 2, label: "Manhã (06:00 - 12:00)" },
+  { bit: 4, label: "Tarde (12:00 - 18:00)" },
+  { bit: 8, label: "Noite (18:00 - 00:00)" },
+];
 
 async function fetchSongs(
   page: number,
@@ -72,6 +89,9 @@ export function SongsTable() {
   const [recoveringCoverId, setRecoveringCoverId] = useState<number | null>(
     null,
   );
+  const [rotationMenuId, setRotationMenuId] = useState<number | null>(null);
+  const [timeSlotsMenuId, setTimeSlotsMenuId] = useState<number | null>(null);
+  const [savingFieldId, setSavingFieldId] = useState<number | null>(null);
 
   useEffect(() => {
     fetch("/api/auth/me")
@@ -154,6 +174,40 @@ export function SongsTable() {
       console.error(error);
     } finally {
       setRecoveringCoverId(null);
+    }
+  };
+
+  const handleChangeRotation = async (song: Song, rotation: RotationType) => {
+    setRotationMenuId(null);
+    if (rotation === (song.rotation || "normal")) return;
+    setSavingFieldId(song.id);
+    try {
+      await updateSong(song.id, { rotation });
+      toast.success("Rotação atualizada!");
+      loadSongs();
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Erro ao atualizar rotação";
+      toast.error(message);
+      console.error(error);
+    } finally {
+      setSavingFieldId(null);
+    }
+  };
+
+  const handleToggleTimeSlot = async (song: Song, bit: number) => {
+    const newSlots = (song.timeSlots ?? 15) ^ bit;
+    setSavingFieldId(song.id);
+    try {
+      await updateSong(song.id, { timeSlots: newSlots });
+      loadSongs();
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Erro ao atualizar horários";
+      toast.error(message);
+      console.error(error);
+    } finally {
+      setSavingFieldId(null);
     }
   };
 
@@ -377,13 +431,107 @@ export function SongsTable() {
                             </span>
                           )}
                       </td>
-                      <td
-                        className={`px-4 py-3 text-sm font-semibold ${getRotationColor(song.rotation)}`}
-                      >
-                        {song.rotation || "normal"}
+                      <td className="px-4 py-3 text-sm relative">
+                        <button
+                          type="button"
+                          disabled={
+                            !permissions.includes("songs:edit_tags") ||
+                            savingFieldId === song.id
+                          }
+                          onClick={() =>
+                            setRotationMenuId((cur) =>
+                              cur === song.id ? null : song.id,
+                            )
+                          }
+                          className={`font-semibold disabled:cursor-default ${getRotationColor(song.rotation)} ${
+                            permissions.includes("songs:edit_tags")
+                              ? "cursor-pointer hover:underline"
+                              : ""
+                          }`}
+                        >
+                          {song.rotation || "normal"}
+                        </button>
+                        {rotationMenuId === song.id && (
+                          <>
+                            <button
+                              type="button"
+                              aria-label="Fechar menu"
+                              className="fixed inset-0 z-20 cursor-default"
+                              onClick={() => setRotationMenuId(null)}
+                            />
+                            <div className="absolute left-0 top-full mt-1 z-30 bg-background-alt border border-primary/30 rounded-md shadow-lg overflow-hidden min-w-36">
+                              {ROTATION_OPTIONS.map((opt) => (
+                                <button
+                                  key={opt.value}
+                                  type="button"
+                                  onClick={() =>
+                                    handleChangeRotation(song, opt.value)
+                                  }
+                                  className={`block w-full text-left px-3 py-2 text-sm hover:bg-primary/10 transition-colors ${getRotationColor(opt.value)} ${
+                                    (song.rotation || "normal") === opt.value
+                                      ? "bg-primary/20"
+                                      : ""
+                                  }`}
+                                >
+                                  {opt.label}
+                                </button>
+                              ))}
+                            </div>
+                          </>
+                        )}
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-400">
-                        {getTimeSlotsText(song.timeSlots)}
+                      <td className="px-4 py-3 text-sm text-gray-400 relative">
+                        <button
+                          type="button"
+                          disabled={
+                            !permissions.includes("songs:edit_tags") ||
+                            savingFieldId === song.id
+                          }
+                          onClick={() =>
+                            setTimeSlotsMenuId((cur) =>
+                              cur === song.id ? null : song.id,
+                            )
+                          }
+                          className={`disabled:cursor-default ${
+                            permissions.includes("songs:edit_tags")
+                              ? "cursor-pointer hover:underline"
+                              : ""
+                          }`}
+                        >
+                          {getTimeSlotsText(song.timeSlots)}
+                        </button>
+                        {timeSlotsMenuId === song.id && (
+                          <>
+                            <button
+                              type="button"
+                              aria-label="Fechar menu"
+                              className="fixed inset-0 z-20 cursor-default"
+                              onClick={() => setTimeSlotsMenuId(null)}
+                            />
+                            <div className="absolute left-0 top-full mt-1 z-30 bg-background-alt border border-primary/30 rounded-md shadow-lg p-2 min-w-56">
+                              {TIME_SLOT_OPTIONS.map(({ bit, label }) => (
+                                <label
+                                  key={bit}
+                                  className="flex items-center gap-2 p-2 rounded cursor-pointer hover:bg-primary/10 transition-colors"
+                                >
+                                  <input
+                                    type="checkbox"
+                                    checked={
+                                      ((song.timeSlots ?? 15) & bit) !== 0
+                                    }
+                                    onChange={() =>
+                                      handleToggleTimeSlot(song, bit)
+                                    }
+                                    className="w-4 h-4 accent-primary"
+                                  />
+                                  <span className="text-sm text-white">
+                                    {label}
+                                  </span>
+                                </label>
+                              ))}
+                            </div>
+                          </>
+                        )}
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex justify-center gap-2">

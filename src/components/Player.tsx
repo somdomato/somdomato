@@ -141,14 +141,20 @@ export default function Player({
       if (response.ok) {
         const data = await response.json();
         // Ignorar se o socket atualizou a música nos últimos 5s para evitar race condition
-        if (data.song && Date.now() - lastSocketSongUpdate.current > 5000) {
+        const isSameSong =
+          data.song?.title === title && data.song?.artist === artist;
+        if (
+          data.song &&
+          !isSameSong &&
+          Date.now() - lastSocketSongUpdate.current > 5000
+        ) {
           setSong(data.song);
         }
       }
     } catch (error) {
       console.error("Erro ao buscar metadados:", error);
     }
-  }, [currentGenre, setSong]);
+  }, [currentGenre, setSong, title, artist]);
 
   // Buscar próxima música
   const fetchNextSong = useCallback(async () => {
@@ -368,10 +374,12 @@ export default function Player({
                   {listeners.peak}
                 </div>
                 <span
-                  className="bottom-full -translate-y-0.5 peer-hover:-translate-y-1.5
+                  className="bottom-full -translate-y-0.5
+                    border-2 border-stone-800 rounded-md 
+                    peer-hover:-translate-y-1 peer-hover:opacity-100
                     absolute w-max left-1/2 -translate-x-1/2
                     text-stone-50 text-sm bg-stone-800 opacity-0 p-2
-                    peer-hover:opacity-100 transition-all rounded-md"
+                    transition-all"
                 >
                   Ouvintes: {listeners.current} Pico: {listeners.peak}
                 </span>

@@ -282,6 +282,13 @@ export async function resolveSongCover(opts: {
   title: string;
   coversDir?: string;
   fallbackUrl?: string;
+  /**
+   * Quando true, pula a checagem de arquivo já existente em disco (passo 1)
+   * e força a re-resolução via ID3/Deezer/fallback. Usado quando o caller
+   * sabe que o arquivo em disco está desatualizado (ex: nova capa enviada
+   * via upload, ou recuperação explícita pedida pelo admin).
+   */
+  skipDiskCache?: boolean;
 }): Promise<string | null> {
   const {
     mp3Path,
@@ -289,12 +296,15 @@ export async function resolveSongCover(opts: {
     title,
     coversDir = path.join(process.cwd(), "public/covers"),
     fallbackUrl,
+    skipDiskCache = false,
   } = opts;
 
   // 1. Arquivo de capa já existe no disco?
-  const existing = await checkExistingCover(artist, coversDir);
-  if (existing) {
-    return existing;
+  if (!skipDiskCache) {
+    const existing = await checkExistingCover(artist, coversDir);
+    if (existing) {
+      return existing;
+    }
   }
 
   // 2. Extração das tags ID3
@@ -410,6 +420,7 @@ export async function resolveAndPersistCover(opts: {
     artist,
     title,
     fallbackUrl,
+    skipDiskCache: force,
   });
   const verified = await validateCoverForDb(resolved);
   const cover = verified ?? DEFAULT_COVER;

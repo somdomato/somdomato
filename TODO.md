@@ -1,3 +1,5 @@
+- Em alguns momentos(não todos) ao editar uma música a capa quebra, há um problema com as capas tambem no painel de admin onde algumas capas aparecem porem no player aparece a capa default ao invés da capa do artista, ao clicar no botão de recuperar capa nada acontece.
+
 - Da mesma forma que existem vídeos no fundo dos botões crie um vídeo que fica tocando ininterruptamente no fundo do logo e nome do site.
 
 - Salve a contagem de reprodução no banco de dados para cada música e mostre essa contagem em "Últimas".

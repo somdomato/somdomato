@@ -401,6 +401,11 @@ export async function updateSong(
           mp3Path: currentPath,
           artist: artistName,
           title: (data.title as string) ?? song.title,
+          // Se o admin enviou uma capa nova, ela já foi gravada nas tags
+          // ID3 acima — pular o cache em disco para garantir que a nova
+          // imagem seja extraída em vez de reaproveitar uma capa antiga
+          // do artista que já estivesse em public/covers.
+          skipDiskCache: !!data.coverFile,
         });
         const verified = await validateCoverForDb(resolved);
         if (verified) {
