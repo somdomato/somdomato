@@ -8,7 +8,8 @@ import MobileGenreSelector from "./MobileGenreSelector";
 import MobileShareButton from "./MobileShareButton";
 
 // TODO: definir o caminho final do vídeo de fundo do logo
-const LOGO_VIDEO_SRC = "https://cdn.somdomato.com/videos/optimized/7353106-uhd_3840_2160_24fps_button.webm";
+const LOGO_VIDEO_SRC =
+  "https://cdn.somdomato.com/videos/optimized/7353106-uhd_3840_2160_24fps_button.webm";
 
 export default function Header() {
   return (
@@ -31,7 +32,10 @@ export default function Header() {
           className="group relative -mx-2 -my-1 flex items-center gap-2 overflow-hidden rounded-lg px-2 py-1 font-bold text-2xl logo"
         >
           {/* Fundo com vídeo contínuo e máscaras */}
-          <span aria-hidden="true" className="pointer-events-none absolute inset-0">
+          <span
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0"
+          >
             <video
               src={LOGO_VIDEO_SRC}
               autoPlay
@@ -74,7 +78,10 @@ export default function Header() {
             className="group relative -mx-1.5 -my-1 flex items-center gap-1.5 overflow-hidden rounded-lg px-1.5 py-1 font-bold text-sm logo"
           >
             {/* Fundo com vídeo contínuo e máscaras */}
-            <span aria-hidden="true" className="pointer-events-none absolute inset-0">
+            <span
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-0"
+            >
               <video
                 src={LOGO_VIDEO_SRC}
                 autoPlay
