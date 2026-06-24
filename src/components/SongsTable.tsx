@@ -475,13 +475,14 @@ export function SongsTable() {
                             !permissions.includes("songs:edit_tags") ||
                             savingFieldId === song.id
                           }
-                          onClick={(e) =>
+                          onClick={(e) => {
+                            const anchor = e.currentTarget;
                             setRotationMenu((cur) =>
                               cur?.songId === song.id
                                 ? null
-                                : { songId: song.id, anchor: e.currentTarget },
-                            )
-                          }
+                                : { songId: song.id, anchor },
+                            );
+                          }}
                           className={`font-semibold disabled:cursor-default ${getRotationColor(song.rotation)} ${
                             permissions.includes("songs:edit_tags")
                               ? "cursor-pointer hover:underline"
@@ -523,13 +524,14 @@ export function SongsTable() {
                             !permissions.includes("songs:edit_tags") ||
                             savingFieldId === song.id
                           }
-                          onClick={(e) =>
+                          onClick={(e) => {
+                            const anchor = e.currentTarget;
                             setTimeSlotsMenu((cur) =>
                               cur?.songId === song.id
                                 ? null
-                                : { songId: song.id, anchor: e.currentTarget },
-                            )
-                          }
+                                : { songId: song.id, anchor },
+                            );
+                          }}
                           className={`disabled:cursor-default ${
                             permissions.includes("songs:edit_tags")
                               ? "cursor-pointer hover:underline"

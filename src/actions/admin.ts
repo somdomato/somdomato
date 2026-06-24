@@ -288,7 +288,14 @@ export async function updateSong(
           /^data:image\/\w+;base64,/,
           "",
         );
-        const imageBuffer = Buffer.from(base64Data, "base64");
+        const rawBuffer = Buffer.from(base64Data, "base64");
+
+        // Normalizar para JPEG independente do formato enviado (WEBP, HEIC,
+        // GIF, etc.) — a validação de capa em disco (isValidImageBuffer) só
+        // reconhece magic bytes de JPEG/PNG, então sem essa conversão
+        // formatos como WEBP/HEIC eram descartados silenciosamente.
+        const sharp = (await import("sharp")).default;
+        const imageBuffer = await sharp(rawBuffer).jpeg().toBuffer();
 
         tags.image = {
           mime: "image/jpeg",
@@ -301,6 +308,9 @@ export async function updateSong(
         };
       } catch (error) {
         console.error("Erro ao processar imagem da capa:", error);
+        throw new Error(
+          "Não foi possível processar a imagem enviada. Verifique se o arquivo é uma imagem válida.",
+        );
       }
     }
 
