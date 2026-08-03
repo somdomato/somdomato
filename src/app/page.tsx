@@ -8,6 +8,11 @@ import NextSongs from "@/components/blocks/Next";
 import { lastSongs, nextSongs, topSongs } from "@/actions/songs";
 //import { slides as images } from "@/config";
 
+// Dados vêm do banco de produção ao vivo (fila/histórico mudam a cada
+// música) — nunca deve ser pré-renderizada/cacheada como estática, e não
+// deve rodar contra o banco durante o build.
+export const dynamic = "force-dynamic";
+
 export default async function Home() {
   const [last, top, nextResult] = await Promise.all([
     lastSongs("geral"),

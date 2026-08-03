@@ -104,6 +104,7 @@ export const queueEntries = sqliteTable(
     index("queue_entries_genre_status_idx").on(table.genre, table.status),
     index("queue_entries_genre_position_idx").on(table.genre, table.position),
     index("queue_entries_genre_ended_idx").on(table.genre, table.endedAt),
+    index("queue_entries_source_status_idx").on(table.source, table.status),
     uniqueIndex("queue_entries_one_current_idx")
       .on(table.genre)
       .where(sql`${table.status} = 'current'`),
