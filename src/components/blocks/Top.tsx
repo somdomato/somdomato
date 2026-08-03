@@ -5,7 +5,6 @@ import { socket } from "@/lib/socket";
 import SongBlock from "./SongBlock";
 import SongList from "./SongList";
 import { Trophy } from "lucide-react";
-import { isJingleMetadata } from "@/lib/song-visibility";
 
 type TopEntry = {
   id: number;
@@ -19,38 +18,24 @@ export default function Top({ data }: { data: TopEntry[] }) {
   const [top, setTop] = useState<TopEntry[]>(data);
 
   useEffect(() => {
-    const onRequestAdded = (req: {
-      id: number;
-      title: string;
-      artist: string;
-      cover?: string | null;
-    }) => {
-      if (isJingleMetadata({ title: req.title, artist: req.artist })) {
-        return;
-      }
-
-      setTop((prev) => {
-        const found = prev.find((p) => p.id === req.id);
-        if (found) {
-          return prev
-            .map((p) => (p.id === req.id ? { ...p, count: p.count + 1 } : p))
-            .sort((a, b) => b.count - a.count)
-            .slice(0, 10);
-        }
-        const added: TopEntry = {
-          id: req.id,
-          title: req.title,
-          artist: req.artist,
-          cover: req.cover || null,
-          count: 1,
-        };
-        return [added, ...prev].sort((a, b) => b.count - a.count).slice(0, 10);
-      });
+    // `song:changed` é emitido quando uma música COMEÇA a tocar — nesse
+    // momento a música anterior já foi rebaixada para "played" no banco
+    // (ver `setCurrent` em lib/queue.ts). O TOP 10 só deve contar pedidos
+    // efetivamente tocados, então refazemos a busca no servidor em vez de
+    // incrementar otimisticamente no `request:added` (que dispara antes de
+    // a música tocar e inflava as contagens).
+    const onSongChanged = () => {
+      fetch("/api/songs/top")
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => {
+          if (data) setTop(data);
+        })
+        .catch((err) => console.warn("Erro ao buscar top 10:", err));
     };
 
-    socket.on("request:added", onRequestAdded);
+    socket.on("song:changed", onSongChanged);
     return () => {
-      socket.off("request:added", onRequestAdded);
+      socket.off("song:changed", onSongChanged);
     };
   }, []);
 
