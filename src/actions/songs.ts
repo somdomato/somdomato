@@ -2,7 +2,7 @@
 
 import { db } from "@/db";
 import { songs, queueEntries } from "@/db/schema";
-import { and, eq, desc } from "drizzle-orm";
+import { and, eq, desc, sql } from "drizzle-orm";
 import { ensureQueue, getQueue } from "@/lib/queue";
 import { isJingleMetadata } from "@/lib/song-visibility";
 
@@ -54,13 +54,16 @@ export async function lastSongs(genre?: string) {
 }
 
 export async function topSongs() {
-  // Top 10 músicas mais PEDIDAS (apenas pedidos efetivamente tocados, não conta AutoDJ)
-  const requestedHistory = await db
+  // Top 10 músicas mais PEDIDAS (apenas pedidos efetivamente tocados, não conta AutoDJ).
+  // Agregado em SQL (uma linha por música) em vez de trazer toda a tabela de
+  // histórico para agregar em JS — a query antiga crescia com o histórico total.
+  const requestCounts = await db
     .select({
       id: songs.id,
       title: songs.title,
       artist: songs.artist,
       cover: songs.cover,
+      count: sql<number>`count(*)`.mapWith(Number),
     })
     .from(queueEntries)
     .innerJoin(songs, eq(queueEntries.songId, songs.id))
@@ -69,35 +72,23 @@ export async function topSongs() {
         eq(queueEntries.source, "request"),
         eq(queueEntries.status, "played"),
       ),
-    );
+    )
+    .groupBy(songs.id, songs.title, songs.artist, songs.cover)
+    .orderBy(desc(sql`count(*)`))
+    .limit(50); // margem para descontar vinhetas antes de cortar para 10
 
-  const map = new Map<number, TopEntry>();
-  for (const row of requestedHistory.filter(
-    (entry) => !isJingleMetadata({ title: entry.title, artist: entry.artist }),
-  )) {
-    const entry = map.get(row.id);
-    if (entry) entry.count += 1;
-    else
-      map.set(row.id, {
-        id: row.id,
-        title: row.title,
-        artist: row.artist,
-        cover: row.cover || null,
-        count: 1,
-      });
-  }
+  const top: TopEntry[] = requestCounts
+    .filter((row) => !isJingleMetadata({ title: row.title, artist: row.artist }))
+    .slice(0, 10)
+    .map((row) => ({
+      id: row.id,
+      title: row.title,
+      artist: row.artist,
+      cover: row.cover || null,
+      count: row.count,
+    }));
 
-  const top = Array.from(map.values())
-    .sort((a, b) => b.count - a.count)
-    .slice(0, 10);
-
-  return top.map((t) => ({
-    id: t.id,
-    title: t.title,
-    artist: t.artist,
-    cover: t.cover || null,
-    count: t.count,
-  }));
+  return top;
 }
 export async function nextSongs(genre?: string) {
   const selectedGenre = genre || "geral";
