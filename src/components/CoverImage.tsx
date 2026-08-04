@@ -14,6 +14,15 @@ const LOAD_TIMEOUT_MS = 8000;
  * If the image fails to load or doesn't finish within LOAD_TIMEOUT_MS,
  * falls back to `fallbackSrc` instead of leaving the spinner stuck.
  *
+ * Sempre `unoptimized`: as capas usadas aqui são sempre arquivos locais
+ * já resolvidos em `public/covers` (ou o placeholder). Rodar essas imagens
+ * pelo otimizador do Next (sharp, sob demanda) na VPS de produção — que
+ * tem só 1.9GB de RAM dividida com Liquidsoap/Icecast/bot/outro app Next —
+ * gera latência bem inconsistente entre requisições concorrentes: algumas
+ * capas aparecem na hora, outras demoram, e as que passam de
+ * LOAD_TIMEOUT_MS caem no fallback permanentemente (sem retry). Servir o
+ * arquivo estático direto evita esse gargalo de CPU/memória.
+ *
  * Requirements:
  * - Parent element MUST have `position: relative` and `overflow: hidden`.
  */
@@ -125,6 +134,7 @@ export default function CoverImage({
       <Image
         key={currentSrc}
         {...props}
+        unoptimized
         ref={handleRef}
         src={currentSrc}
         className={`${className ?? ""} transition-opacity duration-300 ${
