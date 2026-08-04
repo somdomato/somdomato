@@ -257,6 +257,15 @@ export async function ensureQueue(genre: string): Promise<void> {
       position: nextPosition++,
     });
     added++;
+
+    // Evita que outra música do mesmo artista seja sorteada logo em seguida
+    // dentro deste mesmo preenchimento — sem isso, duas músicas do mesmo
+    // artista podiam ficar lado a lado na fila porque `blockedData.artists`
+    // só reflete o estado ANTES deste loop começar, não os artistas já
+    // escolhidos durante ele.
+    for (let i = pool.length - 1; i >= 0; i--) {
+      if (pool[i].artist === song.artist) pool.splice(i, 1);
+    }
   }
 }
 

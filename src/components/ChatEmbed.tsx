@@ -32,6 +32,7 @@ export default function ChatEmbed() {
         className={`absolute inset-0 w-full h-full outline-none rounded-md ${loaded && !failed ? "block" : "hidden"}`}
         src={chatUrl}
         title="Bate-Papo - Rádio Som do Mato"
+        allow="camera; microphone; display-capture"
         allowFullScreen
         onLoad={() => setLoaded(true)}
         onError={() => {
