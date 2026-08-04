@@ -40,6 +40,13 @@ fi
 #   exit 1
 # fi
 
+if pnpm exec tsc --noEmit; then
+  echo "Checagem de tipos concluída com sucesso."
+else
+  echo "Erro na checagem de tipos. Abortando deploy."
+  exit 1
+fi
+
 pnpm run build || exit 1
 
 sudo /usr/bin/systemctl stop $SERVICE
