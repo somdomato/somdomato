@@ -299,8 +299,8 @@ export default function Player({
     <div
       className={
         hideExtras
-          ? `flex items-center gap-3 bg-black/30 py-2 ${className}`
-          : `flex items-center gap-1.5 max-w-xl bg-black/20 rounded-lg px-2 py-1 sm:px-2.5 sm:py-1.5 border border-white/10 ${className}`
+          ? `flex items-center gap-3 bg-black/30 px-1 py-2 ${className}`
+          : `flex items-center gap-1.5 max-w-xl bg-black/20 rounded-lg py-1 border-2 border-white/20 ${className}`
       }
     >
       {/* Cover Image */}
