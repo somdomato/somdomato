@@ -1,11 +1,9 @@
+import { Suspense } from "react";
 import ChatEmbed from "@/components/ChatEmbed";
 //import Featured from "@/components/Featured";
 //import Carousel from "@/components/Carousel";
-import LastSongs from "@/components/blocks/Last";
-import TopSongs from "@/components/blocks/Top";
-import NextSongs from "@/components/blocks/Next";
+import SongsSection from "@/components/blocks/SongsSection";
 //import MiniStats from "@/components/blocks/MiniStats";
-import { lastSongs, nextSongs, topSongs } from "@/actions/songs";
 //import { slides as images } from "@/config";
 
 // Dados vêm do banco de produção ao vivo (fila/histórico mudam a cada
@@ -13,14 +11,7 @@ import { lastSongs, nextSongs, topSongs } from "@/actions/songs";
 // deve rodar contra o banco durante o build.
 export const dynamic = "force-dynamic";
 
-export default async function Home() {
-  const [last, top, nextResult] = await Promise.all([
-    lastSongs("geral"),
-    topSongs(),
-    nextSongs("geral"),
-  ]);
-  const { upcoming: next = [] } = nextResult ?? {};
-
+export default function Home() {
   return (
     <div className="flex flex-col w-full max-w-7xl mx-auto px-4 lg:px-6 py-4 gap-5">
       {/* Hero: Carousel com controles */}
@@ -68,11 +59,21 @@ export default async function Home() {
 
       {/* Conteúdo principal: últimas, top e próximas */}
       <section className="w-full">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <LastSongs data={last} />
-          <TopSongs data={top} />
-          <NextSongs data={next} />
-        </div>
+        <Suspense
+          fallback={
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div
+                  // biome-ignore lint/suspicious/noArrayIndexKey: static skeleton list
+                  key={i}
+                  className="h-48 rounded-xl bg-background-alt border-2 border-primary/20 animate-pulse"
+                />
+              ))}
+            </div>
+          }
+        >
+          <SongsSection />
+        </Suspense>
       </section>
     </div>
   );

@@ -65,7 +65,7 @@ export async function checkMusicRepetition(
     return {
       isRepeated: true,
       reason: "song_in_requests",
-      message: `A música "${song.title}" já está na fila de pedidos.`,
+      message: `A música "${song.title}" já está na fila.`,
     };
   }
 

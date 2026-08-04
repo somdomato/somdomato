@@ -21,12 +21,14 @@ export default function SongList({
   renderRight,
   rightColClass = "w-24",
   numbered = false,
+  animateRight = false,
 }: {
   items: Item[];
   keyField?: string;
   renderRight?: (item: Item) => React.ReactNode;
   rightColClass?: string;
   numbered?: boolean;
+  animateRight?: boolean;
 }) {
   const hasRight = !!renderRight;
 
@@ -69,7 +71,25 @@ export default function SongList({
                   <div
                     className={`${rightColClass} shrink-0 text-right text-xs text-muted`}
                   >
-                    {renderRight ? renderRight(it) : null}
+                    {animateRight ? (
+                      <AnimatePresence mode="popLayout" initial={false}>
+                        <motion.span
+                          key={renderRight ? String(renderRight(it)) : ""}
+                          initial={{ opacity: 0, y: -6, scale: 1.25 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          exit={{ opacity: 0 }}
+                          transition={{
+                            duration: 0.3,
+                            ease: [0.22, 1, 0.36, 1],
+                          }}
+                          className="inline-block text-primary font-semibold"
+                        >
+                          {renderRight ? renderRight(it) : null}
+                        </motion.span>
+                      </AnimatePresence>
+                    ) : renderRight ? (
+                      renderRight(it)
+                    ) : null}
                   </div>
                 )}
               </motion.div>

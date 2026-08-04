@@ -44,7 +44,12 @@ export default function Top({ data }: { data: TopEntry[] }) {
       {top.length === 0 ? (
         <div className="text-muted text-sm">Nenhum pedido ainda.</div>
       ) : (
-        <SongList items={top} numbered renderRight={(t) => `${t.count}x`} />
+        <SongList
+          items={top}
+          numbered
+          animateRight
+          renderRight={(t) => `${t.count}x`}
+        />
       )}
     </SongBlock>
   );
