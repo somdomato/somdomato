@@ -169,7 +169,7 @@ export async function updateSong(
   const isChangingTags =
     !!data.title ||
     !!data.artist ||
-    !!data.album ||
+    data.album !== undefined ||
     !!data.rotation ||
     data.timeSlots !== undefined ||
     !!data.genre ||
@@ -191,6 +191,11 @@ export async function updateSong(
 
   let currentPath = song.path;
   let newPath = song.path;
+  // Erro de renomeação não deve abortar a atualização das demais tags
+  // (título, artista, álbum, etc.) — só é lançado ao final, depois que
+  // os outros campos já foram persistidos no banco.
+  let renameError: string | null = null;
+  let id3Error: string | null = null;
 
   // Se o nome do arquivo mudou, renomear o arquivo físico
   const currentFilename = path.basename(song.path);
@@ -253,7 +258,10 @@ export async function updateSong(
         newPath,
         error: errorMsg,
       });
-      throw new Error(`Erro ao renomear arquivo: ${errorMsg}`);
+      // Não lança aqui: guarda o erro e segue com as demais atualizações
+      // (título, artista, álbum, etc.), já que não têm relação com o arquivo.
+      renameError = errorMsg;
+      data.filename = undefined;
     }
   } else {
     // Se não está renomeando, não atualizar o path no banco
@@ -261,11 +269,17 @@ export async function updateSong(
   }
 
   // Atualizar tags ID3 (usar o path atual, que pode ser o novo se foi renomeado)
-  if (data.title || data.artist || data.album || data.genre || data.coverFile) {
+  if (
+    data.title ||
+    data.artist ||
+    data.album !== undefined ||
+    data.genre ||
+    data.coverFile
+  ) {
     const tags: NodeID3.Tags = {};
     if (data.title) tags.title = data.title;
     if (data.artist) tags.artist = data.artist;
-    if (data.album) tags.album = data.album;
+    if (data.album !== undefined) tags.album = data.album;
 
     // Sincronizar gênero com ID3 tags
     // Importante: "geral" no banco deve ser "Sertanejo" no ID3
@@ -316,7 +330,8 @@ export async function updateSong(
 
     const success = NodeID3.update(tags, currentPath);
     if (!success) {
-      console.error("Erro ao atualizar tags ID3");
+      console.error("Erro ao atualizar tags ID3", { path: currentPath });
+      id3Error = "Falha ao gravar as tags no arquivo MP3";
     }
   }
 
@@ -325,7 +340,7 @@ export async function updateSong(
     ...(data.filename && { path: data.filename }),
     ...(data.title && { title: data.title }),
     ...(data.artist && { artist: data.artist }),
-    ...(data.album && { album: data.album }),
+    ...(data.album !== undefined && { album: data.album }),
     ...(data.rotation && { rotation: data.rotation }),
     ...(data.timeSlots !== undefined && { timeSlots: data.timeSlots }),
     ...(data.genre && { genre: data.genre }),
@@ -446,6 +461,17 @@ export async function updateSong(
       rotation: data.rotation,
     },
   });
+
+  // As demais alterações (título, artista, álbum, etc.) já foram
+  // persistidas acima — reportar falhas de arquivo/ID3 agora, sem
+  // descartar o restante do que foi salvo.
+  const softErrors = [
+    renameError && `Erro ao renomear arquivo: ${renameError}`,
+    id3Error,
+  ].filter(Boolean);
+  if (softErrors.length > 0) {
+    throw new Error(softErrors.join("; "));
+  }
 
   return { success: true, song: updated };
 }
