@@ -13,7 +13,7 @@ const LOGO_VIDEO_SRC =
 
 export default function Header() {
   return (
-    <header className="sticky top-0 z-50 border-b-2 border-black/50">
+    <header className="sticky top-0 z-50 border-b-2 border-black/50 px-2">
       {/* Background com fallback */}
       <div
         className="absolute inset-0 -z-20 bg-background bg-wood bg-repeat-x bg-top bg-contain"
