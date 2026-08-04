@@ -47,7 +47,10 @@ else
   exit 1
 fi
 
-pnpm run build || exit 1
+# Servidor tem só 1.9GB de RAM compartilhados com outros serviços (Liquidsoap,
+# Icecast, bot, outro app Next.js) — sem isso o V8 cresce até o kernel matar o
+# processo com OOM-killer (visto em produção: next-build chegando a 1.2GB de RSS).
+NODE_OPTIONS="--max-old-space-size=768" pnpm run build || exit 1
 
 sudo /usr/bin/systemctl stop $SERVICE
 rm -rf "$PROJECT_DIR"
