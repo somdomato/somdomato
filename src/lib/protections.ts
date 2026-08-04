@@ -1,7 +1,9 @@
 import { db } from "@/db";
-import { requests, songs, queueEntries } from "@/db/schema";
-import { and, eq, desc } from "drizzle-orm";
+import { songs, queueEntries } from "@/db/schema";
+import { and, eq, desc, inArray } from "drizzle-orm";
 import { LAST_SONGS_HISTORY_LIMIT } from "@/config";
+
+const QUEUED_STATUSES = ["scheduled", "pending", "current"] as const;
 
 export interface RepetitionCheckResult {
   isRepeated: boolean;
@@ -47,13 +49,19 @@ export async function checkMusicRepetition(
     };
   }
 
-  // 2. Verificar se a música já está nos pedidos pendentes
-  const existingRequest = await db
+  // 2. Verificar se a música já está na fila (Próximas: agendada, pendente ou tocando agora)
+  const existingInQueue = await db
     .select()
-    .from(requests)
-    .where(eq(requests.songId, songId))
+    .from(queueEntries)
+    .where(
+      and(
+        eq(queueEntries.genre, "geral"),
+        eq(queueEntries.songId, songId),
+        inArray(queueEntries.status, QUEUED_STATUSES),
+      ),
+    )
     .limit(1);
-  if (existingRequest.length > 0) {
+  if (existingInQueue.length > 0) {
     return {
       isRepeated: true,
       reason: "song_in_requests",
@@ -74,17 +82,23 @@ export async function checkMusicRepetition(
     .orderBy(desc(queueEntries.id))
     .limit(10);
 
-  // 4. Verificar artistas dos pedidos pendentes
-  const pendingArtists = await db
+  // 4. Verificar artistas já na fila (Próximas)
+  const queuedArtists = await db
     .select({
       artist: songs.artist,
     })
-    .from(requests)
-    .innerJoin(songs, eq(requests.songId, songs.id));
+    .from(queueEntries)
+    .innerJoin(songs, eq(queueEntries.songId, songs.id))
+    .where(
+      and(
+        eq(queueEntries.genre, "geral"),
+        inArray(queueEntries.status, QUEUED_STATUSES),
+      ),
+    );
 
   const recentArtists = [
     ...recentHistory.map((h) => h.artist),
-    ...pendingArtists.map((p) => p.artist),
+    ...queuedArtists.map((p) => p.artist),
   ];
   if (recentArtists.includes(song.artist)) {
     return {
@@ -115,13 +129,16 @@ export async function getBlockedSongIds(genre: string = "geral"): Promise<{
     .orderBy(desc(queueEntries.id))
     .limit(LAST_SONGS_HISTORY_LIMIT);
 
-  // Requests pendentes (apenas para geral)
-  let pendingRequests: { songId: number }[] = [];
-  if (genre === "geral") {
-    pendingRequests = await db
-      .select({ songId: requests.songId })
-      .from(requests);
-  }
+  // Músicas já na fila (Próximas: agendada, pendente ou tocando agora) DESTE GÊNERO
+  const queuedSongs = await db
+    .select({ songId: queueEntries.songId })
+    .from(queueEntries)
+    .where(
+      and(
+        eq(queueEntries.genre, genre),
+        inArray(queueEntries.status, QUEUED_STATUSES),
+      ),
+    );
 
   // Artistas das últimas 10 músicas do histórico DESTE GÊNERO
   const recentHistory = await db
@@ -136,25 +153,28 @@ export async function getBlockedSongIds(genre: string = "geral"): Promise<{
     .orderBy(desc(queueEntries.id))
     .limit(10);
 
-  // Artistas dos requests pendentes (apenas para geral)
-  let pendingArtists: { artist: string }[] = [];
-  if (genre === "geral") {
-    pendingArtists = await db
-      .select({
-        artist: songs.artist,
-      })
-      .from(requests)
-      .innerJoin(songs, eq(requests.songId, songs.id));
-  }
+  // Artistas já na fila (Próximas) DESTE GÊNERO
+  const queuedArtists = await db
+    .select({
+      artist: songs.artist,
+    })
+    .from(queueEntries)
+    .innerJoin(songs, eq(queueEntries.songId, songs.id))
+    .where(
+      and(
+        eq(queueEntries.genre, genre),
+        inArray(queueEntries.status, QUEUED_STATUSES),
+      ),
+    );
 
   return {
     songIds: [
       ...lastSongs.map((h) => h.songId),
-      ...pendingRequests.map((r) => r.songId),
+      ...queuedSongs.map((r) => r.songId),
     ],
     artists: [
       ...recentHistory.map((h) => h.artist),
-      ...pendingArtists.map((p) => p.artist),
+      ...queuedArtists.map((p) => p.artist),
     ],
   };
 }
