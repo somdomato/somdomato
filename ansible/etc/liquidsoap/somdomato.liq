@@ -1,4 +1,4 @@
-# Permitir execucao como root (necessario para Docker)
+# Permitir execucao como root (necessario para Podman)
 settings.init.allow_root := true
 
 # Configuração do input ao vivo
@@ -7,7 +7,7 @@ live = input.harbor("aovivo", port=8010, user="dj", password="hackme")
 # Função para buscar próxima música do Next.js
 def next(genre) =
   def request_function() =
-    # Chama a API do Next.js via host.docker.internal (acessa o host) passando o gênero
+    # Chama a API do Next.js via host.containers.internal (acessa o host) passando o gênero
     result = process.read.lines("curl -s http://localhost:3000/api/music?genre=#{genre}")
     json = list.hd(default="", result)
     

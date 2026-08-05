@@ -12,7 +12,7 @@ Streaming de audio para as massas.
 | [Stream](https://github.com/somdomato/stream) | [radio.somdomato.com](https://radio.somdomato.com) | IceCast2 & LiquidSoap |
 | [Chat](https://github.com/somdomato/chat) | [chat.somdomato.com](https://chat.somdomato.com) | Ergo IRC Server & Gamja IRC Web Client |
 | [Mobile](https://github.com/somdomato/mobile) |  | Aplicativos iOS e Android da rádio |
-| [Infra](https://github.com/somdomato/infra) |  | Imagens e contêineres do Docker e Ansible Playbooks para desenvolvimento local |
+| [Infra](https://github.com/somdomato/infra) |  | Imagens e contêineres do Podman e Ansible Playbooks para desenvolvimento local |
 
 ## Arquitetura Completa (Produção)
 
@@ -83,13 +83,13 @@ Streaming de audio para as massas.
 | Provisioning | Ansible               | Configuração automatizada da VPS         |
 | Init         | systemd               | Gerenciamento de processos               |
 
-## Arquitetura Local (Docker)
+## Arquitetura Local (Podman)
 
-O Docker replica o ambiente de produção para desenvolvimento:
+O Podman replica o ambiente de produção para desenvolvimento:
 
 ```
   ┌──────────────────────────────────────────────────────────────┐
-  │                    Docker Compose                            │
+  │                    Podman Compose                            │
   │                                                              │
   │   ┌────────────────────┐   ┌──────────────────────────────┐  │
   │   │  Nginx             │──►│  Next.js (dev mode)          │  │
@@ -109,7 +109,7 @@ O Docker replica o ambiente de produção para desenvolvimento:
   │              │              │  :8081 (HTTP ctrl)          │   │
   │              │              │                             │   │
   │              │              │  Debian Trixie              │   │
-  │              │              │  Consulta API via Docker DNS│   │
+  │              │              │  Consulta API via Podman DNS│   │
   │              │              └──────────────┬──────────────┘   │
   │              │                            │                   │
   │              │              ┌─────────────▼──────────────┐    │
@@ -122,7 +122,7 @@ O Docker replica o ambiente de produção para desenvolvimento:
   │                             │  /romantico                │    │
   │                             └────────────────────────────┘    │
   │                                                               │
-  │   Rede Docker: somdomato-radio-network                        │
+  │   Rede Podman: somdomato-radio-network                        │
   │   Volumes: node_modules, .next cache, /var/music/sdm (bind)   │
   └───────────────────────────────────────────────────────────────┘
 
@@ -137,7 +137,7 @@ O Docker replica o ambiente de produção para desenvolvimento:
 
 ### Requisitos
 
-- Docker e Docker Compose
+- Podman e podman-compose (ou plugin `podman compose`)
 - Git
 - OpenSSL (para gerar certificados SSL locais)
 - Arquivos de música em um diretório local
@@ -153,8 +153,8 @@ cd somdomato
 
 # 2. Configurar caminho das músicas
 export MUSIC_PATH=/home/lucas/music/sdm
-# Ou criar arquivo .env na pasta docker/:
-echo "MUSIC_PATH=/home/lucas/music/sdm" > docker/.env
+# Ou criar arquivo .env na pasta podman/:
+echo "MUSIC_PATH=/home/lucas/music/sdm" > podman/.env
 
 # 3. Iniciar ambiente completo (gera certs SSL + sobe 4 containers)
 ./scripts/dev.sh
@@ -172,17 +172,17 @@ cd somdomato
 
 # 2. Configurar caminho das músicas
 $env:MUSIC_PATH = "C:\Users\Lucas\Music\sdm"
-# Ou criar arquivo .env na pasta docker/:
-Set-Content docker\.env "MUSIC_PATH=C:\Users\Lucas\Music\sdm"
+# Ou criar arquivo .env na pasta podman/:
+Set-Content podman\.env "MUSIC_PATH=C:\Users\Lucas\Music\sdm"
 
 # 3. Gerar certificados SSL (via Git Bash ou WSL)
-cd docker
+cd podman
 bash generate-certs.sh
 cd ..
 
 # 4. Iniciar containers
-cd docker
-docker compose up -d --build
+cd podman
+podman compose up -d --build
 
 # 5. Acessar
 # https://localhost (aceite o aviso de certificado auto-assinado)
@@ -258,8 +258,8 @@ choco install mkcert      # ou: scoop install mkcert
 Depois regenere os certificados:
 
 ```bash
-rm -rf docker/certs
-bash docker/generate-certs.sh
+rm -rf podman/certs
+bash podman/generate-certs.sh
 mkcert -install
 ```
 
@@ -299,19 +299,19 @@ make liquidsoap-restart
 make help
 ```
 
-### Comandos Docker diretos
+### Comandos Podman diretos
 
 ```bash
-# Subir com build (da pasta docker/)
-docker compose up -d --build
+# Subir com build (da pasta podman/)
+podman compose up -d --build
 
 # Rebuildar do zero
-docker compose down -v && docker compose build --no-cache && docker compose up -d
+podman compose down -v && podman compose build --no-cache && podman compose up -d
 ```
 
-### Desenvolvimento sem Docker (Next.js local)
+### Desenvolvimento sem Podman (Next.js local)
 
-Se preferir rodar apenas o Next.js localmente (icecast/liquidsoap continuam no Docker):
+Se preferir rodar apenas o Next.js localmente (icecast/liquidsoap continuam no Podman):
 
 ```bash
 # Instalar dependências
@@ -321,7 +321,7 @@ pnpm install
 pnpm dev
 
 # Em outro terminal, subir apenas streaming
-cd docker && docker compose up -d icecast liquidsoap
+cd podman && podman compose up -d icecast liquidsoap
 ```
 
 ## Fluxo do Sistema de Pedidos e Reprodução
@@ -579,25 +579,25 @@ pnpm test
 │   ├── actions/              # Server Actions
 │   ├── proxy.ts              # Proteção de rotas admin (Next.js 16+ usa proxy.ts em vez de middleware.ts)
 │   └── server.ts             # Servidor customizado (Socket.io)
-├── docker/
-│   ├── docker-compose.yml    # Orquestração local (4 serviços)
-│   ├── Dockerfile.nextjs     # Imagem Next.js (Debian Trixie + Node 24 + pnpm)
-│   ├── Dockerfile.nginx      # Imagem Nginx (Debian Trixie — espelha produção)
-│   ├── Dockerfile.icecast    # Imagem Icecast2 (Debian Trixie — espelha produção)
-│   ├── Dockerfile.liquidsoap # Imagem Liquidsoap (Debian Trixie)
-│   ├── nginx.dev.conf        # 2 virtual hosts: localhost + radio.localhost
-│   ├── .env.example          # Variáveis para o docker-compose (MUSIC_PATH)
-│   └── generate-certs.sh     # Gera certificados SSL (mkcert ou openssl)
+├── podman/
+│   ├── compose.yml            # Orquestração local (4 serviços)
+│   ├── Containerfile.nextjs   # Imagem Next.js (Debian Trixie + Node 24 + pnpm)
+│   ├── Containerfile.nginx    # Imagem Nginx (Debian Trixie — espelha produção)
+│   ├── Containerfile.icecast  # Imagem Icecast2 (Debian Trixie — espelha produção)
+│   ├── Containerfile.liquidsoap # Imagem Liquidsoap (Debian Trixie)
+│   ├── nginx.dev.conf         # 2 virtual hosts: localhost + radio.localhost
+│   ├── .env.example           # Variáveis para o compose.yml (MUSIC_PATH)
+│   └── generate-certs.sh      # Gera certificados SSL (mkcert ou openssl)
 ├── ansible/
 │   ├── playbook.yml          # Playbook Ansible para provisioning VPS
 │   ├── inventory.ini         # Inventário de hosts
 │   └── etc/
 │       ├── icecast/          # Configuração Icecast2
-│       ├── liquidsoap/       # Scripts Liquidsoap (produção + Docker)
+│       ├── liquidsoap/       # Scripts Liquidsoap (produção + Podman)
 │       ├── nginx/            # Configuração Nginx (sites + snippets)
 │       └── systemd/          # Services systemd
 ├── scripts/
-│   ├── dev.sh                # Inicia ambiente Docker completo
+│   ├── dev.sh                # Inicia ambiente Podman completo
 │   ├── deploy.sh             # Deploy em produção
 │   ├── sync-music.ts         # Sincronização de músicas (DB ↔ ID3)
 │   └── generate-encryption-key.sh

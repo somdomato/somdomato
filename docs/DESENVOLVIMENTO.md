@@ -18,7 +18,7 @@ Este guia detalha o setup de desenvolvimento local com Nginx, Icecast, Liquidsoa
 
 ## Pré-requisitos
 
-- Docker e Docker Compose
+- Podman e podman-compose (ou plugin `podman compose`)
 - Node.js 18+ e pnpm
 - Arquivos de música em `/home/lucas/music/sdm`
 
@@ -36,9 +36,9 @@ Acesse: http://localhost:3000
 
 ## Configuração Detalhada
 
-### 1. Containers Docker
+### 1. Containers Podman
 
-O arquivo `docker/docker-compose.yml` configura 3 serviços:
+O arquivo `podman/compose.yml` configura 3 serviços:
 
 - **Nginx** (porta 8080): Proxy reverso que roteia:
   - `/socket.io/*` → Next.js (WebSocket)
@@ -52,10 +52,10 @@ O arquivo `docker/docker-compose.yml` configura 3 serviços:
 - **Liquidsoap**: AutoDJ que busca músicas da API Next.js
 
 ```bash
-cd docker
-docker compose up -d
-docker compose logs -f  # Ver logs
-docker compose down     # Parar
+cd podman
+podman compose up -d
+podman compose logs -f  # Ver logs
+podman compose down     # Parar
 ```
 
 ### 2. Variáveis de Ambiente
@@ -87,7 +87,7 @@ O servidor Next.js:
 
 ## Fluxo de Metadados
 
-1. **Liquidsoap** solicita próxima música: `GET http://host.docker.internal:3000/api/music?genre=geral`
+1. **Liquidsoap** solicita próxima música: `GET http://host.containers.internal:3000/api/music?genre=geral`
 2. **Next.js API** retorna música do banco de dados
 3. **Liquidsoap** toca a música no Icecast
 4. **Player no navegador** busca metadados: `GET /api/metadata?genre=geral`
@@ -111,7 +111,7 @@ O servidor Next.js:
 **Debug**:
 ```bash
 # Ver logs do Nginx
-docker logs somdomato-nginx -f
+podman logs somdomato-nginx -f
 
 # Testar stream diretamente
 curl -I http://localhost:8080/geral
@@ -130,10 +130,10 @@ curl http://localhost:8080/json | jq
 ## Estrutura de Arquivos
 
 ```
-├── docker/
-│   ├── docker-compose.yml      # Orquestração dos containers
-│   ├── nginx.dev.conf          # Config Nginx para desenvolvimento
-│   └── Dockerfile.liquidsoap   # Build do Liquidsoap
+├── podman/
+│   ├── compose.yml              # Orquestração dos containers
+│   ├── nginx.dev.conf           # Config Nginx para desenvolvimento
+│   └── Containerfile.liquidsoap # Build do Liquidsoap
 ├── src/
 │   ├── config.ts               # ⭐ Configurações centralizadas
 │   ├── app/api/
@@ -154,17 +154,17 @@ Arquivos marcados com ⭐ foram simplificados.
 
 ```bash
 # Reiniciar Liquidsoap
-docker restart somdomato-liquidsoap
+podman restart somdomato-liquidsoap
 
 # Ver status Icecast
 curl http://localhost:8080/status.xsl
 
-# Limpar cache Docker
-docker compose down -v
-docker system prune -af
+# Limpar cache Podman
+podman compose down -v
+podman system prune -af
 
 # Build Liquidsoap
-cd docker && docker compose build liquidsoap
+cd podman && podman compose build liquidsoap
 
 # Testar Socket.io
 # No navegador console:
@@ -177,7 +177,7 @@ Ver [docs/DEPLOY-RADIO.md](../docs/DEPLOY-RADIO.md) para instruções completas.
 
 **Diferenças principais**:
 - URLs HTTPS com certificado SSL
-- Nginx rodando nativo (não Docker)
+- Nginx rodando nativo (não Podman)
 - Socket.io atrás de proxy com SSL
 - Logging centralizado
 

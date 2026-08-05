@@ -1,4 +1,4 @@
-# Permitir execucao como root (necessario para Docker)
+# Permitir execucao como root (necessario para Podman)
 settings.init.allow_root := true
 
 # Configuração do input ao vivo
@@ -7,7 +7,7 @@ live = input.harbor("aovivo", port=8010, user="dj", password="hackme")
 # Função para buscar próxima música do Next.js para um gênero específico
 def next(genre) =
   def request_function() =
-    # Chama a API do Next.js via rede Docker interna
+    # Chama a API do Next.js via rede Podman interna
     api_url = "http://nextjs:3000/api/music?genre=#{genre}"
     result = process.read.lines("curl -s '#{api_url}'")
     json = list.hd(default="", result)
@@ -27,7 +27,7 @@ def next(genre) =
       null()
     else
       # Converter path do host para path do container
-      # No Docker, músicas estão em /var/music/sdm, mas API retorna /home/lucas/music/sdm
+      # No Podman, músicas estão em /var/music/sdm, mas API retorna /home/lucas/music/sdm
       path = string.replace(pattern="/home/lucas/music/sdm", (fun (_) -> "/var/music/sdm"), path_raw)
       
       # Log para depuracao
@@ -132,7 +132,7 @@ def play_handler(_, req) =
   ignore(req.html("OK"))
 end
 
-# Harbor HTTP em porta 8081 (desenvolvimento Docker)
+# Harbor HTTP em porta 8081 (desenvolvimento Podman)
 # Em produção, o arquivo somdomato.liq usa porta 8080
 harbor.http.register(
   port=8081,

@@ -25,7 +25,7 @@
         <yp-url>http://dir.xiph.org/cgi-bin/yp-cgi</yp-url>
     </directory>
 
-    <hostname>host.docker.internal</hostname>
+    <hostname>host.containers.internal</hostname>
 
     <mount type="default">
         <charset>UTF-8</charset>

@@ -299,8 +299,8 @@ export default function Player({
     <div
       className={
         hideExtras
-          ? `flex items-center gap-3 bg-black/30 px-1 py-2 ${className}`
-          : `flex items-center gap-1.5 max-w-xl bg-black/20 rounded-lg py-1 border-2 border-white/20 ${className}`
+          ? `flex items-center gap-3 bg-black/30 p-2 ${className}`
+          : `flex items-center gap-1.5 max-w-xl bg-black/20 rounded-lg p-2 border-2 border-white/20 ${className}`
       }
     >
       {/* Cover Image */}
@@ -319,17 +319,17 @@ export default function Player({
           className="object-cover"
         />
         {hideExtras && playing && !loading && (
-          <div className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 flex items-end gap-[2px] h-2.5">
+          <div className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 flex items-end gap-0.5 h-2.5">
             <span
-              className="w-[2px] rounded-full bg-primary equalizer-bar"
+              className="w-0.5 rounded-full bg-primary equalizer-bar"
               style={{ animationDelay: "0ms" }}
             />
             <span
-              className="w-[2px] rounded-full bg-primary equalizer-bar"
+              className="w-0.5 rounded-full bg-primary equalizer-bar"
               style={{ animationDelay: "0.2s" }}
             />
             <span
-              className="w-[2px] rounded-full bg-primary equalizer-bar"
+              className="w-0.5 rounded-full bg-primary equalizer-bar"
               style={{ animationDelay: "0.4s" }}
             />
           </div>

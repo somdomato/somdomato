@@ -2,7 +2,7 @@
 
 ## 🔌 Mapeamento de Portas
 
-### Desenvolvimento (Docker)
+### Desenvolvimento (Podman)
 
 | Serviço | Porta Externa | Porta Interna | Propósito |
 |---------|---------------|---------------|-----------|
@@ -70,7 +70,7 @@ LIQUIDSOAP_CONTROL_URL=http://localhost:8080
 
 ## 🔧 Configuração Nginx
 
-### Desenvolvimento (docker/nginx.dev.conf)
+### Desenvolvimento (podman/nginx.dev.conf)
 
 ```nginx
 # Porta 8080 exposta externamente
@@ -79,7 +79,7 @@ server {
     
     # WebSocket para Socket.io
     location /socket.io/ {
-        proxy_pass http://host.docker.internal:3000;
+        proxy_pass http://host.containers.internal:3000;
     }
     
     # Streams do Icecast
@@ -89,7 +89,7 @@ server {
     
     # Next.js
     location / {
-        proxy_pass http://host.docker.internal:3000;
+        proxy_pass http://host.containers.internal:3000;
     }
 }
 ```
@@ -217,8 +217,8 @@ curl https://radio.somdomato.com/json | jq
 
 **Desenvolvimento**: Verificar se container está rodando e porta exposta
 ```bash
-docker ps | grep liquidsoap
-docker logs somdomato-liquidsoap
+podman ps | grep liquidsoap
+podman logs somdomato-liquidsoap
 curl -v http://localhost:8081/skip
 ```
 
@@ -235,7 +235,7 @@ Sempre acessar via **porta 3000** (Next.js), nunca via porta 8080 (Nginx) direta
 
 ### Stream não toca
 
-1. Verificar se Icecast está rodando: `docker ps` ou `systemctl status icecast2`
+1. Verificar se Icecast está rodando: `podman ps` ou `systemctl status icecast2`
 2. Testar stream direto: `curl -I http://localhost:8000/geral` (dev) ou `http://localhost:8000/geral` (prod)
 3. Ver logs do Liquidsoap
 

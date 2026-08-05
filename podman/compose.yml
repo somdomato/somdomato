@@ -5,7 +5,7 @@ services:
     container_name: somdomato-nextjs
     build:
       context: ..
-      dockerfile: docker/Dockerfile.nextjs
+      dockerfile: podman/Containerfile.nextjs
     env_file:
       - ../.env
       - .env
@@ -39,7 +39,7 @@ services:
     container_name: somdomato-nginx
     build:
       context: .
-      dockerfile: Dockerfile.nginx
+      dockerfile: Containerfile.nginx
     ports:
       - "443:443"
       - "8080:80"
@@ -72,12 +72,12 @@ services:
     container_name: somdomato-icecast
     build:
       context: .
-      dockerfile: Dockerfile.icecast
+      dockerfile: Containerfile.icecast
     ports:
       - "8000:8000"
     volumes:
       - type: bind
-        source: ../ansible/etc/icecast/somdomato-docker.xml
+        source: ../ansible/etc/icecast/somdomato-podman.xml
         target: /etc/icecast2/icecast.xml
         read_only: true
     restart: unless-stopped
@@ -88,7 +88,7 @@ services:
     container_name: somdomato-liquidsoap
     build:
       context: .
-      dockerfile: Dockerfile.liquidsoap
+      dockerfile: Containerfile.liquidsoap
     ports:
       - "8081:8081"
     depends_on:
@@ -98,7 +98,7 @@ services:
         condition: service_healthy
     volumes:
       - type: bind
-        source: ../ansible/etc/liquidsoap/somdomato-docker.liq
+        source: ../ansible/etc/liquidsoap/somdomato-podman.liq
         target: /etc/liquidsoap/somdomato.liq
         read_only: true
       - type: bind

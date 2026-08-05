@@ -258,14 +258,14 @@ Ao editar uma música via `updateSong()`:
 ## Comandos Úteis
 
 ```bash
-# Desenvolvimento (Docker completo)
+# Desenvolvimento (Podman completo)
 ./scripts/dev.sh            # Gera certs SSL + sobe 4 containers
-cd docker && docker compose up -d --build  # Alternativa manual
-cd docker && docker compose down           # Parar containers
+cd podman && podman compose up -d --build  # Alternativa manual
+cd podman && podman compose down           # Parar containers
 
-# Desenvolvimento (Next.js local + Docker streaming)
+# Desenvolvimento (Next.js local + Podman streaming)
 pnpm dev                    # Iniciar Next.js local
-cd docker && docker compose up -d icecast liquidsoap  # Apenas streaming
+cd podman && podman compose up -d icecast liquidsoap  # Apenas streaming
 
 # Build e DB
 pnpm build                  # Build para produção
@@ -288,7 +288,7 @@ cd ansible && ansible-playbook -i inventory.ini playbook.yml
 - Configuração Icecast: `ansible/etc/icecast/`
 - Services systemd: `ansible/etc/systemd/`
 - Playbook Ansible: `ansible/playbook.yml`
-- Docker (dev): `docker/docker-compose.yml`
+- Podman (dev): `podman/compose.yml`
 - Tipos TypeScript: `src/types.ts`
 
 ## Estrutura de Diretórios
@@ -297,10 +297,10 @@ cd ansible && ansible-playbook -i inventory.ini playbook.yml
 ├── src/                  # Código fonte Next.js
 │   ├── proxy.ts          # Proxy de autenticação admin (ex-middleware.ts)
 │   └── server.ts         # Servidor customizado (Socket.io)
-├── docker/               # Docker para desenvolvimento local
-│   ├── docker-compose.yml
-│   ├── Dockerfile.nextjs
-│   ├── Dockerfile.liquidsoap
+├── podman/               # Podman para desenvolvimento local
+│   ├── compose.yml
+│   ├── Containerfile.nextjs
+│   ├── Containerfile.liquidsoap
 │   ├── nginx.dev.conf
 │   └── generate-certs.sh
 ├── ansible/              # Configurações de produção + provisioning
@@ -318,19 +318,19 @@ cd ansible && ansible-playbook -i inventory.ini playbook.yml
 
 ## Ambiente de Desenvolvimento
 
-- Docker replica o ambiente de produção (Debian 13, Node 24, pnpm)
+- Podman replica o ambiente de produção (Debian 13, Node 24, pnpm)
 - 4 containers: Next.js, Nginx (SSL auto-assinado), Icecast2, Liquidsoap
-- Nginx no Docker faz proxy reverso idêntico à produção
-- Liquidsoap conecta ao Next.js via rede Docker interna (`http://nextjs:3000`)
-- SSL via certificado auto-assinado gerado por `docker/generate-certs.sh`
+- Nginx no Podman faz proxy reverso idêntico à produção
+- Liquidsoap conecta ao Next.js via rede Podman interna (`http://nextjs:3000`)
+- SSL via certificado auto-assinado gerado por `podman/generate-certs.sh`
 - Acesso: `https://localhost` (aceitar aviso de certificado)
 
 ## Ansible (Provisioning VPS)
 
 - Playbook em `ansible/playbook.yml` provisiona VPS Debian 13 completa
-- Mesmos arquivos de `ansible/etc/` são usados no Docker e na VPS
-- Docker usa variantes `-docker.liq` e `-docker.xml` quando necessário
-- Em produção: Liquidsoap usa `localhost:3000`, no Docker usa `nextjs:3000`
+- Mesmos arquivos de `ansible/etc/` são usados no Podman e na VPS
+- Podman usa variantes `-podman.liq` e `-podman.xml` quando necessário
+- Em produção: Liquidsoap usa `localhost:3000`, no Podman usa `nextjs:3000`
 
 ## Sistema de Capas (Covers)
 
@@ -397,7 +397,7 @@ Quando o nome do artista muda no admin:
 **Ao trabalhar neste projeto:**
 - Sempre considere o fluxo completo: pedido → requests → /api/music → history → UI
 - Mantenha sincronia entre banco de dados e eventos Socket.io
-- Teste localmente com Docker antes de deploy
+- Teste localmente com Podman antes de deploy
 - Documente mudanças significativas no README.md
 - Configs de produção ficam em `ansible/etc/`, NÃO em `files/`
-- Docker para dev fica em `docker/`, Ansible para produção fica em `ansible/`
+- Podman para dev fica em `podman/`, Ansible para produção fica em `ansible/`

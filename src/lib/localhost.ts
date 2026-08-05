@@ -22,10 +22,10 @@ function isPrivateIP(ip: string): boolean {
 }
 
 /**
- * Verifica se a requisição veio de localhost ou rede interna (Docker).
+ * Verifica se a requisição veio de localhost ou rede interna (Podman).
  *
  * - Liquidsoap em produção: `curl http://localhost:3000/...` → sem headers de proxy → permite
- * - Liquidsoap no Docker: `http://nextjs:3000/...` → sem headers de proxy → permite
+ * - Liquidsoap no Podman: `http://nextjs:3000/...` → sem headers de proxy → permite
  * - Usuário externo via Nginx: Nginx seta `X-Real-IP` com IP público → bloqueia
  */
 export function isLocalRequest(request: Request): boolean {
@@ -40,6 +40,6 @@ export function isLocalRequest(request: Request): boolean {
     return LOCAL_IPS.has(clientIp) || isPrivateIP(clientIp);
   }
 
-  // Sem headers de proxy = conexão direta (localhost ou Docker)
+  // Sem headers de proxy = conexão direta (localhost ou Podman)
   return true;
 }

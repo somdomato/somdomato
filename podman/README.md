@@ -1,10 +1,10 @@
-# Docker - Ambiente de Desenvolvimento Som do Mato
+# Podman - Ambiente de Desenvolvimento Som do Mato
 
-Setup Docker completo que replica o ambiente de produção (Debian 13) localmente com Next.js, Nginx (SSL), Icecast2 e Liquidsoap.
+Setup Podman completo que replica o ambiente de produção (Debian 13) localmente com Next.js, Nginx (SSL), Icecast2 e Liquidsoap.
 
 ## Pré-requisitos
 
-1. Docker e Docker Compose instalados
+1. Podman e podman-compose (ou `podman compose`, plugin nativo) instalados
 2. Músicas na pasta definida pela variável `MUSIC_PATH`
 
 ## Setup Rápido
@@ -26,20 +26,20 @@ export MUSIC_PATH=/home/lucas/music/sdm
 $env:MUSIC_PATH = "C:\Users\Lucas\Music\sdm"
 
 # 2. Gerar certificados SSL
-cd docker
+cd podman
 bash generate-certs.sh  # ou usar Git Bash
 
 # 3. Iniciar containers
-docker compose up -d --build
+podman compose up -d --build
 ```
 
 ## Configuração do MUSIC_PATH
 
-O caminho das músicas pode ser configurado via variável de ambiente ou `.env` na pasta `docker/`:
+O caminho das músicas pode ser configurado via variável de ambiente ou `.env` na pasta `podman/`:
 
 ```bash
-# Opção A: Via .env (crie na pasta docker/)
-echo "MUSIC_PATH=/home/lucas/music/sdm" > docker/.env
+# Opção A: Via .env (crie na pasta podman/)
+echo "MUSIC_PATH=/home/lucas/music/sdm" > podman/.env
 
 # Opção B: Via variável de ambiente
 export MUSIC_PATH=/home/lucas/music/sdm
@@ -59,7 +59,7 @@ $env:MUSIC_PATH = "C:\Users\Lucas\Music\sdm"
 Após subir os containers pela primeira vez (ou após resetar os volumes), aplique o schema do banco dentro do container Next.js:
 
 ```bash
-docker compose -f docker/docker-compose.yml exec nextjs pnpm run push
+podman compose -f podman/compose.yml exec nextjs pnpm run push
 ```
 
 Sem isso, a API `/api/music` falha com `no such table: settings` e o Liquidsoap não consegue buscar músicas, deixando todos os streams mudos.
@@ -87,51 +87,51 @@ Sem isso, a API `/api/music` falha com `no such table: settings` e o Liquidsoap 
 
 ```bash
 # Iniciar
-cd docker && docker compose up -d --build
+cd podman && podman compose up -d --build
 
 # Ver logs
-docker compose logs -f
+podman compose logs -f
 
 # Ver logs de um serviço específico
-docker compose logs -f nextjs
-docker compose logs -f liquidsoap
-docker compose logs -f icecast
-docker compose logs -f nginx
+podman compose logs -f nextjs
+podman compose logs -f liquidsoap
+podman compose logs -f icecast
+podman compose logs -f nginx
 
 # Reiniciar um serviço
-docker compose restart liquidsoap
+podman compose restart liquidsoap
 
 # Parar
-docker compose down
+podman compose down
 
 # Rebuildar do zero
-docker compose down -v && docker compose build --no-cache && docker compose up -d
+podman compose down -v && podman compose build --no-cache && podman compose up -d
 ```
 
 ## Estrutura
 
 ```
-docker/
-├── docker-compose.yml       # Orquestração dos containers
-├── Dockerfile.liquidsoap    # Imagem Liquidsoap (Debian Trixie)
-├── Dockerfile.nextjs        # Imagem Next.js (Debian Trixie + Node 24)
-├── nginx.dev.conf           # Nginx com SSL auto-assinado
-├── generate-certs.sh        # Gera certificados SSL para dev
-└── certs/                   # Certificados (gitignored)
+podman/
+├── compose.yml               # Orquestração dos containers
+├── Containerfile.liquidsoap  # Imagem Liquidsoap (Debian Trixie)
+├── Containerfile.nextjs      # Imagem Next.js (Debian Trixie + Node 24)
+├── nginx.dev.conf            # Nginx com SSL auto-assinado
+├── generate-certs.sh         # Gera certificados SSL para dev
+└── certs/                    # Certificados (gitignored)
     ├── selfsigned.crt
     └── selfsigned.key
 ```
 
-## Diferenças Docker vs Produção
+## Diferenças Podman vs Produção
 
-| Aspecto         | Docker (dev)                  | Produção (VPS)               |
-|-----------------|-------------------------------|-------------------------------|
-| SSL             | Certificado auto-assinado     | Let's Encrypt                |
+| Aspecto         | Podman (dev)                    | Produção (VPS)               |
+|-----------------|----------------------------------|-------------------------------|
+| SSL             | Certificado auto-assinado        | Let's Encrypt                |
 | Node.js         | Modo desenvolvimento (`pnpm dev`) | Modo produção (`pnpm start`) |
-| Nginx           | Container Docker              | Instalado no host             |
-| Icecast hostname| `host.docker.internal`        | `somdomato.com`              |
-| Liquidsoap API  | `http://nextjs:3000`          | `http://localhost:3000`      |
-| Liquidsoap host | `icecast` (Docker DNS)        | `localhost`                  |
+| Nginx           | Container Podman                 | Instalado no host             |
+| Icecast hostname| `host.containers.internal`       | `somdomato.com`              |
+| Liquidsoap API  | `http://nextjs:3000`             | `http://localhost:3000`      |
+| Liquidsoap host | `icecast` (Podman DNS)           | `localhost`                  |
 
 ## Transmissão ao vivo (Harbor)
 
@@ -147,32 +147,32 @@ Para transmitir ao vivo, conecte-se em:
 O banco não foi inicializado. Aplique o schema:
 
 ```bash
-docker compose -f docker/docker-compose.yml exec nextjs pnpm run push
+podman compose -f podman/compose.yml exec nextjs pnpm run push
 ```
 
 Confirme que a API responde:
 
 ```bash
-docker exec somdomato-liquidsoap curl -s "http://nextjs:3000/api/music?genre=geral"
+podman exec somdomato-liquidsoap curl -s "http://nextjs:3000/api/music?genre=geral"
 # Deve retornar JSON com title, artist, path — não {"error":...}
 ```
 
 ### Liquidsoap não conecta ao Next.js
 
 ```bash
-docker compose logs liquidsoap  # Verificar erros
-docker compose logs nextjs      # Verificar healthcheck
+podman compose logs liquidsoap  # Verificar erros
+podman compose logs nextjs      # Verificar healthcheck
 ```
 
 ### Músicas não encontradas
 
 ```bash
-docker compose exec liquidsoap ls /var/music/sdm/
+podman compose exec liquidsoap ls /var/music/sdm/
 ```
 
 ### Rebuildar Next.js (dependências mudaram)
 
 ```bash
-docker compose down -v  # Remove volumes (node_modules cache)
-docker compose up -d --build
+podman compose down -v  # Remove volumes (node_modules cache)
+podman compose up -d --build
 ```

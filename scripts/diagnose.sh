@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Script de diagnóstico completo do ambiente Docker
+# Script de diagnóstico completo do ambiente Podman
 
 echo "🔍 Diagnóstico do Ambiente Som do Mato"
 echo "======================================"
@@ -15,14 +15,14 @@ NC='\033[0m' # No Color
 # 1. Status dos Containers
 echo -e "${BLUE}[1/6] Status dos Containers${NC}"
 echo "----------------------------"
-docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}" | grep somdomato || echo "Nenhum container rodando!"
+podman ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}" | grep somdomato || echo "Nenhum container rodando!"
 echo ""
 
 # 2. Logs recentes do Nginx (últimas 5 linhas)
 echo -e "${BLUE}[2/6] Logs do Nginx${NC}"
 echo "-------------------"
-if docker ps | grep -q somdomato-nginx; then
-    docker logs somdomato-nginx 2>&1 | tail -5
+if podman ps | grep -q somdomato-nginx; then
+    podman logs somdomato-nginx 2>&1 | tail -5
     echo ""
 else
     echo -e "${RED}❌ Nginx não está rodando${NC}"
@@ -56,7 +56,7 @@ echo ""
 # 5. Verificar volumes
 echo -e "${BLUE}[5/6] Volumes Montados${NC}"
 echo "----------------------"
-docker inspect somdomato-liquidsoap 2>/dev/null | jq -r '.[0].Mounts[] | "  \(.Source) → \(.Destination) (\(if .RW then "RW" else "RO" end))"' 2>/dev/null || echo "Container não encontrado"
+podman inspect somdomato-liquidsoap 2>/dev/null | jq -r '.[0].Mounts[] | "  \(.Source) → \(.Destination) (\(if .RW then "RW" else "RO" end))"' 2>/dev/null || echo "Container não encontrado"
 echo ""
 
 # 6. Teste de portas
@@ -77,9 +77,9 @@ echo "======================================"
 echo -e "${BLUE}📊 Resumo${NC}"
 echo "======================================"
 
-NGINX_OK=$(docker ps | grep -c somdomato-nginx)
-ICECAST_OK=$(docker ps | grep -c somdomato-icecast)
-LIQUIDSOAP_OK=$(docker ps | grep -c somdomato-liquidsoap)
+NGINX_OK=$(podman ps | grep -c somdomato-nginx)
+ICECAST_OK=$(podman ps | grep -c somdomato-icecast)
+LIQUIDSOAP_OK=$(podman ps | grep -c somdomato-liquidsoap)
 JSON_OK=$(curl -s --max-time 2 http://localhost:8080/json > /dev/null 2>&1 && echo 1 || echo 0)
 
 TOTAL=$((NGINX_OK + ICECAST_OK + LIQUIDSOAP_OK + JSON_OK))
@@ -98,7 +98,7 @@ elif [ $TOTAL -ge 2 ]; then
 else
     echo -e "${RED}❌ Sistema com problemas sérios ($TOTAL/4)${NC}"
     echo ""
-    echo "Execute: cd docker && docker compose up -d"
+    echo "Execute: cd podman && podman compose up -d"
 fi
 
 echo ""

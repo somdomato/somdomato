@@ -82,18 +82,18 @@ Socket.io agora funciona corretamente em desenvolvimento via proxy.
 
 ```bash
 # Parar containers
-cd docker && docker compose down
+cd podman && podman compose down
 
 # Reiniciar um serviço específico
-docker restart somdomato-liquidsoap
+podman restart somdomato-liquidsoap
 
 # Ver logs
-docker logs -f somdomato-nginx
-docker logs -f somdomato-icecast
-docker logs -f somdomato-liquidsoap
+podman logs -f somdomato-nginx
+podman logs -f somdomato-icecast
+podman logs -f somdomato-liquidsoap
 
 # Rebuild containers
-cd docker && docker compose up -d --build
+cd podman && podman compose up -d --build
 ```
 
 ## Testar Funcionalidades

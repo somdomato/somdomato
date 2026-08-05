@@ -1,7 +1,7 @@
-# Makefile — comandos de conveniência para o ambiente Docker
+# Makefile — comandos de conveniência para o ambiente Podman
 # Uso: make <target>   (execute na raiz do repositório)
 
-COMPOSE = docker compose -f docker/docker-compose.yml --env-file docker/.env
+COMPOSE = podman compose -f podman/compose.yml --env-file podman/.env
 
 .PHONY: help up down build build-nextjs restart logs \
         ssl setup \
@@ -19,8 +19,8 @@ help: ## Mostra esta ajuda
 
 setup: ## Configura tudo do zero (certs + .env + build + up)
 	@echo "⚙️  Setup inicial..."
-	@[ -f docker/.env ] || cp docker/.env.example docker/.env && echo "  → docker/.env criado (edite MUSIC_PATH)"
-	@bash docker/generate-certs.sh
+	@[ -f podman/.env ] || cp podman/.env.example podman/.env && echo "  → podman/.env criado (edite MUSIC_PATH)"
+	@bash podman/generate-certs.sh
 	@$(MAKE) build
 	@$(MAKE) up
 	@echo ""
@@ -28,7 +28,7 @@ setup: ## Configura tudo do zero (certs + .env + build + up)
 	@echo "   Rádio (Icecast): https://radio.localhost"
 
 ssl: ## Gera certificados TLS locais (mkcert ou openssl)
-	bash docker/generate-certs.sh
+	bash podman/generate-certs.sh
 
 # ── Ciclo de vida ────────────────────────────────────────────────────────────
 

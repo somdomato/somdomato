@@ -50,8 +50,8 @@ drizzle/**
 
 # custom
 
-# docker dev certs
-docker/certs/
+# podman dev certs
+podman/certs/
 *.old*
 
 # covers
