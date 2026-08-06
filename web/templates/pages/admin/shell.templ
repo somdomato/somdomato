@@ -1,0 +1,33 @@
+package admin
+
+import "github.com/lucasbrum/somdomato/web/templates"
+
+// Shell é o layout comum de todas as telas do painel: navegação lateral +
+// conteúdo. Cada tela chama Shell(...) por dentro em vez de Layout direto.
+templ Shell(title string, active string) {
+	@templates.Layout("Admin · " + title) {
+		<div class="grid gap-6 md:grid-cols-[180px_1fr]">
+			<nav class="space-y-1 text-sm">
+				@navLink("/admin", "Painel", active == "dashboard")
+				@navLink("/admin/musicas", "Músicas", active == "songs")
+				@navLink("/admin/pedidos", "Pedidos", active == "requests")
+				@navLink("/admin/vinhetas", "Vinhetas", active == "jingles")
+				@navLink("/admin/usuarios", "Usuários", active == "users")
+				<form method="POST" action="/admin/logout" class="pt-3">
+					<button type="submit" class="w-full rounded-lg px-3 py-2 text-left text-red-400 hover:bg-white/5">Sair</button>
+				</form>
+			</nav>
+			<div>
+				{ children... }
+			</div>
+		</div>
+	}
+}
+
+templ navLink(href, label string, active bool) {
+	if active {
+		<a href={ templ.URL(href) } class="block rounded-lg bg-brand-600 px-3 py-2 font-medium text-white">{ label }</a>
+	} else {
+		<a href={ templ.URL(href) } class="block rounded-lg px-3 py-2 text-neutral-300 hover:bg-white/5">{ label }</a>
+	}
+}

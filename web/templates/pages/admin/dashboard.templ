@@ -1,0 +1,26 @@
+package admin
+
+import "github.com/lucasbrum/somdomato/api/config"
+
+type DashboardRow struct {
+	Genre     config.Genre
+	NowTitle  string
+	NowArtist string
+	Listeners int
+}
+
+templ Dashboard(rows []DashboardRow) {
+	@Shell("Painel", "dashboard") {
+		<h1 class="text-xl font-bold">Tocando agora</h1>
+		<div class="mt-4 grid gap-3 sm:grid-cols-2">
+			for _, row := range rows {
+				<div class="rounded-lg bg-surface-raised p-4">
+					<p class="text-xs font-semibold uppercase text-brand-300">{ row.Genre.Label() }</p>
+					<p class="mt-1 font-medium">{ row.NowTitle }</p>
+					<p class="text-sm text-neutral-400">{ row.NowArtist }</p>
+					<p class="mt-2 text-xs text-neutral-500">{ itoaInt(row.Listeners) } ouvinte(s)</p>
+				</div>
+			}
+		</div>
+	}
+}

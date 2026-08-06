@@ -1,0 +1,282 @@
+---
+# Ansible Playbook - Som do Mato
+# Provisiona uma VPS Debian 13 com Nginx, PostgreSQL, Icecast2, Liquidsoap e
+# o binário Go (via systemd). Não usa Podman em produção — só em dev
+# (ver Makefile / podman/compose.yml).
+#
+# Segredos (senhas do Icecast, JWT_SECRET, RADIO_INTERNAL_TOKEN, senha do
+# Postgres) NÃO ficam neste arquivo: vêm de ansible/group_vars/production/vault.yml
+# (criptografado com `ansible-vault`). Veja vault.yml.example.
+#
+# Uso:
+#   ansible-playbook -i inventory.ini playbook.yml --ask-vault-pass
+
+- name: Provisionar VPS Som do Mato
+  hosts: production
+  become: true
+  vars:
+    domain: somdomato.com
+    app_dir: /var/www/somdomato
+    music_dir: /var/music/sdm
+    app_user: somdomato
+    app_group: somdomato
+    api_http_port: 3000
+    postgres_db: somdomato
+    postgres_user: somdomato
+    radio_genres:
+      - { mountpoint: geral, label: "Geral" }
+      - { mountpoint: gaucha, label: "Gaúcha" }
+      - { mountpoint: modao, label: "Modão" }
+      - { mountpoint: arrocha, label: "Arrocha" }
+      - { mountpoint: romantico, label: "Romântico" }
+
+  tasks:
+    # =========================================================================
+    # SISTEMA BASE
+    # =========================================================================
+    - name: Atualizar pacotes do sistema
+      ansible.builtin.apt:
+        update_cache: true
+        upgrade: dist
+        cache_valid_time: 3600
+
+    - name: Instalar dependências base
+      ansible.builtin.apt:
+        name: [curl, ca-certificates, gnupg, git, rsync, jq, openssl, acl, ufw]
+        state: present
+
+    # =========================================================================
+    # FIREWALL — só HTTP(S) e o mount público do Icecast ficam expostos.
+    # A API Go e o Postgres nunca são acessados de fora (bind em 127.0.0.1).
+    # =========================================================================
+    - name: Configurar UFW (negar tudo por padrão, exceto SSH/HTTP/HTTPS/Icecast)
+      community.general.ufw:
+        rule: allow
+        port: "{{ item }}"
+        proto: tcp
+      loop: ["22", "80", "443", "8000"]
+
+    - name: Definir política padrão do UFW (deny incoming)
+      community.general.ufw:
+        policy: deny
+        direction: incoming
+
+    - name: Habilitar UFW
+      community.general.ufw:
+        state: enabled
+
+    # =========================================================================
+    # USUÁRIO E DIRETÓRIOS DA APLICAÇÃO
+    # =========================================================================
+    - name: Criar usuário da aplicação
+      ansible.builtin.user:
+        name: "{{ app_user }}"
+        group: "{{ app_group }}"
+        system: true
+        create_home: true
+        shell: /bin/bash
+
+    - name: Criar diretórios da aplicação
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: directory
+        owner: "{{ app_user }}"
+        group: "{{ app_group }}"
+        mode: "0755"
+      loop:
+        - "{{ app_dir }}"
+        - "{{ app_dir }}/bin"
+        - "{{ app_dir }}/tmp"
+        - "{{ music_dir }}"
+        - "{{ music_dir }}/uploads"
+        - "{{ music_dir }}/vinhetas"
+        - "{{ music_dir }}/covers"
+
+    - name: Gerar .env da aplicação a partir do vault
+      ansible.builtin.template:
+        src: templates/app.env.j2
+        dest: "{{ app_dir }}/.env"
+        owner: "{{ app_user }}"
+        group: "{{ app_group }}"
+        mode: "0600"
+      notify: Restart API Go
+
+    # =========================================================================
+    # POSTGRESQL (nativo — sem container)
+    # =========================================================================
+    - name: Instalar PostgreSQL
+      ansible.builtin.apt:
+        name: [postgresql, postgresql-contrib, python3-psycopg2]
+        state: present
+
+    - name: Garantir que o PostgreSQL está rodando
+      ansible.builtin.systemd:
+        name: postgresql
+        state: started
+        enabled: true
+
+    - name: Criar role da aplicação no Postgres
+      become_user: postgres
+      community.postgresql.postgresql_user:
+        name: "{{ postgres_user }}"
+        password: "{{ postgres_password }}"
+        state: present
+
+    - name: Criar banco da aplicação
+      become_user: postgres
+      community.postgresql.postgresql_db:
+        name: "{{ postgres_db }}"
+        owner: "{{ postgres_user }}"
+        state: present
+
+    # =========================================================================
+    # NGINX
+    # =========================================================================
+    - name: Instalar Nginx
+      ansible.builtin.apt:
+        name: nginx
+        state: present
+
+    - name: Copiar configuração Nginx - somdomato.com
+      ansible.builtin.template:
+        src: etc/nginx/sites.d/somdomato.com.conf.j2
+        dest: /etc/nginx/sites-available/somdomato.com.conf
+        mode: "0644"
+      notify: Reload Nginx
+
+    - name: Copiar configuração Nginx - radio.somdomato.com
+      ansible.builtin.template:
+        src: etc/nginx/sites.d/radio.somdomato.com.conf.j2
+        dest: /etc/nginx/sites-available/radio.somdomato.com.conf
+        mode: "0644"
+      notify: Reload Nginx
+
+    - name: Habilitar sites Nginx (symlinks)
+      ansible.builtin.file:
+        src: "/etc/nginx/sites-available/{{ item }}"
+        dest: "/etc/nginx/sites-enabled/{{ item }}"
+        state: link
+      loop: [somdomato.com.conf, radio.somdomato.com.conf]
+      notify: Reload Nginx
+
+    - name: Remover site default do Nginx
+      ansible.builtin.file:
+        path: /etc/nginx/sites-enabled/default
+        state: absent
+      notify: Reload Nginx
+
+    # =========================================================================
+    # ICECAST2 (nativo)
+    # =========================================================================
+    - name: Instalar Icecast2
+      ansible.builtin.apt:
+        name: icecast2
+        state: present
+
+    - name: Criar diretório de logs Icecast
+      ansible.builtin.file:
+        path: /var/log/icecast2
+        state: directory
+        owner: icecast2
+        group: icecast
+        mode: "0755"
+
+    - name: Gerar configuração Icecast2 a partir do vault
+      ansible.builtin.template:
+        src: etc/icecast/somdomato.xml.j2
+        dest: /etc/icecast2/somdomato.xml
+        owner: icecast2
+        group: icecast
+        mode: "0640"
+      notify: Restart Icecast
+
+    # =========================================================================
+    # LIQUIDSOAP (nativo)
+    # =========================================================================
+    - name: Instalar Liquidsoap
+      ansible.builtin.apt:
+        name: liquidsoap
+        state: present
+
+    - name: Criar diretórios Liquidsoap
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: directory
+        owner: liquidsoap
+        group: liquidsoap
+        mode: "0755"
+      loop: [/var/log/liquidsoap, /var/lib/liquidsoap]
+
+    - name: Gerar script Liquidsoap a partir do vault
+      ansible.builtin.template:
+        src: etc/liquidsoap/somdomato.liq.j2
+        dest: /etc/liquidsoap/somdomato.liq
+        owner: liquidsoap
+        group: liquidsoap
+        mode: "0644"
+      notify: Restart Liquidsoap
+
+    # =========================================================================
+    # SYSTEMD — API Go, Icecast, Liquidsoap
+    # =========================================================================
+    - name: Gerar unit somdomato-api.service
+      ansible.builtin.template:
+        src: etc/systemd/system/somdomato-api.service
+        dest: /etc/systemd/system/somdomato-api.service
+        mode: "0644"
+      notify: Reload systemd
+
+    - name: Copiar units systemd restantes
+      ansible.builtin.copy:
+        src: "etc/systemd/system/{{ item }}"
+        dest: "/etc/systemd/system/{{ item }}"
+        mode: "0644"
+      loop: [icecast2-somdomato.service, liquidsoap-somdomato.service]
+      notify: Reload systemd
+
+    - name: Habilitar e iniciar serviços
+      ansible.builtin.systemd:
+        name: "{{ item }}"
+        enabled: true
+        state: started
+        daemon_reload: true
+      loop: [icecast2-somdomato.service, liquidsoap-somdomato.service]
+      # somdomato-api.service só é iniciado depois que o primeiro binário
+      # existir em {{ app_dir }}/bin — ver scripts/deploy.sh.
+
+    # =========================================================================
+    # SSL (Let's Encrypt)
+    # =========================================================================
+    - name: Instalar Certbot
+      ansible.builtin.apt:
+        name: [certbot, python3-certbot-nginx]
+        state: present
+
+    - name: Verificar se certificado existe
+      ansible.builtin.stat:
+        path: "/etc/letsencrypt/live/{{ domain }}/fullchain.pem"
+      register: ssl_cert
+
+    - name: Obter certificado SSL (primeira vez)
+      ansible.builtin.command: >
+        certbot certonly --nginx
+        -d {{ domain }} -d www.{{ domain }} -d radio.{{ domain }}
+        --non-interactive --agree-tos --email {{ letsencrypt_email }}
+      when: not ssl_cert.stat.exists
+      changed_when: false
+
+  handlers:
+    - name: Reload Nginx
+      ansible.builtin.systemd: { name: nginx, state: reloaded }
+
+    - name: Restart Icecast
+      ansible.builtin.systemd: { name: icecast2-somdomato, state: restarted }
+
+    - name: Restart Liquidsoap
+      ansible.builtin.systemd: { name: liquidsoap-somdomato, state: restarted }
+
+    - name: Restart API Go
+      ansible.builtin.systemd: { name: somdomato-api, state: restarted }
+
+    - name: Reload systemd
+      ansible.builtin.systemd: { daemon_reload: true }

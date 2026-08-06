@@ -1,0 +1,15 @@
+[Unit]
+Description=Liquidsoap - Som do Mato
+After=network.target icecast2-somdomato.service somdomato-api.service
+Requires=icecast2-somdomato.service somdomato-api.service
+
+[Service]
+Type=simple
+User=liquidsoap
+Group=liquidsoap
+ExecStart=/usr/bin/liquidsoap /etc/liquidsoap/somdomato.liq
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

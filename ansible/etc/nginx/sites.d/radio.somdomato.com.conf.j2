@@ -1,0 +1,22 @@
+server {
+    listen 80;
+    server_name radio.{{ domain }};
+    location /.well-known/acme-challenge/ { root /var/www/certbot; }
+    location / { return 301 https://radio.{{ domain }}$request_uri; }
+}
+
+server {
+    listen 443 ssl;
+    http2 on;
+    server_name radio.{{ domain }};
+
+    ssl_certificate     /etc/letsencrypt/live/{{ domain }}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/{{ domain }}/privkey.pem;
+
+    location / {
+        proxy_pass http://127.0.0.1:8000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_buffering off;
+    }
+}

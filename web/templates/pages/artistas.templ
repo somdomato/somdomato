@@ -1,0 +1,33 @@
+package pages
+
+import "github.com/lucasbrum/somdomato/web/templates"
+
+type ArtistasData struct {
+	Artists []string
+}
+
+templ Artistas(data ArtistasData) {
+	@templates.Layout("Artistas") {
+		<h1 class="text-xl font-bold">Artistas</h1>
+		<ul class="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3">
+			for _, artist := range data.Artists {
+				<li>
+					<a href={ templ.URL("/artistas/" + artist) } class="block rounded-lg bg-surface-raised px-3 py-2 text-sm hover:bg-white/10">
+						{ artist }
+					</a>
+				</li>
+			}
+		</ul>
+	}
+}
+
+templ ArtistDetail(artist string, songs []string) {
+	@templates.Layout(artist) {
+		<h1 class="text-xl font-bold">{ artist }</h1>
+		<ul class="mt-4 divide-y divide-white/5 rounded-lg bg-surface-raised">
+			for _, title := range songs {
+				<li class="px-4 py-2 text-sm">{ title }</li>
+			}
+		</ul>
+	}
+}

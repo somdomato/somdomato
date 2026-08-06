@@ -1,0 +1,12 @@
+# Dev-only. Em produção o Icecast2 é instalado nativamente pelo Ansible
+# (ansible/playbook.yml) — sem container.
+FROM docker.io/library/debian:bookworm-slim
+
+RUN apt-get update && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends icecast2 && \
+    rm -rf /var/lib/apt/lists/* && \
+    mkdir -p /var/log/icecast2
+
+EXPOSE 8000
+
+ENTRYPOINT ["icecast2", "-n", "-c", "/etc/icecast2/icecast.xml"]

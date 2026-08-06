@@ -1,0 +1,41 @@
+package admin
+
+import "github.com/lucasbrum/somdomato/api/models"
+
+templ JinglesList(list []models.Jingle, interval int, csrfToken string) {
+	@Shell("Vinhetas", "jingles") {
+		<h1 class="text-xl font-bold">Vinhetas</h1>
+
+		<form method="POST" action="/admin/vinhetas/intervalo" class="mt-4 flex items-end gap-2">
+			<input type="hidden" name="csrf_token" value={ csrfToken }/>
+			<label class="text-sm">
+				Intervalo (músicas entre vinhetas)
+				<input type="number" min="1" name="interval" value={ itoaInt(interval) }
+					class="mt-1 block w-24 rounded-lg bg-surface-raised px-3 py-2"/>
+			</label>
+			<button type="submit" class="rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white">Salvar</button>
+		</form>
+
+		<ul class="mt-6 divide-y divide-white/5 rounded-lg bg-surface-raised">
+			for _, j := range list {
+				<li class="flex items-center justify-between px-4 py-2 text-sm">
+					<span>{ j.Title }
+						if !j.Active {
+							<span class="ml-2 text-xs text-neutral-500">(inativa)</span>
+						}
+					</span>
+					<form hx-post={ "/admin/vinhetas/" + itoa64(j.ID) + "/alternar" } hx-swap="none">
+						<input type="hidden" name="csrf_token" value={ csrfToken }/>
+						<button type="submit" class="text-brand-300 hover:underline">
+							if j.Active {
+								Desativar
+							} else {
+								Ativar
+							}
+						</button>
+					</form>
+				</li>
+			}
+		</ul>
+	}
+}

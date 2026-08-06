@@ -1,0 +1,168 @@
+// Package songs é o repositório do catálogo — usado pelas páginas públicas
+// (busca/artistas) e pelo admin (CRUD de tags).
+package songs
+
+import (
+	"context"
+	"fmt"
+
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/lucasbrum/somdomato/api/models"
+)
+
+type Store struct {
+	pool *pgxpool.Pool
+}
+
+func NewStore(pool *pgxpool.Pool) *Store {
+	return &Store{pool: pool}
+}
+
+const selectFields = `id, title, artist, album, path, cover, time_slots, rotation, genre, allowed_in_general, requests_count, likes_count, created_at`
+
+func scanSong(row pgx.Row) (models.Song, error) {
+	var s models.Song
+	err := row.Scan(&s.ID, &s.Title, &s.Artist, &s.Album, &s.Path, &s.Cover, &s.TimeSlots,
+		&s.Rotation, &s.Genre, &s.AllowedInGeneral, &s.RequestsCount, &s.LikesCount, &s.CreatedAt)
+	return s, err
+}
+
+func (s *Store) GetByID(ctx context.Context, id int64) (*models.Song, error) {
+	song, err := scanSong(s.pool.QueryRow(ctx, `SELECT `+selectFields+` FROM songs WHERE id = $1`, id))
+	if err == pgx.ErrNoRows {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("buscando música por id: %w", err)
+	}
+	return &song, nil
+}
+
+// Search retorna músicas cujo título ou artista contém `query` (case
+// insensitive), limitado a `limit` resultados — usado em Pedidos.
+func (s *Store) Search(ctx context.Context, query string, limit int) ([]models.Song, error) {
+	rows, err := s.pool.Query(ctx, `
+		SELECT `+selectFields+` FROM songs
+		WHERE title ILIKE '%' || $1 || '%' OR artist ILIKE '%' || $1 || '%'
+		ORDER BY artist, title LIMIT $2`, query, limit)
+	if err != nil {
+		return nil, fmt.Errorf("buscando músicas: %w", err)
+	}
+	defer rows.Close()
+	return scanAll(rows)
+}
+
+func (s *Store) ListByArtist(ctx context.Context, artist string) ([]models.Song, error) {
+	rows, err := s.pool.Query(ctx, `SELECT `+selectFields+` FROM songs WHERE artist = $1 ORDER BY title`, artist)
+	if err != nil {
+		return nil, fmt.Errorf("listando músicas do artista: %w", err)
+	}
+	defer rows.Close()
+	return scanAll(rows)
+}
+
+func (s *Store) ListArtists(ctx context.Context) ([]string, error) {
+	rows, err := s.pool.Query(ctx, `SELECT DISTINCT artist FROM songs ORDER BY artist`)
+	if err != nil {
+		return nil, fmt.Errorf("listando artistas: %w", err)
+	}
+	defer rows.Close()
+
+	var out []string
+	for rows.Next() {
+		var a string
+		if err := rows.Scan(&a); err != nil {
+			return nil, err
+		}
+		out = append(out, a)
+	}
+	return out, rows.Err()
+}
+
+// ListPaged é usado pela tela de administração de músicas.
+func (s *Store) ListPaged(ctx context.Context, query string, limit, offset int) ([]models.Song, error) {
+	rows, err := s.pool.Query(ctx, `
+		SELECT `+selectFields+` FROM songs
+		WHERE $1 = '' OR title ILIKE '%' || $1 || '%' OR artist ILIKE '%' || $1 || '%'
+		ORDER BY created_at DESC LIMIT $2 OFFSET $3`, query, limit, offset)
+	if err != nil {
+		return nil, fmt.Errorf("listando músicas (admin): %w", err)
+	}
+	defer rows.Close()
+	return scanAll(rows)
+}
+
+func scanAll(rows pgx.Rows) ([]models.Song, error) {
+	var out []models.Song
+	for rows.Next() {
+		s, err := scanSong(rows)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, s)
+	}
+	return out, rows.Err()
+}
+
+type UpdateInput struct {
+	Title            string
+	Artist           string
+	Genre            string
+	Rotation         string
+	TimeSlots        int
+	AllowedInGeneral bool
+}
+
+func (s *Store) Update(ctx context.Context, id int64, in UpdateInput) error {
+	_, err := s.pool.Exec(ctx, `
+		UPDATE songs SET title = $1, artist = $2, genre = $3, rotation = $4, time_slots = $5, allowed_in_general = $6
+		WHERE id = $7`, in.Title, in.Artist, in.Genre, in.Rotation, in.TimeSlots, in.AllowedInGeneral, id)
+	if err != nil {
+		return fmt.Errorf("atualizando música: %w", err)
+	}
+	return nil
+}
+
+func (s *Store) UpdateCover(ctx context.Context, id int64, cover string) error {
+	_, err := s.pool.Exec(ctx, `UPDATE songs SET cover = $1 WHERE id = $2`, cover, id)
+	return err
+}
+
+// Delete apaga a música — `requests`/`queue_entries` têm ON DELETE CASCADE.
+func (s *Store) Delete(ctx context.Context, id int64) error {
+	_, err := s.pool.Exec(ctx, `DELETE FROM songs WHERE id = $1`, id)
+	if err != nil {
+		return fmt.Errorf("apagando música: %w", err)
+	}
+	return nil
+}
+
+type CreateInput struct {
+	Title     string
+	Artist    string
+	Album     *string
+	Path      string
+	Cover     string
+	TimeSlots int
+	Rotation  string
+	Genre     string
+}
+
+// Create insere uma música nova; usado pelo seed. Idempotente por `path`
+// (ON CONFLICT DO NOTHING) — pode rodar em todo boot sem duplicar.
+func (s *Store) Create(ctx context.Context, in CreateInput) (int64, bool, error) {
+	var id int64
+	err := s.pool.QueryRow(ctx, `
+		INSERT INTO songs (title, artist, album, path, cover, time_slots, rotation, genre)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+		ON CONFLICT (path) DO NOTHING
+		RETURNING id`, in.Title, in.Artist, in.Album, in.Path, in.Cover, in.TimeSlots, in.Rotation, in.Genre).Scan(&id)
+	if err == pgx.ErrNoRows {
+		return 0, false, nil // já existia (ON CONFLICT DO NOTHING não retorna linha)
+	}
+	if err != nil {
+		return 0, false, fmt.Errorf("inserindo música: %w", err)
+	}
+	return id, true, nil
+}

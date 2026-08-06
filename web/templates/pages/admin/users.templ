@@ -1,0 +1,44 @@
+package admin
+
+import (
+	"github.com/lucasbrum/somdomato/api/rbac"
+	"github.com/lucasbrum/somdomato/api/models"
+)
+
+templ UsersList(list []models.User, csrfToken string) {
+	@Shell("Usuários", "users") {
+		<h1 class="text-xl font-bold">Usuários</h1>
+		<table class="mt-4 w-full text-left text-sm">
+			<thead class="text-xs uppercase text-neutral-500">
+				<tr>
+					<th class="px-3 py-2">Nome</th>
+					<th class="px-3 py-2">E-mail</th>
+					<th class="px-3 py-2">Papel</th>
+				</tr>
+			</thead>
+			<tbody class="divide-y divide-white/5">
+				for _, u := range list {
+					<tr>
+						<td class="px-3 py-2">{ u.Name }</td>
+						<td class="px-3 py-2">{ u.Email }</td>
+						<td class="px-3 py-2">
+							<form hx-post={ "/admin/usuarios/" + itoa64(u.ID) + "/papel" } hx-swap="none" class="flex items-center gap-2">
+								<input type="hidden" name="csrf_token" value={ csrfToken }/>
+								<select name="role" class="rounded-lg bg-surface-raised px-2 py-1">
+									for _, r := range rbac.AllRoles {
+										if string(r) == u.Role {
+											<option value={ string(r) } selected>{ rbac.RoleLabels[r] }</option>
+										} else {
+											<option value={ string(r) }>{ rbac.RoleLabels[r] }</option>
+										}
+									}
+								</select>
+								<button type="submit" class="text-brand-300 hover:underline">Salvar</button>
+							</form>
+						</td>
+					</tr>
+				}
+			</tbody>
+		</table>
+	}
+}

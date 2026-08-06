@@ -1,0 +1,12 @@
+# Dev-only. Em produção o Liquidsoap é instalado nativamente pelo Ansible.
+FROM docker.io/savonet/liquidsoap:v2.3.0
+
+USER root
+RUN apt-get update && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends curl jq && \
+    rm -rf /var/lib/apt/lists/*
+
+EXPOSE 8081
+
+ENTRYPOINT ["liquidsoap"]
+CMD ["/etc/liquidsoap/somdomato.liq"]

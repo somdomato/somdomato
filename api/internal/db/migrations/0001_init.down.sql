@@ -1,0 +1,8 @@
+DROP TABLE IF EXISTS admin_logs;
+DROP TABLE IF EXISTS role_permissions;
+DROP TABLE IF EXISTS users;
+DROP TABLE IF EXISTS settings;
+DROP TABLE IF EXISTS jingles;
+DROP TABLE IF EXISTS queue_entries;
+DROP TABLE IF EXISTS requests;
+DROP TABLE IF EXISTS songs;

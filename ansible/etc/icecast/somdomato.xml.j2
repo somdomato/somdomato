@@ -1,0 +1,83 @@
+<!-- Gerado pelo Ansible a partir de somdomato.xml.j2 — não editar direto na VPS. -->
+<icecast>
+    <location>Brazil</location>
+    <admin>{{ icecast_admin_email }}</admin>
+
+    <limits>
+        <clients>5000</clients>
+        <sources>10</sources>
+        <queue-size>102400</queue-size>
+        <client-timeout>30</client-timeout>
+        <header-timeout>15</header-timeout>
+        <source-timeout>10</source-timeout>
+        <burst-on-connect>1</burst-on-connect>
+        <burst-size>65536</burst-size>
+    </limits>
+
+    <authentication>
+        <source-password>{{ icecast_source_password }}</source-password>
+        <relay-password>{{ icecast_relay_password }}</relay-password>
+        <admin-user>admin</admin-user>
+        <admin-password>{{ icecast_admin_password }}</admin-password>
+    </authentication>
+
+    <directory>
+        <yp-url-timeout>15</yp-url-timeout>
+        <yp-url>http://dir.xiph.org/cgi-bin/yp-cgi</yp-url>
+    </directory>
+
+    <hostname>{{ domain }}</hostname>
+
+    <mount type="default">
+        <charset>UTF-8</charset>
+    </mount>
+
+{% for genre in radio_genres %}
+    <mount type="normal">
+        <mount-name>/{{ genre.mountpoint }}</mount-name>
+        <charset>UTF-8</charset>
+        <stream-name>Som do Mato - {{ genre.label }}</stream-name>
+        <stream-url>https://{{ domain }}</stream-url>
+        <genre>{{ genre.label }}</genre>
+        <bitrate>128</bitrate>
+        <public>1</public>
+    </mount>
+{% endfor %}
+
+    <listen-socket>
+        <port>8000</port>
+    </listen-socket>
+
+    <listen-socket>
+        <port>8443</port>
+        <ssl>1</ssl>
+    </listen-socket>
+
+    <http-headers>
+        <header name="Access-Control-Allow-Origin" value="*"/>
+    </http-headers>
+
+    <fileserve>1</fileserve>
+
+    <paths>
+        <basedir>/usr/share/icecast2</basedir>
+        <logdir>/var/log/icecast2</logdir>
+        <webroot>/usr/share/icecast2/web</webroot>
+        <adminroot>/usr/share/icecast2/admin</adminroot>
+        <pidfile>/tmp/icecast2.pid</pidfile>
+        <alias source="/" destination="/status.xsl"/>
+        <alias source="/json" destination="/status-json.xsl"/>
+        <ssl-certificate>/etc/letsencrypt/live/{{ domain }}/icecast-somdomato.pem</ssl-certificate>
+    </paths>
+
+    <logging>
+        <accesslog>access.log</accesslog>
+        <errorlog>error.log</errorlog>
+        <loglevel>1</loglevel>
+        <logsize>10000</logsize>
+    </logging>
+
+    <security>
+        <chroot>0</chroot>
+    </security>
+</icecast>

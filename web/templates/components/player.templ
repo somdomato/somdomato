@@ -1,0 +1,54 @@
+package components
+
+import "github.com/lucasbrum/somdomato/api/config"
+
+type NowPlaying struct {
+	ID     int64
+	Title  string
+	Artist string
+	Cover  string
+	Genre  string
+}
+
+// Player renderiza o <audio> e o card "tocando agora". Assina o evento SSE
+// "song-changed" e troca o card inteiro via sse-swap — sem JS customizado
+// além do necessário para o elemento <audio> trocar de fonte.
+templ Player(genre config.Genre, streamURL string, now NowPlaying) {
+	<section class="rounded-xl bg-surface-raised p-5" sse-connect="/events">
+		<div class="flex items-center justify-between">
+			<h2 class="text-sm font-semibold uppercase tracking-wide text-brand-300">{ genre.Label() }</h2>
+			@GenreSwitcher(genre)
+		</div>
+
+		<div id="now-playing" sse-swap="song-changed" hx-swap="innerHTML" data-htmx-fade>
+			@NowPlayingCard(now)
+		</div>
+
+		<audio id="radio-player" class="mt-4 w-full" controls preload="none">
+			<source src={ streamURL } type="audio/mpeg"/>
+			Seu navegador não suporta áudio HTML5.
+		</audio>
+	</section>
+}
+
+templ NowPlayingCard(now NowPlaying) {
+	<div class="mt-4 flex items-center gap-4">
+		<img src={ now.Cover } alt={ now.Title } class="h-16 w-16 rounded-lg object-cover"/>
+		<div>
+			<p class="font-semibold">{ now.Title }</p>
+			<p class="text-sm text-neutral-400">{ now.Artist }</p>
+		</div>
+	</div>
+}
+
+templ GenreSwitcher(active config.Genre) {
+	<div class="flex gap-1 text-xs">
+		for _, g := range config.AllGenres {
+			if g == active {
+				<span class="rounded-full bg-brand-600 px-3 py-1 font-medium text-white">{ g.Label() }</span>
+			} else {
+				<a href={ templ.URL("/?genre=" + string(g)) } class="rounded-full px-3 py-1 text-neutral-400 hover:bg-white/10">{ g.Label() }</a>
+			}
+		}
+	</div>
+}

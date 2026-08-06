@@ -1,0 +1,14 @@
+[Unit]
+Description=Icecast2 - Som do Mato
+After=network.target
+
+[Service]
+Type=simple
+User=icecast2
+Group=icecast
+ExecStart=/usr/bin/icecast2 -n -c /etc/icecast2/somdomato.xml
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,24 @@
+[Unit]
+Description=Som do Mato - API Go
+After=network.target postgresql.service
+Requires=postgresql.service
+
+[Service]
+Type=simple
+User={{ app_user }}
+Group={{ app_group }}
+WorkingDirectory={{ app_dir }}
+EnvironmentFile={{ app_dir }}/.env
+ExecStart={{ app_dir }}/bin/somdomato-server
+Restart=on-failure
+RestartSec=3
+
+# Isolamento — o binário não precisa de acesso amplo ao sistema.
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ReadWritePaths={{ music_dir }} {{ app_dir }}/tmp
+ProtectHome=true
+
+[Install]
+WantedBy=multi-user.target

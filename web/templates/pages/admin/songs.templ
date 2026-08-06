@@ -1,0 +1,95 @@
+package admin
+
+import (
+	"github.com/lucasbrum/somdomato/api/config"
+	"github.com/lucasbrum/somdomato/api/models"
+)
+
+templ SongsList(songsList []models.Song, query, csrfToken string) {
+	@Shell("Músicas", "songs") {
+		<h1 class="text-xl font-bold">Músicas</h1>
+		<form class="mt-4" hx-get="/admin/musicas" hx-target="#songs-table" hx-trigger="input changed delay:300ms">
+			<input type="search" name="q" value={ query } placeholder="Buscar..."
+				class="w-full rounded-lg bg-surface-raised px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-brand-500"/>
+		</form>
+		<div id="songs-table">
+			@SongsTable(songsList, csrfToken)
+		</div>
+	}
+}
+
+templ SongsTable(songsList []models.Song, csrfToken string) {
+	<table class="mt-4 w-full text-left text-sm">
+		<thead class="text-xs uppercase text-neutral-500">
+			<tr>
+				<th class="px-3 py-2">Título</th>
+				<th class="px-3 py-2">Artista</th>
+				<th class="px-3 py-2">Gênero</th>
+				<th class="px-3 py-2">Rotação</th>
+				<th class="px-3 py-2"></th>
+			</tr>
+		</thead>
+		<tbody class="divide-y divide-white/5">
+			for _, s := range songsList {
+				<tr id={ "song-row-" + itoa64(s.ID) }>
+					<td class="px-3 py-2">{ s.Title }</td>
+					<td class="px-3 py-2">{ s.Artist }</td>
+					<td class="px-3 py-2">{ s.Genre }</td>
+					<td class="px-3 py-2">{ s.Rotation }</td>
+					<td class="px-3 py-2 text-right">
+						<form hx-post={ "/admin/musicas/" + itoa64(s.ID) + "/tocar" } hx-swap="none">
+							<input type="hidden" name="csrf_token" value={ csrfToken }/>
+							<button type="submit" class="text-brand-300 hover:underline">Tocar</button>
+						</form>
+					</td>
+				</tr>
+			}
+		</tbody>
+	</table>
+}
+
+templ SongEdit(s models.Song, csrfToken string) {
+	@Shell("Editar música", "songs") {
+		<h1 class="text-xl font-bold">Editar música</h1>
+		<form method="POST" action={ templ.SafeURL("/admin/musicas/" + itoa64(s.ID)) } class="mt-4 max-w-md space-y-3">
+			<input type="hidden" name="csrf_token" value={ csrfToken }/>
+			<label class="block text-sm">
+				Título
+				<input type="text" name="title" value={ s.Title } class="mt-1 w-full rounded-lg bg-surface-raised px-3 py-2"/>
+			</label>
+			<label class="block text-sm">
+				Artista
+				<input type="text" name="artist" value={ s.Artist } class="mt-1 w-full rounded-lg bg-surface-raised px-3 py-2"/>
+			</label>
+			<label class="block text-sm">
+				Gênero
+				<select name="genre" class="mt-1 w-full rounded-lg bg-surface-raised px-3 py-2">
+					for _, g := range config.AllGenres {
+						if string(g) == s.Genre {
+							<option value={ string(g) } selected>{ g.Label() }</option>
+						} else {
+							<option value={ string(g) }>{ g.Label() }</option>
+						}
+					}
+				</select>
+			</label>
+			<label class="block text-sm">
+				Rotação
+				<select name="rotation" class="mt-1 w-full rounded-lg bg-surface-raised px-3 py-2">
+					for _, r := range []string{"inativo", "ultraleve", "leve", "normal", "pesado", "ultrapesada"} {
+						if r == s.Rotation {
+							<option value={ r } selected>{ r }</option>
+						} else {
+							<option value={ r }>{ r }</option>
+						}
+					}
+				</select>
+			</label>
+			<label class="flex items-center gap-2 text-sm">
+				<input type="checkbox" name="allowed_in_general" checked?={ s.AllowedInGeneral }/>
+				Permitir no Geral
+			</label>
+			<button type="submit" class="rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white">Salvar</button>
+		</form>
+	}
+}

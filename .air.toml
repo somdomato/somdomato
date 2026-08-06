@@ -1,0 +1,14 @@
+root = "."
+tmp_dir = "tmp"
+
+[build]
+  pre_cmd = ["templ generate"]
+  cmd = "go build -o ./tmp/server ./api/cmd/server"
+  bin = "./tmp/server"
+  include_ext = ["go", "templ", "sql"]
+  exclude_dir = ["tmp", "node_modules", ".git", "web/static"]
+  exclude_regex = ["_templ.go"]
+  delay = 200
+
+[log]
+  time = true

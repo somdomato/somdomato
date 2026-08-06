@@ -1,0 +1,28 @@
+/* Tailwind v4: um único @import (sem @tailwind base/components/utilities,
+   que foram removidos nessa versão) e configuração de tema via @theme,
+   substituindo o tailwind.config.js do v3. */
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+
+  --color-brand-50: oklch(0.98 0.02 150);
+  --color-brand-100: oklch(0.94 0.05 150);
+  --color-brand-300: oklch(0.8 0.12 150);
+  --color-brand-500: oklch(0.6 0.16 150);
+  --color-brand-600: oklch(0.52 0.16 150);
+  --color-brand-700: oklch(0.44 0.15 150);
+  --color-brand-900: oklch(0.28 0.1 150);
+
+  --color-surface: oklch(0.16 0.01 260);
+  --color-surface-raised: oklch(0.21 0.01 260);
+}
+
+/* htmx troca o conteúdo sem reload — evita flash de elementos entrando
+   sem transição nas trocas de "tocando agora". */
+[data-htmx-fade].htmx-added {
+  opacity: 0;
+}
+[data-htmx-fade] {
+  transition: opacity 200ms ease-in;
+}

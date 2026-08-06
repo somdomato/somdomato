@@ -1,0 +1,31 @@
+package admin
+
+// PendingRequestRow é a projeção do pedido pendente usada só nesta tela —
+// evita que o template (pacote não-internal) precise importar
+// api/internal/requests.
+type PendingRequestRow struct {
+	RequestID   int64
+	SongTitle   string
+	SongArtist  string
+}
+
+templ RequestsList(pending []PendingRequestRow, csrfToken string) {
+	@Shell("Pedidos", "requests") {
+		<h1 class="text-xl font-bold">Fila de pedidos</h1>
+		if len(pending) == 0 {
+			<p class="mt-4 text-sm text-neutral-500">Nenhum pedido pendente.</p>
+		} else {
+			<ul class="mt-4 divide-y divide-white/5 rounded-lg bg-surface-raised">
+				for _, r := range pending {
+					<li class="flex items-center justify-between px-4 py-2 text-sm">
+						<span>{ r.SongTitle } — { r.SongArtist }</span>
+						<form hx-post={ "/admin/pedidos/" + itoa64(r.RequestID) + "/remover" } hx-target="closest li" hx-swap="outerHTML">
+							<input type="hidden" name="csrf_token" value={ csrfToken }/>
+							<button type="submit" class="text-red-400 hover:underline">Remover</button>
+						</form>
+					</li>
+				}
+			</ul>
+		}
+	}
+}

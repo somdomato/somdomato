@@ -1,0 +1,331 @@
+// Painel administrativo: login/logout, dashboard, músicas, pedidos,
+// vinhetas e usuários — porta de src/app/admin/* e src/actions/admin.ts.
+package httpserver
+
+import (
+	"net/http"
+	"strconv"
+
+	"github.com/lucasbrum/somdomato/api/config"
+	"github.com/lucasbrum/somdomato/api/internal/auth"
+	"github.com/lucasbrum/somdomato/api/internal/icecastclient"
+	"github.com/lucasbrum/somdomato/api/internal/requests"
+	"github.com/lucasbrum/somdomato/api/internal/songs"
+	"github.com/lucasbrum/somdomato/api/models"
+	"github.com/lucasbrum/somdomato/api/rbac"
+	admintpl "github.com/lucasbrum/somdomato/web/templates/pages/admin"
+)
+
+func registerAdminRoutes(mux *http.ServeMux, app *App) {
+	mux.HandleFunc("GET /admin/login", handleAdminLoginForm(app))
+	mux.HandleFunc("POST /admin/login", requireCSRF(handleAdminLoginSubmit(app)))
+	mux.HandleFunc("POST /admin/logout", requireAuth(app, handleAdminLogout(app)))
+
+	mux.HandleFunc("GET /admin", requireAuth(app, handleAdminDashboard(app)))
+
+	mux.HandleFunc("GET /admin/musicas", requirePermission(app, rbac.PermSongsEditTags, handleAdminSongsList(app)))
+	mux.HandleFunc("GET /admin/musicas/{id}", requirePermission(app, rbac.PermSongsEditTags, handleAdminSongEditForm(app)))
+	mux.HandleFunc("POST /admin/musicas/{id}", requirePermission(app, rbac.PermSongsEditTags, requireCSRF(handleAdminSongUpdate(app))))
+	mux.HandleFunc("POST /admin/musicas/{id}/tocar", requirePermission(app, rbac.PermRequestsManage, requireCSRF(handleAdminPlaySong(app))))
+
+	mux.HandleFunc("GET /admin/pedidos", requirePermission(app, rbac.PermRequestsManage, handleAdminRequestsList(app)))
+	mux.HandleFunc("POST /admin/pedidos/{id}/remover", requirePermission(app, rbac.PermRequestsManage, requireCSRF(handleAdminRequestRemove(app))))
+
+	mux.HandleFunc("GET /admin/vinhetas", requirePermission(app, rbac.PermJinglesManage, handleAdminJinglesList(app)))
+	mux.HandleFunc("POST /admin/vinhetas/intervalo", requirePermission(app, rbac.PermJinglesManage, requireCSRF(handleAdminJingleInterval(app))))
+	mux.HandleFunc("POST /admin/vinhetas/{id}/alternar", requirePermission(app, rbac.PermJinglesManage, requireCSRF(handleAdminJingleToggle(app))))
+
+	mux.HandleFunc("GET /admin/usuarios", requirePermission(app, rbac.PermUsersManage, handleAdminUsersList(app)))
+	mux.HandleFunc("POST /admin/usuarios/{id}/papel", requirePermission(app, rbac.PermUsersManage, requireCSRF(handleAdminUserRoleUpdate(app))))
+}
+
+// --- Autenticação -----------------------------------------------------------
+
+func handleAdminLoginForm(app *App) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		token := ensureCSRFCookie(w, r)
+		render(w, admintpl.Login(token, ""))
+	}
+}
+
+func handleAdminLoginSubmit(app *App) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		email := r.FormValue("email")
+		password := r.FormValue("password")
+
+		user, err := app.Auth.Authenticate(r.Context(), email, password)
+		if err != nil {
+			token := ensureCSRFCookie(w, r)
+			w.WriteHeader(http.StatusUnauthorized)
+			render(w, admintpl.Login(token, "E-mail ou senha inválidos."))
+			return
+		}
+		if !rbac.IsAdminRole(user.Role) {
+			token := ensureCSRFCookie(w, r)
+			w.WriteHeader(http.StatusForbidden)
+			render(w, admintpl.Login(token, "Este usuário não tem acesso ao painel."))
+			return
+		}
+
+		jwtToken, err := auth.IssueToken(app.Cfg.JWTSecret, user.ID, user.Role)
+		if err != nil {
+			http.Error(w, "erro interno", http.StatusInternalServerError)
+			return
+		}
+		setSessionCookie(w, jwtToken, app.Cfg.IsProduction())
+		http.Redirect(w, r, "/admin", http.StatusSeeOther)
+	}
+}
+
+func handleAdminLogout(app *App) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		clearSessionCookie(w, app.Cfg.IsProduction())
+		http.Redirect(w, r, "/admin/login", http.StatusSeeOther)
+	}
+}
+
+// --- Dashboard ---------------------------------------------------------------
+
+func handleAdminDashboard(app *App) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		snapshot := icecastclient.Fetch(ctx, http.DefaultClient, app.Cfg.IcecastStatusURL)
+		listenersByGenre := map[string]int{}
+		for _, m := range snapshot.Mountpoints {
+			listenersByGenre[m.Mountpoint] = m.Listeners
+		}
+
+		var rows []admintpl.DashboardRow
+		for _, g := range config.AllGenres {
+			var title, artist string
+			_ = app.Pool.QueryRow(ctx, `
+				SELECT s.title, s.artist FROM queue_entries qe JOIN songs s ON s.id = qe.song_id
+				WHERE qe.genre = $1 AND qe.status = 'current' LIMIT 1`, string(g)).Scan(&title, &artist)
+			if title == "" {
+				title = "—"
+			}
+			rows = append(rows, admintpl.DashboardRow{
+				Genre: g, NowTitle: title, NowArtist: artist, Listeners: listenersByGenre[string(g)],
+			})
+		}
+
+		render(w, admintpl.Dashboard(rows))
+	}
+}
+
+// --- Músicas -------------------------------------------------------------
+
+func handleAdminSongsList(app *App) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		query := r.URL.Query().Get("q")
+		list, err := app.Songs.ListPaged(r.Context(), query, 50, 0)
+		if err != nil {
+			app.Log.Error("listando músicas (admin)", "error", err)
+		}
+		if isHXRequest(r) {
+			token := ensureCSRFCookie(w, r)
+			render(w, admintpl.SongsTable(list, token))
+			return
+		}
+		token := ensureCSRFCookie(w, r)
+		render(w, admintpl.SongsList(list, query, token))
+	}
+}
+
+func handleAdminSongEditForm(app *App) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id := pathInt64(r, "id")
+		song, err := app.Songs.GetByID(r.Context(), id)
+		if err != nil || song == nil {
+			http.NotFound(w, r)
+			return
+		}
+		token := ensureCSRFCookie(w, r)
+		render(w, admintpl.SongEdit(*song, token))
+	}
+}
+
+func handleAdminSongUpdate(app *App) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id := pathInt64(r, "id")
+		timeSlots, _ := strconv.Atoi(r.FormValue("time_slots"))
+		if timeSlots == 0 {
+			timeSlots = int(config.SlotTodos)
+		}
+		err := app.Songs.Update(r.Context(), id, songsUpdateInput(r, timeSlots))
+		if err != nil {
+			app.Log.Error("atualizando música", "error", err)
+			http.Error(w, "erro interno", http.StatusInternalServerError)
+			return
+		}
+		http.Redirect(w, r, "/admin/musicas", http.StatusSeeOther)
+	}
+}
+
+func songsUpdateInput(r *http.Request, timeSlots int) songs.UpdateInput {
+	return songs.UpdateInput{
+		Title:            r.FormValue("title"),
+		Artist:           r.FormValue("artist"),
+		Genre:            r.FormValue("genre"),
+		Rotation:         r.FormValue("rotation"),
+		TimeSlots:        timeSlots,
+		AllowedInGeneral: r.FormValue("allowed_in_general") == "on",
+	}
+}
+
+// handleAdminPlaySong injeta uma música fora da fila normal — equivalente a
+// /api/admin/play: ignora as proteções anti-repetição (só admin pode).
+func handleAdminPlaySong(app *App) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id := pathInt64(r, "id")
+		song, err := app.Songs.GetByID(r.Context(), id)
+		if err != nil || song == nil {
+			http.NotFound(w, r)
+			return
+		}
+		_, err = app.Queue.SetCurrent(r.Context(), queueSetCurrentParams(song.Genre, song.ID, false))
+		if err != nil {
+			app.Log.Error("tocando música manualmente", "error", err)
+			http.Error(w, "erro interno", http.StatusInternalServerError)
+			return
+		}
+		w.WriteHeader(http.StatusNoContent)
+	}
+}
+
+// --- Pedidos -------------------------------------------------------------
+
+func handleAdminRequestsList(app *App) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		pending, err := app.Requests.ListPending(r.Context())
+		if err != nil {
+			app.Log.Error("listando pedidos (admin)", "error", err)
+		}
+		token := ensureCSRFCookie(w, r)
+		render(w, admintpl.RequestsList(toPendingRows(pending), token))
+	}
+}
+
+func toPendingRows(pending []requests.PendingRequest) []admintpl.PendingRequestRow {
+	var out []admintpl.PendingRequestRow
+	for _, p := range pending {
+		out = append(out, admintpl.PendingRequestRow{RequestID: p.RequestID, SongTitle: p.Song.Title, SongArtist: p.Song.Artist})
+	}
+	return out
+}
+
+func handleAdminRequestRemove(app *App) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id := pathInt64(r, "id")
+		if err := app.Requests.Remove(r.Context(), id); err != nil {
+			app.Log.Error("removendo pedido", "error", err)
+			http.Error(w, "erro interno", http.StatusInternalServerError)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+	}
+}
+
+// --- Vinhetas ------------------------------------------------------------
+
+func handleAdminJinglesList(app *App) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		rows, err := app.Pool.Query(ctx, `SELECT id, title, filename, path, duration, active FROM jingles ORDER BY title`)
+		var list []models.Jingle
+		if err == nil {
+			defer rows.Close()
+			for rows.Next() {
+				var j models.Jingle
+				if err := rows.Scan(&j.ID, &j.Title, &j.Filename, &j.Path, &j.Duration, &j.Active); err == nil {
+					list = append(list, j)
+				}
+			}
+		}
+		interval, _ := app.Jingles.GetJingleInterval(ctx)
+		token := ensureCSRFCookie(w, r)
+		render(w, admintpl.JinglesList(list, interval, token))
+	}
+}
+
+func handleAdminJingleInterval(app *App) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		interval, err := strconv.Atoi(r.FormValue("interval"))
+		if err != nil || interval < 1 {
+			http.Error(w, "intervalo inválido", http.StatusBadRequest)
+			return
+		}
+		_, err = app.Pool.Exec(r.Context(), `
+			INSERT INTO settings (key, value) VALUES ('jingle_interval', $1)
+			ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`, strconv.Itoa(interval))
+		if err != nil {
+			app.Log.Error("salvando intervalo de vinheta", "error", err)
+			http.Error(w, "erro interno", http.StatusInternalServerError)
+			return
+		}
+		http.Redirect(w, r, "/admin/vinhetas", http.StatusSeeOther)
+	}
+}
+
+func handleAdminJingleToggle(app *App) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id := pathInt64(r, "id")
+		_, err := app.Pool.Exec(r.Context(), `UPDATE jingles SET active = NOT active WHERE id = $1`, id)
+		if err != nil {
+			app.Log.Error("alternando vinheta", "error", err)
+			http.Error(w, "erro interno", http.StatusInternalServerError)
+			return
+		}
+		http.Redirect(w, r, "/admin/vinhetas", http.StatusSeeOther)
+	}
+}
+
+// --- Usuários ------------------------------------------------------------
+
+func handleAdminUsersList(app *App) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		rows, err := app.Pool.Query(ctx, `SELECT id, name, email, password_hash, role, created_at FROM users ORDER BY name`)
+		var list []models.User
+		if err == nil {
+			defer rows.Close()
+			for rows.Next() {
+				var u models.User
+				if err := rows.Scan(&u.ID, &u.Name, &u.Email, &u.PasswordHash, &u.Role, &u.CreatedAt); err == nil {
+					list = append(list, u)
+				}
+			}
+		}
+		token := ensureCSRFCookie(w, r)
+		render(w, admintpl.UsersList(list, token))
+	}
+}
+
+func handleAdminUserRoleUpdate(app *App) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id := pathInt64(r, "id")
+		role := r.FormValue("role")
+		if !rbac.IsValidRole(role) {
+			http.Error(w, "papel inválido", http.StatusBadRequest)
+			return
+		}
+		_, err := app.Pool.Exec(r.Context(), `UPDATE users SET role = $1, updated_at = now() WHERE id = $2`, role, id)
+		if err != nil {
+			app.Log.Error("atualizando papel de usuário", "error", err)
+			http.Error(w, "erro interno", http.StatusInternalServerError)
+			return
+		}
+		http.Redirect(w, r, "/admin/usuarios", http.StatusSeeOther)
+	}
+}
+
+// --- Utilidades ------------------------------------------------------------
+
+func pathInt64(r *http.Request, key string) int64 {
+	v, _ := strconv.ParseInt(r.PathValue(key), 10, 64)
+	return v
+}
+
+func isHXRequest(r *http.Request) bool {
+	return r.Header.Get("HX-Request") == "true"
+}

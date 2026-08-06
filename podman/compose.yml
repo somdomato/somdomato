@@ -1,0 +1,109 @@
+name: somdomato
+
+services:
+  postgres:
+    container_name: somdomato-postgres
+    image: docker.io/library/postgres:16-alpine
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-sdm}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-sdm_dev_only}
+      - POSTGRES_DB=${POSTGRES_DB:-sdm}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-sdm}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - radio-network
+    restart: unless-stopped
+
+  api:
+    container_name: somdomato-api
+    build:
+      context: ..
+      dockerfile: podman/Containerfile.api
+    env_file:
+      - .env
+    environment:
+      - APP_ENV=development
+      - HTTP_ADDR=0.0.0.0:3000
+      - DATABASE_URL=postgres://${POSTGRES_USER:-sdm}:${POSTGRES_PASSWORD:-sdm_dev_only}@postgres:5432/${POSTGRES_DB:-sdm}?sslmode=disable
+      - MUSIC_PATH=/var/music/sdm
+      - COVERS_DIR=/var/music/sdm/covers
+      - JINGLES_DIR=/var/music/sdm/vinhetas
+      - JWT_SECRET=${JWT_SECRET:-dev-change-me}
+      - RADIO_INTERNAL_TOKEN=${RADIO_INTERNAL_TOKEN:-dev-change-me-too}
+      - ICECAST_STATUS_URL=http://icecast:8000/status-json.xsl
+      - STREAM_BASE_URL=http://localhost:8000
+    volumes:
+      - type: bind
+        source: ..
+        target: /app
+      - go_mod_cache:/root/go/pkg/mod
+      - type: bind
+        source: ${MUSIC_PATH:-/home/lucas/music/sdm}
+        target: /var/music/sdm
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - radio-network
+    restart: unless-stopped
+
+  icecast:
+    container_name: somdomato-icecast
+    build:
+      context: .
+      dockerfile: Containerfile.icecast
+    volumes:
+      - type: bind
+        source: ../ansible/etc/icecast/somdomato-podman.xml
+        target: /etc/icecast2/icecast.xml
+        read_only: true
+    ports:
+      - "8000:8000"
+    networks:
+      - radio-network
+    restart: unless-stopped
+
+  liquidsoap:
+    container_name: somdomato-liquidsoap
+    build:
+      context: .
+      dockerfile: Containerfile.liquidsoap
+    volumes:
+      - type: bind
+        source: ../ansible/etc/liquidsoap/somdomato-podman.liq
+        target: /etc/liquidsoap/somdomato.liq
+        read_only: true
+      - type: bind
+        source: ${MUSIC_PATH:-/home/lucas/music/sdm}
+        target: /var/music/sdm
+        read_only: true
+    environment:
+      - RADIO_INTERNAL_TOKEN=${RADIO_INTERNAL_TOKEN:-dev-change-me-too}
+    ports:
+      - "8081:8081"
+    depends_on:
+      icecast:
+        condition: service_started
+      api:
+        condition: service_started
+    networks:
+      - radio-network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  go_mod_cache:
+
+networks:
+  radio-network:
+    name: somdomato-radio-network
+    driver: bridge

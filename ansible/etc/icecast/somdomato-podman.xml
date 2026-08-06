@@ -1,0 +1,101 @@
+<icecast>
+    <location>Brazil</location>
+    <admin>sistematico@gmail.com</admin>
+
+    <limits>
+        <clients>5000</clients>
+        <sources>10</sources>
+        <queue-size>102400</queue-size>
+        <client-timeout>30</client-timeout>
+        <header-timeout>15</header-timeout>
+        <source-timeout>10</source-timeout>
+        <burst-on-connect>1</burst-on-connect>
+        <burst-size>65536</burst-size>
+    </limits>
+
+    <authentication>
+        <source-password>hackme-dev-only</source-password>
+        <relay-password>hackme-dev-only</relay-password>
+        <admin-user>admin</admin-user>
+        <admin-password>hackme-dev-only</admin-password>
+    </authentication>
+
+    <hostname>0.0.0.0</hostname>
+
+    <mount type="default">
+        <charset>UTF-8</charset>
+    </mount>
+
+    <mount type="normal">
+        <mount-name>/geral</mount-name>
+        <charset>UTF-8</charset>
+        <stream-name>Som do Mato - Geral</stream-name>
+        <stream-description>Rádio geral com pedidos</stream-description>
+        <genre>Sertanejo</genre>
+        <bitrate>128</bitrate>
+        <public>0</public>
+    </mount>
+    <mount type="normal">
+        <mount-name>/gaucha</mount-name>
+        <charset>UTF-8</charset>
+        <stream-name>Som do Mato - Gaúcha</stream-name>
+        <genre>Gaúcha</genre>
+        <bitrate>128</bitrate>
+        <public>0</public>
+    </mount>
+    <mount type="normal">
+        <mount-name>/modao</mount-name>
+        <charset>UTF-8</charset>
+        <stream-name>Som do Mato - Modão</stream-name>
+        <genre>Modão</genre>
+        <bitrate>128</bitrate>
+        <public>0</public>
+    </mount>
+    <mount type="normal">
+        <mount-name>/arrocha</mount-name>
+        <charset>UTF-8</charset>
+        <stream-name>Som do Mato - Arrocha</stream-name>
+        <genre>Arrocha</genre>
+        <bitrate>128</bitrate>
+        <public>0</public>
+    </mount>
+    <mount type="normal">
+        <mount-name>/romantico</mount-name>
+        <charset>UTF-8</charset>
+        <stream-name>Som do Mato - Romântico</stream-name>
+        <genre>Romântico</genre>
+        <bitrate>128</bitrate>
+        <public>0</public>
+    </mount>
+
+    <listen-socket>
+        <port>8000</port>
+    </listen-socket>
+
+    <http-headers>
+        <header name="Access-Control-Allow-Origin" value="*"/>
+    </http-headers>
+
+    <fileserve>1</fileserve>
+
+    <paths>
+        <basedir>/usr/share/icecast2</basedir>
+        <logdir>/var/log/icecast2</logdir>
+        <webroot>/usr/share/icecast2/web</webroot>
+        <adminroot>/usr/share/icecast2/admin</adminroot>
+        <pidfile>/tmp/icecast2.pid</pidfile>
+        <alias source="/" destination="/status.xsl"/>
+        <alias source="/json" destination="/status-json.xsl"/>
+    </paths>
+
+    <logging>
+        <accesslog>access.log</accesslog>
+        <errorlog>error.log</errorlog>
+        <loglevel>2</loglevel>
+        <logsize>10000</logsize>
+    </logging>
+
+    <security>
+        <chroot>0</chroot>
+    </security>
+</icecast>

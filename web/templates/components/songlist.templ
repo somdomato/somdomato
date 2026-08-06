@@ -1,0 +1,55 @@
+package components
+
+type SongListItem struct {
+	ID     int64
+	Title  string
+	Artist string
+	Cover  string
+}
+
+templ SongList(title string, items []SongListItem, emptyMessage string) {
+	<section class="mt-6">
+		<h3 class="mb-2 text-sm font-semibold uppercase tracking-wide text-neutral-400">{ title }</h3>
+		if len(items) == 0 {
+			<p class="text-sm text-neutral-500">{ emptyMessage }</p>
+		} else {
+			<ul class="divide-y divide-white/5 rounded-lg bg-surface-raised">
+				for _, item := range items {
+					<li class="flex items-center gap-3 px-4 py-2">
+						<img src={ item.Cover } alt={ item.Title } class="h-10 w-10 rounded object-cover"/>
+						<div class="min-w-0">
+							<p class="truncate text-sm font-medium">{ item.Title }</p>
+							<p class="truncate text-xs text-neutral-400">{ item.Artist }</p>
+						</div>
+					</li>
+				}
+			</ul>
+		}
+	</section>
+}
+
+// SearchResultRow é usado em Pedidos — inclui o botão de solicitar via HTMX.
+templ SearchResultRow(item SongListItem, csrfToken string) {
+	<li class="flex items-center gap-3 px-4 py-2" id={ "song-" + itoa(item.ID) }>
+		<img src={ item.Cover } alt={ item.Title } class="h-10 w-10 rounded object-cover"/>
+		<div class="min-w-0 flex-1">
+			<p class="truncate text-sm font-medium">{ item.Title }</p>
+			<p class="truncate text-xs text-neutral-400">{ item.Artist }</p>
+		</div>
+		<form hx-post="/pedidos/solicitar" hx-target={ "#song-" + itoa(item.ID) } hx-swap="outerHTML">
+			<input type="hidden" name="song_id" value={ itoa(item.ID) }/>
+			<input type="hidden" name="csrf_token" value={ csrfToken }/>
+			<button type="submit" class="rounded-full bg-brand-600 px-3 py-1 text-xs font-medium text-white hover:bg-brand-500">
+				Pedir
+			</button>
+		</form>
+	</li>
+}
+
+templ RequestFeedback(message string, ok bool) {
+	if ok {
+		<li class="px-4 py-2 text-sm text-brand-300">{ message }</li>
+	} else {
+		<li class="px-4 py-2 text-sm text-red-400">{ message }</li>
+	}
+}

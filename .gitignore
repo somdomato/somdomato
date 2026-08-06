@@ -1,0 +1,22 @@
+# Build artifacts
+/tmp/
+/tailwindcss
+# web/static/css/output.css é versionado com um placeholder (go:embed exige
+# que o arquivo exista) — `make css` o sobrescreve com o build real.
+
+# Go
+*.test
+*.out
+
+# Ansible
+ansible/group_vars/production/vault.yml
+ansible/*.retry
+
+# Env
+.env
+podman/.env
+
+# Editor/OS
+.DS_Store
+.idea/
+.vscode/
