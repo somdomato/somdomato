@@ -10,7 +10,7 @@ echo "$(date): Iniciando sincronização do banco de dados de músicas..."
 
 # Executar o script TypeScript de sincronização
 cd /var/www/somdomato
-NODE_ENV=production /home/nginx/.local/share/pnpm/pnpm tsx scripts/sync-music.ts
+NODE_ENV=production /home/nginx/.local/share/pnpm/pnpm tsx src/scripts/sync-music.ts
 
 # Sincronizar os arquivos de música usando rsync (com detecção de erros)
 echo "$(date): Sincronizando arquivos de música..."

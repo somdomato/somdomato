@@ -79,7 +79,7 @@ server {
     
     # WebSocket para Socket.io
     location /socket.io/ {
-        proxy_pass http://host.containers.internal:3000;
+        proxy_pass http://nextjs:3000;
     }
     
     # Streams do Icecast
@@ -89,7 +89,7 @@ server {
     
     # Next.js
     location / {
-        proxy_pass http://host.containers.internal:3000;
+        proxy_pass http://nextjs:3000;
     }
 }
 ```

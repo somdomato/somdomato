@@ -15,7 +15,7 @@
     "lint": "biome check",
     "format": "biome format --write",
     "check": "tsc --noEmit",
-    "update": "tsx ./scripts/sync-music.ts",
+    "update": "tsx ./src/scripts/sync-music.ts",
     "test": "vitest",
     "test:watch": "vitest --watch"
   },

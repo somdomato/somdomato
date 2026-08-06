@@ -87,7 +87,7 @@ O servidor Next.js:
 
 ## Fluxo de Metadados
 
-1. **Liquidsoap** solicita próxima música: `GET http://host.containers.internal:3000/api/music?genre=geral`
+1. **Liquidsoap** solicita próxima música: `GET http://nextjs:3000/api/music?genre=geral`
 2. **Next.js API** retorna música do banco de dados
 3. **Liquidsoap** toca a música no Icecast
 4. **Player no navegador** busca metadados: `GET /api/metadata?genre=geral`
