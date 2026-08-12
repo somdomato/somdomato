@@ -37,24 +37,6 @@ func handleHome(app *App) http.HandlerFunc {
 		ctx := r.Context()
 		genre := genreFromQuery(r)
 
-		var now components.NowPlaying
-		var currentRow struct {
-			SongID int64
-			Title  string
-			Artist string
-			Cover  string
-		}
-		err := app.Pool.QueryRow(ctx, `
-			SELECT s.id, s.title, s.artist, s.cover FROM queue_entries qe
-			JOIN songs s ON s.id = qe.song_id
-			WHERE qe.genre = $1 AND qe.status = 'current' LIMIT 1`, string(genre)).
-			Scan(&currentRow.SongID, &currentRow.Title, &currentRow.Artist, &currentRow.Cover)
-		if err == nil {
-			now = components.NowPlaying{ID: currentRow.SongID, Title: currentRow.Title, Artist: currentRow.Artist, Cover: currentRow.Cover, Genre: string(genre)}
-		} else {
-			now = components.NowPlaying{Title: "Rádio Som do Mato", Artist: "A mais sertaneja", Cover: cover.DefaultCover, Genre: string(genre)}
-		}
-
 		last, _ := fetchRecentlyPlayed(ctx, app, string(genre), 10)
 		queueEntries, err := app.Queue.GetQueue(ctx, string(genre))
 		var next []components.SongListItem
@@ -65,9 +47,34 @@ func handleHome(app *App) http.HandlerFunc {
 		}
 
 		render(w, pages.Home(pages.HomeData{
-			Genre: genre, StreamURL: app.Cfg.StreamURL(genre), Now: now, Last: last, Next: next,
+			Player: buildPlayerData(ctx, app, genre), Last: last, Next: next,
 		}))
 	}
+}
+
+// buildPlayerData monta os dados do player embutido no header — usado em
+// toda página pública para que ele persista (via hx-preserve) durante a
+// navegação sem parar de tocar.
+func buildPlayerData(ctx context.Context, app *App, genre config.Genre) components.PlayerData {
+	var now components.NowPlaying
+	var currentRow struct {
+		SongID int64
+		Title  string
+		Artist string
+		Cover  string
+	}
+	err := app.Pool.QueryRow(ctx, `
+		SELECT s.id, s.title, s.artist, s.cover FROM queue_entries qe
+		JOIN songs s ON s.id = qe.song_id
+		WHERE qe.genre = $1 AND qe.status = 'current' LIMIT 1`, string(genre)).
+		Scan(&currentRow.SongID, &currentRow.Title, &currentRow.Artist, &currentRow.Cover)
+	if err == nil {
+		now = components.NowPlaying{ID: currentRow.SongID, Title: currentRow.Title, Artist: currentRow.Artist, Cover: currentRow.Cover, Genre: string(genre)}
+	} else {
+		now = components.NowPlaying{Title: "Rádio Som do Mato", Artist: "A mais sertaneja", Cover: cover.DefaultCover, Genre: string(genre)}
+	}
+
+	return components.PlayerData{Genre: genre, StreamURL: app.Cfg.StreamURL(genre), Now: now}
 }
 
 func fetchRecentlyPlayed(ctx context.Context, app *App, genre string, limit int) ([]components.SongListItem, error) {
@@ -102,7 +109,9 @@ func handlePedidos(app *App) http.HandlerFunc {
 			pendingItems = append(pendingItems, components.SongListItem{ID: p.Song.ID, Title: p.Song.Title, Artist: p.Song.Artist, Cover: p.Song.Cover})
 		}
 
-		render(w, pages.Pedidos(pages.PedidosData{CSRFToken: token, Pending: pendingItems}))
+		render(w, pages.Pedidos(pages.PedidosData{
+			Player: buildPlayerData(r.Context(), app, config.DefaultGenre), CSRFToken: token, Pending: pendingItems,
+		}))
 	}
 }
 
@@ -156,7 +165,9 @@ func handleArtistas(app *App) http.HandlerFunc {
 		if err != nil {
 			app.Log.Error("listando artistas", "error", err)
 		}
-		render(w, pages.Artistas(pages.ArtistasData{Artists: artists}))
+		render(w, pages.Artistas(pages.ArtistasData{
+			Player: buildPlayerData(r.Context(), app, config.DefaultGenre), Artists: artists,
+		}))
 	}
 }
 
@@ -171,6 +182,6 @@ func handleArtistDetail(app *App) http.HandlerFunc {
 		for _, s := range songList {
 			titles = append(titles, s.Title)
 		}
-		render(w, pages.ArtistDetail(artist, titles))
+		render(w, pages.ArtistDetail(artist, titles, buildPlayerData(r.Context(), app, config.DefaultGenre)))
 	}
 }

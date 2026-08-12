@@ -1,0 +1,66 @@
+package components
+
+import "fmt"
+
+// EnviarSearchItem é um resultado de busca no Deezer, pronto para virar um
+// pedido de download em /enviar.
+type EnviarSearchItem struct {
+	ID        string
+	Title     string
+	Artist    string
+	Thumbnail string
+	Duration  int // segundos
+}
+
+func formatDuration(seconds int) string {
+	return fmt.Sprintf("%d:%02d", seconds/60, seconds%60)
+}
+
+templ EnviarResultRow(item EnviarSearchItem, csrfToken string) {
+	<li class="flex items-center gap-3 px-4 py-2" id={ "track-" + item.ID }>
+		<img src={ item.Thumbnail } alt={ item.Title } class="h-10 w-10 shrink-0 rounded object-cover"/>
+		<div class="min-w-0 flex-1">
+			<p class="truncate text-sm font-medium">{ item.Title }</p>
+			<p class="truncate text-xs text-neutral-400">{ item.Artist } · { formatDuration(item.Duration) }</p>
+		</div>
+		<form hx-post="/enviar/baixar" hx-target={ "#track-" + item.ID } hx-swap="outerHTML">
+			<input type="hidden" name="track_id" value={ item.ID }/>
+			<input type="hidden" name="title" value={ item.Title }/>
+			<input type="hidden" name="artist" value={ item.Artist }/>
+			<input type="hidden" name="thumbnail" value={ item.Thumbnail }/>
+			<input type="hidden" name="csrf_token" value={ csrfToken }/>
+			<button type="submit" class="rounded-full bg-brand-600 px-3 py-1 text-xs font-medium text-white hover:bg-brand-500">
+				Baixar
+			</button>
+		</form>
+	</li>
+}
+
+// EnviarJobStarted substitui a linha de resultado assim que o download é
+// aceito: abre a conexão SSE (sse-connect) que vai atualizar #job-<id> com
+// EnviarProgress/EnviarDone/EnviarError conforme os eventos chegam.
+templ EnviarJobStarted(jobID, title, artist string) {
+	<li class="flex items-center gap-3 px-4 py-2" id={ "track-" + jobID } sse-connect={ "/enviar/progresso/" + jobID }>
+		<div class="min-w-0 flex-1" id={ "job-" + jobID } sse-swap="progress">
+			@EnviarProgress(title, artist, 0)
+		</div>
+	</li>
+}
+
+templ EnviarProgress(title, artist string, percent int) {
+	<p class="truncate text-sm font-medium">{ title }</p>
+	<p class="truncate text-xs text-neutral-400">{ artist }</p>
+	<div class="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-white/10">
+		<div class="h-full rounded-full bg-brand-500 transition-all" style={ fmt.Sprintf("width: %d%%", percent) }></div>
+	</div>
+}
+
+templ EnviarDone(title, artist string) {
+	<p class="truncate text-sm font-medium">{ title }</p>
+	<p class="truncate text-xs text-brand-300">{ artist } · baixada! aguardando avaliação automática.</p>
+}
+
+templ EnviarError(title, artist, message string) {
+	<p class="truncate text-sm font-medium">{ title }</p>
+	<p class="truncate text-xs text-red-400">{ artist } · { message }</p>
+}

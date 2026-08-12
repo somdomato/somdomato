@@ -1,10 +1,15 @@
 # Dev-only: build leve com hot-reload via air. A imagem de produção não usa
 # este Containerfile — produção roda o binário estático via systemd
 # (ver ansible/playbook.yml), sem container nenhum.
-FROM docker.io/library/golang:1.23-alpine
+#
+# air@latest exige go >= 1.26 (ainda não publicado como tag estável no Docker
+# Hub no momento em que isso foi escrito) — por isso pinamos v1.61.7, a
+# última release compatível com go 1.23+. templ@latest exige go >= 1.25, daí
+# a imagem base golang:1.25-alpine.
+FROM docker.io/library/golang:1.25-alpine
 
 RUN apk add --no-cache git curl && \
-    go install github.com/air-verse/air@latest && \
+    go install github.com/air-verse/air@v1.61.7 && \
     go install github.com/a-h/templ/cmd/templ@latest
 
 WORKDIR /app

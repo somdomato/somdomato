@@ -14,6 +14,8 @@ import (
 	"github.com/lucasbrum/somdomato/api/config"
 	"github.com/lucasbrum/somdomato/api/internal/auth"
 	"github.com/lucasbrum/somdomato/api/internal/db"
+	"github.com/lucasbrum/somdomato/api/internal/deezerdl"
+	"github.com/lucasbrum/somdomato/api/internal/groqeval"
 	"github.com/lucasbrum/somdomato/api/internal/httpserver"
 	"github.com/lucasbrum/somdomato/api/internal/icecastclient"
 	"github.com/lucasbrum/somdomato/api/internal/jingles"
@@ -22,6 +24,7 @@ import (
 	"github.com/lucasbrum/somdomato/api/internal/requests"
 	"github.com/lucasbrum/somdomato/api/internal/songs"
 	"github.com/lucasbrum/somdomato/api/internal/sse"
+	"github.com/lucasbrum/somdomato/api/internal/uploads"
 )
 
 func main() {
@@ -51,6 +54,15 @@ func main() {
 	protectionsStore := protections.NewStore(pool)
 	queueStore := queue.NewStore(pool, protectionsStore)
 	hub := sse.NewHub()
+	songsStore := songs.NewStore(pool)
+	uploadsStore := uploads.NewStore(pool)
+
+	var deezerClient *deezerdl.Client
+	if cfg.DeezerARL != "" {
+		deezerClient = deezerdl.New(cfg.DeezerARL)
+	} else {
+		log.Warn("DEEZER_ARL não configurado — rota /enviar/baixar fica desativada")
+	}
 
 	app := &httpserver.App{
 		Cfg:         cfg,
@@ -59,11 +71,18 @@ func main() {
 		Queue:       queueStore,
 		Protections: protectionsStore,
 		Jingles:     jingles.NewStore(pool),
-		Songs:       songs.NewStore(pool),
+		Songs:       songsStore,
 		Requests:    requests.NewStore(pool, protectionsStore, queueStore),
 		Auth:        auth.NewStore(pool),
 		Hub:         hub,
+		Uploads:     uploadsStore,
+		Deezer:      deezerClient,
 	}
+
+	// Avaliador Groq: no máximo 1 chamada/min, ver internal/groqeval. Sem
+	// GROQ_API_KEY o worker simplesmente não processa nada (uploads ficam
+	// pendentes) — não impede o boot.
+	go groqeval.New(cfg, uploadsStore, songsStore, log).Run(ctx)
 
 	// Alimenta o hub SSE com a contagem de ouvintes a cada 10s — mesma
 	// cadência do polling que o front atual fazia em /api/listeners.

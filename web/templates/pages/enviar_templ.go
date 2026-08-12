@@ -13,13 +13,14 @@ import (
 	"github.com/lucasbrum/somdomato/web/templates/components"
 )
 
-type HomeData struct {
-	Player components.PlayerData
-	Last   []components.SongListItem
-	Next   []components.SongListItem
+type EnviarData struct {
+	Player    components.PlayerData
+	CSRFToken string
+	Results   []components.EnviarSearchItem
+	Query     string
 }
 
-func Home(data HomeData) templ.Component {
+func Enviar(data EnviarData) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -52,25 +53,36 @@ func Home(data HomeData) templ.Component {
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"grid gap-6 md:grid-cols-2\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<h1 class=\"text-xl font-bold\">Manda tua música pra rádio</h1><p class=\"mt-1 text-sm text-neutral-400\">Busque no Deezer e peça o download. Toda música passa por uma avaliação automática antes de entrar no ar — pode levar alguns minutos.</p><form class=\"mt-4\" hx-get=\"/enviar/buscar\" hx-target=\"#search-results\" hx-trigger=\"input changed delay:300ms, search\"><input type=\"search\" name=\"q\" value=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = components.SongList("Últimas", data.Last, "Ainda não há histórico nesta stream.").Render(ctx, templ_7745c5c3_Buffer)
+			var templ_7745c5c3_Var3 string
+			templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.ResolveAttributeValue(data.Query)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/pages/enviar.templ`, Line: 27, Col: 22}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var3)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = components.SongList("Próximas", data.Next, "A fila está sendo preparada.").Render(ctx, templ_7745c5c3_Buffer)
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "\" placeholder=\"Buscar por título ou artista...\" class=\"w-full rounded-lg bg-surface-raised px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-brand-500\"></form><ul id=\"search-results\" class=\"mt-3 divide-y divide-white/5 rounded-lg bg-surface-raised\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</div>")
+			for _, item := range data.Results {
+				templ_7745c5c3_Err = components.EnviarResultRow(item, data.CSRFToken).Render(ctx, templ_7745c5c3_Buffer)
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "</ul>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			return nil
 		})
-		templ_7745c5c3_Err = templates.Layout("Rádio ao vivo", &data.Player).Render(templ.WithChildren(ctx, templ_7745c5c3_Var2), templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = templates.Layout("Enviar música", &data.Player).Render(templ.WithChildren(ctx, templ_7745c5c3_Var2), templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

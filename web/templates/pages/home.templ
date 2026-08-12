@@ -1,22 +1,18 @@
 package pages
 
 import (
-	"github.com/lucasbrum/somdomato/api/config"
 	"github.com/lucasbrum/somdomato/web/templates"
 	"github.com/lucasbrum/somdomato/web/templates/components"
 )
 
 type HomeData struct {
-	Genre     config.Genre
-	StreamURL string
-	Now       components.NowPlaying
-	Last      []components.SongListItem
-	Next      []components.SongListItem
+	Player components.PlayerData
+	Last   []components.SongListItem
+	Next   []components.SongListItem
 }
 
 templ Home(data HomeData) {
-	@templates.Layout("Rádio ao vivo") {
-		@components.Player(data.Genre, data.StreamURL, data.Now)
+	@templates.Layout("Rádio ao vivo", &data.Player) {
 		<div class="grid gap-6 md:grid-cols-2">
 			@components.SongList("Últimas", data.Last, "Ainda não há histórico nesta stream.")
 			@components.SongList("Próximas", data.Next, "A fila está sendo preparada.")

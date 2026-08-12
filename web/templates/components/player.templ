@@ -10,45 +10,126 @@ type NowPlaying struct {
 	Genre  string
 }
 
-// Player renderiza o <audio> e o card "tocando agora". Assina o evento SSE
-// "song-changed" e troca o card inteiro via sse-swap — sem JS customizado
-// além do necessário para o elemento <audio> trocar de fonte.
-templ Player(genre config.Genre, streamURL string, now NowPlaying) {
-	<section class="rounded-xl bg-surface-raised p-5" sse-connect="/events">
-		<div class="flex items-center justify-between">
-			<h2 class="text-sm font-semibold uppercase tracking-wide text-brand-300">{ genre.Label() }</h2>
-			@GenreSwitcher(genre)
-		</div>
-
-		<div id="now-playing" sse-swap="song-changed" hx-swap="innerHTML" data-htmx-fade>
-			@NowPlayingCard(now)
-		</div>
-
-		<audio id="radio-player" class="mt-4 w-full" controls preload="none">
-			<source src={ streamURL } type="audio/mpeg"/>
-			Seu navegador não suporta áudio HTML5.
-		</audio>
-	</section>
+type PlayerData struct {
+	Genre     config.Genre
+	StreamURL string
+	Now       NowPlaying
 }
 
-templ NowPlayingCard(now NowPlaying) {
-	<div class="mt-4 flex items-center gap-4">
-		<img src={ now.Cover } alt={ now.Title } class="h-16 w-16 rounded-lg object-cover"/>
-		<div>
-			<p class="font-semibold">{ now.Title }</p>
-			<p class="text-sm text-neutral-400">{ now.Artist }</p>
+// PlayerBar é a barra do player embutida no header: capa, controles e troca
+// de gênero em uma única faixa compacta. Assina o evento SSE "song-changed"
+// e troca só a capa/título via sse-swap — sem JS customizado além do
+// necessário para o <audio> trocar de fonte.
+templ PlayerBar(data PlayerData) {
+	<div class="flex flex-wrap items-center gap-3 border-t border-white/5 py-2.5 sm:flex-nowrap" sse-connect="/events">
+		<div
+			id="now-playing"
+			sse-swap="song-changed"
+			hx-swap="innerHTML"
+			data-htmx-fade
+			class="flex min-w-0 flex-1 items-center gap-3 sm:flex-none"
+		>
+			@NowPlayingCard(data.Now)
+		</div>
+
+		<div class="flex shrink-0 items-center gap-1.5" data-player data-stream-url={ data.StreamURL }>
+			<div class="flex items-center gap-2">
+				<button
+					type="button"
+					data-player-toggle
+					aria-label="Reproduzir"
+					class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-600 text-white transition hover:bg-brand-500 active:scale-95"
+				>
+					<svg data-icon-play class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
+						<path d="M8 5v14l11-7z"></path>
+					</svg>
+					<svg data-icon-pause class="hidden h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
+						<path d="M6 5h4v14H6zM14 5h4v14h-4z"></path>
+					</svg>
+					<svg data-icon-loading class="hidden h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+						<path d="M21 12a9 9 0 1 1-9-9" opacity="0.9"></path>
+					</svg>
+				</button>
+
+				<div data-player-bars class="flex h-5 items-end gap-[3px]" aria-hidden="true">
+					<span class="w-[3px] rounded-full bg-brand-400"></span>
+					<span class="w-[3px] rounded-full bg-brand-400"></span>
+					<span class="w-[3px] rounded-full bg-brand-400"></span>
+					<span class="w-[3px] rounded-full bg-brand-400"></span>
+					<span class="w-[3px] rounded-full bg-brand-400"></span>
+				</div>
+			</div>
+
+			<button
+				type="button"
+				data-player-reload
+				aria-label="Recarregar transmissão"
+				title="Recarregar transmissão"
+				class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-neutral-400 transition hover:bg-white/10 hover:text-neutral-200 active:scale-95"
+			>
+				<svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+					<path d="M21 12a9 9 0 1 1-2.64-6.36"></path>
+					<path d="M21 3v6h-6"></path>
+				</svg>
+			</button>
+
+			<div class="hidden items-center gap-2 lg:flex">
+				<svg class="h-4 w-4 shrink-0 text-neutral-400" viewBox="0 0 24 24" fill="currentColor">
+					<path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3a4.5 4.5 0 00-2.5-4.03v8.06A4.5 4.5 0 0016.5 12z"></path>
+				</svg>
+				<input
+					type="range"
+					data-player-volume
+					min="0"
+					max="1"
+					step="0.01"
+					value="0.8"
+					aria-label="Volume"
+					class="h-1 w-16 cursor-pointer accent-brand-500"
+				/>
+			</div>
+
+			<audio data-player-audio preload="none"></audio>
+		</div>
+
+		<div class="order-last w-full sm:order-none sm:ml-auto sm:w-auto">
+			@GenreSwitcher(data.Genre)
 		</div>
 	</div>
 }
 
+templ NowPlayingCard(now NowPlaying) {
+	<div class="relative h-11 w-11 shrink-0">
+		<img src={ now.Cover } alt={ now.Title } class="h-11 w-11 rounded-lg object-cover shadow-md ring-1 ring-white/10"/>
+		<span class="absolute -right-1 -top-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-red-600 ring-2 ring-surface-raised" title="Ao vivo">
+			<span class="h-1.5 w-1.5 animate-pulse rounded-full bg-white"></span>
+		</span>
+	</div>
+	<div class="min-w-0 leading-tight">
+		<p class="max-w-[8rem] truncate text-sm font-semibold sm:max-w-[10rem]">{ now.Title }</p>
+		<p class="max-w-[8rem] truncate text-xs text-neutral-400 sm:max-w-[10rem]">{ now.Artist }</p>
+	</div>
+}
+
 templ GenreSwitcher(active config.Genre) {
-	<div class="flex gap-1 text-xs">
-		for _, g := range config.AllGenres {
-			if g == active {
-				<span class="rounded-full bg-brand-600 px-3 py-1 font-medium text-white">{ g.Label() }</span>
-			} else {
-				<a href={ templ.URL("/?genre=" + string(g)) } class="rounded-full px-3 py-1 text-neutral-400 hover:bg-white/10">{ g.Label() }</a>
+	<div class="relative w-full sm:w-44">
+		<select
+			data-genre-select
+			aria-label="Selecionar rádio"
+			hx-boost="false"
+			onchange="if (this.value) { sessionStorage.setItem('sdm-autoplay', '1'); window.location.href = this.value; }"
+			class="w-full cursor-pointer appearance-none rounded-lg border border-white/10 bg-surface-raised py-1.5 pl-3 pr-8 text-xs font-medium text-neutral-200 shadow-sm transition hover:border-white/20 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+		>
+			for _, g := range config.AllGenres {
+				if g == active {
+					<option value={ "/?genre=" + string(g) } selected>{ g.Label() }</option>
+				} else {
+					<option value={ "/?genre=" + string(g) }>{ g.Label() }</option>
+				}
 			}
-		}
+		</select>
+		<svg class="pointer-events-none absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-neutral-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+			<path d="m6 9 6 6 6-6"></path>
+		</svg>
 	</div>
 }

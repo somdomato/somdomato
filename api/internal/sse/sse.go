@@ -8,12 +8,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 	"sync"
 )
 
 type Event struct {
 	Name string // usado como `event:` SSE — os templates fazem sse-swap por esse nome
-	Data any    // serializado como JSON no corpo do evento
+	Data any    // string é enviada crua (ex.: HTML renderizado); qualquer outro tipo é serializado como JSON
 }
 
 type client struct {
@@ -72,11 +73,21 @@ func (h *Hub) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		case <-ctx.Done():
 			return
 		case evt := <-c.ch:
-			payload, err := json.Marshal(evt.Data)
-			if err != nil {
-				continue
+			var payload string
+			if s, ok := evt.Data.(string); ok {
+				payload = s
+			} else {
+				b, err := json.Marshal(evt.Data)
+				if err != nil {
+					continue
+				}
+				payload = string(b)
 			}
-			fmt.Fprintf(w, "event: %s\ndata: %s\n\n", evt.Name, payload)
+			fmt.Fprintf(w, "event: %s\n", evt.Name)
+			for line := range strings.SplitSeq(payload, "\n") {
+				fmt.Fprintf(w, "data: %s\n", line)
+			}
+			fmt.Fprint(w, "\n")
 			flusher.Flush()
 		}
 	}

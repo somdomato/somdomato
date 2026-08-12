@@ -34,8 +34,13 @@ tools: ## Instala templ e o CLI standalone do Tailwind v4 (sem Node.js)
 
 # ── Dev (Podman) ─────────────────────────────────────────────────────────
 
-dev: up ## Sobe o ambiente completo e acompanha os logs da API
+dev: up ## Sobe o ambiente completo, recompila CSS em watch e acompanha os logs da API
+	@trap '$(MAKE) --no-print-directory _dev-stop-css' EXIT; \
+	$(MAKE) --no-print-directory css-watch & \
 	$(COMPOSE) logs -f api
+
+_dev-stop-css:
+	@pkill -f 'tailwindcss --input web/css/input.css' 2>/dev/null || true
 
 up: ## Sobe todos os serviços em background (postgres, api, icecast, liquidsoap)
 	$(COMPOSE) up -d

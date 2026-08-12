@@ -5,10 +5,20 @@ tmp_dir = "tmp"
   pre_cmd = ["templ generate"]
   cmd = "go build -o ./tmp/server ./api/cmd/server"
   bin = "./tmp/server"
-  include_ext = ["go", "templ", "sql"]
-  exclude_dir = ["tmp", "node_modules", ".git", "web/static"]
+  include_ext = ["go", "templ", "sql", "css", "js"]
+  exclude_dir = ["tmp", "node_modules", ".git"]
   exclude_regex = ["_templ.go"]
   delay = 200
+  # inotify não é confiável em bind mounts do Podman machine no macOS
+  # (virtiofs/9p não repassa os eventos pra dentro da VM) — sem polling,
+  # o air simplesmente nunca detecta as mudanças feitas no host.
+  poll = true
+  poll_interval = 500
 
 [log]
   time = true
+
+[proxy]
+  enabled = true
+  proxy_port = 3001
+  app_port = 3000

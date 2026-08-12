@@ -94,6 +94,35 @@ type Jingle struct {
 	Active   bool
 }
 
+// UploadStatus é o ciclo de vida de uma faixa baixada via /enviar aguardando
+// avaliação: pending -> evaluating -> approved|rejected.
+type UploadStatus string
+
+const (
+	UploadPending    UploadStatus = "pending"
+	UploadEvaluating UploadStatus = "evaluating"
+	UploadApproved   UploadStatus = "approved"
+	UploadRejected   UploadStatus = "rejected"
+)
+
+type Upload struct {
+	ID          int64
+	Title       string
+	Artist      string
+	DeezerID    string
+	Thumbnail   *string
+	Filename    string
+	Path        string
+	Duration    *int
+	Status      UploadStatus
+	AIGenre     *string
+	AIReason    *string
+	Attempts    int
+	SongID      *int64
+	RequestedIP string
+	CreatedAt   time.Time
+}
+
 type User struct {
 	ID           int64
 	Name         string

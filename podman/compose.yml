@@ -48,7 +48,9 @@ services:
         source: ${MUSIC_PATH:-/home/lucas/music/sdm}
         target: /var/music/sdm
     ports:
-      - "3000:3000"
+      # host 3000 -> proxy do air (3001), que injeta o script de livereload
+      # e repassa para a app real (3000, só interna ao container).
+      - "3000:3001"
     depends_on:
       postgres:
         condition: service_healthy

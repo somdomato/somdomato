@@ -9,12 +9,14 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/lucasbrum/somdomato/api/config"
 	"github.com/lucasbrum/somdomato/api/internal/auth"
+	"github.com/lucasbrum/somdomato/api/internal/deezerdl"
 	"github.com/lucasbrum/somdomato/api/internal/jingles"
 	"github.com/lucasbrum/somdomato/api/internal/protections"
 	"github.com/lucasbrum/somdomato/api/internal/queue"
 	"github.com/lucasbrum/somdomato/api/internal/requests"
 	"github.com/lucasbrum/somdomato/api/internal/songs"
 	"github.com/lucasbrum/somdomato/api/internal/sse"
+	"github.com/lucasbrum/somdomato/api/internal/uploads"
 	"github.com/lucasbrum/somdomato/web"
 )
 
@@ -32,6 +34,11 @@ type App struct {
 	Requests    *requests.Store
 	Auth        *auth.Store
 	Hub         *sse.Hub
+	Uploads     *uploads.Store
+
+	// Deezer é nil quando DEEZER_ARL não está configurado — /enviar/baixar
+	// responde 503 nesse caso em vez de o processo inteiro falhar ao subir.
+	Deezer *deezerdl.Client
 }
 
 func NewRouter(app *App) http.Handler {
@@ -41,6 +48,7 @@ func NewRouter(app *App) http.Handler {
 	registerFileRoutes(mux, app)
 	registerSSERoutes(mux, app)
 	registerPublicRoutes(mux, app)
+	registerEnviarRoutes(mux, app)
 	registerAdminRoutes(mux, app)
 
 	fileServer := http.FileServer(http.FS(web.StaticFS()))

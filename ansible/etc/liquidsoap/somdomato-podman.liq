@@ -4,7 +4,7 @@
 settings.init.allow_root := true
 
 api_base = "http://api:3000"
-internal_token = "#{os.environ("RADIO_INTERNAL_TOKEN")}"
+internal_token = environment.get("RADIO_INTERNAL_TOKEN")
 
 live = input.harbor("aovivo", port=8010, user="dj", password="hackme-dev-only")
 

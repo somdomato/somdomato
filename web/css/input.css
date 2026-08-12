@@ -3,8 +3,25 @@
    substituindo o tailwind.config.js do v3. */
 @import "tailwindcss";
 
+/* Nunito auto-hospedada (subset latin, cobre pt-BR) — evita depender do
+   Google Fonts CDN em runtime. */
+@font-face {
+  font-family: "Nunito";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/static/fonts/nunito-400.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Nunito";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("/static/fonts/nunito-700.woff2") format("woff2");
+}
+
 @theme {
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Nunito", ui-sans-serif, system-ui, sans-serif;
 
   --color-brand-50: oklch(0.98 0.02 150);
   --color-brand-100: oklch(0.94 0.05 150);
@@ -25,4 +42,23 @@
 }
 [data-htmx-fade] {
   transition: opacity 200ms ease-in;
+}
+
+/* Barrinhas de equalizador do player — só animam enquanto o áudio toca. */
+[data-player-bars] span {
+  height: 30%;
+  transition: height 150ms ease;
+}
+[data-player-bars].is-playing span {
+  animation: eq-bounce 900ms ease-in-out infinite;
+}
+[data-player-bars].is-playing span:nth-child(1) { animation-delay: -0.8s; }
+[data-player-bars].is-playing span:nth-child(2) { animation-delay: -0.65s; }
+[data-player-bars].is-playing span:nth-child(3) { animation-delay: -0.5s; }
+[data-player-bars].is-playing span:nth-child(4) { animation-delay: -0.35s; }
+[data-player-bars].is-playing span:nth-child(5) { animation-delay: -0.2s; }
+
+@keyframes eq-bounce {
+  0%, 100% { height: 20%; }
+  50% { height: 100%; }
 }

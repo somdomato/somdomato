@@ -4,6 +4,8 @@
 package httpserver
 
 import (
+	"bytes"
+	"context"
 	"encoding/json"
 	"net/http"
 	"strconv"
@@ -12,6 +14,7 @@ import (
 	"github.com/lucasbrum/somdomato/api/internal/cover"
 	"github.com/lucasbrum/somdomato/api/internal/sse"
 	"github.com/lucasbrum/somdomato/api/models"
+	"github.com/lucasbrum/somdomato/web/templates/components"
 )
 
 func registerInternalRadioRoutes(mux *http.ServeMux, app *App) {
@@ -118,10 +121,10 @@ func handleGetMusic(app *App) http.HandlerFunc {
 		// Flush: se havia um "pending" anterior que nunca recebeu on_track,
 		// marca como "skipped" e avisa os clientes conectados via SSE.
 		if stale, err := app.Queue.FlushStalePending(ctx, genre, selected.QueueEntryID); err == nil && stale != nil {
-			app.Hub.Broadcast(sse.Event{Name: "song-changed", Data: map[string]any{
-				"id": stale.SongID, "title": stale.Title, "artist": stale.Artist,
-				"cover": stale.Cover, "genre": stale.Genre, "wasRequested": stale.WasRequested,
-			}})
+			broadcastSongChanged(app, components.NowPlaying{
+				ID: stale.SongID, Title: stale.Title, Artist: stale.Artist,
+				Cover: stale.Cover, Genre: stale.Genre,
+			})
 		}
 
 		app.Jingles.IncrementSongCounter(genre)
@@ -163,10 +166,10 @@ func handleMusicStarted(app *App) http.HandlerFunc {
 			return
 		}
 
-		app.Hub.Broadcast(sse.Event{Name: "song-changed", Data: map[string]any{
-			"id": confirmed.SongID, "title": confirmed.Title, "artist": confirmed.Artist,
-			"cover": confirmed.Cover, "genre": confirmed.Genre, "wasRequested": confirmed.WasRequested,
-		}})
+		broadcastSongChanged(app, components.NowPlaying{
+			ID: confirmed.SongID, Title: confirmed.Title, Artist: confirmed.Artist,
+			Cover: confirmed.Cover, Genre: confirmed.Genre,
+		})
 
 		// Resolução de capa assíncrona (fire-and-forget), só quando a capa
 		// ainda é a padrão — protege capas já definidas pelo admin.
@@ -189,6 +192,19 @@ func resolveCoverAsync(app *App, songID int64, mp3Path string) {
 		return
 	}
 	app.Hub.Broadcast(sse.Event{Name: "song-cover", Data: map[string]any{"id": songID, "cover": resolved}})
+}
+
+// broadcastSongChanged renderiza NowPlayingCard (mesmo componente usado no
+// render inicial) para HTML e publica via SSE — o cliente faz sse-swap com
+// hx-swap="innerHTML" em #now-playing, então o payload já precisa ser
+// markup pronto, não JSON.
+func broadcastSongChanged(app *App, now components.NowPlaying) {
+	var buf bytes.Buffer
+	if err := components.NowPlayingCard(now).Render(context.Background(), &buf); err != nil {
+		app.Log.Error("renderizando now-playing para SSE", "error", err)
+		return
+	}
+	app.Hub.Broadcast(sse.Event{Name: "song-changed", Data: buf.String()})
 }
 
 func writeJSON(w http.ResponseWriter, status int, v any) {

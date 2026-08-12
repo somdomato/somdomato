@@ -109,6 +109,13 @@ type Config struct {
 
 	// Rádio
 	StreamBaseURL string // ex: https://radio.somdomato.com
+
+	// Deezer/Groq (feature /enviar) — opcionais: sem eles as rotas ficam
+	// desabilitadas, o resto da aplicação sobe normalmente.
+	DeezerARL  string // cookie ARL de uma conta Deezer (idealmente premium, p/ mp3_320)
+	UploadsDir string // onde os downloads pousam antes de entrar no catálogo
+	GroqAPIKey string
+	GroqModel  string
 }
 
 func Load() (*Config, error) {
@@ -123,6 +130,10 @@ func Load() (*Config, error) {
 		InternalRadioToken: os.Getenv("RADIO_INTERNAL_TOKEN"),
 		IcecastStatusURL:   getEnv("ICECAST_STATUS_URL", "http://localhost:8000/status-json.xsl"),
 		StreamBaseURL:      getEnv("STREAM_BASE_URL", "https://radio.somdomato.com"),
+		DeezerARL:          os.Getenv("DEEZER_ARL"),
+		UploadsDir:         getEnv("UPLOADS_DIR", getEnv("MUSIC_PATH", "/var/music/sdm")+"/uploads"),
+		GroqAPIKey:         os.Getenv("GROQ_API_KEY"),
+		GroqModel:          getEnv("GROQ_MODEL", "llama-3.1-8b-instant"),
 	}
 
 	var missing []string

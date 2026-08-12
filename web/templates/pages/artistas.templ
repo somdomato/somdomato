@@ -1,13 +1,17 @@
 package pages
 
-import "github.com/lucasbrum/somdomato/web/templates"
+import (
+	"github.com/lucasbrum/somdomato/web/templates"
+	"github.com/lucasbrum/somdomato/web/templates/components"
+)
 
 type ArtistasData struct {
+	Player  components.PlayerData
 	Artists []string
 }
 
 templ Artistas(data ArtistasData) {
-	@templates.Layout("Artistas") {
+	@templates.Layout("Artistas", &data.Player) {
 		<h1 class="text-xl font-bold">Artistas</h1>
 		<ul class="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3">
 			for _, artist := range data.Artists {
@@ -21,8 +25,8 @@ templ Artistas(data ArtistasData) {
 	}
 }
 
-templ ArtistDetail(artist string, songs []string) {
-	@templates.Layout(artist) {
+templ ArtistDetail(artist string, songs []string, player components.PlayerData) {
+	@templates.Layout(artist, &player) {
 		<h1 class="text-xl font-bold">{ artist }</h1>
 		<ul class="mt-4 divide-y divide-white/5 rounded-lg bg-surface-raised">
 			for _, title := range songs {
