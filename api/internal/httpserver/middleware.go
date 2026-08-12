@@ -41,6 +41,15 @@ func (r *statusRecorder) WriteHeader(code int) {
 	r.ResponseWriter.WriteHeader(code)
 }
 
+// Flush repassa para o ResponseWriter subjacente — sem isso, statusRecorder
+// quebra a asserção de tipo http.Flusher que o handler SSE depende para
+// fazer streaming (ver api/internal/sse/sse.go).
+func (r *statusRecorder) Flush() {
+	if f, ok := r.ResponseWriter.(http.Flusher); ok {
+		f.Flush()
+	}
+}
+
 // --- Autenticação de rotas internas (Liquidsoap) ---------------------------
 
 // requireInternalToken exige o header X-Internal-Token com o segredo

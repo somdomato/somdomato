@@ -44,7 +44,7 @@ func Layout(title string, player *components.PlayerData) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, " · Som do Mato</title><link rel=\"stylesheet\" href=\"/static/css/output.css\"><script src=\"/static/js/htmx.min.js\"></script><script src=\"/static/js/htmx-sse.js\"></script></head><body class=\"flex min-h-screen flex-col bg-surface text-neutral-100 font-sans\" hx-ext=\"sse\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, " · Som do Mato</title><link rel=\"icon\" type=\"image/svg+xml\" href=\"/static/images/logotipo.svg\"><link rel=\"stylesheet\" href=\"/static/css/output.css\"><script src=\"/static/js/htmx.min.js\"></script><script src=\"/static/js/htmx-sse.js\"></script></head><body class=\"flex min-h-screen flex-col bg-surface text-neutral-100 font-sans\" hx-ext=\"sse\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -100,7 +100,7 @@ func Header(player *components.PlayerData) templ.Component {
 			templ_7745c5c3_Var3 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "<header id=\"site-header\" hx-boost=\"true\" hx-preserve=\"true\" class=\"sticky top-0 z-40 border-b border-white/10 bg-surface-raised/95 backdrop-blur\"><div class=\"mx-auto max-w-5xl px-4\"><div class=\"flex items-center justify-between gap-4 py-3\"><a href=\"/\" class=\"flex shrink-0 items-center gap-2\"><img src=\"/static/images/logotipo.svg\" alt=\"Som do Mato\" class=\"h-8 w-auto\"> <span class=\"text-lg font-bold text-brand-300\">Som do Mato</span></a><nav class=\"flex gap-3 text-xs text-neutral-300 sm:gap-4 sm:text-sm\"><a href=\"/\" class=\"hover:text-brand-300\">Início</a> <a href=\"/pedidos\" class=\"hover:text-brand-300\">Pedidos</a> <a href=\"/enviar\" class=\"hover:text-brand-300\">Enviar música</a> <a href=\"/artistas\" class=\"hover:text-brand-300\">Artistas</a></nav></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "<header id=\"site-header\" hx-boost=\"true\" hx-preserve=\"true\" class=\"sticky top-0 z-40 border-b border-white/10 bg-surface-raised/95 backdrop-blur\"><div class=\"mx-auto max-w-5xl px-4\"><div class=\"flex flex-col items-center gap-2 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4\"><a href=\"/\" class=\"flex shrink-0 items-center gap-2\"><img src=\"/static/images/logotipo.svg\" alt=\"Som do Mato\" class=\"h-8 w-auto\"> <span class=\"text-lg md:text-2xl font-bold\">Som do Mato</span></a><nav class=\"scrollbar-hide flex w-full max-w-full gap-3 overflow-x-auto whitespace-nowrap text-xs text-neutral-300 sm:w-auto sm:gap-4 sm:text-sm\"><a href=\"/\" class=\"hover:text-brand-300\">Início</a> <a href=\"/pedidos\" class=\"hover:text-brand-300\">Pedidos</a> <a href=\"/enviar\" class=\"hover:text-brand-300\">Enviar música</a> <a href=\"/artistas\" class=\"hover:text-brand-300\">Artistas</a></nav></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -181,7 +181,7 @@ func CSRFField(token string) templ.Component {
 		var templ_7745c5c3_Var6 string
 		templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.ResolveAttributeValue(token)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/layout.templ`, Line: 61, Col: 53}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/layout.templ`, Line: 62, Col: 53}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var6)
 		if templ_7745c5c3_Err != nil {

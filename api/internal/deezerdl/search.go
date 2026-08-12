@@ -24,15 +24,21 @@ type SearchResult struct {
 
 // Search consulta a busca pública do Deezer — sem custo de autenticação,
 // então não passa pelo semáforo de downloads nem pela sessão cacheada.
-func Search(ctx context.Context, query string, limit int) ([]SearchResult, error) {
+// offset é o índice do primeiro resultado (paginação via parâmetro "index"
+// da API do Deezer).
+func Search(ctx context.Context, query string, limit, offset int) ([]SearchResult, error) {
 	if limit <= 0 || limit > 25 {
 		limit = 10
+	}
+	if offset < 0 {
+		offset = 0
 	}
 
 	u := url.URL{Scheme: "https", Host: "api.deezer.com", Path: "/search"}
 	q := u.Query()
 	q.Set("q", query)
 	q.Set("limit", fmt.Sprintf("%d", limit))
+	q.Set("index", fmt.Sprintf("%d", offset))
 	u.RawQuery = q.Encode()
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u.String(), nil)

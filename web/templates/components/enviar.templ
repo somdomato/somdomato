@@ -1,6 +1,9 @@
 package components
 
-import "fmt"
+import (
+	"fmt"
+	"net/url"
+)
 
 // EnviarSearchItem é um resultado de busca no Deezer, pronto para virar um
 // pedido de download em /enviar.
@@ -33,6 +36,23 @@ templ EnviarResultRow(item EnviarSearchItem, csrfToken string) {
 				Baixar
 			</button>
 		</form>
+	</li>
+}
+
+// EnviarLoadMore é o botão de paginação: ao ser clicado, busca a próxima
+// página e se substitui (outerHTML) pelas novas linhas + um novo botão (ou
+// nada, se a API devolveu uma página incompleta).
+templ EnviarLoadMore(query string, offset int) {
+	<li
+		class="px-4 py-2 text-center"
+		hx-get={ fmt.Sprintf("/enviar/buscar?q=%s&offset=%d", url.QueryEscape(query), offset) }
+		hx-target="this"
+		hx-swap="outerHTML"
+		hx-trigger="click"
+	>
+		<button type="button" class="text-xs font-medium text-brand-300 hover:text-brand-200">
+			Carregar mais
+		</button>
 	</li>
 }
 

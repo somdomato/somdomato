@@ -35,6 +35,16 @@
   --color-surface-raised: oklch(0.21 0.01 260);
 }
 
+/* Scroll horizontal sem barra visível — usado no menu do header em telas
+   pequenas, onde os itens não podem quebrar linha. */
+.scrollbar-hide {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
 /* htmx troca o conteúdo sem reload — evita flash de elementos entrando
    sem transição nas trocas de "tocando agora". */
 [data-htmx-fade].htmx-added {
@@ -44,7 +54,14 @@
   transition: opacity 200ms ease-in;
 }
 
-/* Barrinhas de equalizador do player — só animam enquanto o áudio toca. */
+/* Barrinhas de equalizador do player — só aparecem enquanto o áudio toca. */
+[data-player-bars] {
+  opacity: 0;
+  transition: opacity 150ms ease;
+}
+[data-player-bars].is-playing {
+  opacity: 1;
+}
 [data-player-bars] span {
   height: 30%;
   transition: height 150ms ease;

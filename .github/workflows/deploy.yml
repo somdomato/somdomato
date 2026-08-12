@@ -1,0 +1,125 @@
+name: Deploy
+
+# A cada push em main: roda testes (com Postgres real) e, se passarem,
+# builda o binário (linux/amd64, estático) + CSS/templates e publica na VPS
+# via scripts/deploy.sh (mesmo script usado para deploy manual).
+
+on:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  TEMPL_VERSION: v0.3.1020
+
+jobs:
+  test:
+    name: test
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: sdm
+          POSTGRES_PASSWORD: sdm_ci
+          POSTGRES_DB: sdm
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U sdm"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Instalar templ
+        run: |
+          echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
+          go install github.com/a-h/templ/cmd/templ@${{ env.TEMPL_VERSION }}
+
+      - name: Gerar templates
+        run: templ generate
+
+      - name: go vet
+        run: go vet ./...
+
+      - name: go test
+        env:
+          DATABASE_URL: postgres://sdm:sdm_ci@localhost:5432/sdm?sslmode=disable
+        run: go test ./...
+
+  deploy:
+    name: deploy
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Instalar templ
+        run: |
+          echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
+          go install github.com/a-h/templ/cmd/templ@${{ env.TEMPL_VERSION }}
+
+      - name: Instalar Tailwind CLI standalone
+        run: |
+          curl -sSL -o tailwindcss \
+            "https://github.com/tailwindlabs/tailwindcss/releases/latest/download/tailwindcss-linux-x64"
+          chmod +x tailwindcss
+          echo "$PWD" >> "$GITHUB_PATH"
+
+      - name: Configurar acesso SSH à VPS (usuário + senha)
+        env:
+          SSH_PORT: ${{ secrets.SSH_PORT }}
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq sshpass
+
+          mkdir -p ~/.ssh "$HOME/bin"
+          cat >> ~/.ssh/config <<EOF
+          Host *
+            Port ${SSH_PORT:-22}
+            PreferredAuthentications password
+            PubkeyAuthentication no
+            StrictHostKeyChecking accept-new
+            UserKnownHostsFile ~/.ssh/known_hosts
+          EOF
+          chmod 600 ~/.ssh/config
+
+          # scripts/deploy.sh chama `ssh`/`scp` diretamente (auth por chave é
+          # o normal); em vez de reescrever o script, interceptamos os dois
+          # com wrappers que autenticam via sshpass usando a senha do secret.
+          cat > "$HOME/bin/ssh" <<'EOF'
+          #!/usr/bin/env bash
+          exec sshpass -e /usr/bin/ssh "$@"
+          EOF
+          cat > "$HOME/bin/scp" <<'EOF'
+          #!/usr/bin/env bash
+          exec sshpass -e /usr/bin/scp "$@"
+          EOF
+          chmod +x "$HOME/bin/ssh" "$HOME/bin/scp"
+          echo "$HOME/bin" >> "$GITHUB_PATH"
+
+      - name: Build + deploy
+        env:
+          HOST: ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}
+          APP_DIR: ${{ secrets.APP_DIR }}
+          SSHPASS: ${{ secrets.SSH_PASS }}
+        run: ./scripts/deploy.sh

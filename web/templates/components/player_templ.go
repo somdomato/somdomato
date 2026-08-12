@@ -57,20 +57,20 @@ func PlayerBar(data PlayerData) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</div><div class=\"flex shrink-0 items-center gap-1.5\" data-player data-stream-url=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</div><div class=\"flex shrink-0 items-center gap-3\" data-player data-stream-url=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var2 string
 		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.ResolveAttributeValue(data.StreamURL)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/components/player.templ`, Line: 35, Col: 94}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/components/player.templ`, Line: 35, Col: 92}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var2)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "\"><div class=\"flex items-center gap-2\"><button type=\"button\" data-player-toggle aria-label=\"Reproduzir\" class=\"flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-600 text-white transition hover:bg-brand-500 active:scale-95\"><svg data-icon-play class=\"h-4 w-4\" viewBox=\"0 0 24 24\" fill=\"currentColor\"><path d=\"M8 5v14l11-7z\"></path></svg> <svg data-icon-pause class=\"hidden h-4 w-4\" viewBox=\"0 0 24 24\" fill=\"currentColor\"><path d=\"M6 5h4v14H6zM14 5h4v14h-4z\"></path></svg> <svg data-icon-loading class=\"hidden h-4 w-4 animate-spin\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\"><path d=\"M21 12a9 9 0 1 1-9-9\" opacity=\"0.9\"></path></svg></button><div data-player-bars class=\"flex h-5 items-end gap-[3px]\" aria-hidden=\"true\"><span class=\"w-[3px] rounded-full bg-brand-400\"></span> <span class=\"w-[3px] rounded-full bg-brand-400\"></span> <span class=\"w-[3px] rounded-full bg-brand-400\"></span> <span class=\"w-[3px] rounded-full bg-brand-400\"></span> <span class=\"w-[3px] rounded-full bg-brand-400\"></span></div></div><button type=\"button\" data-player-reload aria-label=\"Recarregar transmissão\" title=\"Recarregar transmissão\" class=\"flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-neutral-400 transition hover:bg-white/10 hover:text-neutral-200 active:scale-95\"><svg class=\"h-3.5 w-3.5\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21 12a9 9 0 1 1-2.64-6.36\"></path> <path d=\"M21 3v6h-6\"></path></svg></button><div class=\"hidden items-center gap-2 lg:flex\"><svg class=\"h-4 w-4 shrink-0 text-neutral-400\" viewBox=\"0 0 24 24\" fill=\"currentColor\"><path d=\"M3 9v6h4l5 5V4L7 9H3zm13.5 3a4.5 4.5 0 00-2.5-4.03v8.06A4.5 4.5 0 0016.5 12z\"></path></svg> <input type=\"range\" data-player-volume min=\"0\" max=\"1\" step=\"0.01\" value=\"0.8\" aria-label=\"Volume\" class=\"h-1 w-16 cursor-pointer accent-brand-500\"></div><audio data-player-audio preload=\"none\"></audio></div><div class=\"order-last w-full sm:order-none sm:ml-auto sm:w-auto\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "\"><div class=\"relative\"><button type=\"button\" data-player-toggle aria-label=\"Reproduzir\" class=\"flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-600 text-white transition hover:bg-brand-500 active:scale-95\"><svg data-icon-play class=\"h-4 w-4\" viewBox=\"0 0 24 24\" fill=\"currentColor\"><path d=\"M8 5v14l11-7z\"></path></svg> <svg data-icon-pause class=\"hidden h-4 w-4\" viewBox=\"0 0 24 24\" fill=\"currentColor\"><path d=\"M6 5h4v14H6zM14 5h4v14h-4z\"></path></svg> <svg data-icon-loading class=\"hidden h-4 w-4 animate-spin\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\"><path d=\"M21 12a9 9 0 1 1-9-9\" opacity=\"0.9\"></path></svg></button><div data-player-bars class=\"absolute -right-1.5 -bottom-1.5 flex h-2.5 items-end gap-[2px] rounded-full bg-surface px-0.5\" aria-hidden=\"true\"><span class=\"w-[2px] rounded-full bg-brand-400\"></span> <span class=\"w-[2px] rounded-full bg-brand-400\"></span> <span class=\"w-[2px] rounded-full bg-brand-400\"></span> <span class=\"w-[2px] rounded-full bg-brand-400\"></span> <span class=\"w-[2px] rounded-full bg-brand-400\"></span></div></div><button type=\"button\" data-player-reload aria-label=\"Recarregar transmissão\" title=\"Recarregar transmissão\" class=\"flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-neutral-400 transition hover:bg-white/10 hover:text-neutral-200 active:scale-95\"><svg class=\"h-3.5 w-3.5\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21 12a9 9 0 1 1-2.64-6.36\"></path> <path d=\"M21 3v6h-6\"></path></svg></button> <svg class=\"hidden h-4 w-4 shrink-0 text-neutral-400 lg:block\" viewBox=\"0 0 24 24\" fill=\"currentColor\"><path d=\"M3 9v6h4l5 5V4L7 9H3zm13.5 3a4.5 4.5 0 00-2.5-4.03v8.06A4.5 4.5 0 0016.5 12z\"></path></svg> <input type=\"range\" data-player-volume min=\"0\" max=\"1\" step=\"0.01\" value=\"0.8\" aria-label=\"Volume\" class=\"hidden h-1 w-16 shrink-0 cursor-pointer accent-brand-500 lg:block\"> <audio data-player-audio preload=\"none\"></audio></div><div class=\"order-last w-full sm:order-none sm:ml-auto sm:w-auto\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -114,7 +114,7 @@ func NowPlayingCard(now NowPlaying) templ.Component {
 		var templ_7745c5c3_Var4 string
 		templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.ResolveAttributeValue(now.Cover)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/components/player.templ`, Line: 103, Col: 22}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/components/player.templ`, Line: 101, Col: 22}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var4)
 		if templ_7745c5c3_Err != nil {
@@ -127,7 +127,7 @@ func NowPlayingCard(now NowPlaying) templ.Component {
 		var templ_7745c5c3_Var5 string
 		templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.ResolveAttributeValue(now.Title)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/components/player.templ`, Line: 103, Col: 40}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/components/player.templ`, Line: 101, Col: 40}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var5)
 		if templ_7745c5c3_Err != nil {
@@ -140,7 +140,7 @@ func NowPlayingCard(now NowPlaying) templ.Component {
 		var templ_7745c5c3_Var6 string
 		templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(now.Title)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/components/player.templ`, Line: 109, Col: 85}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/components/player.templ`, Line: 107, Col: 85}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 		if templ_7745c5c3_Err != nil {
@@ -153,7 +153,7 @@ func NowPlayingCard(now NowPlaying) templ.Component {
 		var templ_7745c5c3_Var7 string
 		templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(now.Artist)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/components/player.templ`, Line: 110, Col: 89}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/components/player.templ`, Line: 108, Col: 89}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 		if templ_7745c5c3_Err != nil {
@@ -201,7 +201,7 @@ func GenreSwitcher(active config.Genre) templ.Component {
 				var templ_7745c5c3_Var9 string
 				templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.ResolveAttributeValue("/?genre=" + string(g))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/components/player.templ`, Line: 125, Col: 43}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/components/player.templ`, Line: 123, Col: 43}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var9)
 				if templ_7745c5c3_Err != nil {
@@ -214,7 +214,7 @@ func GenreSwitcher(active config.Genre) templ.Component {
 				var templ_7745c5c3_Var10 string
 				templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(g.Label())
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/components/player.templ`, Line: 125, Col: 66}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/components/player.templ`, Line: 123, Col: 66}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 				if templ_7745c5c3_Err != nil {
@@ -232,7 +232,7 @@ func GenreSwitcher(active config.Genre) templ.Component {
 				var templ_7745c5c3_Var11 string
 				templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.ResolveAttributeValue("/?genre=" + string(g))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/components/player.templ`, Line: 127, Col: 43}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/components/player.templ`, Line: 125, Col: 43}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var11)
 				if templ_7745c5c3_Err != nil {
@@ -245,7 +245,7 @@ func GenreSwitcher(active config.Genre) templ.Component {
 				var templ_7745c5c3_Var12 string
 				templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(g.Label())
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/components/player.templ`, Line: 127, Col: 57}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/components/player.templ`, Line: 125, Col: 57}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 				if templ_7745c5c3_Err != nil {

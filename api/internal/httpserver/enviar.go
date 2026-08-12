@@ -59,6 +59,10 @@ const searchCacheTTL = 60 * time.Second
 // complexidade de um LRU de verdade.
 const maxSearchCacheEntries = 2000
 
+// searchPageSize é quantos resultados vêm por página — tanto na primeira
+// busca quanto em cada "carregar mais".
+const searchPageSize = 15
+
 type searchCacheEntry struct {
 	results []deezerdl.SearchResult
 	expires time.Time
@@ -72,13 +76,14 @@ var (
 func handleEnviarBuscar(app *App) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		query := r.URL.Query().Get("q")
+		offset := parseNonNegativeInt(r.URL.Query().Get("offset"))
 		token := csrfTokenFromRequest(r)
 
 		if len(query) < 2 {
 			return
 		}
 
-		results, err := searchDeezerCached(r.Context(), query)
+		results, err := searchDeezerCached(r.Context(), query, offset)
 		if err != nil {
 			app.Log.Error("buscando no deezer", "error", err)
 			return
@@ -90,18 +95,37 @@ func handleEnviarBuscar(app *App) http.HandlerFunc {
 			}
 			_ = components.EnviarResultRow(item, token).Render(r.Context(), w)
 		}
+
+		// Página cheia sugere que há mais resultados — oferece "carregar
+		// mais"; se a API devolveu menos que uma página, essa é a última.
+		if len(results) == searchPageSize {
+			_ = components.EnviarLoadMore(query, offset+searchPageSize).Render(r.Context(), w)
+		}
 	}
 }
 
-func searchDeezerCached(ctx context.Context, query string) ([]deezerdl.SearchResult, error) {
+func parseNonNegativeInt(s string) int {
+	n := 0
+	for _, c := range s {
+		if c < '0' || c > '9' {
+			return 0
+		}
+		n = n*10 + int(c-'0')
+	}
+	return n
+}
+
+func searchDeezerCached(ctx context.Context, query string, offset int) ([]deezerdl.SearchResult, error) {
+	cacheKey := fmt.Sprintf("%s|%d", query, offset)
+
 	searchCacheMu.Lock()
-	if entry, ok := searchCache[query]; ok && time.Now().Before(entry.expires) {
+	if entry, ok := searchCache[cacheKey]; ok && time.Now().Before(entry.expires) {
 		searchCacheMu.Unlock()
 		return entry.results, nil
 	}
 	searchCacheMu.Unlock()
 
-	results, err := deezerdl.Search(ctx, query, 15)
+	results, err := deezerdl.Search(ctx, query, searchPageSize, offset)
 	if err != nil {
 		return nil, err
 	}
@@ -110,7 +134,7 @@ func searchDeezerCached(ctx context.Context, query string) ([]deezerdl.SearchRes
 	if len(searchCache) >= maxSearchCacheEntries {
 		searchCache = map[string]searchCacheEntry{}
 	}
-	searchCache[query] = searchCacheEntry{results: results, expires: time.Now().Add(searchCacheTTL)}
+	searchCache[cacheKey] = searchCacheEntry{results: results, expires: time.Now().Add(searchCacheTTL)}
 	searchCacheMu.Unlock()
 
 	return results, nil
