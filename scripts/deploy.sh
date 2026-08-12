@@ -4,10 +4,10 @@
 # `ansible-playbook playbook.yml` já rodou pelo menos uma vez (usuário,
 # diretórios e unit do systemd já existem).
 #
-# Uso: HOST=root@vps.exemplo.com ./scripts/deploy.sh
+# Uso: ./scripts/deploy.sh  (ou HOST=usuario@outro-host ./scripts/deploy.sh)
 set -euo pipefail
 
-HOST="${HOST:?defina HOST=usuario@host da VPS}"
+HOST="${HOST:-nginx@tyche}"
 APP_DIR="${APP_DIR:-/var/www/somdomato}"
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 

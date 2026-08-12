@@ -134,7 +134,8 @@ TLS via Certbot) e cria o serviço systemd `somdomato-api`. Para publicar
 uma nova versão do binário:
 
 ```bash
-HOST=root@sua-vps ./scripts/deploy.sh
+./scripts/deploy.sh                     # usa nginx@tyche por padrão
+HOST=root@outro-host ./scripts/deploy.sh # ou aponte para outro usuário/host
 ```
 
 Só a porta 80/443 (Nginx) e 8000 (Icecast) ficam expostas publicamente — a
