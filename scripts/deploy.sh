@@ -28,6 +28,8 @@ scp "$REPO_ROOT/tmp/somdomato-server" "$HOST:$APP_DIR/bin/somdomato-server.new"
 ssh "$HOST" "mv $APP_DIR/bin/somdomato-server.new $APP_DIR/bin/somdomato-server && chmod +x $APP_DIR/bin/somdomato-server"
 
 echo "==> Reiniciando serviço (o binário aplica migrations pendentes no boot)..."
-ssh "$HOST" "systemctl enable --now somdomato-api && systemctl restart somdomato-api"
+# systemctl exige root; o usuário SSH usado no deploy tem uma regra sudoers
+# NOPASSWD restrita a esta unit (ver ansible/templates/etc/sudoers.d).
+ssh "$HOST" "sudo systemctl enable --now somdomato-api && sudo systemctl restart somdomato-api"
 
 echo "==> Deploy concluído."

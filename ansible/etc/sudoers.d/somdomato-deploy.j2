@@ -1,0 +1,5 @@
+{{ ansible_managed | comment }}
+# Permite que o usuário de deploy (SSH usado pelo GitHub Actions, ver
+# scripts/deploy.sh e .github/workflows/deploy.yml) reinicie só a unit da
+# API sem senha — nada além disso.
+{{ deploy_user }} ALL=(root) NOPASSWD: /usr/bin/systemctl * somdomato-api

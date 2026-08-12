@@ -20,6 +20,7 @@
     music_dir: /var/music/sdm
     app_user: somdomato
     app_group: somdomato
+    deploy_user: nginx # usuário SSH do GitHub Actions (scripts/deploy.sh) — ganha sudo NOPASSWD só para systemctl da unit da API
     api_http_port: 3000
     postgres_db: somdomato
     postgres_user: somdomato
@@ -243,6 +244,18 @@
       loop: [icecast2-somdomato.service, liquidsoap-somdomato.service]
       # somdomato-api.service só é iniciado depois que o primeiro binário
       # existir em {{ app_dir }}/bin — ver scripts/deploy.sh.
+
+    # =========================================================================
+    # DEPLOY (GitHub Actions) — sudo restrito para reiniciar a API
+    # =========================================================================
+    - name: Liberar sudo NOPASSWD para {{ deploy_user }} reiniciar somdomato-api
+      ansible.builtin.template:
+        src: etc/sudoers.d/somdomato-deploy.j2
+        dest: /etc/sudoers.d/somdomato-deploy
+        owner: root
+        group: root
+        mode: "0440"
+        validate: "visudo -cf %s"
 
     # =========================================================================
     # SSL (Let's Encrypt)
