@@ -130,8 +130,10 @@ ansible-playbook -i inventory.ini playbook.yml --ask-vault-pass
 ```
 
 Isso provisiona o host (Postgres, Nginx, Icecast2, Liquidsoap, firewall,
-TLS via Certbot) e cria o serviço systemd `somdomato-api`. Para publicar
-uma nova versão do binário:
+TLS via Certbot) e cria o serviço systemd `somdomato-api`. É sempre um
+passo manual e separado — `scripts/deploy.sh` e o workflow de deploy
+assumem que o host já foi provisionado e nunca disparam o Ansible sozinhos.
+Para publicar uma nova versão do binário:
 
 ```bash
 ./scripts/deploy.sh                     # usa nginx@tyche por padrão
@@ -143,10 +145,11 @@ API Go e o Postgres escutam somente em `127.0.0.1`.
 
 ### Deploy contínuo (GitHub Actions)
 
-`.github/workflows/deploy.yml` roda `go vet` + `go test` (com Postgres de
-serviço) a cada push em `main` e, se passar, builda e publica na VPS via
-`scripts/deploy.sh` — autenticando por usuário/senha (não por chave SSH).
-Configure em Settings → Secrets and variables → Actions:
+`.github/workflows/deploy.yml` roda `make vet` + `make test` (com Postgres
+de serviço) a cada push em `main` e, se passar, builda com `make build`
+(o mesmo alvo usado localmente e por `scripts/deploy.sh`) e publica na VPS
+— autenticando por usuário/senha (não por chave SSH). Configure em
+Settings → Secrets and variables → Actions:
 
 | Secret         | Descrição                                   |
 | -------------- | -------------------------------------------- |

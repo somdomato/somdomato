@@ -1,9 +1,9 @@
 name: Deploy
 
 # A cada push em main: roda testes (com Postgres real) e, se passarem,
-# builda o binário (linux/amd64, estático) + CSS/templates aqui no runner e
-# publica na VPS via appleboy/scp-action + appleboy/ssh-action (usuário/senha
-# dos secrets). scripts/deploy.sh faz o equivalente para deploy manual.
+# builda o binário (linux/amd64, estático) + CSS/templates via `make build`
+# (mesmo alvo usado localmente e em scripts/deploy.sh) e publica na VPS via
+# appleboy/scp-action + appleboy/ssh-action (usuário/senha dos secrets).
 
 on:
   push:
@@ -37,10 +37,10 @@ jobs:
           --health-retries 10
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v7
         with:
           go-version-file: go.mod
           cache: true
@@ -50,16 +50,13 @@ jobs:
           echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
           go install github.com/a-h/templ/cmd/templ@${{ env.TEMPL_VERSION }}
 
-      - name: Gerar templates
-        run: templ generate
+      - name: make vet
+        run: make vet
 
-      - name: go vet
-        run: go vet ./...
-
-      - name: go test
+      - name: make test
         env:
           DATABASE_URL: postgres://sdm:sdm_ci@localhost:5432/sdm?sslmode=disable
-        run: go test ./...
+        run: make test
 
   deploy:
     name: deploy
@@ -67,10 +64,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v7
         with:
           go-version-file: go.mod
           cache: true
@@ -85,33 +82,23 @@ jobs:
           curl -sSL -o tailwindcss \
             "https://github.com/tailwindlabs/tailwindcss/releases/latest/download/tailwindcss-linux-x64"
           chmod +x tailwindcss
-          echo "$PWD" >> "$GITHUB_PATH"
 
-      - name: Gerar templates e CSS
-        run: |
-          templ generate
-          ./tailwindcss --input web/css/input.css --output web/static/css/output.css --minify
+      - name: make build
+        run: make build
 
-      - name: Compilar binário linux/amd64
-        run: |
-          GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build \
-            -ldflags="-s -w" \
-            -o tmp/somdomato-server \
-            ./api/cmd/server
-
-      - name: Enviar binário e deploy-remote.sh para a VPS
-        uses: appleboy/scp-action@v0.1.7
+      - name: Enviar binário e deploy.sh para a VPS
+        uses: appleboy/scp-action@v1
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           password: ${{ secrets.SSH_PASS }}
           port: ${{ secrets.SSH_PORT }}
-          source: "tmp/somdomato-server,scripts/deploy-remote.sh"
+          source: "tmp/somdomato-server,scripts/deploy.sh"
           target: ${{ secrets.PROJECT_PATH }}/bin
           strip_components: 1
 
-      - name: Rodar deploy-remote.sh na VPS
-        uses: appleboy/ssh-action@v1.0.3
+      - name: Rodar deploy.sh na VPS
+        uses: appleboy/ssh-action@v1.2.5
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
@@ -119,7 +106,7 @@ jobs:
           port: ${{ secrets.SSH_PORT }}
           envs: PROJECT_PATH
           script: |
-            chmod +x $PROJECT_PATH/bin/deploy-remote.sh
-            APP_DIR=$PROJECT_PATH $PROJECT_PATH/bin/deploy-remote.sh
+            chmod +x $PROJECT_PATH/bin/deploy.sh
+            APP_DIR=$PROJECT_PATH $PROJECT_PATH/bin/deploy.sh
         env:
           PROJECT_PATH: ${{ secrets.PROJECT_PATH }}

@@ -7,7 +7,8 @@ GOBIN = $(shell go env GOPATH)/bin
 
 .PHONY: help setup dev up down build-images restart logs ps \
         templ css css-watch migrate seed test lint vet fmt \
-        build deploy tools clean
+        build deploy tools clean \
+        provision provision-check provision-tags
 
 help: ## Mostra esta ajuda
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
@@ -72,6 +73,18 @@ seed: ## Varre MUSIC_PATH e popula o catálogo (idempotente)
 migrate: ## Aplica migrations pendentes no Postgres
 	$(COMPOSE) exec api go run ./api/cmd/migrate
 
+# ── Provisionamento da VPS (Ansible) ─────────────────────────────────────────
+
+provision: ## Provisiona/atualiza a VPS de produção via Ansible
+	cd ansible && ansible-playbook -i inventory.ini playbook.yml --ask-vault-pass
+
+provision-check: ## Dry run do provisionamento (não aplica nada)
+	cd ansible && ansible-playbook -i inventory.ini playbook.yml --ask-vault-pass --check
+
+provision-tags: ## Provisiona só as tags indicadas (uso: make provision-tags TAGS=nginx,ssl)
+	@if [ -z "$(TAGS)" ]; then echo "Uso: make provision-tags TAGS=nginx,ssl"; exit 1; fi
+	cd ansible && ansible-playbook -i inventory.ini playbook.yml --ask-vault-pass --tags $(TAGS)
+
 # ── Build local (sem Podman) ─────────────────────────────────────────────
 
 templ: ## Gera os *_templ.go a partir de web/templates/**/*.templ
@@ -85,9 +98,6 @@ css-watch: ## Recompila o CSS a cada mudança (dev)
 
 build: templ css ## Compila o binário de produção (linux/amd64, estático)
 	GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -ldflags="-s -w" -o tmp/somdomato-server ./api/cmd/server
-
-deploy: ## Builda e envia o binário para produção (HOST=usuario@vps)
-	./scripts/deploy.sh
 
 # ── Qualidade ────────────────────────────────────────────────────────────
 

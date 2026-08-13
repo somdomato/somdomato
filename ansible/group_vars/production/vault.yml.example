@@ -5,11 +5,11 @@
 # Nunca commitar vault.yml em texto plano. Gere segredos fortes com, por
 # exemplo: `openssl rand -hex 32`.
 
-letsencrypt_email: sistematico@gmail.com
+letsencrypt_email: "sistematico@gmail.com"
 
 postgres_password: "CHANGE-ME-strong-random-password"
 
-icecast_admin_email: sistematico@gmail.com
+icecast_admin_email: "sistematico@gmail.com"
 icecast_source_password: "CHANGE-ME"
 icecast_relay_password: "CHANGE-ME"
 icecast_admin_password: "CHANGE-ME"
