@@ -9,12 +9,12 @@
 *.out
 
 # Ansible
-ansible/group_vars/production/vault.yml
 ansible/*.retry
 
-# Env
+# Env — .env.production deve ser criptografado com `ansible-vault encrypt`
+# antes de sair da sua máquina; nunca commitar nenhum dos dois em texto plano.
 .env
-podman/.env
+.env.production
 
 # Editor/OS
 .DS_Store

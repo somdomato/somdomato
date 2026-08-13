@@ -1,7 +1,7 @@
 # Makefile — comandos de conveniência (dev via Podman, build/deploy nativos)
 # Uso: make <target>   (execute na raiz do repositório)
 
-COMPOSE = podman compose -f podman/compose.yml --env-file podman/.env
+COMPOSE = podman compose -f podman/compose.yml --env-file .env
 TAILWIND = ./tailwindcss
 GOBIN = $(shell go env GOPATH)/bin
 
@@ -17,7 +17,7 @@ help: ## Mostra esta ajuda
 # ── Setup inicial ────────────────────────────────────────────────────────
 
 setup: tools ## Configura tudo do zero (.env + tools + up)
-	@[ -f podman/.env ] || cp podman/.env.example podman/.env && echo "  → podman/.env criado (edite MUSIC_PATH)"
+	@[ -f .env ] || cp .env.example .env && echo "  → .env criado (edite MUSIC_PATH)"
 	@$(MAKE) up
 	@echo "✅ Ambiente disponível em http://localhost:3000 (rádio: http://localhost:8000)"
 

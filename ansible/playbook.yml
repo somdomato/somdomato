@@ -4,9 +4,9 @@
 # o binário Go (via systemd). Não usa Podman em produção — só em dev
 # (ver Makefile / podman/compose.yml).
 #
-# Segredos (senhas do Icecast, JWT_SECRET, RADIO_INTERNAL_TOKEN, senha do
-# Postgres) NÃO ficam neste arquivo: vêm de ansible/group_vars/production/vault.yml
-# (criptografado com `ansible-vault`). Veja vault.yml.example.
+# Toda a config (segredos e topologia) vem de um único arquivo na raiz do
+# repo: ../.env.production (criptografado com `ansible-vault`). Veja
+# .env.production.example. Nada de segredo fica hardcoded aqui.
 #
 # Uso:
 #   ansible-playbook -i inventory.ini playbook.yml --ask-vault-pass
@@ -15,16 +15,6 @@
   hosts: production
   become: true
   vars:
-    domain: somdomato.com
-    app_dir: /var/www/somdomato
-    music_dir: /var/music/sdm
-    app_user: nginx
-    app_group: nginx
-    deploy_user: nginx # usuário SSH do GitHub Actions (scripts/deploy.sh) — ganha sudo NOPASSWD só para systemctl da unit da API; mesmo usuário de app_user neste host
-    ssh_port: 2200 # tem que bater com o Port do sshd_config e com ansible_port em inventory.ini — senão o UFW tranca o próprio SSH
-    api_http_port: 3000
-    postgres_db: somdomato
-    postgres_user: somdomato
     radio_genres:
       - { mountpoint: geral, label: "Geral" }
       - { mountpoint: gaucha, label: "Gaúcha" }
@@ -33,6 +23,42 @@
       - { mountpoint: romantico, label: "Romântico" }
 
   tasks:
+    # =========================================================================
+    # CONFIG — única fonte de verdade: ../.env.production
+    # =========================================================================
+    - name: Carregar ../.env.production como dict
+      ansible.builtin.set_fact:
+        app_env: "{{ app_env | default({}) | combine({ item.split('=', 1)[0]: item.split('=', 1)[1] }) }}"
+      loop: "{{ lookup('ansible.builtin.file', playbook_dir + '/../.env.production').splitlines() | select('match', '^[A-Za-z_][A-Za-z0-9_]*=') | list }}"
+      loop_control:
+        label: "{{ item.split('=')[0] }}"
+      no_log: true
+      tags: [always]
+
+    - name: Expor variáveis nomeadas a partir de app_env
+      ansible.builtin.set_fact:
+        domain: "{{ app_env.DOMAIN }}"
+        app_dir: "{{ app_env.APP_DIR }}"
+        music_dir: "{{ app_env.MUSIC_DIR }}"
+        app_user: "{{ app_env.APP_USER }}"
+        app_group: "{{ app_env.APP_GROUP }}"
+        deploy_user: "{{ app_env.DEPLOY_USER }}"
+        ssh_port: "{{ app_env.SSH_PORT }}"
+        api_http_port: "{{ app_env.API_HTTP_PORT }}"
+        postgres_db: "{{ app_env.POSTGRES_DB }}"
+        postgres_user: "{{ app_env.POSTGRES_USER }}"
+        postgres_password: "{{ app_env.POSTGRES_PASSWORD }}"
+        jwt_secret: "{{ app_env.JWT_SECRET }}"
+        radio_internal_token: "{{ app_env.RADIO_INTERNAL_TOKEN }}"
+        letsencrypt_email: "{{ app_env.LETSENCRYPT_EMAIL }}"
+        icecast_admin_email: "{{ app_env.ICECAST_ADMIN_EMAIL }}"
+        icecast_source_password: "{{ app_env.ICECAST_SOURCE_PASSWORD }}"
+        icecast_relay_password: "{{ app_env.ICECAST_RELAY_PASSWORD }}"
+        icecast_admin_password: "{{ app_env.ICECAST_ADMIN_PASSWORD }}"
+        harbor_password: "{{ app_env.HARBOR_PASSWORD }}"
+      no_log: true
+      tags: [always]
+
     # =========================================================================
     # SISTEMA BASE
     # =========================================================================
@@ -105,13 +131,26 @@
         - "{{ music_dir }}/covers"
       tags: [app]
 
-    - name: Gerar .env da aplicação a partir do vault
-      ansible.builtin.template:
-        src: templates/app.env.j2
+    - name: Gerar .env da aplicação a partir de ../.env.production
+      ansible.builtin.copy:
         dest: "{{ app_dir }}/.env"
         owner: "{{ app_user }}"
         group: "{{ app_group }}"
         mode: "0600"
+        # Só os campos abaixo são derivados (URL/porta montadas a partir do
+        # resto) — tudo mais é passthrough direto de ../.env.production.
+        content: |
+          APP_ENV=production
+          HTTP_ADDR=127.0.0.1:{{ api_http_port }}
+          DATABASE_URL=postgres://{{ postgres_user }}:{{ postgres_password }}@127.0.0.1:5432/{{ postgres_db }}?sslmode=disable
+          MUSIC_PATH={{ music_dir }}
+          COVERS_DIR={{ music_dir }}/covers
+          JINGLES_DIR={{ music_dir }}/vinhetas
+          JWT_SECRET={{ jwt_secret }}
+          RADIO_INTERNAL_TOKEN={{ radio_internal_token }}
+          ICECAST_STATUS_URL=http://127.0.0.1:8000/status-json.xsl
+          STREAM_BASE_URL=https://radio.{{ domain }}
+      no_log: true
       notify: Restart API Go
       tags: [app]
 
@@ -248,6 +287,27 @@
     # =========================================================================
     # SYSTEMD — API Go, Icecast, Liquidsoap
     # =========================================================================
+    # Units legadas (pré-Ansible, nomes antigos) apontavam para os mesmos
+    # arquivos de config e ficavam disputando as mesmas portas com as units
+    # atuais (icecast2-somdomato/liquidsoap-somdomato) — a que perdia a
+    # corrida ficava em crash-loop permanente. Ver incidente 2026-08-13.
+    - name: Parar e desabilitar units legadas (nomes antigos, pré-Ansible)
+      ansible.builtin.systemd:
+        name: "{{ item }}"
+        state: stopped
+        enabled: false
+      loop: [somdomato-icecast.service, somdomato-liquidsoap.service]
+      failed_when: false
+      tags: [systemd]
+
+    - name: Remover unit files legados
+      ansible.builtin.file:
+        path: "/etc/systemd/system/{{ item }}"
+        state: absent
+      loop: [somdomato-icecast.service, somdomato-liquidsoap.service]
+      notify: Reload systemd
+      tags: [systemd]
+
     - name: Gerar unit somdomato-api.service
       ansible.builtin.template:
         src: etc/systemd/system/somdomato-api.service
