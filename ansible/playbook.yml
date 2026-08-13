@@ -18,9 +18,10 @@
     domain: somdomato.com
     app_dir: /var/www/somdomato
     music_dir: /var/music/sdm
-    app_user: somdomato
-    app_group: somdomato
-    deploy_user: nginx # usuário SSH do GitHub Actions (scripts/deploy.sh) — ganha sudo NOPASSWD só para systemctl da unit da API
+    app_user: nginx
+    app_group: nginx
+    deploy_user: nginx # usuário SSH do GitHub Actions (scripts/deploy.sh) — ganha sudo NOPASSWD só para systemctl da unit da API; mesmo usuário de app_user neste host
+    ssh_port: 2200 # tem que bater com o Port do sshd_config e com ansible_port em inventory.ini — senão o UFW tranca o próprio SSH
     api_http_port: 3000
     postgres_db: somdomato
     postgres_user: somdomato
@@ -55,7 +56,11 @@
         rule: allow
         port: "{{ item }}"
         proto: tcp
-      loop: ["22", "80", "443", "8000"]
+      loop:
+        - "{{ ssh_port }}"
+        - "80"
+        - "443"
+        - "8000"
 
     - name: Definir política padrão do UFW (deny incoming)
       community.general.ufw:
