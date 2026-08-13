@@ -25,14 +25,19 @@ manualmente os uploads (hoje a decisão é 100% da IA).
 Requer [Podman](https://podman.io) e [Go](https://go.dev) 1.23+.
 
 ```bash
-cp podman/.env.example podman/.env   # ajuste MUSIC_PATH para seu catálogo local
-make setup                            # instala templ/tailwind e sobe tudo
-make seed                             # varre MUSIC_PATH e popula o catálogo
+cp .env.example .env   # ajuste MUSIC_PATH para seu catálogo local
+make setup               # instala templ/tailwind e sobe tudo
+make seed                # varre MUSIC_PATH e popula o catálogo
 ```
 
-`DEEZER_ARL` e `GROQ_API_KEY` (também em `podman/.env.example`) são
-opcionais — sem eles a aplicação sobe normalmente e só a rota `/enviar`
-fica desativada. Ver "Envio de músicas via Deezer" abaixo.
+`.env` na raiz do repo é a única fonte de config para o ambiente de dev
+(Podman) — não existe mais `podman/.env` separado. Para produção, o
+equivalente é `.env.production` (ver seção "Produção" abaixo); os dois têm
+formato parecido mas valores diferentes, não é pra copiar um no outro.
+
+`DEEZER_ARL` e `GROQ_API_KEY` (também em `.env.example`) são opcionais —
+sem eles a aplicação sobe normalmente e só a rota `/enviar` fica
+desativada. Ver "Envio de músicas via Deezer" abaixo.
 
 - App: http://localhost:3000
 - Rádio (Icecast): http://localhost:8000/geral
@@ -121,10 +126,18 @@ indefinidamente (nada quebra, só não são aprovados sozinhos).
 
 ## Produção
 
+`.env.production` na raiz do repo é a única fonte de verdade para o
+provisionamento — segredos (senhas, tokens) e topologia (domínio, usuário
+da app, porta SSH etc.) num só arquivo, no mesmo formato `KEY=VALUE` do
+`.env` de dev. O Ansible lê esse arquivo direto (`ansible/playbook.yml`) e
+usa os valores tanto para gerar o `.env` real do binário Go quanto para os
+arquivos de config nativos (Icecast2, Liquidsoap, Nginx, systemd) — nada de
+segredo fica hardcoded em `ansible/*.yml`.
+
 ```bash
+cp .env.production.example .env.production   # preencha os segredos
+ansible-vault encrypt .env.production          # nunca commitar em texto plano
 cd ansible
-cp group_vars/production/vault.yml.example group_vars/production/vault.yml
-ansible-vault encrypt group_vars/production/vault.yml   # depois de preencher os segredos
 ansible-galaxy install -r requirements.yml
 ansible-playbook -i inventory.ini playbook.yml --ask-vault-pass
 ```
