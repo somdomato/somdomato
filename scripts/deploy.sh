@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
-# Compila o binário Go (cross-compile linux/amd64) + assets de web/ e envia
-# para a VPS, reiniciando o serviço systemd. Se a unit somdomato-api.service
+# Orquestra o deploy a partir de quem chama (máquina de dev ou runner do
+# GitHub Actions — nenhum dos dois é o destino): compila o binário Go
+# (cross-compile linux/amd64) + assets de web/, envia para a VPS via ssh e
+# executa lá scripts/deploy-remote.sh (que roda no destino, sem ssh, e faz
+# a troca do binário + restart do serviço). Se a unit somdomato-api.service
 # ainda não existir (primeiro deploy), roda `ansible-playbook` primeiro para
 # provisionar o host — requer ansible/group_vars/production/vault.yml já
 # preenchido e criptografado (ver README, seção Produção).
@@ -35,11 +38,6 @@ ssh "$HOST" "mkdir -p $APP_DIR/bin"
 # que faz o scp "ter sucesso" escrevendo em outro lugar e o mv seguinte
 # falhar com "No such file or directory".
 ssh "$HOST" "cat > $APP_DIR/bin/somdomato-server.new" < "$REPO_ROOT/tmp/somdomato-server"
-ssh "$HOST" "mv $APP_DIR/bin/somdomato-server.new $APP_DIR/bin/somdomato-server && chmod +x $APP_DIR/bin/somdomato-server"
 
-echo "==> Reiniciando serviço (o binário aplica migrations pendentes no boot)..."
-# systemctl exige root; o usuário SSH usado no deploy tem uma regra sudoers
-# NOPASSWD restrita a esta unit (ver ansible/etc/sudoers.d).
-ssh "$HOST" "sudo systemctl enable --now somdomato-api && sudo systemctl restart somdomato-api"
-
-echo "==> Deploy concluído."
+echo "==> Executando deploy-remote.sh no destino..."
+ssh "$HOST" "APP_DIR=$APP_DIR bash -s" < "$REPO_ROOT/scripts/deploy-remote.sh"
