@@ -148,13 +148,13 @@ serviço) a cada push em `main` e, se passar, builda e publica na VPS via
 `scripts/deploy.sh` — autenticando por usuário/senha (não por chave SSH).
 Configure em Settings → Secrets and variables → Actions:
 
-| Secret        | Descrição                                   |
-| ------------- | -------------------------------------------- |
-| `SSH_HOST`    | IP ou hostname da VPS                        |
-| `SSH_USER`    | Usuário SSH (precisa poder rodar `systemctl`) |
-| `SSH_PASS`    | Senha do usuário SSH                          |
-| `SSH_PORT`    | Porta do SSH (opcional, default `22`)         |
-| `APP_DIR`     | Caminho da app (opcional, default `/var/www/somdomato`) |
+| Secret         | Descrição                                   |
+| -------------- | -------------------------------------------- |
+| `SSH_HOST`     | IP ou hostname da VPS                        |
+| `SSH_USER`     | Usuário SSH (precisa poder rodar `systemctl`) |
+| `SSH_PASS`     | Senha do usuário SSH                          |
+| `SSH_PORT`     | Porta do SSH (opcional, default `22`)         |
+| `PROJECT_PATH` | Caminho da app (opcional, default `/var/www/somdomato`) |
 
 ## Testes
 

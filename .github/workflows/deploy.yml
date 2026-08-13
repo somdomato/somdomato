@@ -1,8 +1,9 @@
 name: Deploy
 
 # A cada push em main: roda testes (com Postgres real) e, se passarem,
-# builda o binário (linux/amd64, estático) + CSS/templates e publica na VPS
-# via scripts/deploy.sh (mesmo script usado para deploy manual).
+# builda o binário (linux/amd64, estático) + CSS/templates aqui no runner e
+# publica na VPS via appleboy/scp-action + appleboy/ssh-action (usuário/senha
+# dos secrets). scripts/deploy.sh faz o equivalente para deploy manual.
 
 on:
   push:
@@ -86,40 +87,39 @@ jobs:
           chmod +x tailwindcss
           echo "$PWD" >> "$GITHUB_PATH"
 
-      - name: Configurar acesso SSH à VPS (usuário + senha)
-        env:
-          SSH_PORT: ${{ secrets.SSH_PORT }}
+      - name: Gerar templates e CSS
         run: |
-          sudo apt-get update -qq && sudo apt-get install -y -qq sshpass
+          templ generate
+          ./tailwindcss --input web/css/input.css --output web/static/css/output.css --minify
 
-          mkdir -p ~/.ssh "$HOME/bin"
-          cat >> ~/.ssh/config <<EOF
-          Host *
-            Port ${SSH_PORT:-22}
-            PreferredAuthentications password
-            PubkeyAuthentication no
-            StrictHostKeyChecking accept-new
-            UserKnownHostsFile ~/.ssh/known_hosts
-          EOF
-          chmod 600 ~/.ssh/config
+      - name: Compilar binário linux/amd64
+        run: |
+          GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build \
+            -ldflags="-s -w" \
+            -o tmp/somdomato-server \
+            ./api/cmd/server
 
-          # scripts/deploy.sh chama `ssh`/`scp` diretamente (auth por chave é
-          # o normal); em vez de reescrever o script, interceptamos os dois
-          # com wrappers que autenticam via sshpass usando a senha do secret.
-          cat > "$HOME/bin/ssh" <<'EOF'
-          #!/usr/bin/env bash
-          exec sshpass -e /usr/bin/ssh "$@"
-          EOF
-          cat > "$HOME/bin/scp" <<'EOF'
-          #!/usr/bin/env bash
-          exec sshpass -e /usr/bin/scp "$@"
-          EOF
-          chmod +x "$HOME/bin/ssh" "$HOME/bin/scp"
-          echo "$HOME/bin" >> "$GITHUB_PATH"
+      - name: Enviar binário e deploy-remote.sh para a VPS
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          password: ${{ secrets.SSH_PASS }}
+          port: ${{ secrets.SSH_PORT }}
+          source: "tmp/somdomato-server,scripts/deploy-remote.sh"
+          target: ${{ secrets.PROJECT_PATH }}/bin
+          strip_components: 1
 
-      - name: Build + deploy
+      - name: Rodar deploy-remote.sh na VPS
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          password: ${{ secrets.SSH_PASS }}
+          port: ${{ secrets.SSH_PORT }}
+          envs: PROJECT_PATH
+          script: |
+            chmod +x $PROJECT_PATH/bin/deploy-remote.sh
+            APP_DIR=$PROJECT_PATH $PROJECT_PATH/bin/deploy-remote.sh
         env:
-          HOST: ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}
-          APP_DIR: ${{ secrets.APP_DIR }}
-          SSHPASS: ${{ secrets.SSH_PASS }}
-        run: ./scripts/deploy.sh
+          PROJECT_PATH: ${{ secrets.PROJECT_PATH }}

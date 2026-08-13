@@ -35,9 +35,8 @@ echo "==> Enviando binário e assets estáticos para $HOST..."
 ssh "$HOST" "mkdir -p $APP_DIR/bin"
 # Envia pelo mesmo canal de shell do ssh (não via scp/sftp): em alguns hosts
 # o subsistema SFTP resolve caminhos num chroot diferente do shell exec, o
-# que faz o scp "ter sucesso" escrevendo em outro lugar e o mv seguinte
-# falhar com "No such file or directory".
-ssh "$HOST" "cat > $APP_DIR/bin/somdomato-server.new" < "$REPO_ROOT/tmp/somdomato-server"
+# que faz o scp "ter sucesso" escrevendo em outro lugar.
+ssh "$HOST" "cat > $APP_DIR/bin/somdomato-server" < "$REPO_ROOT/tmp/somdomato-server"
 
 echo "==> Executando deploy-remote.sh no destino..."
 ssh "$HOST" "APP_DIR=$APP_DIR bash -s" < "$REPO_ROOT/scripts/deploy-remote.sh"
