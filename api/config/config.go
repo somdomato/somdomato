@@ -155,9 +155,12 @@ func Load() (*Config, error) {
 
 func (c *Config) IsProduction() bool { return c.Env == "production" }
 
-// StreamURL monta a URL pública do mountpoint Icecast para o gênero.
+// StreamURL monta a URL pública do mountpoint Icecast para o gênero. A
+// extensão .mp3 é intencional: versões do WebKit no iOS não reconhecem de
+// forma confiável streams de áudio cujas URLs não têm extensão, mesmo quando
+// o Content-Type é audio/mpeg. Nginx/Icecast a removem antes do mountpoint.
 func (c *Config) StreamURL(genre Genre) string {
-	return strings.TrimRight(c.StreamBaseURL, "/") + "/" + string(genre)
+	return strings.TrimRight(c.StreamBaseURL, "/") + "/" + string(genre) + ".mp3"
 }
 
 func getEnv(key, fallback string) string {

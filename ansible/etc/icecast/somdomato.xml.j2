@@ -67,6 +67,9 @@
         <pidfile>/tmp/icecast2.pid</pidfile>
         <alias source="/" destination="/status.xsl"/>
         <alias source="/json" destination="/status-json.xsl"/>
+{% for genre in radio_genres %}
+        <alias source="/{{ genre.mountpoint }}.mp3" destination="/{{ genre.mountpoint }}"/>
+{% endfor %}
         <ssl-certificate>/etc/letsencrypt/live/{{ domain }}/icecast-somdomato.pem</ssl-certificate>
     </paths>
 

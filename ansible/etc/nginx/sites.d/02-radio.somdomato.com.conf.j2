@@ -18,6 +18,9 @@ server {
     # são voltados a páginas HTTP comuns e podem encerrar/bufferizar a stream
     # antes que o elemento <audio> do navegador comece a decodificá-la.
     location / {
+        # A URL pública termina em .mp3 para que o WebKit no iOS reconheça a
+        # stream como áudio. O mountpoint real do Icecast não tem extensão.
+        rewrite ^/(geral|gaucha|modao|arrocha|romantico)\.mp3$ /$1 break;
         proxy_pass http://127.0.0.1:8000;
         proxy_http_version 1.1;
         proxy_set_header Host $host;

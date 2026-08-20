@@ -86,6 +86,11 @@
         <pidfile>/tmp/icecast2.pid</pidfile>
         <alias source="/" destination="/status.xsl"/>
         <alias source="/json" destination="/status-json.xsl"/>
+        <alias source="/geral.mp3" destination="/geral"/>
+        <alias source="/gaucha.mp3" destination="/gaucha"/>
+        <alias source="/modao.mp3" destination="/modao"/>
+        <alias source="/arrocha.mp3" destination="/arrocha"/>
+        <alias source="/romantico.mp3" destination="/romantico"/>
     </paths>
 
     <logging>
