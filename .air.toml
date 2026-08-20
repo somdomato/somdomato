@@ -9,16 +9,15 @@ tmp_dir = "tmp"
   exclude_dir = ["tmp", "node_modules", ".git"]
   exclude_regex = ["_templ.go"]
   delay = 200
-  # inotify não é confiável em bind mounts do Podman machine no macOS
-  # (virtiofs/9p não repassa os eventos pra dentro da VM) — sem polling,
-  # o air simplesmente nunca detecta as mudanças feitas no host.
-  poll = true
-  poll_interval = 500
 
 [log]
   time = true
 
 [proxy]
+  # air roda nativo no host (não em container) via `make air`/`make dev` —
+  # o navegador acessa a app por aqui (:3000, com livereload injetado); a
+  # app de verdade escuta em app_port (HTTP_ADDR=127.0.0.1:3001, ver
+  # scripts/dev-env.sh).
   enabled = true
-  proxy_port = 3001
-  app_port = 3000
+  proxy_port = 3000
+  app_port = 3001

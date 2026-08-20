@@ -1,9 +1,13 @@
 # Dev/Podman: o AutoDJ e os pedidos são alimentados pelo backend Go (não
 # mais Next.js), via /internal/music e /internal/music/started, protegidos
 # por X-Internal-Token (ver api/internal/httpserver/internal_radio.go).
+#
+# A API roda nativa no host (via `make air`), não em container — por isso
+# aponta pra host.containers.internal (porta 3001, a app real por trás do
+# proxy do air em :3000; ver .air.toml) em vez de um hostname de serviço.
 settings.init.allow_root := true
 
-api_base = "http://api:3000"
+api_base = "http://host.containers.internal:3001"
 internal_token = environment.get("RADIO_INTERNAL_TOKEN")
 
 live = input.harbor("aovivo", port=8010, user="dj", password="hackme-dev-only")

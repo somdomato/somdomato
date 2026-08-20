@@ -5,7 +5,7 @@ COMPOSE = podman compose -f podman/compose.yml --env-file .env
 TAILWIND = ./tailwindcss
 GOBIN = $(shell go env GOPATH)/bin
 
-.PHONY: help setup dev up down build-images restart logs ps \
+.PHONY: help setup dev air up down build-images restart logs ps \
         templ css css-watch migrate seed test lint vet fmt \
         build deploy tools clean \
         provision provision-check provision-tags
@@ -19,7 +19,7 @@ help: ## Mostra esta ajuda
 setup: tools ## Configura tudo do zero (.env + tools + up)
 	@[ -f .env ] || cp .env.example .env && echo "  → .env criado (edite MUSIC_PATH)"
 	@$(MAKE) up
-	@echo "✅ Ambiente disponível em http://localhost:3000 (rádio: http://localhost:8000)"
+	@echo "✅ Postgres/Icecast/Liquidsoap no ar. Rode 'make dev' para subir a API+HTMX (via air)."
 
 tools: ## Instala templ e o CLI standalone do Tailwind v4 (sem Node.js)
 	go install github.com/a-h/templ/cmd/templ@latest
@@ -33,17 +33,23 @@ tools: ## Instala templ e o CLI standalone do Tailwind v4 (sem Node.js)
 		chmod +x tailwindcss; \
 	fi
 
-# ── Dev (Podman) ─────────────────────────────────────────────────────────
+# ── Dev ──────────────────────────────────────────────────────────────────
+# Postgres, Icecast e Liquidsoap sobem via Podman (`make up`); a API+HTMX
+# roda nativa no host com hot-reload via air (`make air`) — `make dev` faz
+# as duas coisas, mais o Tailwind em watch.
 
-dev: up ## Sobe o ambiente completo, recompila CSS em watch e acompanha os logs da API
+dev: up templ ## Sobe Podman (postgres/icecast/liquidsoap) + CSS em watch + API com hot-reload (air)
 	@trap '$(MAKE) --no-print-directory _dev-stop-css' EXIT; \
 	$(MAKE) --no-print-directory css-watch & \
-	$(COMPOSE) logs -f api
+	$(MAKE) --no-print-directory air
 
 _dev-stop-css:
 	@pkill -f 'tailwindcss --input web/css/input.css' 2>/dev/null || true
 
-up: ## Sobe todos os serviços em background (postgres, api, icecast, liquidsoap)
+air: templ ## Roda só a API+HTMX com hot-reload (requer 'make up' rodando à parte)
+	@. ./scripts/dev-env.sh && $(GOBIN)/air -c .air.toml
+
+up: ## Sobe postgres, icecast e liquidsoap em background
 	$(COMPOSE) up -d
 
 down: ## Para e remove todos os containers
@@ -61,17 +67,14 @@ ps: ## Lista containers em execução
 logs: ## Logs de todos os serviços (segue)
 	$(COMPOSE) logs -f
 
-logs-api: ## Logs só da API Go
-	$(COMPOSE) logs -f api
-
 logs-liquidsoap: ## Logs só do Liquidsoap
 	$(COMPOSE) logs -f liquidsoap
 
-seed: ## Varre MUSIC_PATH e popula o catálogo (idempotente)
-	$(COMPOSE) exec api go run ./api/cmd/seed
+seed: ## Varre MUSIC_PATH e popula o catálogo (idempotente) — requer 'make up'
+	. ./scripts/dev-env.sh && go run ./api/cmd/seed
 
-migrate: ## Aplica migrations pendentes no Postgres
-	$(COMPOSE) exec api go run ./api/cmd/migrate
+migrate: ## Aplica migrations pendentes no Postgres — requer 'make up'
+	. ./scripts/dev-env.sh && go run ./api/cmd/migrate
 
 # ── Provisionamento da VPS (Ansible) ─────────────────────────────────────────
 

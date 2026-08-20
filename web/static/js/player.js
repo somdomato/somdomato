@@ -25,7 +25,7 @@ document.querySelectorAll("[data-player]").forEach((root) => {
 			"aria-label",
 			state === "playing" ? "Pausar" : state === "loading" ? "Carregando transmissão" : "Reproduzir",
 		);
-		bars.classList.toggle("is-playing", state === "playing");
+		bars?.classList.toggle("is-playing", state === "playing");
 	};
 
 	// Adiciona um timestamp à URL a cada play para evitar que o navegador

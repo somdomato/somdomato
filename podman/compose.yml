@@ -21,43 +21,6 @@ services:
       - radio-network
     restart: unless-stopped
 
-  api:
-    container_name: somdomato-api
-    build:
-      context: ..
-      dockerfile: podman/Containerfile.api
-    env_file:
-      - ../.env
-    environment:
-      - APP_ENV=development
-      - HTTP_ADDR=0.0.0.0:3000
-      - DATABASE_URL=postgres://${POSTGRES_USER:-sdm}:${POSTGRES_PASSWORD:-sdm_dev_only}@postgres:5432/${POSTGRES_DB:-sdm}?sslmode=disable
-      - MUSIC_PATH=/var/music/sdm
-      - COVERS_DIR=/var/music/sdm/covers
-      - JINGLES_DIR=/var/music/sdm/vinhetas
-      - JWT_SECRET=${JWT_SECRET:-dev-change-me}
-      - RADIO_INTERNAL_TOKEN=${RADIO_INTERNAL_TOKEN:-dev-change-me-too}
-      - ICECAST_STATUS_URL=http://icecast:8000/status-json.xsl
-      - STREAM_BASE_URL=http://localhost:8000
-    volumes:
-      - type: bind
-        source: ..
-        target: /app
-      - go_mod_cache:/root/go/pkg/mod
-      - type: bind
-        source: ${MUSIC_PATH:-/home/lucas/music/sdm}
-        target: /var/music/sdm
-    ports:
-      # host 3000 -> proxy do air (3001), que injeta o script de livereload
-      # e repassa para a app real (3000, só interna ao container).
-      - "3000:3001"
-    depends_on:
-      postgres:
-        condition: service_healthy
-    networks:
-      - radio-network
-    restart: unless-stopped
-
   icecast:
     container_name: somdomato-icecast
     build:
@@ -85,17 +48,25 @@ services:
         target: /etc/liquidsoap/somdomato.liq
         read_only: true
       - type: bind
+        # Monta no MESMO caminho absoluto do host (não em /var/music/sdm):
+        # a API roda nativa e grava `songs.path`/`jingles.path` com o
+        # caminho do host — o Liquidsoap abre esse `path` literalmente (ver
+        # somdomato-podman.liq), então os dois precisam enxergar o arquivo
+        # no mesmo lugar.
         source: ${MUSIC_PATH:-/home/lucas/music/sdm}
-        target: /var/music/sdm
+        target: ${MUSIC_PATH:-/home/lucas/music/sdm}
         read_only: true
     environment:
       - RADIO_INTERNAL_TOKEN=${RADIO_INTERNAL_TOKEN:-dev-change-me-too}
+    extra_hosts:
+      # a API roda nativa no host (via `make air`), não em container — o
+      # liquidsoap acessa http://host.containers.internal:3001 (ver
+      # ansible/etc/liquidsoap/somdomato-podman.liq).
+      - "host.containers.internal:host-gateway"
     ports:
       - "8081:8081"
     depends_on:
       icecast:
-        condition: service_started
-      api:
         condition: service_started
     networks:
       - radio-network
@@ -103,7 +74,6 @@ services:
 
 volumes:
   postgres_data:
-  go_mod_cache:
 
 networks:
   radio-network:

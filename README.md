@@ -5,8 +5,9 @@ rotação/proteções anti-repetição, pedidos ao vivo e painel administrativo.
 
 Stack: **Go** (backend, `api/`) + **HTMX** (frontend server-rendered,
 `web/`) + **Tailwind CSS v4** + **PostgreSQL**. Realtime via **SSE**
-(Server-Sent Events), sem WebSocket/Socket.io. Dev local via **Podman**
-(`Makefile`); produção provisionada via **Ansible**, sem containers.
+(Server-Sent Events), sem WebSocket/Socket.io. Dev local: postgres/icecast/
+liquidsoap via **Podman**, API+HTMX nativa via **air** (`Makefile`);
+produção provisionada via **Ansible**, sem containers.
 
 ## Escopo desta versão
 
@@ -22,18 +23,25 @@ manualmente os uploads (hoje a decisão é 100% da IA).
 
 ## Desenvolvimento local
 
-Requer [Podman](https://podman.io) e [Go](https://go.dev) 1.23+.
+Requer [Podman](https://podman.io) e [Go](https://go.dev) 1.26+ (a API roda
+nativa no host, ver `go.mod`).
 
 ```bash
 cp .env.example .env   # ajuste MUSIC_PATH para seu catálogo local
-make setup               # instala templ/tailwind e sobe tudo
-make seed                # varre MUSIC_PATH e popula o catálogo
+make setup                # instala templ/tailwind/air e sobe postgres/icecast/liquidsoap
+make seed                 # varre MUSIC_PATH e popula o catálogo
+make dev                  # roda a API+HTMX localmente com hot-reload (air) + CSS em watch
 ```
 
-`.env` na raiz do repo é a única fonte de config para o ambiente de dev
-(Podman) — não existe mais `podman/.env` separado. Para produção, o
-equivalente é `.env.production` (ver seção "Produção" abaixo); os dois têm
-formato parecido mas valores diferentes, não é pra copiar um no outro.
+Só postgres/icecast/liquidsoap rodam via Podman; a API Go (e o HTMX que ela
+serve) roda nativa no host via [air](https://github.com/air-verse/air), sem
+container — `make dev` sobe as duas coisas juntas, `make air` só a API (se
+`make up` já estiver rodando à parte).
+
+`.env` na raiz do repo é a única fonte de config para o ambiente de dev —
+não existe mais `podman/.env` separado. Para produção, o equivalente é
+`.env.production` (ver seção "Produção" abaixo); os dois têm formato
+parecido mas valores diferentes, não é pra copiar um no outro.
 
 `DEEZER_ARL` e `GROQ_API_KEY` (também em `.env.example`) são opcionais —
 sem eles a aplicação sobe normalmente e só a rota `/enviar` fica
@@ -41,8 +49,8 @@ desativada. Ver "Envio de músicas via Deezer" abaixo.
 
 - App: http://localhost:3000
 - Rádio (Icecast): http://localhost:8000/geral
-- `make logs` / `make logs-api` / `make logs-liquidsoap` — acompanhar logs
-- `make down` — parar tudo
+- `make logs` / `make logs-liquidsoap` — logs do Podman (postgres/icecast/liquidsoap)
+- `make down` — parar os containers
 
 Outros comandos úteis: `make templ` (gera `_templ.go`), `make css-watch`
 (Tailwind em watch), `make test` (requer `DATABASE_URL` para os testes de
@@ -59,7 +67,8 @@ web/            Tudo que o navegador consome: templates .templ, CSS
                 Compilado para dentro do binário via go:embed.
 ansible/        Provisionamento da VPS de produção (Postgres, Nginx,
                 Icecast2, Liquidsoap nativos + binário Go via systemd).
-podman/         SOMENTE dev local: compose com postgres/api/icecast/liquidsoap.
+podman/         SOMENTE dev local: compose com postgres/icecast/liquidsoap
+                (a API roda nativa no host via air, não em container).
 ```
 
 ### Fluxo AutoDJ / pedidos (contrato com o Liquidsoap)
