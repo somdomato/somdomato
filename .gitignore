@@ -11,10 +11,8 @@
 # Ansible
 ansible/*.retry
 
-# Env — .env.production deve ser criptografado com `ansible-vault encrypt`
-# antes de sair da sua máquina; nunca commitar nenhum dos dois em texto plano.
+# Ambiente — .env contém segredos e nunca deve ser versionado.
 .env
-.env.production
 
 # Editor/OS
 .DS_Store

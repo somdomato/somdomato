@@ -79,14 +79,14 @@ migrate: ## Aplica migrations pendentes no Postgres — requer 'make up'
 # ── Provisionamento da VPS (Ansible) ─────────────────────────────────────────
 
 provision: ## Provisiona/atualiza a VPS de produção via Ansible
-	cd ansible && ansible-playbook -i inventory.ini playbook.yml --ask-vault-pass
+	cd ansible && ansible-playbook -i inventory.ini playbook.yml
 
 provision-check: ## Dry run do provisionamento (não aplica nada)
-	cd ansible && ansible-playbook -i inventory.ini playbook.yml --ask-vault-pass --check
+	cd ansible && ansible-playbook -i inventory.ini playbook.yml --check
 
 provision-tags: ## Provisiona só as tags indicadas (uso: make provision-tags TAGS=nginx,ssl)
 	@if [ -z "$(TAGS)" ]; then echo "Uso: make provision-tags TAGS=nginx,ssl"; exit 1; fi
-	cd ansible && ansible-playbook -i inventory.ini playbook.yml --ask-vault-pass --tags $(TAGS)
+	cd ansible && ansible-playbook -i inventory.ini playbook.yml --tags $(TAGS)
 
 # ── Build local (sem Podman) ─────────────────────────────────────────────
 

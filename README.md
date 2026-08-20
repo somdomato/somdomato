@@ -38,10 +38,12 @@ serve) roda nativa no host via [air](https://github.com/air-verse/air), sem
 container — `make dev` sobe as duas coisas juntas, `make air` só a API (se
 `make up` já estiver rodando à parte).
 
-`.env` na raiz do repo é a única fonte de config para o ambiente de dev —
-não existe mais `podman/.env` separado. Para produção, o equivalente é
-`.env.production` (ver seção "Produção" abaixo); os dois têm formato
-parecido mas valores diferentes, não é pra copiar um no outro.
+`.env` na raiz é a única fonte de configuração do projeto: o Make/Podman o
+usa no desenvolvimento e o Ansible o usa ao provisionar a VPS. Não há
+`podman/.env` nem `.env.production`. Os valores são específicos do ambiente:
+antes de executar um provisionamento, confira a seção de produção do mesmo
+arquivo. O `.env` contém segredos, é ignorado pelo Git e deve ter permissão
+restrita (`chmod 600 .env`).
 
 `DEEZER_ARL` e `GROQ_API_KEY` (também em `.env.example`) são opcionais —
 sem eles a aplicação sobe normalmente e só a rota `/enviar` fica
@@ -135,20 +137,27 @@ indefinidamente (nada quebra, só não são aprovados sozinhos).
 
 ## Produção
 
-`.env.production` na raiz do repo é a única fonte de verdade para o
-provisionamento — segredos (senhas, tokens) e topologia (domínio, usuário
-da app, porta SSH etc.) num só arquivo, no mesmo formato `KEY=VALUE` do
-`.env` de dev. O Ansible lê esse arquivo direto (`ansible/playbook.yml`) e
-usa os valores tanto para gerar o `.env` real do binário Go quanto para os
-arquivos de config nativos (Icecast2, Liquidsoap, Nginx, systemd) — nada de
-segredo fica hardcoded em `ansible/*.yml`.
+O `.env` na raiz é a única fonte de verdade para o provisionamento: contém
+segredos (senhas e tokens) e topologia (domínio, usuário da aplicação, porta
+SSH etc.). O Ansible o lê diretamente (`ansible/playbook.yml`) e usa os
+valores para gerar o `.env` do binário Go e as configurações nativas do
+Icecast2, Liquidsoap, Nginx e systemd. Nada de segredo fica hardcoded em
+`ansible/*.yml`.
+
+O mesmo arquivo também é usado pelo desenvolvimento local. Ao preparar outra
+máquina, comece por `.env.example`, ajuste `MUSIC_PATH` para o catálogo local
+e preencha **todos** os campos da seção “Provisionamento de produção” antes
+de rodar Ansible. Nunca envie `.env` ao Git, e mantenha-o com permissão `600`.
+Esta convenção privilegia um único arquivo legível pelo Make e pelo Ansible;
+por isso ele não deve ser criptografado com Ansible Vault.
 
 ```bash
-cp .env.production.example .env.production   # preencha os segredos
-ansible-vault encrypt .env.production          # nunca commitar em texto plano
+cp .env.example .env                           # se ainda não existir
+chmod 600 .env
+# preencha/revise os valores de produção em .env
 cd ansible
 ansible-galaxy install -r requirements.yml
-ansible-playbook -i inventory.ini playbook.yml --ask-vault-pass
+ansible-playbook -i inventory.ini playbook.yml
 ```
 
 Isso provisiona o host (Postgres, Nginx, Icecast2, Liquidsoap, firewall,

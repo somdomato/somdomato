@@ -5,8 +5,7 @@
 # (ver Makefile / podman/compose.yml).
 #
 # Toda a config (segredos e topologia) vem de um único arquivo na raiz do
-# repo: ../.env.production (criptografado com `ansible-vault`). Veja
-# .env.production.example. Nada de segredo fica hardcoded aqui.
+# repo: ../.env. Veja .env.example. Nada de segredo fica hardcoded aqui.
 #
 # Uso:
 #   ansible-playbook -i inventory.ini playbook.yml --ask-vault-pass
@@ -24,12 +23,12 @@
 
   tasks:
     # =========================================================================
-    # CONFIG — única fonte de verdade: ../.env.production
+    # CONFIG — única fonte de verdade: ../.env
     # =========================================================================
-    - name: Carregar ../.env.production como dict
+    - name: Carregar ../.env como dict
       ansible.builtin.set_fact:
         app_env: "{{ app_env | default({}) | combine({ item.split('=', 1)[0]: item.split('=', 1)[1] }) }}"
-      loop: "{{ lookup('ansible.builtin.file', playbook_dir + '/../.env.production').splitlines() | select('match', '^[A-Za-z_][A-Za-z0-9_]*=') | list }}"
+      loop: "{{ lookup('ansible.builtin.file', playbook_dir + '/../.env').splitlines() | select('match', '^[A-Za-z_][A-Za-z0-9_]*=') | list }}"
       loop_control:
         label: "{{ item.split('=')[0] }}"
       no_log: true
@@ -131,14 +130,14 @@
         - "{{ music_dir }}/covers"
       tags: [app]
 
-    - name: Gerar .env da aplicação a partir de ../.env.production
+    - name: Gerar .env da aplicação a partir de ../.env
       ansible.builtin.copy:
         dest: "{{ app_dir }}/.env"
         owner: "{{ app_user }}"
         group: "{{ app_group }}"
         mode: "0600"
         # Só os campos abaixo são derivados (URL/porta montadas a partir do
-        # resto) — tudo mais é passthrough direto de ../.env.production.
+        # resto) — tudo mais é passthrough direto de ../.env.
         content: |
           APP_ENV=production
           HTTP_ADDR=127.0.0.1:{{ api_http_port }}
