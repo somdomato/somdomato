@@ -5,6 +5,7 @@ package httpserver
 import (
 	"fmt"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -34,6 +35,7 @@ func registerAdminRoutes(mux *http.ServeMux, app *App) {
 	mux.HandleFunc("POST /admin/musicas/{id}", requirePermission(app, rbac.PermSongsEditTags, requireCSRF(handleAdminSongUpdate(app))))
 	mux.HandleFunc("POST /admin/musicas/{id}/tocar", requirePermission(app, rbac.PermRequestsManage, requireCSRF(handleAdminPlaySong(app))))
 	mux.HandleFunc("POST /admin/musicas/{id}/remover", requirePermission(app, rbac.PermSongsDelete, requireCSRF(handleAdminSongDelete(app))))
+	mux.HandleFunc("POST /admin/artistas/{artist}/renomear", requirePermission(app, rbac.PermSongsEditTags, requireCSRF(handleAdminArtistRename(app))))
 
 	mux.HandleFunc("GET /admin/pedidos", requirePermission(app, rbac.PermRequestsManage, handleAdminRequestsList(app)))
 	mux.HandleFunc("POST /admin/pedidos/{id}/remover", requirePermission(app, rbac.PermRequestsManage, requireCSRF(handleAdminRequestRemove(app))))
@@ -327,6 +329,25 @@ func handleAdminPlaySong(app *App) http.HandlerFunc {
 			return
 		}
 		w.WriteHeader(http.StatusNoContent)
+	}
+}
+
+// handleAdminArtistRename renomeia um artista em todas as músicas dele —
+// disparado a partir do formulário "Editar artista" em /artistas/{artist}.
+func handleAdminArtistRename(app *App) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		oldName := r.PathValue("artist")
+		newName := strings.TrimSpace(r.FormValue("artist"))
+		if newName == "" {
+			http.Error(w, "nome do artista inválido", http.StatusBadRequest)
+			return
+		}
+		if err := app.Songs.RenameArtist(r.Context(), oldName, newName); err != nil {
+			app.Log.Error("renomeando artista", "error", err)
+			http.Error(w, "erro interno", http.StatusInternalServerError)
+			return
+		}
+		http.Redirect(w, r, "/artistas/"+url.PathEscape(newName), http.StatusSeeOther)
 	}
 }
 

@@ -116,6 +116,30 @@ templ SearchResultRow(item SongListItem, csrfToken string) {
 	</li>
 }
 
+// ArtistSongRow é usado em /artistas/{artist} — igual ao SearchResultRow
+// (botão de pedir via HTMX), mas com um link "Editar" para admins logados
+// que leva direto ao formulário de edição da música no painel.
+templ ArtistSongRow(item SongListItem, csrfToken string, isAdmin bool) {
+	<li class="flex items-center gap-3 px-4 py-2" id={ "song-" + itoa(item.ID) }>
+		<img src={ item.Cover } alt={ item.Title } class="h-10 w-10 shrink-0 rounded object-cover"/>
+		<div class="min-w-0 flex-1">
+			<p class="truncate text-sm font-medium">{ item.Title }</p>
+		</div>
+		if isAdmin {
+			<a href={ templ.URL("/admin/musicas/" + itoa(item.ID)) } class="shrink-0 text-xs font-medium text-neutral-400 hover:text-neutral-200 hover:underline">
+				Editar
+			</a>
+		}
+		<form hx-post="/pedidos/solicitar" hx-target={ "#song-" + itoa(item.ID) } hx-swap="outerHTML">
+			<input type="hidden" name="song_id" value={ itoa(item.ID) }/>
+			<input type="hidden" name="csrf_token" value={ csrfToken }/>
+			<button type="submit" class="shrink-0 rounded-full bg-brand-600 px-3 py-1 text-xs font-medium text-white hover:bg-brand-500">
+				Pedir
+			</button>
+		</form>
+	</li>
+}
+
 templ RequestFeedback(message string, ok bool) {
 	if ok {
 		<li class="px-4 py-2 text-sm text-brand-300">{ message }</li>

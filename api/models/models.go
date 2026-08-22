@@ -19,6 +19,14 @@ type Song struct {
 	CreatedAt        time.Time
 }
 
+// ArtistCard resume um artista para o grid de /artistas: nome, uma capa
+// representativa e a contagem de músicas.
+type ArtistCard struct {
+	Name      string
+	Cover     string
+	SongCount int
+}
+
 type Request struct {
 	ID        int64
 	SongID    int64

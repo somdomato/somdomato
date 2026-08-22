@@ -94,6 +94,38 @@ func (s *Store) ListArtists(ctx context.Context) ([]string, error) {
 	return out, rows.Err()
 }
 
+// ListArtistsWithCovers é como ListArtists, mas já traz a capa mais recente
+// e a contagem de músicas de cada artista — usado para os cards de /artistas.
+func (s *Store) ListArtistsWithCovers(ctx context.Context) ([]models.ArtistCard, error) {
+	rows, err := s.pool.Query(ctx, `
+		SELECT artist, (array_agg(cover ORDER BY created_at DESC))[1], count(*)
+		FROM songs GROUP BY artist ORDER BY artist`)
+	if err != nil {
+		return nil, fmt.Errorf("listando artistas com capa: %w", err)
+	}
+	defer rows.Close()
+
+	var out []models.ArtistCard
+	for rows.Next() {
+		var c models.ArtistCard
+		if err := rows.Scan(&c.Name, &c.Cover, &c.SongCount); err != nil {
+			return nil, err
+		}
+		out = append(out, c)
+	}
+	return out, rows.Err()
+}
+
+// RenameArtist atualiza o nome do artista em todas as músicas dele —
+// usado pelo admin a partir da página de detalhe do artista.
+func (s *Store) RenameArtist(ctx context.Context, oldName, newName string) error {
+	_, err := s.pool.Exec(ctx, `UPDATE songs SET artist = $1 WHERE artist = $2`, newName, oldName)
+	if err != nil {
+		return fmt.Errorf("renomeando artista: %w", err)
+	}
+	return nil
+}
+
 // ListPaged é usado pela tela de administração de músicas. limit <= 0
 // significa "sem limite" (retorna todos os resultados a partir de offset).
 func (s *Store) ListPaged(ctx context.Context, query string, limit, offset int) ([]models.Song, error) {

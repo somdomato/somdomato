@@ -198,7 +198,7 @@ func handlePedidosSolicitar(app *App) http.HandlerFunc {
 func handleArtistas(app *App) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		trackPageView(app, w, r, r.URL.Path)
-		artists, err := app.Songs.ListArtists(r.Context())
+		artists, err := app.Songs.ListArtistsWithCovers(r.Context())
 		if err != nil {
 			app.Log.Error("listando artistas", "error", err)
 		}
@@ -216,10 +216,14 @@ func handleArtistDetail(app *App) http.HandlerFunc {
 		if err != nil {
 			app.Log.Error("listando músicas do artista", "error", err)
 		}
-		var titles []string
+		var items []components.SongListItem
 		for _, s := range songList {
-			titles = append(titles, s.Title)
+			items = append(items, components.SongListItem{ID: s.ID, Title: s.Title, Artist: s.Artist, Cover: s.Cover})
 		}
-		render(w, pages.ArtistDetail(artist, titles, buildPlayerData(r.Context(), app, config.DefaultGenre), isAdminRequest(app, r)))
+		token := ensureCSRFCookie(w, r)
+		render(w, pages.ArtistDetail(pages.ArtistDetailData{
+			Artist: artist, Songs: items, Player: buildPlayerData(r.Context(), app, config.DefaultGenre),
+			CSRFToken: token, IsAdmin: isAdminRequest(app, r),
+		}))
 	}
 }
