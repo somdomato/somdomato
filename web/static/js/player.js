@@ -10,7 +10,9 @@ document.querySelectorAll("[data-player]").forEach((root) => {
 	const message = root.querySelector("[data-player-message]");
 	const bars = root.querySelector("[data-player-bars]");
 	const volume = root.querySelector("[data-player-volume]");
+	const nowPlaying = document.getElementById("now-playing");
 	const streamURL = root.dataset.streamUrl;
+	const radioName = root.dataset.radioName || "";
 	const loadTimeoutMS = 15000;
 	const volumeStorageKey = "sdm-volume";
 	let loadTimeout;
@@ -51,7 +53,64 @@ document.querySelectorAll("[data-player]").forEach((root) => {
 			state === "playing" ? "Pausar" : state === "loading" ? "Carregando transmissão" : "Reproduzir",
 		);
 		bars?.classList.toggle("is-playing", state === "playing");
+
+		if ("mediaSession" in navigator) {
+			navigator.mediaSession.playbackState = state === "playing" ? "playing" : "paused";
+		}
 	};
+
+	// Preenche a Media Session API com a capa/título/artista da música atual
+	// e o nome da rádio, para que capa e nome apareçam na tela de bloqueio,
+	// nos controles de mídia do notebook e na central multimídia do carro.
+	const mimeTypeFor = (url) => {
+		const ext = url.split(".").pop()?.toLowerCase().split(/[?#]/)[0];
+		return { jpg: "image/jpeg", jpeg: "image/jpeg", png: "image/png", webp: "image/webp", gif: "image/gif" }[ext] || "";
+	};
+
+	const updateMediaSessionMetadata = () => {
+		if (!("mediaSession" in navigator) || !nowPlaying) return;
+		const img = nowPlaying.querySelector("img");
+		const title = img?.alt || radioName || "Som do Mato";
+		const artist = nowPlaying.querySelector("p.text-neutral-400")?.textContent || radioName;
+		const artwork = img?.src
+			? [
+					{ src: img.src, sizes: "96x96", type: mimeTypeFor(img.src) },
+					{ src: img.src, sizes: "512x512", type: mimeTypeFor(img.src) },
+				]
+			: [];
+
+		navigator.mediaSession.metadata = new MediaMetadata({
+			title,
+			artist,
+			album: radioName,
+			artwork,
+		});
+	};
+
+	if ("mediaSession" in navigator) {
+		updateMediaSessionMetadata();
+
+		// O SSE substitui o innerHTML de #now-playing a cada troca de música;
+		// observamos isso em vez de reagir só ao "play" para que a tela de
+		// bloqueio/carro acompanhe a faixa mesmo com o áudio já tocando.
+		if (nowPlaying) {
+			new MutationObserver(updateMediaSessionMetadata).observe(nowPlaying, { childList: true, subtree: true });
+		}
+
+		navigator.mediaSession.setActionHandler("play", () => {
+			if (audio.paused) play();
+		});
+		navigator.mediaSession.setActionHandler("pause", () => {
+			stop();
+			setMessage("");
+			setState("idle");
+		});
+		navigator.mediaSession.setActionHandler("stop", () => {
+			stop();
+			setMessage("");
+			setState("idle");
+		});
+	}
 
 	const stop = () => {
 		clearLoadTimeout();
