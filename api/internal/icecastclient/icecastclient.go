@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/lucasbrum/somdomato/api/config"
+	"github.com/somdomato/somdomato/api/config"
 )
 
 type source struct {

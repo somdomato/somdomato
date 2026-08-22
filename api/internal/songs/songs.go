@@ -8,7 +8,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/lucasbrum/somdomato/api/models"
+	"github.com/somdomato/somdomato/api/models"
 )
 
 type Store struct {

@@ -17,11 +17,11 @@ import (
 	"time"
 
 	"github.com/a-h/templ"
-	"github.com/lucasbrum/somdomato/api/config"
-	"github.com/lucasbrum/somdomato/api/internal/deezerdl"
-	"github.com/lucasbrum/somdomato/api/internal/uploads"
-	"github.com/lucasbrum/somdomato/web/templates/components"
-	"github.com/lucasbrum/somdomato/web/templates/pages"
+	"github.com/somdomato/somdomato/api/config"
+	"github.com/somdomato/somdomato/api/internal/deezerdl"
+	"github.com/somdomato/somdomato/api/internal/uploads"
+	"github.com/somdomato/somdomato/web/templates/components"
+	"github.com/somdomato/somdomato/web/templates/pages"
 )
 
 // enviarDownloadLimiter é deliberadamente mais apertado que o rate limit de

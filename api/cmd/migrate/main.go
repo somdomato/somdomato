@@ -6,8 +6,8 @@ import (
 	"log/slog"
 	"os"
 
-	"github.com/lucasbrum/somdomato/api/config"
-	"github.com/lucasbrum/somdomato/api/internal/db"
+	"github.com/somdomato/somdomato/api/config"
+	"github.com/somdomato/somdomato/api/internal/db"
 )
 
 func main() {

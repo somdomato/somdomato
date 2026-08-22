@@ -9,8 +9,8 @@ import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
 import (
-	"github.com/lucasbrum/somdomato/web"
-	"github.com/lucasbrum/somdomato/web/templates/components"
+	"github.com/somdomato/somdomato/web"
+	"github.com/somdomato/somdomato/web/templates/components"
 )
 
 func Layout(title string, player *components.PlayerData, isAdmin bool) templ.Component {

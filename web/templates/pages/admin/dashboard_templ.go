@@ -8,7 +8,7 @@ package admin
 import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
-import "github.com/lucasbrum/somdomato/api/config"
+import "github.com/somdomato/somdomato/api/config"
 
 type DashboardRow struct {
 	Genre     config.Genre

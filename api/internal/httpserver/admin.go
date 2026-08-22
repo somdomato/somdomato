@@ -12,14 +12,14 @@ import (
 	"time"
 
 	"github.com/bogem/id3v2/v2"
-	"github.com/lucasbrum/somdomato/api/config"
-	"github.com/lucasbrum/somdomato/api/internal/auth"
-	"github.com/lucasbrum/somdomato/api/internal/icecastclient"
-	"github.com/lucasbrum/somdomato/api/internal/requests"
-	"github.com/lucasbrum/somdomato/api/internal/songs"
-	"github.com/lucasbrum/somdomato/api/models"
-	"github.com/lucasbrum/somdomato/api/rbac"
-	admintpl "github.com/lucasbrum/somdomato/web/templates/pages/admin"
+	"github.com/somdomato/somdomato/api/config"
+	"github.com/somdomato/somdomato/api/internal/auth"
+	"github.com/somdomato/somdomato/api/internal/icecastclient"
+	"github.com/somdomato/somdomato/api/internal/requests"
+	"github.com/somdomato/somdomato/api/internal/songs"
+	"github.com/somdomato/somdomato/api/models"
+	"github.com/somdomato/somdomato/api/rbac"
+	admintpl "github.com/somdomato/somdomato/web/templates/pages/admin"
 )
 
 func registerAdminRoutes(mux *http.ServeMux, app *App) {

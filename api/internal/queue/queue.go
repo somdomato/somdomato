@@ -12,10 +12,10 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/lucasbrum/somdomato/api/config"
-	"github.com/lucasbrum/somdomato/api/internal/protections"
-	"github.com/lucasbrum/somdomato/api/internal/rotation"
-	"github.com/lucasbrum/somdomato/api/models"
+	"github.com/somdomato/somdomato/api/config"
+	"github.com/somdomato/somdomato/api/internal/protections"
+	"github.com/somdomato/somdomato/api/internal/rotation"
+	"github.com/somdomato/somdomato/api/models"
 )
 
 const QueueSize = config.QueueSize
@@ -374,7 +374,11 @@ func (s *Store) SetCurrent(ctx context.Context, p SetCurrentParams) (*models.Con
 
 	return &models.ConfirmedCurrent{
 		SongID: song.ID, Title: song.Title, Artist: song.Artist, Path: song.Path,
-		Cover: song.Cover, Genre: song.Genre, AllowedInGeneral: song.AllowedInGeneral,
+		// Genre é o da transmissão (p.Genre), não o cadastrado na música —
+		// uma faixa allowed_in_general tocada no "geral" mantém seu próprio
+		// genre na tabela songs, mas o evento precisa refletir em qual rádio
+		// ela está de fato tocando.
+		Cover: song.Cover, Genre: p.Genre, AllowedInGeneral: song.AllowedInGeneral,
 		WasRequested: wasRequested, RequestedAt: requestedAt,
 	}, nil
 }

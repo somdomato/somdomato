@@ -9,8 +9,8 @@ import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
 import (
-	"github.com/lucasbrum/somdomato/web/templates"
-	"github.com/lucasbrum/somdomato/web/templates/components"
+	"github.com/somdomato/somdomato/web/templates"
+	"github.com/somdomato/somdomato/web/templates/components"
 )
 
 type PedidosData struct {

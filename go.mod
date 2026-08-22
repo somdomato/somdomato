@@ -1,4 +1,4 @@
-module github.com/lucasbrum/somdomato
+module github.com/somdomato/somdomato
 
 go 1.26.5
 

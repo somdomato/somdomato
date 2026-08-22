@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/lucasbrum/somdomato/api/internal/auth"
-	"github.com/lucasbrum/somdomato/api/rbac"
+	"github.com/somdomato/somdomato/api/internal/auth"
+	"github.com/somdomato/somdomato/api/rbac"
 )
 
 func withLogging(log *slog.Logger, next http.Handler) http.Handler {

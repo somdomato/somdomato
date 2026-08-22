@@ -11,8 +11,8 @@ import templruntime "github.com/a-h/templ/runtime"
 import (
 	"path/filepath"
 
-	"github.com/lucasbrum/somdomato/api/config"
-	"github.com/lucasbrum/somdomato/api/models"
+	"github.com/somdomato/somdomato/api/config"
+	"github.com/somdomato/somdomato/api/models"
 )
 
 func SongsList(songsList []models.Song, query, csrfToken string) templ.Component {

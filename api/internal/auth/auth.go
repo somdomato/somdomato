@@ -12,8 +12,8 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/lucasbrum/somdomato/api/models"
-	"github.com/lucasbrum/somdomato/api/rbac"
+	"github.com/somdomato/somdomato/api/models"
+	"github.com/somdomato/somdomato/api/rbac"
 	"golang.org/x/crypto/bcrypt"
 )
 

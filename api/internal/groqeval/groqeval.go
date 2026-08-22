@@ -23,10 +23,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/lucasbrum/somdomato/api/config"
-	"github.com/lucasbrum/somdomato/api/internal/cover"
-	"github.com/lucasbrum/somdomato/api/internal/songs"
-	"github.com/lucasbrum/somdomato/api/internal/uploads"
+	"github.com/somdomato/somdomato/api/config"
+	"github.com/somdomato/somdomato/api/internal/cover"
+	"github.com/somdomato/somdomato/api/internal/songs"
+	"github.com/somdomato/somdomato/api/internal/uploads"
 )
 
 const groqEndpoint = "https://api.groq.com/openai/v1/chat/completions"

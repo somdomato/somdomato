@@ -7,11 +7,11 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/lucasbrum/somdomato/api/config"
-	"github.com/lucasbrum/somdomato/api/internal/cover"
-	"github.com/lucasbrum/somdomato/api/rbac"
-	"github.com/lucasbrum/somdomato/web/templates/components"
-	"github.com/lucasbrum/somdomato/web/templates/pages"
+	"github.com/somdomato/somdomato/api/config"
+	"github.com/somdomato/somdomato/api/internal/cover"
+	"github.com/somdomato/somdomato/api/rbac"
+	"github.com/somdomato/somdomato/web/templates/components"
+	"github.com/somdomato/somdomato/web/templates/pages"
 )
 
 var publicRequestLimiter = newIPRateLimiter(10, time.Minute)

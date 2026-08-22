@@ -9,8 +9,8 @@ import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
 import (
-	"github.com/lucasbrum/somdomato/api/models"
-	"github.com/lucasbrum/somdomato/api/rbac"
+	"github.com/somdomato/somdomato/api/models"
+	"github.com/somdomato/somdomato/api/rbac"
 )
 
 func UsersList(list []models.User, csrfToken string) templ.Component {

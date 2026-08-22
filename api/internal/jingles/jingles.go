@@ -11,7 +11,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/lucasbrum/somdomato/api/models"
+	"github.com/somdomato/somdomato/api/models"
 )
 
 type Store struct {
@@ -41,6 +41,18 @@ func (s *Store) GetSongCounter(genre string) int {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	return s.counters[genre]
+}
+
+// Create insere uma vinheta, ignorando se `path` já existir (idempotente,
+// como songs.Create) — usado por cmd/seedjingles.
+func (s *Store) Create(ctx context.Context, title, filename, path string) (created bool, err error) {
+	tag, err := s.pool.Exec(ctx, `
+		INSERT INTO jingles (title, filename, path) VALUES ($1, $2, $3)
+		ON CONFLICT (path) DO NOTHING`, title, filename, path)
+	if err != nil {
+		return false, fmt.Errorf("inserindo vinheta: %w", err)
+	}
+	return tag.RowsAffected() > 0, nil
 }
 
 // GetJingleInterval lê `settings.jingle_interval` (default 5 se ausente).

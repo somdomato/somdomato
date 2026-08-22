@@ -10,10 +10,10 @@ import (
 	"testing"
 
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/lucasbrum/somdomato/api/internal/db"
-	"github.com/lucasbrum/somdomato/api/internal/protections"
-	"github.com/lucasbrum/somdomato/api/internal/queue"
-	"github.com/lucasbrum/somdomato/api/models"
+	"github.com/somdomato/somdomato/api/internal/db"
+	"github.com/somdomato/somdomato/api/internal/protections"
+	"github.com/somdomato/somdomato/api/internal/queue"
+	"github.com/somdomato/somdomato/api/models"
 )
 
 func testPool(t *testing.T) *pgxpool.Pool {

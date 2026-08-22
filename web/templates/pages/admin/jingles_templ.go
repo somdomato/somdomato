@@ -8,7 +8,7 @@ package admin
 import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
-import "github.com/lucasbrum/somdomato/api/models"
+import "github.com/somdomato/somdomato/api/models"
 
 func JinglesList(list []models.Jingle, interval int, csrfToken string) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {

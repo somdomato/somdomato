@@ -9,8 +9,8 @@ import (
 	"strconv"
 
 	"github.com/a-h/templ"
-	"github.com/lucasbrum/somdomato/api/internal/queue"
-	"github.com/lucasbrum/somdomato/api/models"
+	"github.com/somdomato/somdomato/api/internal/queue"
+	"github.com/somdomato/somdomato/api/models"
 )
 
 // render escreve um componente templ direto na resposta.

@@ -8,7 +8,7 @@ import (
 	"fmt"
 
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/lucasbrum/somdomato/api/config"
+	"github.com/somdomato/somdomato/api/config"
 )
 
 type Store struct {

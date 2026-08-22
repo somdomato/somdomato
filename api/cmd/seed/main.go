@@ -16,10 +16,10 @@ import (
 	"strings"
 
 	"github.com/dhowden/tag"
-	"github.com/lucasbrum/somdomato/api/config"
-	"github.com/lucasbrum/somdomato/api/internal/cover"
-	"github.com/lucasbrum/somdomato/api/internal/db"
-	"github.com/lucasbrum/somdomato/api/internal/songs"
+	"github.com/somdomato/somdomato/api/config"
+	"github.com/somdomato/somdomato/api/internal/cover"
+	"github.com/somdomato/somdomato/api/internal/db"
+	"github.com/somdomato/somdomato/api/internal/songs"
 )
 
 func main() {

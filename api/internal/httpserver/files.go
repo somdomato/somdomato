@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/lucasbrum/somdomato/api/config"
+	"github.com/somdomato/somdomato/api/config"
 )
 
 func registerFileRoutes(mux *http.ServeMux, app *App) {

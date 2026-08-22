@@ -8,9 +8,9 @@ import (
 	"fmt"
 
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/lucasbrum/somdomato/api/internal/protections"
-	"github.com/lucasbrum/somdomato/api/internal/queue"
-	"github.com/lucasbrum/somdomato/api/models"
+	"github.com/somdomato/somdomato/api/internal/protections"
+	"github.com/somdomato/somdomato/api/internal/queue"
+	"github.com/somdomato/somdomato/api/models"
 )
 
 type Store struct {

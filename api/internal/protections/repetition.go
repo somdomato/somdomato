@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/lucasbrum/somdomato/api/config"
+	"github.com/somdomato/somdomato/api/config"
 )
 
 type RepetitionReason string

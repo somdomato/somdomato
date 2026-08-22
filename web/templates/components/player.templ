@@ -1,6 +1,6 @@
 package components
 
-import "github.com/lucasbrum/somdomato/api/config"
+import "github.com/somdomato/somdomato/api/config"
 
 type NowPlaying struct {
 	ID     int64
@@ -17,14 +17,20 @@ type PlayerData struct {
 }
 
 // PlayerBar é a barra do player embutida no header: capa, controles e troca
-// de gênero em uma única faixa compacta. Assina o evento SSE "song-changed"
-// e troca só a capa/título via sse-swap — sem JS customizado além do
-// necessário para o <audio> trocar de fonte.
+// de gênero em uma única faixa compacta. Assina o evento SSE
+// "song-changed-<genre>" (nome específico da rádio desta página) e troca só
+// a capa/título via sse-swap — sem JS customizado além do necessário para o
+// <audio> trocar de fonte.
+//
+// O nome do evento precisa carregar o gênero porque o Hub de SSE é global:
+// as cinco rádios avançam suas filas de forma independente, e um nome
+// genérico faria o player trocar de música toda vez que QUALQUER rádio
+// confirmasse uma faixa nova — não só a que esta página está tocando.
 templ PlayerBar(data PlayerData) {
 	<div class="flex flex-wrap items-center gap-3 border-t border-white/5 py-2.5 sm:flex-nowrap" sse-connect="/events">
 		<div
 			id="now-playing"
-			sse-swap="song-changed"
+			sse-swap={ "song-changed-" + string(data.Genre) }
 			hx-swap="innerHTML"
 			data-htmx-fade
 			class="flex min-w-0 flex-1 items-center gap-3 sm:flex-none"

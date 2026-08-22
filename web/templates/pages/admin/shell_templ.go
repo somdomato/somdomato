@@ -9,8 +9,8 @@ import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
 import (
-	"github.com/lucasbrum/somdomato/web"
-	"github.com/lucasbrum/somdomato/web/templates"
+	"github.com/somdomato/somdomato/web"
+	"github.com/somdomato/somdomato/web/templates"
 )
 
 // Shell é o layout comum de todas as telas do painel: navegação lateral +

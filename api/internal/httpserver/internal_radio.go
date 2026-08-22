@@ -11,11 +11,11 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/lucasbrum/somdomato/api/config"
-	"github.com/lucasbrum/somdomato/api/internal/cover"
-	"github.com/lucasbrum/somdomato/api/internal/sse"
-	"github.com/lucasbrum/somdomato/api/models"
-	"github.com/lucasbrum/somdomato/web/templates/components"
+	"github.com/somdomato/somdomato/api/config"
+	"github.com/somdomato/somdomato/api/internal/cover"
+	"github.com/somdomato/somdomato/api/internal/sse"
+	"github.com/somdomato/somdomato/api/models"
+	"github.com/somdomato/somdomato/web/templates/components"
 )
 
 func registerInternalRadioRoutes(mux *http.ServeMux, app *App) {
@@ -200,6 +200,12 @@ func resolveCoverAsync(app *App, songID int64, mp3Path string) {
 // hx-swap="innerHTML" em #now-playing, então o payload já precisa ser
 // markup pronto, não JSON.
 //
+// O evento é nomeado "song-changed-<genre>": o Hub é global e cada rádio
+// (geral/gaucha/modão/...) avança sua fila de forma independente, então um
+// nome de evento genérico faria o player de quem ouve "geral" trocar de
+// música toda vez que QUALQUER outra rádio confirmasse uma faixa. O client
+// (sse-swap) assina só o evento da rádio que está tocando naquela página.
+//
 // O broadcast em si é atrasado por app.Cfg.NowPlayingDelay: o on_track do
 // Liquidsoap dispara no instante em que o encoder começa a faixa, mas o
 // ouvinte só a escuta depois do burst-on-connect do Icecast + buffer do
@@ -211,8 +217,9 @@ func broadcastSongChanged(app *App, now components.NowPlaying) {
 		return
 	}
 	payload := buf.String()
+	eventName := "song-changed-" + now.Genre
 	time.AfterFunc(app.Cfg.NowPlayingDelay, func() {
-		app.Hub.Broadcast(sse.Event{Name: "song-changed", Data: payload})
+		app.Hub.Broadcast(sse.Event{Name: eventName, Data: payload})
 	})
 }
 

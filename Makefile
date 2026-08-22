@@ -73,6 +73,9 @@ logs-liquidsoap: ## Logs só do Liquidsoap
 seed: ## Varre MUSIC_PATH e popula o catálogo (idempotente) — requer 'make up'
 	. ./scripts/dev-env.sh && go run ./api/cmd/seed
 
+seed-jingles: ## Varre JINGLES_DIR e popula a tabela jingles (idempotente) — requer 'make up'
+	. ./scripts/dev-env.sh && go run ./api/cmd/seedjingles
+
 migrate: ## Aplica migrations pendentes no Postgres — requer 'make up'
 	. ./scripts/dev-env.sh && go run ./api/cmd/migrate
 

@@ -7,8 +7,8 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/lucasbrum/somdomato/api/config"
-	"github.com/lucasbrum/somdomato/api/models"
+	"github.com/somdomato/somdomato/api/config"
+	"github.com/somdomato/somdomato/api/models"
 )
 
 // CanPlayAtCurrentTime replica canPlayAtCurrentTime(): true se o bit do

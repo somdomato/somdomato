@@ -4,8 +4,8 @@ import (
 	"time"
 
 	"github.com/a-h/templ"
-	"github.com/lucasbrum/somdomato/api/config"
-	"github.com/lucasbrum/somdomato/api/models"
+	"github.com/somdomato/somdomato/api/config"
+	"github.com/somdomato/somdomato/api/models"
 )
 
 var genreColors = map[config.Genre]string{

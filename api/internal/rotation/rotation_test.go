@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lucasbrum/somdomato/api/models"
+	"github.com/somdomato/somdomato/api/models"
 )
 
 func TestCanPlayAtCurrentTime(t *testing.T) {
