@@ -65,6 +65,18 @@ type ArtistDetailData struct {
 
 templ ArtistDetail(data ArtistDetailData) {
 	@templates.Layout(data.Artist, &data.Player, data.IsAdmin) {
+		<a
+			href="/artistas"
+			onclick="try{var u=new window.URL(document.referrer);if(u.origin===location.origin&&u.pathname==='/artistas'){event.preventDefault();setTimeout(function(){history.back();},0);}}catch(e){}"
+			class="mb-4 inline-flex items-center gap-1.5 rounded-full bg-surface-raised px-3 py-1.5 text-sm font-medium text-neutral-300 shadow ring-1 ring-white/10 transition hover:-translate-x-0.5 hover:bg-white/10 hover:text-white active:translate-x-0"
+		>
+			<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-4 w-4 shrink-0">
+				<path fill-rule="evenodd" d="M17 10a.75.75 0 0 1-.75.75H5.612l4.158 3.96a.75.75 0 1 1-1.04 1.08l-5.5-5.25a.75.75 0 0 1 0-1.08l5.5-5.25a.75.75 0 1 1 1.04 1.08L5.612 9.25H16.25A.75.75 0 0 1 17 10Z" clip-rule="evenodd"></path>
+			</svg>
+			<span class="hidden sm:inline">Voltar a todos os artistas</span>
+			<span class="sm:hidden">Artistas</span>
+		</a>
+
 		<div class="flex items-center gap-4">
 			if len(data.Songs) > 0 {
 				<img src={ data.Songs[0].Cover } alt={ data.Artist } class="h-20 w-20 shrink-0 rounded-xl object-cover shadow-lg"/>
