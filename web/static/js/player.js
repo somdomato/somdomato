@@ -12,8 +12,15 @@ document.querySelectorAll("[data-player]").forEach((root) => {
 	const volume = root.querySelector("[data-player-volume]");
 	const streamURL = root.dataset.streamUrl;
 	const loadTimeoutMS = 15000;
+	const volumeStorageKey = "sdm-volume";
 	let loadTimeout;
 
+	// O volume é salvo em localStorage porque trocar de estação recarrega a
+	// página inteira, o que reiniciaria o <audio> com o valor padrão do slider.
+	const storedVolume = localStorage.getItem(volumeStorageKey);
+	if (storedVolume !== null) {
+		volume.value = storedVolume;
+	}
 	audio.volume = Number(volume.value);
 
 	// Três estados possíveis: "idle" (parado), "loading" (conectando ou
@@ -59,18 +66,15 @@ document.querySelectorAll("[data-player]").forEach((root) => {
 		setMessage("Não foi possível iniciar a rádio. Tente recarregar.");
 	};
 
-	// Adiciona um timestamp à URL a cada play para evitar que o navegador
-	// (ou um CDN/proxy no caminho) sirva uma resposta de stream em cache.
-	const cacheBustedStreamURL = () => {
-		const separator = streamURL.includes("?") ? "&" : "?";
-		return `${streamURL}${separator}ts=${Date.now()}`;
-	};
-
 	const play = () => {
 		clearLoadTimeout();
 		setState("loading");
 		setMessage("");
-		audio.src = cacheBustedStreamURL();
+		// Sem query string: o Nginx já responde com Cache-Control: no-cache,
+		// no-store para este proxy, e a URL precisa terminar em ".mp3" para
+		// que o WebKit no iOS reconheça a stream como áudio (um "?ts=..."
+		// no final quebra essa detecção).
+		audio.src = streamURL;
 		startLoadTimeout();
 		audio.play().catch(fail);
 	};
@@ -109,6 +113,7 @@ document.querySelectorAll("[data-player]").forEach((root) => {
 
 	volume.addEventListener("input", () => {
 		audio.volume = Number(volume.value);
+		localStorage.setItem(volumeStorageKey, volume.value);
 	});
 
 	// Após trocar de estação (GenreSwitcher grava a flag antes de navegar),
