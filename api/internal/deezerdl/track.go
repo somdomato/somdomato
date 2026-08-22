@@ -9,6 +9,7 @@ import (
 	"io"
 	"net/http"
 	"strings"
+	"time"
 )
 
 // Track é o subconjunto de campos do gw-light que a rádio realmente usa —
@@ -90,11 +91,40 @@ func fetchTrack(ctx context.Context, sess *session, trackID string) (*Track, err
 	return res.Results.Data, nil
 }
 
+// coverFetchAttempts e coverFetchRetryDelay: o CDN de imagens do Deezer
+// falha de forma transitória com frequência maior que os endpoints de
+// gw-light — uma única tentativa perde capas que um segundo request, alguns
+// milissegundos depois, buscaria sem problema.
+const coverFetchAttempts = 3
+
+var coverFetchRetryDelay = 300 * time.Millisecond
+
 func fetchCoverImage(ctx context.Context, sess *session, track *Track) ([]byte, error) {
 	if track.Cover == "" {
 		return nil, errors.New("deezerdl: faixa sem capa")
 	}
 	url := fmt.Sprintf("https://e-cdn-images.dzcdn.net/images/cover/%s/500x500-000000-80-0-0.jpg", track.Cover)
+
+	var lastErr error
+	for attempt := range coverFetchAttempts {
+		if attempt > 0 {
+			select {
+			case <-ctx.Done():
+				return nil, ctx.Err()
+			case <-time.After(coverFetchRetryDelay):
+			}
+		}
+
+		data, err := doFetchCoverImage(ctx, sess, url)
+		if err == nil {
+			return data, nil
+		}
+		lastErr = err
+	}
+	return nil, lastErr
+}
+
+func doFetchCoverImage(ctx context.Context, sess *session, url string) ([]byte, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return nil, err

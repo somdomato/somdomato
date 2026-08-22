@@ -117,7 +117,15 @@ func (e *Evaluator) tick(ctx context.Context) {
 		genre = string(config.DefaultGenre)
 	}
 
+	// A capa embutida no ID3 é preferida (arquivo já local, sem depender de
+	// rede), mas o download pode ter falhado em anexá-la (ver comentário de
+	// fetchCoverImage best-effort em deezerdl/download.go) — nesse caso cai
+	// para a miniatura já resolvida na busca do Deezer antes de desistir e
+	// usar o logo genérico.
 	coverURL, _ := cover.ExtractAndSave(upload.Path, e.coversDir)
+	if coverURL == "" && upload.Thumbnail != nil && *upload.Thumbnail != "" {
+		coverURL = *upload.Thumbnail
+	}
 	if coverURL == "" {
 		coverURL = cover.DefaultCover
 	}

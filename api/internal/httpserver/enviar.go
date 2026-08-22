@@ -219,6 +219,7 @@ func handleEnviarBaixar(app *App) http.HandlerFunc {
 		trackID := r.FormValue("track_id")
 		title := r.FormValue("title")
 		artist := r.FormValue("artist")
+		thumbnail := r.FormValue("thumbnail")
 
 		if trackID == "" || title == "" || artist == "" {
 			http.Error(w, "dados inválidos", http.StatusBadRequest)
@@ -239,7 +240,7 @@ func handleEnviarBaixar(app *App) http.HandlerFunc {
 		activeJobs.Add(1)
 
 		clientIP := clientIP(r)
-		go runDownloadJob(app, job, jobID, trackID, title, artist, clientIP)
+		go runDownloadJob(app, job, jobID, trackID, title, artist, thumbnail, clientIP)
 
 		render(w, components.EnviarJobStarted(jobID, title, artist))
 	}
@@ -249,7 +250,7 @@ func handleEnviarBaixar(app *App) http.HandlerFunc {
 // disparou já respondeu antes dela terminar, então usa um contexto próprio
 // (não o da requisição, que seria cancelado no fim do handler) com um
 // timeout generoso.
-func runDownloadJob(app *App, job *downloadJob, jobID, trackID, title, artist, clientIP string) {
+func runDownloadJob(app *App, job *downloadJob, jobID, trackID, title, artist, thumbnail, clientIP string) {
 	defer func() {
 		activeJobs.Add(-1)
 		job.finish()
@@ -277,7 +278,7 @@ func runDownloadJob(app *App, job *downloadJob, jobID, trackID, title, artist, c
 	}
 
 	if _, err := app.Uploads.Create(ctx, uploads.CreateInput{
-		Title: result.Title, Artist: result.Artist, DeezerID: trackID,
+		Title: result.Title, Artist: result.Artist, DeezerID: trackID, Thumbnail: thumbnail,
 		Filename: result.Filename, Path: result.Path, Duration: result.Duration, RequestedIP: clientIP,
 	}); err != nil {
 		app.Log.Error("salvando upload", "error", err)
