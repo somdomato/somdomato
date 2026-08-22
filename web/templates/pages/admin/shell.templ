@@ -10,7 +10,7 @@ import (
 templ Shell(title string, active string) {
 	@templates.Layout("Admin · "+title, nil, true) {
 		<div class="grid gap-6 md:grid-cols-[180px_1fr]">
-			<nav class="space-y-1 text-sm">
+			<nav hx-boost="true" class="space-y-1 text-sm">
 				@navLink("/admin", "Painel", active == "dashboard")
 				@navLink("/admin/musicas", "Músicas", active == "songs")
 				@navLink("/admin/pedidos", "Pedidos", active == "requests")
