@@ -18,7 +18,7 @@ templ Pedidos(data PedidosData) {
 		<h1 class="text-xl font-bold">Peça sua música</h1>
 		<p class="mt-1 text-sm text-neutral-400">Vale só para a rádio Geral.</p>
 
-		<form class="mt-4" hx-get="/pedidos/buscar" hx-target="#search-results" hx-trigger="input changed delay:300ms, search">
+		<form class="mt-4" hx-get="/pedidos/buscar" hx-target="#search-results" hx-trigger="input changed delay:300ms, search" onsubmit="event.preventDefault()">
 			<input
 				type="search"
 				name="q"

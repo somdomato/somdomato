@@ -26,19 +26,23 @@ func NewStore(pool *pgxpool.Pool, protections *protections.Store, queue *queue.S
 var ErrRepeated = fmt.Errorf("música bloqueada por proteção anti-repetição")
 
 // Add valida a proteção anti-repetição, insere o pedido e ressincroniza a
-// fila do "geral" (única stream que aceita pedidos).
-func (s *Store) Add(ctx context.Context, songID int64) (protections.RepetitionResult, error) {
+// fila do "geral" (única stream que aceita pedidos). skipRepetitionCheck
+// permite que admins e super admins logados ignorem as restrições de
+// artista/música repetidos.
+func (s *Store) Add(ctx context.Context, songID int64, skipRepetitionCheck bool) (protections.RepetitionResult, error) {
 	var title, artist string
 	if err := s.pool.QueryRow(ctx, `SELECT title, artist FROM songs WHERE id = $1`, songID).Scan(&title, &artist); err != nil {
 		return protections.RepetitionResult{}, fmt.Errorf("buscando música do pedido: %w", err)
 	}
 
-	result, err := s.protections.CheckRepetition(ctx, songID, title, artist)
-	if err != nil {
-		return protections.RepetitionResult{}, err
-	}
-	if result.Repeated {
-		return result, nil
+	if !skipRepetitionCheck {
+		result, err := s.protections.CheckRepetition(ctx, songID, title, artist)
+		if err != nil {
+			return protections.RepetitionResult{}, err
+		}
+		if result.Repeated {
+			return result, nil
+		}
 	}
 
 	var maxOrder int

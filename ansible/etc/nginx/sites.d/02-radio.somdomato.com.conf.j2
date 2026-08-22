@@ -35,7 +35,12 @@ server {
 
         # O player está em outro origin (www/somdomato.com), portanto a
         # resposta da rádio precisa permanecer legível pelo navegador mesmo
-        # quando Nginx responde um erro em vez do Icecast.
+        # quando Nginx responde um erro em vez do Icecast. O Icecast já
+        # envia seu próprio Access-Control-Allow-Origin; sem os hides abaixo
+        # o header sai duplicado na resposta (inválido pela spec de CORS e
+        # rejeitado por navegadores mais estritos, como o Safari/WebKit do iOS).
+        proxy_hide_header Access-Control-Allow-Origin;
+        proxy_hide_header Cache-Control;
         add_header Access-Control-Allow-Origin "*" always;
         add_header Cache-Control "no-cache, no-store, must-revalidate" always;
     }

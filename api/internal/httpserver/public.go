@@ -9,6 +9,7 @@ import (
 
 	"github.com/lucasbrum/somdomato/api/config"
 	"github.com/lucasbrum/somdomato/api/internal/cover"
+	"github.com/lucasbrum/somdomato/api/rbac"
 	"github.com/lucasbrum/somdomato/web/templates/components"
 	"github.com/lucasbrum/somdomato/web/templates/pages"
 )
@@ -145,7 +146,12 @@ func handlePedidosSolicitar(app *App) http.HandlerFunc {
 			return
 		}
 
-		result, err := app.Requests.Add(r.Context(), songID)
+		skipRepetitionCheck := false
+		if claims := claimsFromRequest(app, r); claims != nil {
+			skipRepetitionCheck = claims.Role == string(rbac.RoleAdmin) || claims.Role == string(rbac.RoleSuperAdmin)
+		}
+
+		result, err := app.Requests.Add(r.Context(), songID, skipRepetitionCheck)
 		if err != nil {
 			app.Log.Error("adicionando pedido", "error", err)
 			_ = components.RequestFeedback("Erro ao processar o pedido.", false).Render(r.Context(), w)

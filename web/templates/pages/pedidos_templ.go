@@ -54,7 +54,7 @@ func Pedidos(data PedidosData) templ.Component {
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<h1 class=\"text-xl font-bold\">Peça sua música</h1><p class=\"mt-1 text-sm text-neutral-400\">Vale só para a rádio Geral.</p><form class=\"mt-4\" hx-get=\"/pedidos/buscar\" hx-target=\"#search-results\" hx-trigger=\"input changed delay:300ms, search\"><input type=\"search\" name=\"q\" value=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<h1 class=\"text-xl font-bold\">Peça sua música</h1><p class=\"mt-1 text-sm text-neutral-400\">Vale só para a rádio Geral.</p><form class=\"mt-4\" hx-get=\"/pedidos/buscar\" hx-target=\"#search-results\" hx-trigger=\"input changed delay:300ms, search\" onsubmit=\"event.preventDefault()\"><input type=\"search\" name=\"q\" value=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
