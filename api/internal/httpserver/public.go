@@ -105,7 +105,7 @@ func buildPlayerData(ctx context.Context, app *App, genre config.Genre) componen
 
 func fetchRecentlyPlayed(ctx context.Context, app *App, genre string, limit int) ([]components.SongListItem, error) {
 	rows, err := app.Pool.Query(ctx, `
-		SELECT s.id, s.title, s.artist, s.cover FROM queue_entries qe
+		SELECT s.id, s.title, s.artist, s.cover, qe.ended_at FROM queue_entries qe
 		JOIN songs s ON s.id = qe.song_id
 		WHERE qe.genre = $1 AND qe.status = 'played'
 		ORDER BY qe.id DESC LIMIT $2`, genre, limit)
@@ -117,8 +117,12 @@ func fetchRecentlyPlayed(ctx context.Context, app *App, genre string, limit int)
 	var out []components.SongListItem
 	for rows.Next() {
 		var item components.SongListItem
-		if err := rows.Scan(&item.ID, &item.Title, &item.Artist, &item.Cover); err != nil {
+		var endedAt *time.Time
+		if err := rows.Scan(&item.ID, &item.Title, &item.Artist, &item.Cover, &endedAt); err != nil {
 			return nil, err
+		}
+		if endedAt != nil {
+			item.PlayedAt = *endedAt
 		}
 		out = append(out, item)
 	}

@@ -1,25 +1,28 @@
 package components
 
+import "time"
+
 type SongListItem struct {
 	ID        int64
 	Title     string
 	Artist    string
 	Cover     string
 	IsRequest bool
+	PlayedAt  time.Time
 }
 
 // SourceBadge sinaliza se a música entrou na fila por pedido de um ouvinte
 // ou por seleção automática do Auto DJ.
 templ SourceBadge(isRequest bool) {
 	if isRequest {
-		<span class="inline-flex shrink-0 items-center gap-1 rounded-full bg-brand-500/15 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-brand-300 ring-1 ring-inset ring-brand-400/25">
+		<span class="badge-pill self-start bg-brand-500/15 text-brand-300 ring-brand-400/25">
 			<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-2.5 w-2.5 shrink-0">
 				<path d="M10 2a6 6 0 0 0-6 6v3.586l-.707.707A1 1 0 0 0 4 14h12a1 1 0 0 0 .707-1.707L16 11.586V8a6 6 0 0 0-6-6ZM8.5 16a1.5 1.5 0 0 0 3 0h-3Z"></path>
 			</svg>
 			Pedido
 		</span>
 	} else {
-		<span class="inline-flex shrink-0 items-center gap-1 rounded-full bg-neutral-800 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-neutral-400 ring-1 ring-inset ring-white/10">
+		<span class="badge-pill self-start bg-neutral-800 text-neutral-400 ring-white/10">
 			<span class="h-1 w-1 shrink-0 rounded-full bg-neutral-500"></span>
 			Auto DJ
 		</span>
@@ -53,6 +56,8 @@ templ songList(title string, items []SongListItem, emptyMessage string, showSour
 						</div>
 						if showSource {
 							@SourceBadge(item.IsRequest)
+						} else if !item.PlayedAt.IsZero() {
+							<time datetime={ item.PlayedAt.UTC().Format(time.RFC3339) } data-relative="true" class="shrink-0 self-start text-[10px] text-neutral-500"></time>
 						}
 					</li>
 				}
