@@ -35,6 +35,13 @@
   --color-surface-raised: oklch(0.21 0.01 260);
 }
 
+/* Selo pequeno e discreto usado em cada item de lista (origem, contagem de
+   pedidos, tempo relativo) — mesmo tamanho/alinhamento, cor variando por
+   contexto. */
+.badge-pill {
+  @apply inline-flex shrink-0 items-center gap-1 rounded-full px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider ring-1 ring-inset;
+}
+
 /* Scroll horizontal sem barra visível — usado no menu do header em telas
    pequenas, onde os itens não podem quebrar linha. */
 .scrollbar-hide {

@@ -57,7 +57,7 @@ templ songList(title string, items []SongListItem, emptyMessage string, showSour
 						if showSource {
 							@SourceBadge(item.IsRequest)
 						} else if !item.PlayedAt.IsZero() {
-							<time datetime={ item.PlayedAt.UTC().Format(time.RFC3339) } data-relative="true" class="shrink-0 self-start text-[10px] text-neutral-500"></time>
+							<time datetime={ item.PlayedAt.UTC().Format(time.RFC3339) } data-relative="true" class="shrink-0 self-start text-[9px] font-medium tracking-wide text-neutral-500"></time>
 						}
 					</li>
 				}
@@ -88,7 +88,7 @@ templ TopRequestsList(title string, items []TopRequestItem, emptyMessage string)
 							<p class="truncate text-sm font-medium">{ item.Title }</p>
 							<p class="truncate text-xs text-neutral-400">{ item.Artist }</p>
 						</div>
-						<span class="shrink-0 rounded-full bg-brand-600/20 px-2 py-0.5 text-xs font-medium text-brand-300">
+						<span class="badge-pill self-start bg-amber-500/15 text-amber-300 ring-amber-400/25">
 							{ itoa(int64(item.Count)) }x
 						</span>
 					</li>

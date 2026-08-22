@@ -11,7 +11,11 @@ templ Layout(title string, player *components.PlayerData, isAdmin bool) {
 		<head>
 			<meta charset="UTF-8" />
 			<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-			<title>{ title } · Som do Mato</title>
+			if title == "" {
+				<title>Som do Mato</title>
+			} else {
+				<title>{ title } · Som do Mato</title>
+			}
 			<link rel="icon" type="image/svg+xml" href={ "/static/images/logotipo.svg?v=" + web.AssetVersion() } />
 			<link rel="stylesheet" href={ "/static/css/output.css?v=" + web.AssetVersion() }/>
 			<script src={ "/static/js/htmx.min.js?v=" + web.AssetVersion() }></script>

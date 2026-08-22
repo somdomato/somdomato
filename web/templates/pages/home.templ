@@ -14,7 +14,7 @@ type HomeData struct {
 }
 
 templ Home(data HomeData) {
-	@templates.Layout("Rádio ao vivo", &data.Player, data.IsAdmin) {
+	@templates.Layout("", &data.Player, data.IsAdmin) {
 		<div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
 			@components.SongList("Últimas", data.Last, "Ainda não há histórico nesta stream.")
 			@components.SongListWithSource("Próximas", data.Next, "A fila está sendo preparada.")

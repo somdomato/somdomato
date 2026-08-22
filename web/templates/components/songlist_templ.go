@@ -255,7 +255,7 @@ func songList(title string, items []SongListItem, emptyMessage string, showSourc
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "\" data-relative=\"true\" class=\"shrink-0 self-start text-[10px] text-neutral-500\"></time>")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "\" data-relative=\"true\" class=\"shrink-0 self-start text-[9px] font-medium tracking-wide text-neutral-500\"></time>")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
@@ -412,7 +412,7 @@ func TopRequestsList(title string, items []TopRequestItem, emptyMessage string) 
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 28, "</p></div><span class=\"shrink-0 rounded-full bg-brand-600/20 px-2 py-0.5 text-xs font-medium text-brand-300\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 28, "</p></div><span class=\"badge-pill self-start bg-amber-500/15 text-amber-300 ring-amber-400/25\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
