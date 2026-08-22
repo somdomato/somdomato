@@ -9,6 +9,7 @@ import (
 
 	"github.com/somdomato/somdomato/api/config"
 	"github.com/somdomato/somdomato/api/internal/cover"
+	"github.com/somdomato/somdomato/api/models"
 	"github.com/somdomato/somdomato/api/rbac"
 	"github.com/somdomato/somdomato/web/templates/components"
 	"github.com/somdomato/somdomato/web/templates/pages"
@@ -54,7 +55,7 @@ func handleHome(app *App) http.HandlerFunc {
 				if len(next) == 10 {
 					break
 				}
-				next = append(next, components.SongListItem{ID: e.SongID, Title: e.Title, Artist: e.Artist, Cover: e.Cover})
+				next = append(next, components.SongListItem{ID: e.SongID, Title: e.Title, Artist: e.Artist, Cover: e.Cover, IsRequest: e.Source == models.SourceRequest})
 			}
 		}
 

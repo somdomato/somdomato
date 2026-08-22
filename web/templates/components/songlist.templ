@@ -1,13 +1,43 @@
 package components
 
 type SongListItem struct {
-	ID     int64
-	Title  string
-	Artist string
-	Cover  string
+	ID        int64
+	Title     string
+	Artist    string
+	Cover     string
+	IsRequest bool
+}
+
+// SourceBadge sinaliza se a música entrou na fila por pedido de um ouvinte
+// ou por seleção automática do Auto DJ.
+templ SourceBadge(isRequest bool) {
+	if isRequest {
+		<span class="inline-flex shrink-0 items-center gap-1 rounded-full bg-brand-500/15 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-brand-300 ring-1 ring-inset ring-brand-400/25">
+			<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-2.5 w-2.5 shrink-0">
+				<path d="M10 2a6 6 0 0 0-6 6v3.586l-.707.707A1 1 0 0 0 4 14h12a1 1 0 0 0 .707-1.707L16 11.586V8a6 6 0 0 0-6-6ZM8.5 16a1.5 1.5 0 0 0 3 0h-3Z"></path>
+			</svg>
+			Pedido
+		</span>
+	} else {
+		<span class="inline-flex shrink-0 items-center gap-1 rounded-full bg-neutral-800 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-neutral-400 ring-1 ring-inset ring-white/10">
+			<span class="h-1 w-1 shrink-0 rounded-full bg-neutral-500"></span>
+			Auto DJ
+		</span>
+	}
 }
 
 templ SongList(title string, items []SongListItem, emptyMessage string) {
+	@songList(title, items, emptyMessage, false)
+}
+
+// SongListWithSource é igual a SongList, mas exibe o SourceBadge (Pedido /
+// Auto DJ) em cada item — usado na fila "Próximas", onde a origem da
+// música ainda é relevante para o ouvinte.
+templ SongListWithSource(title string, items []SongListItem, emptyMessage string) {
+	@songList(title, items, emptyMessage, true)
+}
+
+templ songList(title string, items []SongListItem, emptyMessage string, showSource bool) {
 	<section class="mt-6 min-w-0">
 		<h3 class="mb-2 text-sm font-semibold uppercase tracking-wide text-neutral-400">{ title }</h3>
 		if len(items) == 0 {
@@ -17,10 +47,13 @@ templ SongList(title string, items []SongListItem, emptyMessage string) {
 				for _, item := range items {
 					<li class="flex min-w-0 items-center gap-3 px-4 py-2">
 						<img src={ item.Cover } alt={ item.Title } class="h-10 w-10 shrink-0 rounded object-cover"/>
-						<div class="min-w-0">
+						<div class="min-w-0 flex-1">
 							<p class="truncate text-sm font-medium">{ item.Title }</p>
 							<p class="truncate text-xs text-neutral-400">{ item.Artist }</p>
 						</div>
+						if showSource {
+							@SourceBadge(item.IsRequest)
+						}
 					</li>
 				}
 			</ul>
