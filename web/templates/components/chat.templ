@@ -1,0 +1,20 @@
+package components
+
+// ChatEmbed embute o webchat IRC (KiwiIRC) rodando em irc.somdomato.com. O
+// client.json de lá já entra direto no canal #somdomato em modo restrito
+// (sem troca de servidor/canal pelo usuário), então o iframe só precisa da
+// URL raiz — sem parâmetros de query.
+templ ChatEmbed() {
+	<section class="mt-6 min-w-0">
+		<h3 class="mb-2 text-sm font-semibold uppercase tracking-wide text-neutral-400">Chat</h3>
+		<div class="overflow-hidden rounded-lg bg-surface-raised">
+			<iframe
+				src="https://irc.somdomato.com/"
+				title="Chat da Rádio Som do Mato"
+				loading="lazy"
+				class="h-[420px] w-full border-0 sm:h-[480px]"
+				referrerpolicy="strict-origin-when-cross-origin"
+			></iframe>
+		</div>
+	</section>
+}
