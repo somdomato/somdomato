@@ -16,9 +16,15 @@ type HomeData struct {
 templ Home(data HomeData) {
 	@templates.Layout("", &data.Player, data.IsAdmin) {
 		<div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-			@components.SongList("Últimas", data.Last, "Ainda não há histórico nesta stream.")
-			@components.SongListWithSource("Próximas", data.Next, "A fila está sendo preparada.")
-			@components.TopRequestsList("Top 10", data.Top10, "Ainda não há pedidos suficientes.")
+			<div class="order-1">
+				@components.SongList("Últimas", data.Last, "Ainda não há histórico nesta stream.")
+			</div>
+			<div class="order-3 md:order-2">
+				@components.TopRequestsList("Top 10", data.Top10, "Ainda não há pedidos suficientes.")
+			</div>
+			<div class="order-2 md:order-3">
+				@components.SongListWithSource("Próximas", data.Next, "A fila está sendo preparada.")
+			</div>
 		</div>
 	}
 }

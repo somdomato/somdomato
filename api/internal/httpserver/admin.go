@@ -470,6 +470,11 @@ func pathInt64(r *http.Request, key string) int64 {
 	return v
 }
 
+// isHXRequest identifica um pedido htmx por um fragmento específico (ex.: a
+// busca da tabela de músicas via hx-get). Uma navegação hx-boost também manda
+// HX-Request: true, mas com HX-Boosted: true junto — nesse caso queremos a
+// página completa (com Shell/Layout), senão o boost troca o <body> por só o
+// fragmento e o layout do painel some até um refresh.
 func isHXRequest(r *http.Request) bool {
-	return r.Header.Get("HX-Request") == "true"
+	return r.Header.Get("HX-Request") == "true" && r.Header.Get("HX-Boosted") != "true"
 }

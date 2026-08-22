@@ -67,15 +67,18 @@ document.querySelectorAll("[data-player]").forEach((root) => {
 		return { jpg: "image/jpeg", jpeg: "image/jpeg", png: "image/png", webp: "image/webp", gif: "image/gif" }[ext] || "";
 	};
 
-	const updateMediaSessionMetadata = () => {
-		if (!("mediaSession" in navigator) || !nowPlaying) return;
-		const img = nowPlaying.querySelector("img");
-		const title = img?.alt || radioName || "Som do Mato";
-		const artist = nowPlaying.querySelector("p.text-neutral-400")?.textContent || radioName;
+	// Usa as dimensões reais da imagem (img.naturalWidth/Height) em vez de um
+	// tamanho fixo: declarar "512x512" para uma capa embutida de baixa
+	// resolução faz o SO ampliar essa imagem pequena, deixando a arte
+	// borrada na tela de bloqueio/central multimídia.
+	const applyMediaSessionMetadata = (img, title, artist) => {
 		const artwork = img?.src
 			? [
-					{ src: img.src, sizes: "96x96", type: mimeTypeFor(img.src) },
-					{ src: img.src, sizes: "512x512", type: mimeTypeFor(img.src) },
+					{
+						src: img.src,
+						...(img.naturalWidth && img.naturalHeight ? { sizes: `${img.naturalWidth}x${img.naturalHeight}` } : {}),
+						type: mimeTypeFor(img.src),
+					},
 				]
 			: [];
 
@@ -85,6 +88,20 @@ document.querySelectorAll("[data-player]").forEach((root) => {
 			album: radioName,
 			artwork,
 		});
+	};
+
+	const updateMediaSessionMetadata = () => {
+		if (!("mediaSession" in navigator) || !nowPlaying) return;
+		const img = nowPlaying.querySelector("img");
+		const title = img?.alt || radioName || "Som do Mato";
+		const artist = nowPlaying.querySelector("p.text-neutral-400")?.textContent || radioName;
+
+		if (img && img.src && !(img.complete && img.naturalWidth)) {
+			img.addEventListener("load", () => applyMediaSessionMetadata(img, title, artist), { once: true });
+			return;
+		}
+
+		applyMediaSessionMetadata(img, title, artist);
 	};
 
 	if ("mediaSession" in navigator) {

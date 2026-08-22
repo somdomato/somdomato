@@ -167,6 +167,13 @@ func handleMusicStarted(app *App) http.HandlerFunc {
 			return
 		}
 
+		// Promover pending->current libera uma vaga em "scheduled": repõe
+		// aqui para que a fila "Próximas" volte a mostrar QueueSize itens
+		// imediatamente, em vez de só no próximo poll do Liquidsoap.
+		if err := app.Queue.EnsureQueue(ctx, genre); err != nil {
+			app.Log.Error("ensure queue (post set-current)", "error", err, "genre", genre)
+		}
+
 		broadcastSongChanged(app, components.NowPlaying{
 			ID: confirmed.SongID, Title: confirmed.Title, Artist: confirmed.Artist,
 			Cover: confirmed.Cover, Genre: confirmed.Genre,
