@@ -107,7 +107,7 @@ func NowPlayingCard(now NowPlaying) templ.Component {
 			templ_7745c5c3_Var3 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "<div class=\"relative h-11 w-11 shrink-0\"><img src=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "<div class=\"relative h-11 w-11 shrink-0 sm:h-9 sm:w-9\"><img src=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -133,7 +133,7 @@ func NowPlayingCard(now NowPlaying) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "\" class=\"h-11 w-11 rounded-lg object-cover shadow-md ring-1 ring-white/10\"> <span class=\"absolute -right-1 -top-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-red-600 ring-2 ring-surface-raised\" title=\"Ao vivo\"><span class=\"h-1.5 w-1.5 animate-pulse rounded-full bg-white\"></span></span></div><div class=\"min-w-0 leading-tight\"><p class=\"max-w-[8rem] truncate text-sm font-semibold sm:max-w-[10rem]\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "\" class=\"h-11 w-11 rounded-lg object-cover shadow-sm ring-1 ring-white/10 sm:h-9 sm:w-9\"> <span class=\"absolute -right-1 -top-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-red-600 ring-2 ring-surface-raised\" title=\"Ao vivo\"><span class=\"h-1.5 w-1.5 animate-pulse rounded-full bg-white\"></span></span></div><div class=\"min-w-0 leading-tight\"><p class=\"max-w-[8rem] truncate text-sm font-semibold sm:max-w-[10rem]\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

@@ -43,6 +43,9 @@ func handleHome(app *App) http.HandlerFunc {
 		var next []components.SongListItem
 		if err == nil {
 			for _, e := range queueEntries {
+				if len(next) == 10 {
+					break
+				}
 				next = append(next, components.SongListItem{ID: e.SongID, Title: e.Title, Artist: e.Artist, Cover: e.Cover})
 			}
 		}
