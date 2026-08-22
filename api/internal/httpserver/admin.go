@@ -124,20 +124,63 @@ func handleAdminDashboard(app *App) http.HandlerFunc {
 
 // --- Músicas -------------------------------------------------------------
 
+// songsPerPageOptions são os tamanhos de página aceitos em /admin/musicas;
+// 0 representa "Tudo" (sem paginação).
+var songsPerPageOptions = []int{20, 50, 100, 200, 0}
+
+func songsPerPage(r *http.Request) int {
+	raw := r.URL.Query().Get("per_page")
+	if raw == "" {
+		return 50
+	}
+	n, err := strconv.Atoi(raw)
+	if err != nil {
+		return 50
+	}
+	for _, opt := range songsPerPageOptions {
+		if opt == n {
+			return n
+		}
+	}
+	return 50
+}
+
 func handleAdminSongsList(app *App) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		query := r.URL.Query().Get("q")
-		list, err := app.Songs.ListPaged(r.Context(), query, 50, 0)
+		perPage := songsPerPage(r)
+		page, _ := strconv.Atoi(r.URL.Query().Get("page"))
+		if page < 1 {
+			page = 1
+		}
+		offset := 0
+		if perPage > 0 {
+			offset = (page - 1) * perPage
+		}
+
+		list, err := app.Songs.ListPaged(r.Context(), query, perPage, offset)
 		if err != nil {
 			app.Log.Error("listando músicas (admin)", "error", err)
 		}
+		total, err := app.Songs.CountFiltered(r.Context(), query)
+		if err != nil {
+			app.Log.Error("contando músicas (admin)", "error", err)
+		}
+
+		pageInfo := admintpl.SongsPageInfo{
+			Query:   query,
+			PerPage: perPage,
+			Page:    page,
+			Total:   total,
+		}
+
 		if isHXRequest(r) {
 			token := ensureCSRFCookie(w, r)
-			render(w, admintpl.SongsTable(list, token))
+			render(w, admintpl.SongsTable(list, token, pageInfo))
 			return
 		}
 		token := ensureCSRFCookie(w, r)
-		render(w, admintpl.SongsList(list, query, token))
+		render(w, admintpl.SongsList(list, query, token, pageInfo))
 	}
 }
 

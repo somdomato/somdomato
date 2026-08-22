@@ -7,7 +7,27 @@ import (
 	"github.com/somdomato/somdomato/api/models"
 )
 
-templ SongsList(songsList []models.Song, query, csrfToken string) {
+// SongsPageInfo carrega o estado de paginação da tela de músicas do admin.
+type SongsPageInfo struct {
+	Query   string
+	PerPage int // 0 = "Tudo" (sem paginação)
+	Page    int
+	Total   int
+}
+
+// TotalPages retorna o número de páginas, ou 1 quando PerPage é 0 ("Tudo").
+func (p SongsPageInfo) TotalPages() int {
+	if p.PerPage <= 0 {
+		return 1
+	}
+	pages := (p.Total + p.PerPage - 1) / p.PerPage
+	if pages < 1 {
+		return 1
+	}
+	return pages
+}
+
+templ SongsList(songsList []models.Song, query, csrfToken string, page SongsPageInfo) {
 	@Shell("Músicas", "songs") {
 		<h1 class="text-xl font-bold">Músicas</h1>
 		<form class="mt-4" hx-get="/admin/musicas" hx-target="#songs-table" hx-trigger="input changed delay:300ms">
@@ -15,13 +35,42 @@ templ SongsList(songsList []models.Song, query, csrfToken string) {
 				class="w-full rounded-lg bg-surface-raised px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-brand-500"/>
 		</form>
 		<div id="songs-table">
-			@SongsTable(songsList, csrfToken)
+			@SongsTable(songsList, csrfToken, page)
 		</div>
 	}
 }
 
-templ SongsTable(songsList []models.Song, csrfToken string) {
-	<table class="mt-4 w-full text-left text-sm">
+templ songsPerPageOption(value int, label string, current int) {
+	if value == current {
+		<option value={ itoaInt(value) } selected>{ label }</option>
+	} else {
+		<option value={ itoaInt(value) }>{ label }</option>
+	}
+}
+
+templ SongsTable(songsList []models.Song, csrfToken string, page SongsPageInfo) {
+	<div class="mt-4 flex items-center justify-between text-xs text-neutral-500">
+		<span>{ itoaInt(page.Total) } música(s)</span>
+		<form
+			hx-get="/admin/musicas"
+			hx-target="#songs-table"
+			hx-trigger="change"
+			class="flex items-center gap-2"
+		>
+			<input type="hidden" name="q" value={ page.Query }/>
+			<label class="flex items-center gap-2">
+				Por página
+				<select name="per_page" class="rounded-lg bg-surface-raised px-2 py-1">
+					@songsPerPageOption(20, "20", page.PerPage)
+					@songsPerPageOption(50, "50", page.PerPage)
+					@songsPerPageOption(100, "100", page.PerPage)
+					@songsPerPageOption(200, "200", page.PerPage)
+					@songsPerPageOption(0, "Tudo", page.PerPage)
+				</select>
+			</label>
+		</form>
+	</div>
+	<table class="mt-2 w-full text-left text-sm">
 		<thead class="text-xs uppercase text-neutral-500">
 			<tr>
 				<th class="px-3 py-2">Título</th>
@@ -60,6 +109,31 @@ templ SongsTable(songsList []models.Song, csrfToken string) {
 			}
 		</tbody>
 	</table>
+	if page.PerPage > 0 && page.TotalPages() > 1 {
+		<div class="mt-4 flex items-center justify-center gap-3 text-sm">
+			if page.Page > 1 {
+				<form hx-get="/admin/musicas" hx-target="#songs-table">
+					<input type="hidden" name="q" value={ page.Query }/>
+					<input type="hidden" name="per_page" value={ itoaInt(page.PerPage) }/>
+					<input type="hidden" name="page" value={ itoaInt(page.Page - 1) }/>
+					<button type="submit" class="rounded-lg bg-surface-raised px-3 py-1 hover:bg-surface-raised/70">Anterior</button>
+				</form>
+			} else {
+				<span class="rounded-lg px-3 py-1 text-neutral-600">Anterior</span>
+			}
+			<span class="text-neutral-400">Página { itoaInt(page.Page) } de { itoaInt(page.TotalPages()) }</span>
+			if page.Page < page.TotalPages() {
+				<form hx-get="/admin/musicas" hx-target="#songs-table">
+					<input type="hidden" name="q" value={ page.Query }/>
+					<input type="hidden" name="per_page" value={ itoaInt(page.PerPage) }/>
+					<input type="hidden" name="page" value={ itoaInt(page.Page + 1) }/>
+					<button type="submit" class="rounded-lg bg-surface-raised px-3 py-1 hover:bg-surface-raised/70">Próxima</button>
+				</form>
+			} else {
+				<span class="rounded-lg px-3 py-1 text-neutral-600">Próxima</span>
+			}
+		</div>
+	}
 }
 
 templ SongEdit(s models.Song, csrfToken string) {

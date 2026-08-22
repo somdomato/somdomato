@@ -13,9 +13,20 @@ document.querySelectorAll("[data-player]").forEach((root) => {
 	const nowPlaying = document.getElementById("now-playing");
 	const streamURL = root.dataset.streamUrl;
 	const radioName = root.dataset.radioName || "";
-	const loadTimeoutMS = 15000;
+	const loadTimeoutMS = 10000;
 	const volumeStorageKey = "sdm-volume";
+	// Falhas de stream costumam ser blips passageiros (Icecast/Liquidsoap
+	// reconectando, uma rajada de perda de pacote durante a navegação do
+	// site) — nunca um problema permanente. Por isso tentamos reconectar
+	// sozinhos algumas vezes, com backoff, antes de exibir qualquer erro
+	// para quem só está navegando e nem tocou no player. No pior caso (falha
+	// real do stream) isso adia a mensagem de erro em ~1 minuto — uma troca
+	// aceitável para eliminar falsos positivos de blips passageiros.
+	const maxRetries = 4;
+	const retryDelayMS = (attempt) => Math.min(1000 * 2 ** (attempt - 1), 6000);
 	let loadTimeout;
+	let retryTimeout;
+	let retryCount = 0;
 
 	// O volume é salvo em localStorage porque trocar de estação recarrega a
 	// página inteira, o que reiniciaria o <audio> com o valor padrão do slider.
@@ -33,9 +44,14 @@ document.querySelectorAll("[data-player]").forEach((root) => {
 		loadTimeout = undefined;
 	};
 
+	const clearRetryTimeout = () => {
+		window.clearTimeout(retryTimeout);
+		retryTimeout = undefined;
+	};
+
 	const startLoadTimeout = () => {
 		clearLoadTimeout();
-		loadTimeout = window.setTimeout(fail, loadTimeoutMS);
+		loadTimeout = window.setTimeout(handleStreamFailure, loadTimeoutMS);
 	};
 
 	const setMessage = (text) => {
@@ -131,19 +147,41 @@ document.querySelectorAll("[data-player]").forEach((root) => {
 
 	const stop = () => {
 		clearLoadTimeout();
+		clearRetryTimeout();
+		retryCount = 0;
 		audio.pause();
 		audio.removeAttribute("src");
 		audio.load();
 	};
 
-	const fail = () => {
-		stop();
-		setState("idle");
-		setMessage("Não foi possível iniciar a rádio. Tente recarregar.");
+	// Chamada em toda falha de stream (timeout de conexão, evento "error" do
+	// <audio>). Quedas do Icecast/Liquidsoap e blips de rede durante a
+	// navegação do site são passageiros — por isso reconectamos sozinhos
+	// algumas vezes com backoff antes de exigir uma ação do usuário. Só
+	// depois de esgotar as tentativas é que mostramos o erro vermelho.
+	const handleStreamFailure = () => {
+		clearLoadTimeout();
+		audio.pause();
+		audio.removeAttribute("src");
+		audio.load();
+
+		if (retryCount >= maxRetries) {
+			clearRetryTimeout();
+			retryCount = 0;
+			setState("idle");
+			setMessage("Não foi possível iniciar a rádio. Tente recarregar.");
+			return;
+		}
+
+		retryCount += 1;
+		setState("loading");
+		retryTimeout = window.setTimeout(() => play({ isRetry: true }), retryDelayMS(retryCount));
 	};
 
-	const play = ({ silent } = {}) => {
+	const play = ({ silent, isRetry } = {}) => {
 		clearLoadTimeout();
+		clearRetryTimeout();
+		if (!isRetry) retryCount = 0;
 		setState("loading");
 		setMessage("");
 		// Sem query string: o Nginx já responde com Cache-Control: no-cache,
@@ -163,7 +201,7 @@ document.querySelectorAll("[data-player]").forEach((root) => {
 				setState("idle");
 				return;
 			}
-			fail();
+			handleStreamFailure();
 		});
 	};
 
@@ -202,7 +240,7 @@ document.querySelectorAll("[data-player]").forEach((root) => {
 		// dispara "error" — sem essa checagem, pausar a rádio às vezes mostra
 		// a mensagem de falha mesmo sendo uma parada intencional.
 		if (audio.src) {
-			fail();
+			handleStreamFailure();
 		}
 	});
 

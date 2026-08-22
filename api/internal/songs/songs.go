@@ -94,17 +94,31 @@ func (s *Store) ListArtists(ctx context.Context) ([]string, error) {
 	return out, rows.Err()
 }
 
-// ListPaged é usado pela tela de administração de músicas.
+// ListPaged é usado pela tela de administração de músicas. limit <= 0
+// significa "sem limite" (retorna todos os resultados a partir de offset).
 func (s *Store) ListPaged(ctx context.Context, query string, limit, offset int) ([]models.Song, error) {
 	rows, err := s.pool.Query(ctx, `
 		SELECT `+selectFields+` FROM songs
 		WHERE $1 = '' OR title ILIKE '%' || $1 || '%' OR artist ILIKE '%' || $1 || '%'
-		ORDER BY created_at DESC LIMIT $2 OFFSET $3`, query, limit, offset)
+		ORDER BY created_at DESC LIMIT NULLIF($2, 0) OFFSET $3`, query, limit, offset)
 	if err != nil {
 		return nil, fmt.Errorf("listando músicas (admin): %w", err)
 	}
 	defer rows.Close()
 	return scanAll(rows)
+}
+
+// CountFiltered conta as músicas que combinam com o mesmo filtro usado em
+// ListPaged — usado para calcular o total de páginas na tela de admin.
+func (s *Store) CountFiltered(ctx context.Context, query string) (int, error) {
+	var total int
+	err := s.pool.QueryRow(ctx, `
+		SELECT count(*) FROM songs
+		WHERE $1 = '' OR title ILIKE '%' || $1 || '%' OR artist ILIKE '%' || $1 || '%'`, query).Scan(&total)
+	if err != nil {
+		return 0, fmt.Errorf("contando músicas (admin): %w", err)
+	}
+	return total, nil
 }
 
 func scanAll(rows pgx.Rows) ([]models.Song, error) {
