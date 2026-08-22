@@ -25,6 +25,13 @@ func registerPublicRoutes(mux *http.ServeMux, app *App) {
 	mux.HandleFunc("GET /artistas/{artist}", handleArtistDetail(app))
 }
 
+// isAdminRequest indica se a sessão atual pertence a um papel com acesso
+// ao painel /admin — usado para exibir o link no menu público.
+func isAdminRequest(app *App, r *http.Request) bool {
+	claims := claimsFromRequest(app, r)
+	return claims != nil && rbac.IsAdminRole(claims.Role)
+}
+
 func genreFromQuery(r *http.Request) config.Genre {
 	g := r.URL.Query().Get("genre")
 	if g == "" || !config.IsValidGenre(g) {
@@ -51,7 +58,7 @@ func handleHome(app *App) http.HandlerFunc {
 		}
 
 		render(w, pages.Home(pages.HomeData{
-			Player: buildPlayerData(ctx, app, genre), Last: last, Next: next,
+			Player: buildPlayerData(ctx, app, genre), Last: last, Next: next, IsAdmin: isAdminRequest(app, r),
 		}))
 	}
 }
@@ -114,7 +121,7 @@ func handlePedidos(app *App) http.HandlerFunc {
 		}
 
 		render(w, pages.Pedidos(pages.PedidosData{
-			Player: buildPlayerData(r.Context(), app, config.DefaultGenre), CSRFToken: token, Pending: pendingItems,
+			Player: buildPlayerData(r.Context(), app, config.DefaultGenre), CSRFToken: token, Pending: pendingItems, IsAdmin: isAdminRequest(app, r),
 		}))
 	}
 }
@@ -175,7 +182,7 @@ func handleArtistas(app *App) http.HandlerFunc {
 			app.Log.Error("listando artistas", "error", err)
 		}
 		render(w, pages.Artistas(pages.ArtistasData{
-			Player: buildPlayerData(r.Context(), app, config.DefaultGenre), Artists: artists,
+			Player: buildPlayerData(r.Context(), app, config.DefaultGenre), Artists: artists, IsAdmin: isAdminRequest(app, r),
 		}))
 	}
 }
@@ -191,6 +198,6 @@ func handleArtistDetail(app *App) http.HandlerFunc {
 		for _, s := range songList {
 			titles = append(titles, s.Title)
 		}
-		render(w, pages.ArtistDetail(artist, titles, buildPlayerData(r.Context(), app, config.DefaultGenre)))
+		render(w, pages.ArtistDetail(artist, titles, buildPlayerData(r.Context(), app, config.DefaultGenre), isAdminRequest(app, r)))
 	}
 }

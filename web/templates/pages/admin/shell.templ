@@ -5,7 +5,7 @@ import "github.com/lucasbrum/somdomato/web/templates"
 // Shell é o layout comum de todas as telas do painel: navegação lateral +
 // conteúdo. Cada tela chama Shell(...) por dentro em vez de Layout direto.
 templ Shell(title string, active string) {
-	@templates.Layout("Admin · "+title, nil) {
+	@templates.Layout("Admin · "+title, nil, true) {
 		<div class="grid gap-6 md:grid-cols-[180px_1fr]">
 			<nav class="space-y-1 text-sm">
 				@navLink("/admin", "Painel", active == "dashboard")

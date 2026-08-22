@@ -3,7 +3,7 @@ package admin
 import "github.com/lucasbrum/somdomato/web/templates"
 
 templ Login(csrfToken string, errorMsg string) {
-	@templates.Layout("Login", nil) {
+	@templates.Layout("Login", nil, false) {
 		<div class="mx-auto max-w-sm">
 			<h1 class="text-xl font-bold">Painel administrativo</h1>
 			if errorMsg != "" {

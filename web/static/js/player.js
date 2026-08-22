@@ -121,7 +121,14 @@ document.querySelectorAll("[data-player]").forEach((root) => {
 			setState("idle");
 		}
 	});
-	audio.addEventListener("error", fail);
+	audio.addEventListener("error", () => {
+		// stop() remove o atributo src antes de chamar load(), o que também
+		// dispara "error" — sem essa checagem, pausar a rádio às vezes mostra
+		// a mensagem de falha mesmo sendo uma parada intencional.
+		if (audio.src) {
+			fail();
+		}
+	});
 
 	volume.addEventListener("input", () => {
 		audio.volume = Number(volume.value);

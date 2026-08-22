@@ -6,13 +6,14 @@ import (
 )
 
 type HomeData struct {
-	Player components.PlayerData
-	Last   []components.SongListItem
-	Next   []components.SongListItem
+	Player  components.PlayerData
+	Last    []components.SongListItem
+	Next    []components.SongListItem
+	IsAdmin bool
 }
 
 templ Home(data HomeData) {
-	@templates.Layout("Rádio ao vivo", &data.Player) {
+	@templates.Layout("Rádio ao vivo", &data.Player, data.IsAdmin) {
 		<div class="grid gap-6 md:grid-cols-2">
 			@components.SongList("Últimas", data.Last, "Ainda não há histórico nesta stream.")
 			@components.SongList("Próximas", data.Next, "A fila está sendo preparada.")

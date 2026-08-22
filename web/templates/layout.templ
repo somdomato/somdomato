@@ -5,7 +5,7 @@ import (
 	"github.com/lucasbrum/somdomato/web/templates/components"
 )
 
-templ Layout(title string, player *components.PlayerData) {
+templ Layout(title string, player *components.PlayerData, isAdmin bool) {
 	<!DOCTYPE html>
 	<html lang="pt-BR" class="dark">
 		<head>
@@ -18,7 +18,7 @@ templ Layout(title string, player *components.PlayerData) {
 			<script src={ "/static/js/htmx-sse.js?v=" + web.AssetVersion() }></script>
 		</head>
 		<body class="flex min-h-screen flex-col bg-surface text-neutral-100 font-sans" hx-ext="sse">
-			@Header(player)
+			@Header(player, isAdmin)
 			<main class="mx-auto w-full max-w-5xl flex-1 px-4 py-6">
 				{ children... }
 			</main>
@@ -30,7 +30,7 @@ templ Layout(title string, player *components.PlayerData) {
 // Header carrega hx-boost + hx-preserve para que a navegação entre páginas
 // troque só o <main>: o player (áudio, SSE, JS já ligados) segue tocando sem
 // interrupção em vez de recarregar a cada clique no menu.
-templ Header(player *components.PlayerData) {
+templ Header(player *components.PlayerData, isAdmin bool) {
 	<header id="site-header" hx-boost="true" hx-preserve="true" class="sticky top-0 z-40 border-b border-white/10 bg-surface-raised/95 backdrop-blur">
 		<div class="mx-auto max-w-5xl px-4">
 			<div class="flex flex-col items-center gap-2 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
@@ -43,6 +43,9 @@ templ Header(player *components.PlayerData) {
 					<a href="/pedidos" class="hover:text-brand-300">Pedidos</a>
 					<a href="/enviar" class="hover:text-brand-300">Enviar música</a>
 					<a href="/artistas" class="hover:text-brand-300">Artistas</a>
+					if isAdmin {
+						<a href="/admin" class="hover:text-brand-300">Painel admin</a>
+					}
 				</nav>
 			</div>
 			if player != nil {

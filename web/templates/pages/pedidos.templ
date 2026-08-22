@@ -11,10 +11,11 @@ type PedidosData struct {
 	Results   []components.SongListItem
 	Pending   []components.SongListItem
 	Query     string
+	IsAdmin   bool
 }
 
 templ Pedidos(data PedidosData) {
-	@templates.Layout("Pedidos", &data.Player) {
+	@templates.Layout("Pedidos", &data.Player, data.IsAdmin) {
 		<h1 class="text-xl font-bold">Peça sua música</h1>
 		<p class="mt-1 text-sm text-neutral-400">Vale só para a rádio Geral.</p>
 

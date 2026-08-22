@@ -43,7 +43,7 @@ func handleEnviar(app *App) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		token := ensureCSRFCookie(w, r)
 		render(w, pages.Enviar(pages.EnviarData{
-			Player: buildPlayerData(r.Context(), app, config.DefaultGenre), CSRFToken: token,
+			Player: buildPlayerData(r.Context(), app, config.DefaultGenre), CSRFToken: token, IsAdmin: isAdminRequest(app, r),
 		}))
 	}
 }

@@ -10,10 +10,11 @@ type EnviarData struct {
 	CSRFToken string
 	Results   []components.EnviarSearchItem
 	Query     string
+	IsAdmin   bool
 }
 
 templ Enviar(data EnviarData) {
-	@templates.Layout("Enviar música", &data.Player) {
+	@templates.Layout("Enviar música", &data.Player, data.IsAdmin) {
 		<h1 class="text-xl font-bold">Manda tua música pra rádio</h1>
 		<p class="mt-1 text-sm text-neutral-400">
 			Busque no Deezer e peça o download. Toda música passa por uma avaliação automática antes de entrar no ar

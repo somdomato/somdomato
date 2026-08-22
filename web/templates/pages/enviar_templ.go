@@ -18,6 +18,7 @@ type EnviarData struct {
 	CSRFToken string
 	Results   []components.EnviarSearchItem
 	Query     string
+	IsAdmin   bool
 }
 
 func Enviar(data EnviarData) templ.Component {
@@ -60,7 +61,7 @@ func Enviar(data EnviarData) templ.Component {
 			var templ_7745c5c3_Var3 string
 			templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.ResolveAttributeValue(data.Query)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/pages/enviar.templ`, Line: 27, Col: 22}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/pages/enviar.templ`, Line: 28, Col: 22}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var3)
 			if templ_7745c5c3_Err != nil {
@@ -82,7 +83,7 @@ func Enviar(data EnviarData) templ.Component {
 			}
 			return nil
 		})
-		templ_7745c5c3_Err = templates.Layout("Enviar música", &data.Player).Render(templ.WithChildren(ctx, templ_7745c5c3_Var2), templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = templates.Layout("Enviar música", &data.Player, data.IsAdmin).Render(templ.WithChildren(ctx, templ_7745c5c3_Var2), templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
