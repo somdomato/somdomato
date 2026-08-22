@@ -13,6 +13,7 @@ const (
 	PermJinglesManage  Permission = "jingles:manage"
 	PermLogsView       Permission = "logs:view"
 	PermUsersManage    Permission = "users:manage"
+	PermStatsView      Permission = "stats:view"
 )
 
 var PermissionLabels = map[Permission]string{
@@ -23,6 +24,7 @@ var PermissionLabels = map[Permission]string{
 	PermJinglesManage:  "Gerenciar Vinhetas",
 	PermLogsView:       "Ver Logs",
 	PermUsersManage:    "Gerenciar Usuários",
+	PermStatsView:      "Ver Estatísticas",
 }
 
 type Role string

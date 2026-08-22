@@ -44,6 +44,7 @@ func handleHome(app *App) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		genre := genreFromQuery(r)
+		trackPageView(app, w, r, r.URL.Path)
 
 		last, _ := fetchRecentlyPlayed(ctx, app, string(genre), 10)
 		queueEntries, err := app.Queue.GetQueue(ctx, string(genre))
@@ -125,6 +126,7 @@ func fetchRecentlyPlayed(ctx context.Context, app *App, genre string, limit int)
 
 func handlePedidos(app *App) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		trackPageView(app, w, r, r.URL.Path)
 		token := ensureCSRFCookie(w, r)
 		pending, _ := app.Requests.ListPending(r.Context())
 
@@ -190,6 +192,7 @@ func handlePedidosSolicitar(app *App) http.HandlerFunc {
 
 func handleArtistas(app *App) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		trackPageView(app, w, r, r.URL.Path)
 		artists, err := app.Songs.ListArtists(r.Context())
 		if err != nil {
 			app.Log.Error("listando artistas", "error", err)
@@ -202,6 +205,7 @@ func handleArtistas(app *App) http.HandlerFunc {
 
 func handleArtistDetail(app *App) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		trackPageView(app, w, r, r.URL.Path)
 		artist := r.PathValue("artist")
 		songList, err := app.Songs.ListByArtist(r.Context(), artist)
 		if err != nil {

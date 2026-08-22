@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/lucasbrum/somdomato/api/config"
+	"github.com/lucasbrum/somdomato/api/internal/analytics"
 	"github.com/lucasbrum/somdomato/api/internal/auth"
 	"github.com/lucasbrum/somdomato/api/internal/db"
 	"github.com/lucasbrum/somdomato/api/internal/deezerdl"
@@ -56,6 +57,7 @@ func main() {
 	hub := sse.NewHub()
 	songsStore := songs.NewStore(pool)
 	uploadsStore := uploads.NewStore(pool)
+	analyticsStore := analytics.NewStore(pool)
 
 	var deezerClient *deezerdl.Client
 	if cfg.DeezerARL != "" {
@@ -76,6 +78,7 @@ func main() {
 		Auth:        auth.NewStore(pool),
 		Hub:         hub,
 		Uploads:     uploadsStore,
+		Analytics:   analyticsStore,
 		Deezer:      deezerClient,
 	}
 
@@ -88,6 +91,18 @@ func main() {
 	// cadência do polling que o front atual fazia em /api/listeners.
 	go icecastclient.StartPolling(ctx, cfg.IcecastStatusURL, 10*time.Second, func(snap icecastclient.Snapshot) {
 		hub.Broadcast(sse.Event{Name: "listeners-update", Data: snap})
+	})
+
+	// Amostra os ouvintes por gênero a cada minuto para alimentar o
+	// histórico do painel de estatísticas — cadência bem menor que o
+	// polling de 10s do player (que só alimenta o "agora"), pra não inchar
+	// stream_listener_samples.
+	go icecastclient.StartPolling(ctx, cfg.IcecastStatusURL, time.Minute, func(snap icecastclient.Snapshot) {
+		for _, m := range snap.Mountpoints {
+			if err := analyticsStore.RecordListenerSample(ctx, m.Mountpoint, m.Listeners); err != nil {
+				log.Error("gravando amostra de ouvintes", "error", err, "genre", m.Mountpoint)
+			}
+		}
 	})
 
 	srv := &http.Server{

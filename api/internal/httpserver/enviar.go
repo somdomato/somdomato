@@ -41,6 +41,7 @@ func registerEnviarRoutes(mux *http.ServeMux, app *App) {
 
 func handleEnviar(app *App) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		trackPageView(app, w, r, r.URL.Path)
 		token := ensureCSRFCookie(w, r)
 		render(w, pages.Enviar(pages.EnviarData{
 			Player: buildPlayerData(r.Context(), app, config.DefaultGenre), CSRFToken: token, IsAdmin: isAdminRequest(app, r),

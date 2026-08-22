@@ -131,3 +131,105 @@ type User struct {
 	Role         string
 	CreatedAt    time.Time
 }
+
+// Period é a janela de tempo usada para filtrar o painel de estatísticas
+// (ver internal/analytics e web/templates/pages/admin/stats.templ).
+type Period string
+
+const (
+	PeriodAll   Period = "tudo"
+	PeriodYear  Period = "anual"
+	PeriodMonth Period = "mensal"
+	PeriodWeek  Period = "semanal"
+	PeriodDay   Period = "diario"
+)
+
+var AllPeriods = []Period{PeriodAll, PeriodYear, PeriodMonth, PeriodWeek, PeriodDay}
+
+var periodLabels = map[Period]string{
+	PeriodAll:   "Tudo",
+	PeriodYear:  "Anual",
+	PeriodMonth: "Mensal",
+	PeriodWeek:  "Semanal",
+	PeriodDay:   "Diário",
+}
+
+func (p Period) Label() string {
+	if l, ok := periodLabels[p]; ok {
+		return l
+	}
+	return string(p)
+}
+
+func IsValidPeriod(p string) bool {
+	for _, v := range AllPeriods {
+		if string(v) == p {
+			return true
+		}
+	}
+	return false
+}
+
+// Since retorna o início da janela do período (zero value para "tudo").
+func (p Period) Since(now time.Time) time.Time {
+	switch p {
+	case PeriodYear:
+		return now.AddDate(-1, 0, 0)
+	case PeriodMonth:
+		return now.AddDate(0, -1, 0)
+	case PeriodWeek:
+		return now.AddDate(0, 0, -7)
+	case PeriodDay:
+		return now.AddDate(0, 0, -1)
+	default:
+		return time.Time{}
+	}
+}
+
+// BucketUnit define a granularidade dos gráficos de linha por período —
+// usado como argumento de date_trunc no Postgres.
+func (p Period) BucketUnit() string {
+	switch p {
+	case PeriodDay:
+		return "hour"
+	case PeriodWeek, PeriodMonth:
+		return "day"
+	default:
+		return "month"
+	}
+}
+
+// AnalyticsTotals alimenta os cards do painel de estatísticas.
+type AnalyticsTotals struct {
+	Visits int64
+	Clicks int64
+	Online int64
+}
+
+// PageStat é a linha da tabela "visitas e cliques por página".
+type PageStat struct {
+	Path   string
+	Visits int64
+	Clicks int64
+}
+
+// OnlinePage é a linha da tabela "online agora, por página".
+type OnlinePage struct {
+	Path  string
+	Count int64
+}
+
+// VisitPoint é um ponto do gráfico de visitas/cliques ao longo do tempo.
+type VisitPoint struct {
+	Bucket time.Time
+	Visits int64
+	Clicks int64
+}
+
+// ListenerPoint é um ponto do gráfico de ouvintes por rádio ao longo do
+// tempo (amostrado do Icecast, ver internal/icecastclient).
+type ListenerPoint struct {
+	Bucket    time.Time
+	Genre     string
+	Listeners float64
+}

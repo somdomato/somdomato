@@ -15,6 +15,7 @@ templ Shell(title string, active string) {
 				@navLink("/admin/musicas", "Músicas", active == "songs")
 				@navLink("/admin/pedidos", "Pedidos", active == "requests")
 				@navLink("/admin/vinhetas", "Vinhetas", active == "jingles")
+				@navLink("/admin/estatisticas", "Estatísticas", active == "stats")
 				@navLink("/admin/usuarios", "Usuários", active == "users")
 				<form method="POST" action="/admin/logout" class="pt-3">
 					<button type="submit" class="w-full rounded-lg px-3 py-2 text-left text-red-400 hover:bg-white/5">Sair</button>

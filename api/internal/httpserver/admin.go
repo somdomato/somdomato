@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/bogem/id3v2/v2"
 	"github.com/lucasbrum/somdomato/api/config"
@@ -43,6 +44,8 @@ func registerAdminRoutes(mux *http.ServeMux, app *App) {
 
 	mux.HandleFunc("GET /admin/usuarios", requirePermission(app, rbac.PermUsersManage, handleAdminUsersList(app)))
 	mux.HandleFunc("POST /admin/usuarios/{id}/papel", requirePermission(app, rbac.PermUsersManage, requireCSRF(handleAdminUserRoleUpdate(app))))
+
+	mux.HandleFunc("GET /admin/estatisticas", requirePermission(app, rbac.PermStatsView, handleAdminStats(app)))
 }
 
 // --- Autenticação -----------------------------------------------------------
@@ -407,6 +410,56 @@ func handleAdminUserRoleUpdate(app *App) http.HandlerFunc {
 			return
 		}
 		http.Redirect(w, r, "/admin/usuarios", http.StatusSeeOther)
+	}
+}
+
+// --- Estatísticas ----------------------------------------------------------
+
+func handleAdminStats(app *App) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		period := models.Period(r.URL.Query().Get("periodo"))
+		if !models.IsValidPeriod(string(period)) {
+			period = models.PeriodMonth
+		}
+
+		since := period.Since(time.Now())
+
+		totals, err := app.Analytics.Totals(ctx, since)
+		if err != nil {
+			app.Log.Error("carregando totais de estatísticas", "error", err)
+		}
+		pages, err := app.Analytics.PageStats(ctx, since)
+		if err != nil {
+			app.Log.Error("carregando estatísticas por página", "error", err)
+		}
+		online, err := app.Analytics.OnlineByPage(ctx)
+		if err != nil {
+			app.Log.Error("carregando visitantes online", "error", err)
+		}
+		visitSeries, err := app.Analytics.VisitSeries(ctx, period)
+		if err != nil {
+			app.Log.Error("carregando série de visitas", "error", err)
+		}
+		listenSeries, err := app.Analytics.ListenerSeries(ctx, period)
+		if err != nil {
+			app.Log.Error("carregando série de ouvintes", "error", err)
+		}
+
+		data := admintpl.StatsData{
+			Period:       period,
+			Totals:       totals,
+			Pages:        pages,
+			Online:       online,
+			VisitSeries:  visitSeries,
+			ListenSeries: listenSeries,
+		}
+
+		if isHXRequest(r) {
+			render(w, admintpl.StatsContent(data))
+			return
+		}
+		render(w, admintpl.Stats(data))
 	}
 }
 
