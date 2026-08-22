@@ -126,12 +126,13 @@ type UpdateInput struct {
 	Rotation         string
 	TimeSlots        int
 	AllowedInGeneral bool
+	Path             string
 }
 
 func (s *Store) Update(ctx context.Context, id int64, in UpdateInput) error {
 	_, err := s.pool.Exec(ctx, `
-		UPDATE songs SET title = $1, artist = $2, genre = $3, rotation = $4, time_slots = $5, allowed_in_general = $6
-		WHERE id = $7`, in.Title, in.Artist, in.Genre, in.Rotation, in.TimeSlots, in.AllowedInGeneral, id)
+		UPDATE songs SET title = $1, artist = $2, genre = $3, rotation = $4, time_slots = $5, allowed_in_general = $6, path = $7
+		WHERE id = $8`, in.Title, in.Artist, in.Genre, in.Rotation, in.TimeSlots, in.AllowedInGeneral, in.Path, id)
 	if err != nil {
 		return fmt.Errorf("atualizando música: %w", err)
 	}

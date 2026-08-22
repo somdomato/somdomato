@@ -3,9 +3,14 @@
 package httpserver
 
 import (
+	"fmt"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strconv"
+	"strings"
 
+	"github.com/bogem/id3v2/v2"
 	"github.com/lucasbrum/somdomato/api/config"
 	"github.com/lucasbrum/somdomato/api/internal/auth"
 	"github.com/lucasbrum/somdomato/api/internal/icecastclient"
@@ -27,6 +32,7 @@ func registerAdminRoutes(mux *http.ServeMux, app *App) {
 	mux.HandleFunc("GET /admin/musicas/{id}", requirePermission(app, rbac.PermSongsEditTags, handleAdminSongEditForm(app)))
 	mux.HandleFunc("POST /admin/musicas/{id}", requirePermission(app, rbac.PermSongsEditTags, requireCSRF(handleAdminSongUpdate(app))))
 	mux.HandleFunc("POST /admin/musicas/{id}/tocar", requirePermission(app, rbac.PermRequestsManage, requireCSRF(handleAdminPlaySong(app))))
+	mux.HandleFunc("POST /admin/musicas/{id}/remover", requirePermission(app, rbac.PermSongsDelete, requireCSRF(handleAdminSongDelete(app))))
 
 	mux.HandleFunc("GET /admin/pedidos", requirePermission(app, rbac.PermRequestsManage, handleAdminRequestsList(app)))
 	mux.HandleFunc("POST /admin/pedidos/{id}/remover", requirePermission(app, rbac.PermRequestsManage, requireCSRF(handleAdminRequestRemove(app))))
@@ -148,12 +154,31 @@ func handleAdminSongEditForm(app *App) http.HandlerFunc {
 func handleAdminSongUpdate(app *App) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := pathInt64(r, "id")
+		song, err := app.Songs.GetByID(r.Context(), id)
+		if err != nil || song == nil {
+			http.NotFound(w, r)
+			return
+		}
 		timeSlots, _ := strconv.Atoi(r.FormValue("time_slots"))
 		if timeSlots == 0 {
 			timeSlots = int(config.SlotTodos)
 		}
-		err := app.Songs.Update(r.Context(), id, songsUpdateInput(r, timeSlots))
+		title := r.FormValue("title")
+		artist := r.FormValue("artist")
+
+		newPath, err := renameSongFile(song.Path, r.FormValue("filename"))
 		if err != nil {
+			app.Log.Error("renomeando arquivo de música", "error", err)
+			http.Error(w, "não foi possível renomear o arquivo: "+err.Error(), http.StatusBadRequest)
+			return
+		}
+		if err := writeID3Tags(newPath, title, artist); err != nil {
+			app.Log.Error("gravando tags ID3", "error", err)
+		}
+
+		in := songsUpdateInput(r, timeSlots)
+		in.Title, in.Artist, in.Path = title, artist, newPath
+		if err := app.Songs.Update(r.Context(), id, in); err != nil {
 			app.Log.Error("atualizando música", "error", err)
 			http.Error(w, "erro interno", http.StatusInternalServerError)
 			return
@@ -170,6 +195,72 @@ func songsUpdateInput(r *http.Request, timeSlots int) songs.UpdateInput {
 		Rotation:         r.FormValue("rotation"),
 		TimeSlots:        timeSlots,
 		AllowedInGeneral: r.FormValue("allowed_in_general") == "on",
+	}
+}
+
+// renameSongFile renomeia o arquivo em disco para o nome informado,
+// mantendo-o no mesmo diretório. filename vazio ou igual ao nome atual é
+// um no-op. Rejeita qualquer componente de caminho (barras, "..") para não
+// permitir escrever fora do diretório da música.
+func renameSongFile(currentPath, filename string) (string, error) {
+	filename = strings.TrimSpace(filename)
+	if filename == "" {
+		return currentPath, nil
+	}
+	if filename != filepath.Base(filename) || filename == "." || filename == ".." {
+		return "", fmt.Errorf("nome de arquivo inválido")
+	}
+	newPath := filepath.Join(filepath.Dir(currentPath), filename)
+	if newPath == currentPath {
+		return currentPath, nil
+	}
+	if _, err := os.Stat(newPath); err == nil {
+		return "", fmt.Errorf("já existe um arquivo com esse nome")
+	}
+	if err := os.Rename(currentPath, newPath); err != nil {
+		return "", fmt.Errorf("renomeando arquivo: %w", err)
+	}
+	return newPath, nil
+}
+
+// writeID3Tags grava título/artista nas tags ID3 do arquivo mp3 — apenas
+// os campos exibidos no formulário de edição, sem tocar em capa/álbum.
+func writeID3Tags(path, title, artist string) error {
+	if !strings.HasSuffix(strings.ToLower(path), ".mp3") {
+		return nil
+	}
+	tag, err := id3v2.Open(path, id3v2.Options{Parse: true})
+	if err != nil {
+		return fmt.Errorf("abrindo tags ID3: %w", err)
+	}
+	defer tag.Close()
+	tag.SetTitle(title)
+	tag.SetArtist(artist)
+	if err := tag.Save(); err != nil {
+		return fmt.Errorf("salvando tags ID3: %w", err)
+	}
+	return nil
+}
+
+// handleAdminSongDelete apaga a música do banco (requests/queue_entries
+// caem em cascata) e remove o arquivo de áudio do disco.
+func handleAdminSongDelete(app *App) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id := pathInt64(r, "id")
+		song, err := app.Songs.GetByID(r.Context(), id)
+		if err != nil || song == nil {
+			http.NotFound(w, r)
+			return
+		}
+		if err := app.Songs.Delete(r.Context(), id); err != nil {
+			app.Log.Error("apagando música", "error", err)
+			http.Error(w, "erro interno", http.StatusInternalServerError)
+			return
+		}
+		if err := os.Remove(song.Path); err != nil && !os.IsNotExist(err) {
+			app.Log.Error("removendo arquivo de música do disco", "error", err, "path", song.Path)
+		}
+		w.WriteHeader(http.StatusOK)
 	}
 }
 

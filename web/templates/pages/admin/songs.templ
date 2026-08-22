@@ -1,6 +1,8 @@
 package admin
 
 import (
+	"path/filepath"
+
 	"github.com/lucasbrum/somdomato/api/config"
 	"github.com/lucasbrum/somdomato/api/models"
 )
@@ -36,11 +38,23 @@ templ SongsTable(songsList []models.Song, csrfToken string) {
 					<td class="px-3 py-2">{ s.Artist }</td>
 					<td class="px-3 py-2">{ s.Genre }</td>
 					<td class="px-3 py-2">{ s.Rotation }</td>
-					<td class="px-3 py-2 text-right">
-						<form hx-post={ "/admin/musicas/" + itoa64(s.ID) + "/tocar" } hx-swap="none">
-							<input type="hidden" name="csrf_token" value={ csrfToken }/>
-							<button type="submit" class="text-brand-300 hover:underline">Tocar</button>
-						</form>
+					<td class="px-3 py-2">
+						<div class="flex items-center justify-end gap-3">
+							<a href={ templ.URL("/admin/musicas/" + itoa64(s.ID)) } class="text-neutral-300 hover:underline">Editar</a>
+							<form hx-post={ "/admin/musicas/" + itoa64(s.ID) + "/tocar" } hx-swap="none">
+								<input type="hidden" name="csrf_token" value={ csrfToken }/>
+								<button type="submit" class="text-brand-300 hover:underline">Tocar</button>
+							</form>
+							<form
+								hx-post={ "/admin/musicas/" + itoa64(s.ID) + "/remover" }
+								hx-target={ "#song-row-" + itoa64(s.ID) }
+								hx-swap="outerHTML"
+								hx-confirm={ "Apagar \"" + s.Title + "\" — " + s.Artist + "? O arquivo de áudio também será removido do disco." }
+							>
+								<input type="hidden" name="csrf_token" value={ csrfToken }/>
+								<button type="submit" class="text-red-400 hover:underline">Excluir</button>
+							</form>
+						</div>
 					</td>
 				</tr>
 			}
@@ -60,6 +74,11 @@ templ SongEdit(s models.Song, csrfToken string) {
 			<label class="block text-sm">
 				Artista
 				<input type="text" name="artist" value={ s.Artist } class="mt-1 w-full rounded-lg bg-surface-raised px-3 py-2"/>
+			</label>
+			<label class="block text-sm">
+				Nome do arquivo
+				<input type="text" name="filename" value={ filepath.Base(s.Path) } class="mt-1 w-full rounded-lg bg-surface-raised px-3 py-2 font-mono text-xs"/>
+				<span class="mt-1 block text-xs text-neutral-500">Renomeia o arquivo em disco (fica na mesma pasta). Título e artista também são gravados nas tags ID3 do arquivo.</span>
 			</label>
 			<label class="block text-sm">
 				Gênero
