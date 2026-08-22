@@ -5,7 +5,9 @@ package config
 import (
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
+	"time"
 )
 
 // Genre é um mountpoint/stream da rádio. Mantido como tipo fechado (não
@@ -110,6 +112,12 @@ type Config struct {
 	// Rádio
 	StreamBaseURL string // ex: https://radio.somdomato.com
 
+	// NowPlayingDelay atrasa o broadcast SSE de "tocando agora" para
+	// compensar o atraso entre o Liquidsoap iniciar a codificação da faixa
+	// e o ouvinte de fato escutá-la (burst-on-connect do Icecast + buffer do
+	// <audio> no navegador) — sem isso o card muda antes do som trocar.
+	NowPlayingDelay time.Duration
+
 	// Deezer/Groq (feature /enviar) — opcionais: sem eles as rotas ficam
 	// desabilitadas, o resto da aplicação sobe normalmente.
 	DeezerARL  string // cookie ARL de uma conta Deezer (idealmente premium, p/ mp3_320)
@@ -134,6 +142,7 @@ func Load() (*Config, error) {
 		UploadsDir:         getEnv("UPLOADS_DIR", getEnv("MUSIC_PATH", "/var/music/sdm")+"/uploads"),
 		GroqAPIKey:         os.Getenv("GROQ_API_KEY"),
 		GroqModel:          getEnv("GROQ_MODEL", "llama-3.1-8b-instant"),
+		NowPlayingDelay:    time.Duration(getEnvInt("RADIO_NOWPLAYING_DELAY_SECONDS", 8)) * time.Second,
 	}
 
 	var missing []string
@@ -168,4 +177,16 @@ func getEnv(key, fallback string) string {
 		return v
 	}
 	return fallback
+}
+
+func getEnvInt(key string, fallback int) int {
+	v := os.Getenv(key)
+	if v == "" {
+		return fallback
+	}
+	n, err := strconv.Atoi(v)
+	if err != nil {
+		return fallback
+	}
+	return n
 }

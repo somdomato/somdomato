@@ -66,7 +66,7 @@ document.querySelectorAll("[data-player]").forEach((root) => {
 		setMessage("Não foi possível iniciar a rádio. Tente recarregar.");
 	};
 
-	const play = () => {
+	const play = ({ silent } = {}) => {
 		clearLoadTimeout();
 		setState("loading");
 		setMessage("");
@@ -76,7 +76,19 @@ document.querySelectorAll("[data-player]").forEach((root) => {
 		// no final quebra essa detecção).
 		audio.src = streamURL;
 		startLoadTimeout();
-		audio.play().catch(fail);
+		audio.play().catch((err) => {
+			// No mobile, retomar a reprodução automaticamente após trocar de
+			// estação é bloqueado pela política de autoplay do navegador
+			// (NotAllowedError) por não vir de um toque direto do usuário —
+			// isso não é uma falha real da rádio, então não mostramos o erro
+			// vermelho, só voltamos para "parado" e deixamos o usuário tocar.
+			if (silent && err.name === "NotAllowedError") {
+				stop();
+				setState("idle");
+				return;
+			}
+			fail();
+		});
 	};
 
 	toggle.addEventListener("click", () => {
@@ -120,6 +132,6 @@ document.querySelectorAll("[data-player]").forEach((root) => {
 	// a página recarrega — retomamos a reprodução automaticamente aqui.
 	if (sessionStorage.getItem("sdm-autoplay") === "1") {
 		sessionStorage.removeItem("sdm-autoplay");
-		play();
+		play({ silent: true });
 	}
 });

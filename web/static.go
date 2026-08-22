@@ -11,8 +11,11 @@
 package web
 
 import (
+	"crypto/sha256"
 	"embed"
+	"encoding/hex"
 	"io/fs"
+	"sync"
 )
 
 //go:embed static
@@ -27,4 +30,31 @@ func StaticFS() fs.FS {
 		panic(err) // só pode falhar se o diretório embutido sumir — erro de build
 	}
 	return sub
+}
+
+var assetVersion = sync.OnceValue(func() string {
+	h := sha256.New()
+	fsys := StaticFS()
+	_ = fs.WalkDir(fsys, ".", func(path string, d fs.DirEntry, err error) error {
+		if err != nil || d.IsDir() {
+			return err
+		}
+		b, err := fs.ReadFile(fsys, path)
+		if err != nil {
+			return err
+		}
+		h.Write(b)
+		return nil
+	})
+	return hex.EncodeToString(h.Sum(nil))[:12]
+})
+
+// AssetVersion identifica o conteúdo atual de web/static — muda sempre que
+// qualquer arquivo embutido muda (novo build). Usado como query string
+// (?v=...) nas tags <script>/<link> em layout.templ para invalidar o cache
+// agressivo (immutable, 1 ano) configurado no Nginx para /static/: sem isso,
+// navegadores que já cacharam uma versão antiga de um asset nunca buscariam
+// a nova, mesmo após deploy.
+func AssetVersion() string {
+	return assetVersion()
 }

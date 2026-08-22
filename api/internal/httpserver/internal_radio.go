@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/lucasbrum/somdomato/api/config"
 	"github.com/lucasbrum/somdomato/api/internal/cover"
@@ -198,13 +199,21 @@ func resolveCoverAsync(app *App, songID int64, mp3Path string) {
 // render inicial) para HTML e publica via SSE — o cliente faz sse-swap com
 // hx-swap="innerHTML" em #now-playing, então o payload já precisa ser
 // markup pronto, não JSON.
+//
+// O broadcast em si é atrasado por app.Cfg.NowPlayingDelay: o on_track do
+// Liquidsoap dispara no instante em que o encoder começa a faixa, mas o
+// ouvinte só a escuta depois do burst-on-connect do Icecast + buffer do
+// <audio> no navegador. Sem esse atraso o card troca antes do som trocar.
 func broadcastSongChanged(app *App, now components.NowPlaying) {
 	var buf bytes.Buffer
 	if err := components.NowPlayingCard(now).Render(context.Background(), &buf); err != nil {
 		app.Log.Error("renderizando now-playing para SSE", "error", err)
 		return
 	}
-	app.Hub.Broadcast(sse.Event{Name: "song-changed", Data: buf.String()})
+	payload := buf.String()
+	time.AfterFunc(app.Cfg.NowPlayingDelay, func() {
+		app.Hub.Broadcast(sse.Event{Name: "song-changed", Data: payload})
+	})
 }
 
 func writeJSON(w http.ResponseWriter, status int, v any) {
