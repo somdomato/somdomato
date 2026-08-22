@@ -19,7 +19,7 @@ templ Layout(title string, player *components.PlayerData, isAdmin bool) {
 		</head>
 		<body class="flex min-h-screen flex-col bg-surface text-neutral-100 font-sans" hx-ext="sse">
 			@Header(player, isAdmin)
-			<main class="mx-auto w-full max-w-5xl flex-1 px-4 py-6">
+			<main class="mx-auto w-full max-w-5xl flex-1 px-4 py-3">
 				{ children... }
 			</main>
 			@Footer()
@@ -57,7 +57,7 @@ templ Header(player *components.PlayerData, isAdmin bool) {
 }
 
 templ Footer() {
-	<footer class="mt-12 border-t border-white/10 py-6 text-center text-xs text-neutral-500">
+	<footer class="mt-4 border-t border-white/10 py-4 text-center text-xs text-neutral-500">
 		Som do Mato — a mais sertaneja.
 	</footer>
 }

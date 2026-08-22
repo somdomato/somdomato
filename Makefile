@@ -6,7 +6,7 @@ TAILWIND = ./tailwindcss
 GOBIN = $(shell go env GOPATH)/bin
 
 .PHONY: help setup dev air up down build-images restart logs ps \
-        templ css css-watch migrate seed test lint vet fmt \
+        templ css css-watch migrate seed cleanup-jingles test lint vet fmt \
         build deploy tools clean \
         provision provision-check provision-tags
 
@@ -75,6 +75,9 @@ seed: ## Varre MUSIC_PATH e popula o catálogo (idempotente) — requer 'make up
 
 migrate: ## Aplica migrations pendentes no Postgres — requer 'make up'
 	. ./scripts/dev-env.sh && go run ./api/cmd/migrate
+
+cleanup-jingles: ## Lista (dry-run) vinhetas indevidamente inseridas em songs — use CONFIRM=1 para apagar
+	. ./scripts/dev-env.sh && go run ./api/cmd/cleanupjingles $(if $(CONFIRM),-confirm)
 
 # ── Provisionamento da VPS (Ansible) ─────────────────────────────────────────
 

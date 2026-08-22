@@ -2,7 +2,9 @@
 // ID3 (título/artista/álbum) e insere cada música no catálogo — idempotente
 // por `path` (ON CONFLICT DO NOTHING em songs.Create), então pode rodar em
 // todo boot sem duplicar. Não requer nem lê o SQLite antigo: catálogo novo,
-// só a partir dos arquivos em disco.
+// só a partir dos arquivos em disco. JINGLES_DIR (normalmente uma subpasta
+// de MUSIC_PATH) é pulado — vinhetas pertencem à tabela `jingles`, não a
+// `songs`, e não devem aparecer em /admin/musicas.
 package main
 
 import (
@@ -46,12 +48,20 @@ func main() {
 
 	var scanned, inserted, skipped, failed int
 
+	jinglesDir := filepath.Clean(cfg.JinglesDir)
+
 	err = filepath.WalkDir(cfg.MusicPath, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			log.Warn("erro ao acessar caminho", "path", path, "error", err)
 			return nil
 		}
-		if d.IsDir() || !strings.EqualFold(filepath.Ext(path), ".mp3") {
+		if d.IsDir() {
+			if filepath.Clean(path) == jinglesDir {
+				return filepath.SkipDir
+			}
+			return nil
+		}
+		if !strings.EqualFold(filepath.Ext(path), ".mp3") {
 			return nil
 		}
 		scanned++

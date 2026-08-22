@@ -62,6 +62,20 @@ func (s *Store) ListByArtist(ctx context.Context, artist string) ([]models.Song,
 	return scanAll(rows)
 }
 
+// ListTopRequested retorna as músicas mais pedidas (requests_count > 0),
+// ordenadas por contagem decrescente — usado no bloco "Top 10" da home.
+func (s *Store) ListTopRequested(ctx context.Context, limit int) ([]models.Song, error) {
+	rows, err := s.pool.Query(ctx, `
+		SELECT `+selectFields+` FROM songs
+		WHERE requests_count > 0
+		ORDER BY requests_count DESC, title ASC LIMIT $1`, limit)
+	if err != nil {
+		return nil, fmt.Errorf("listando músicas mais pedidas: %w", err)
+	}
+	defer rows.Close()
+	return scanAll(rows)
+}
+
 func (s *Store) ListArtists(ctx context.Context) ([]string, error) {
 	rows, err := s.pool.Query(ctx, `SELECT DISTINCT artist FROM songs ORDER BY artist`)
 	if err != nil {

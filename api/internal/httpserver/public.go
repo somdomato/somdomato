@@ -57,8 +57,21 @@ func handleHome(app *App) http.HandlerFunc {
 			}
 		}
 
+		topSongs, err := app.Songs.ListTopRequested(ctx, 10)
+		var top10 []components.TopRequestItem
+		if err == nil {
+			for _, s := range topSongs {
+				top10 = append(top10, components.TopRequestItem{
+					SongListItem: components.SongListItem{ID: s.ID, Title: s.Title, Artist: s.Artist, Cover: s.Cover},
+					Count:        s.RequestsCount,
+				})
+			}
+		} else {
+			app.Log.Error("listando top 10 pedidos", "error", err)
+		}
+
 		render(w, pages.Home(pages.HomeData{
-			Player: buildPlayerData(ctx, app, genre), Last: last, Next: next, IsAdmin: isAdminRequest(app, r),
+			Player: buildPlayerData(ctx, app, genre), Last: last, Next: next, Top10: top10, IsAdmin: isAdminRequest(app, r),
 		}))
 	}
 }

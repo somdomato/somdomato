@@ -9,14 +9,16 @@ type HomeData struct {
 	Player  components.PlayerData
 	Last    []components.SongListItem
 	Next    []components.SongListItem
+	Top10   []components.TopRequestItem
 	IsAdmin bool
 }
 
 templ Home(data HomeData) {
 	@templates.Layout("Rádio ao vivo", &data.Player, data.IsAdmin) {
-		<div class="grid gap-6 md:grid-cols-2">
+		<div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
 			@components.SongList("Últimas", data.Last, "Ainda não há histórico nesta stream.")
 			@components.SongList("Próximas", data.Next, "A fila está sendo preparada.")
+			@components.TopRequestsList("Top 10", data.Top10, "Ainda não há pedidos suficientes.")
 		</div>
 	}
 }
