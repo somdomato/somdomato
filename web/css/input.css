@@ -100,3 +100,38 @@
   from { opacity: 0; transform: scale(0.96); }
   to { opacity: 1; transform: scale(1); }
 }
+
+/* Scroll dos modais do rodapé (Termos, Privacidade, Contato) — barra fina
+   na cor da marca em vez do scrollbar cinza padrão do navegador, coerente
+   com o resto da identidade visual do site. */
+.modal-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-brand-600) transparent;
+}
+.modal-scroll::-webkit-scrollbar {
+  width: 8px;
+}
+.modal-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.modal-scroll::-webkit-scrollbar-thumb {
+  background-color: var(--color-brand-600);
+  border-radius: 9999px;
+}
+.modal-scroll::-webkit-scrollbar-thumb:hover {
+  background-color: var(--color-brand-500);
+}
+
+/* dialog nativo não fica sobre o header: footer-modals.js calcula --modal-top
+   (altura do header + respiro) e o posiciona logo abaixo. Definimos a
+   posição inteira aqui (em vez de confiar no inset-block/margin:auto que o
+   UA aplica a dialog:modal) para não depender de como cada navegador
+   resolve a centralização quando só o "top" é sobrescrito. */
+dialog[data-modal] {
+  position: fixed;
+  top: var(--modal-top, 4rem);
+  left: 50%;
+  transform: translateX(-50%);
+  margin: 0;
+  max-height: var(--modal-max-h, 80vh);
+}

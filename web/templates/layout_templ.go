@@ -473,7 +473,7 @@ func Footer() templ.Component {
 			templ_7745c5c3_Var23 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 34, "<footer class=\"mt-10 border-t border-white/10 bg-surface-raised/60\"><div class=\"mx-auto grid max-w-5xl grid-cols-2 gap-x-6 gap-y-10 px-4 py-12 sm:grid-cols-2 md:grid-cols-4\"><div class=\"col-span-2 flex flex-col gap-3 md:col-span-1\"><a href=\"/\" class=\"flex items-center gap-2\"><img src=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 34, "<footer hx-boost=\"true\" class=\"mt-10 border-t border-white/10 bg-surface-raised/60\"><div class=\"mx-auto grid max-w-5xl grid-cols-2 gap-x-6 gap-y-10 px-4 py-12 sm:grid-cols-2 md:grid-cols-4\"><div class=\"col-span-2 flex flex-col gap-3 md:col-span-1\"><a href=\"/\" class=\"flex items-center gap-2\"><img src=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -486,20 +486,235 @@ func Footer() templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 35, "\" alt=\"Som do Mato\" class=\"h-8 w-auto\"> <span class=\"text-lg font-bold text-neutral-100\">Som do Mato</span></a><p class=\"max-w-xs text-sm leading-relaxed text-neutral-400\">A rádio sertaneja da galera. Peça sua música, descubra novos artistas e ouça o melhor do sertanejo, 24 horas por dia.</p><div class=\"mt-1 flex items-center gap-3\"><a href=\"#\" aria-label=\"Instagram\" class=\"flex h-9 w-9 items-center justify-center rounded-full bg-white/5 text-neutral-400 transition hover:bg-brand-500/20 hover:text-brand-300\"><svg class=\"h-4 w-4\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"2\" y=\"2\" width=\"20\" height=\"20\" rx=\"5\"></rect> <circle cx=\"12\" cy=\"12\" r=\"4\"></circle> <circle cx=\"17.5\" cy=\"6.5\" r=\"1\" fill=\"currentColor\" stroke=\"none\"></circle></svg></a> <a href=\"#\" aria-label=\"WhatsApp\" class=\"flex h-9 w-9 items-center justify-center rounded-full bg-white/5 text-neutral-400 transition hover:bg-brand-500/20 hover:text-brand-300\"><svg class=\"h-4 w-4\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z\"></path></svg></a> <a href=\"#\" aria-label=\"YouTube\" class=\"flex h-9 w-9 items-center justify-center rounded-full bg-white/5 text-neutral-400 transition hover:bg-brand-500/20 hover:text-brand-300\"><svg class=\"h-4 w-4\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"2\" y=\"5\" width=\"20\" height=\"14\" rx=\"4\"></rect> <path d=\"M10 9.5v5l4.5-2.5z\" fill=\"currentColor\" stroke=\"none\"></path></svg></a></div></div><div class=\"flex flex-col gap-3\"><h3 class=\"text-sm font-semibold uppercase tracking-wider text-neutral-200\">Navegar</h3><nav class=\"flex flex-col gap-2 text-sm text-neutral-400\"><a href=\"/\" class=\"transition hover:text-brand-300\">Início</a> <a href=\"/pedidos\" class=\"transition hover:text-brand-300\">Pedidos</a> <a href=\"/enviar\" class=\"transition hover:text-brand-300\">Enviar música</a> <a href=\"/artistas\" class=\"transition hover:text-brand-300\">Artistas</a></nav></div><div class=\"flex flex-col gap-3\"><h3 class=\"text-sm font-semibold uppercase tracking-wider text-neutral-200\">Comunidade</h3><nav class=\"flex flex-col gap-2 text-sm text-neutral-400\"><a href=\"/enviar\" class=\"transition hover:text-brand-300\">Envie sua música</a> <a href=\"/pedidos\" class=\"transition hover:text-brand-300\">Faça um pedido</a> <a href=\"/artistas\" class=\"transition hover:text-brand-300\">Descubra artistas</a></nav></div><div class=\"flex flex-col gap-3\"><h3 class=\"text-sm font-semibold uppercase tracking-wider text-neutral-200\">Sobre</h3><nav class=\"flex flex-col gap-2 text-sm text-neutral-400\"><a href=\"#\" class=\"transition hover:text-brand-300\">Termos de uso</a> <a href=\"#\" class=\"transition hover:text-brand-300\">Privacidade</a> <a href=\"mailto:contato@somdomato.com\" class=\"transition hover:text-brand-300\">Contato</a></nav></div></div><div class=\"border-t border-white/10\"><div class=\"mx-auto flex max-w-5xl flex-col-reverse items-center gap-2 px-4 py-5 text-xs text-neutral-500 sm:flex-row sm:justify-between\"><span>&copy; 2011-")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 35, "\" alt=\"Som do Mato\" class=\"h-8 w-auto\"> <span class=\"text-lg font-bold text-neutral-100\">Som do Mato</span></a><p class=\"max-w-xs text-sm leading-relaxed text-neutral-400\">A rádio sertaneja da galera. Peça sua música, descubra novos artistas e ouça o melhor do sertanejo, 24 horas por dia.</p><div class=\"mt-1 flex items-center gap-3\"><a href=\"https://facebook.com/somdomato\" target=\"_blank\" rel=\"noopener noreferrer\" aria-label=\"Facebook\" class=\"flex h-9 w-9 items-center justify-center rounded-full bg-white/5 text-neutral-400 transition hover:bg-brand-500/20 hover:text-brand-300\"><svg class=\"h-4 w-4\" viewBox=\"0 0 24 24\" fill=\"currentColor\"><path d=\"M13.5 21v-7.5H16l.4-3H13.5V8.4c0-.87.24-1.46 1.5-1.46H16.5V4.35C16.24 4.31 15.32 4.24 14.24 4.24c-2.24 0-3.78 1.37-3.78 3.88V10.5H8v3H10.46V21h3.04z\"></path></svg></a> <a href=\"https://x.com/radiosomdomato\" target=\"_blank\" rel=\"noopener noreferrer\" aria-label=\"X\" class=\"flex h-9 w-9 items-center justify-center rounded-full bg-white/5 text-neutral-400 transition hover:bg-brand-500/20 hover:text-brand-300\"><svg class=\"h-4 w-4\" viewBox=\"0 0 24 24\" fill=\"currentColor\"><path d=\"M18.9 3H21.6l-5.9 6.75L22.6 21h-5.4l-4.24-5.55L8.1 21H5.4l6.3-7.2L5.4 3h5.53l3.83 5.07L18.9 3zm-.95 16.2h1.5L8.1 4.7H6.5l11.45 14.5z\"></path></svg></a></div></div><div class=\"flex flex-col gap-3\"><h3 class=\"text-sm font-semibold uppercase tracking-wider text-neutral-200\">Navegar</h3><nav class=\"flex flex-col gap-2 text-sm text-neutral-400\"><a href=\"/\" class=\"transition hover:text-brand-300\">Início</a> <a href=\"/pedidos\" class=\"transition hover:text-brand-300\">Pedidos</a> <a href=\"/enviar\" class=\"transition hover:text-brand-300\">Enviar música</a> <a href=\"/artistas\" class=\"transition hover:text-brand-300\">Artistas</a></nav></div><div class=\"flex flex-col gap-3\"><h3 class=\"text-sm font-semibold uppercase tracking-wider text-neutral-200\">Comunidade</h3><nav class=\"flex flex-col gap-2 text-sm text-neutral-400\"><a href=\"/enviar\" class=\"transition hover:text-brand-300\">Envie sua música</a> <a href=\"/pedidos\" class=\"transition hover:text-brand-300\">Faça um pedido</a> <a href=\"/artistas\" class=\"transition hover:text-brand-300\">Descubra artistas</a></nav></div><div class=\"flex flex-col gap-3\"><h3 class=\"text-sm font-semibold uppercase tracking-wider text-neutral-200\">Sobre</h3><nav class=\"flex flex-col gap-2 text-sm text-neutral-400\"><button type=\"button\" data-modal-open=\"terms-modal\" class=\"text-left transition hover:text-brand-300\">Termos de uso</button> <button type=\"button\" data-modal-open=\"privacy-modal\" class=\"text-left transition hover:text-brand-300\">Privacidade</button> <button type=\"button\" data-modal-open=\"contact-modal\" class=\"text-left transition hover:text-brand-300\">Contato</button></nav></div></div><div class=\"border-t border-white/10\"><div class=\"mx-auto flex max-w-5xl flex-col-reverse items-center gap-2 px-4 py-5 text-xs text-neutral-500 sm:flex-row sm:justify-between\"><span>&copy; 2011-")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var25 string
 		templ_7745c5c3_Var25, templ_7745c5c3_Err = templ.JoinStringErrs(strconv.Itoa(time.Now().Year()))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/layout.templ`, Line: 178, Col: 55}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/layout.templ`, Line: 170, Col: 55}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var25))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 36, " Som do Mato — a mais sertaneja.</span> <span class=\"flex items-center gap-1.5\">Por <span class=\"text-brand-300\">&hearts;</span> à música sertaneja</span></div></div></footer>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = termsModal().Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = privacyModal().Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = contactModal().Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 37, "<script src=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var26 string
+		templ_7745c5c3_Var26, templ_7745c5c3_Err = templ.ResolveAttributeValue("/static/js/footer-modals.js?v=" + web.AssetVersion())
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/layout.templ`, Line: 180, Col: 68}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var26)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 38, "\"></script>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		return nil
+	})
+}
+
+// modalHeader é o cabeçalho comum a todos os modais do rodapé: logo + título
+// + botão de fechar, fixo no topo enquanto o corpo rola.
+func modalHeader(title string) templ.Component {
+	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
+			return templ_7745c5c3_CtxErr
+		}
+		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
+		if !templ_7745c5c3_IsBuffer {
+			defer func() {
+				templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
+				if templ_7745c5c3_Err == nil {
+					templ_7745c5c3_Err = templ_7745c5c3_BufErr
+				}
+			}()
+		}
+		ctx = templ.InitializeContext(ctx)
+		templ_7745c5c3_Var27 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var27 == nil {
+			templ_7745c5c3_Var27 = templ.NopComponent
+		}
+		ctx = templ.ClearChildren(ctx)
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 39, "<div class=\"relative sticky top-0 z-10 flex items-center justify-between gap-4 rounded-t-2xl border-b border-brand-500/20 bg-surface-raised px-5 py-4 sm:px-6\"><div class=\"absolute inset-x-0 top-0 h-1 rounded-t-2xl bg-gradient-to-r from-brand-600 to-brand-400\"></div><div class=\"flex min-w-0 items-center gap-3\"><img src=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var28 string
+		templ_7745c5c3_Var28, templ_7745c5c3_Err = templ.ResolveAttributeValue("/static/images/logotipo.svg?v=" + web.AssetVersion())
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/layout.templ`, Line: 189, Col: 67}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var28)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 40, "\" alt=\"\" class=\"h-7 w-auto shrink-0 sm:h-8\"><h2 class=\"truncate text-lg font-bold text-neutral-100 sm:text-xl\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var29 string
+		templ_7745c5c3_Var29, templ_7745c5c3_Err = templ.JoinStringErrs(title)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/layout.templ`, Line: 190, Col: 77}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var29))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 41, "</h2></div><button type=\"button\" data-modal-close aria-label=\"Fechar\" class=\"flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-neutral-400 transition hover:bg-brand-500/20 hover:text-brand-300\"><svg class=\"h-5 w-5\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\"><path d=\"M6 6l12 12M18 6L6 18\"></path></svg></button></div>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		return nil
+	})
+}
+
+// termsModal, privacyModal e contactModal são <dialog> nativos (mesmo
+// padrão do confirm-dialog do admin, ver pages/admin/shell.templ) abertos
+// pelos botões "Sobre" do rodapé via static/js/footer-modals.js. O topo é
+// posicionado dinamicamente pelo footer-modals.js (abaixo do header, que
+// muda de altura com o player) — nunca cobrindo o header.
+func termsModal() templ.Component {
+	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
+			return templ_7745c5c3_CtxErr
+		}
+		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
+		if !templ_7745c5c3_IsBuffer {
+			defer func() {
+				templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
+				if templ_7745c5c3_Err == nil {
+					templ_7745c5c3_Err = templ_7745c5c3_BufErr
+				}
+			}()
+		}
+		ctx = templ.InitializeContext(ctx)
+		templ_7745c5c3_Var30 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var30 == nil {
+			templ_7745c5c3_Var30 = templ.NopComponent
+		}
+		ctx = templ.ClearChildren(ctx)
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 42, "<dialog id=\"terms-modal\" data-modal class=\"w-[92vw] max-w-2xl modal-scroll overflow-y-auto rounded-2xl border border-brand-500/20 bg-surface-raised p-0 text-neutral-100 shadow-2xl shadow-black/50 backdrop:bg-black/70 backdrop:backdrop-blur-sm\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = modalHeader("Termos de uso").Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 43, "<div class=\"space-y-4 px-5 py-5 text-sm leading-relaxed text-neutral-300 sm:px-6\"><p>Bem-vindo à Som do Mato! Ao acessar o site ou ouvir nossa transmissão, você concorda com os termos abaixo. Eles existem para manter a rádio um lugar bacana para todo mundo.</p><div><h3 class=\"mb-1 font-semibold text-neutral-100\">1. O que é a Som do Mato</h3><p>Somos uma rádio online sertaneja, no ar 24 horas por dia, com pedidos de música, envio de faixas por artistas e ouvintes, e conteúdo sobre o universo sertanejo.</p></div><div><h3 class=\"mb-1 font-semibold text-neutral-100\">2. Pedidos e envio de músicas</h3><p>Ao enviar um pedido ou uma música, você declara que tem o direito de compartilhar aquele conteúdo. O envio não garante execução na programação — a curadoria é feita pela equipe da rádio, que pode recusar ou remover qualquer material a seu critério.</p></div><div><h3 class=\"mb-1 font-semibold text-neutral-100\">3. Propriedade intelectual</h3><p>A marca, o logotipo e a identidade visual da Som do Mato nos pertencem. As músicas transmitidas pertencem aos respectivos artistas, compositores e gravadoras — a rádio realiza execução pública desse conteúdo, não reivindica autoria sobre ele.</p></div><div><h3 class=\"mb-1 font-semibold text-neutral-100\">4. Disponibilidade</h3><p>Fazemos o possível para manter o streaming no ar sem interrupções, mas instabilidades técnicas podem acontecer. Não garantimos disponibilidade ininterrupta do serviço.</p></div><div><h3 class=\"mb-1 font-semibold text-neutral-100\">5. Uso adequado</h3><p>Pedimos que pedidos, comentários e envios sejam feitos com respeito — sem conteúdo ofensivo, discurso de ódio ou spam. Reservamo-nos o direito de moderar ou bloquear o uso indevido do site.</p></div><div><h3 class=\"mb-1 font-semibold text-neutral-100\">6. Alterações</h3><p>Estes termos podem ser atualizados de tempos em tempos. Ao continuar usando o site após uma mudança, você concorda com a versão vigente.</p></div><p class=\"text-neutral-400\">Dúvidas sobre estes termos? Fale com a gente pelo <button type=\"button\" data-modal-open=\"contact-modal\" class=\"text-brand-300 underline underline-offset-2 hover:text-brand-200\">canal de contato</button>.</p></div></dialog>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		return nil
+	})
+}
+
+func privacyModal() templ.Component {
+	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
+			return templ_7745c5c3_CtxErr
+		}
+		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
+		if !templ_7745c5c3_IsBuffer {
+			defer func() {
+				templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
+				if templ_7745c5c3_Err == nil {
+					templ_7745c5c3_Err = templ_7745c5c3_BufErr
+				}
+			}()
+		}
+		ctx = templ.InitializeContext(ctx)
+		templ_7745c5c3_Var31 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var31 == nil {
+			templ_7745c5c3_Var31 = templ.NopComponent
+		}
+		ctx = templ.ClearChildren(ctx)
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 44, "<dialog id=\"privacy-modal\" data-modal class=\"w-[92vw] max-w-2xl modal-scroll overflow-y-auto rounded-2xl border border-brand-500/20 bg-surface-raised p-0 text-neutral-100 shadow-2xl shadow-black/50 backdrop:bg-black/70 backdrop:backdrop-blur-sm\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = modalHeader("Política de privacidade").Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 45, "<div class=\"space-y-4 px-5 py-5 text-sm leading-relaxed text-neutral-300 sm:px-6\"><p>Sua privacidade importa pra gente. Esta política explica quais dados coletamos na Som do Mato e como usamos essas informações.</p><div><h3 class=\"mb-1 font-semibold text-neutral-100\">1. Dados que coletamos</h3><p>Nome ou apelido e mensagem quando você faz um pedido de música; e-mail e informações da faixa quando você envia uma música; e dados básicos de navegação (como página acessada e horário) para estatísticas de uso.</p></div><div><h3 class=\"mb-1 font-semibold text-neutral-100\">2. Como usamos</h3><p>Para exibir pedidos na programação, avaliar envios de músicas, responder contatos e entender como o site é usado, para melhorá-lo.</p></div><div><h3 class=\"mb-1 font-semibold text-neutral-100\">3. Cookies</h3><p>Usamos cookies e armazenamento local apenas para o funcionamento do site (como manter o player tocando entre páginas) e para métricas básicas de audiência. Não usamos cookies para publicidade de terceiros.</p></div><div><h3 class=\"mb-1 font-semibold text-neutral-100\">4. Compartilhamento</h3><p>Não vendemos seus dados. Compartilhamos informações apenas com provedores essenciais para operar o site e o streaming (como hospedagem), e apenas na medida necessária para o serviço funcionar.</p></div><div><h3 class=\"mb-1 font-semibold text-neutral-100\">5. Segurança</h3><p>Adotamos medidas razoáveis para proteger os dados armazenados contra acesso não autorizado.</p></div><div><h3 class=\"mb-1 font-semibold text-neutral-100\">6. Seus direitos</h3><p>Você pode solicitar acesso, correção ou exclusão dos seus dados a qualquer momento, entrando em contato pelo e-mail informado na seção de contato.</p></div><div><h3 class=\"mb-1 font-semibold text-neutral-100\">7. Alterações</h3><p>Esta política pode ser atualizada periodicamente. A versão mais recente estará sempre disponível aqui.</p></div></div></dialog>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		return nil
+	})
+}
+
+func contactModal() templ.Component {
+	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
+			return templ_7745c5c3_CtxErr
+		}
+		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
+		if !templ_7745c5c3_IsBuffer {
+			defer func() {
+				templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
+				if templ_7745c5c3_Err == nil {
+					templ_7745c5c3_Err = templ_7745c5c3_BufErr
+				}
+			}()
+		}
+		ctx = templ.InitializeContext(ctx)
+		templ_7745c5c3_Var32 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var32 == nil {
+			templ_7745c5c3_Var32 = templ.NopComponent
+		}
+		ctx = templ.ClearChildren(ctx)
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 46, "<dialog id=\"contact-modal\" data-modal class=\"w-[92vw] max-w-md modal-scroll overflow-y-auto rounded-2xl border border-brand-500/20 bg-surface-raised p-0 text-neutral-100 shadow-2xl shadow-black/50 backdrop:bg-black/70 backdrop:backdrop-blur-sm\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = modalHeader("Contato").Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 47, "<div class=\"space-y-5 px-5 py-5 text-sm leading-relaxed text-neutral-300 sm:px-6\"><p>Quer mandar um recado, sugestão ou dúvida pra Som do Mato? Fala com a gente por aqui:</p><a href=\"mailto:contato@somdomato.com\" class=\"flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-4 py-3 transition hover:border-brand-500/40 hover:bg-brand-500/10\"><span class=\"flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-500/20 text-brand-300\"><svg class=\"h-4 w-4\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"M4 6h16v12H4z\"></path> <path d=\"M4 7l8 6 8-6\"></path></svg></span> <span><span class=\"block font-medium text-neutral-100\">E-mail</span> <span class=\"block text-neutral-400\">contato@somdomato.com</span></span></a><div class=\"flex items-center gap-3\"><a href=\"https://facebook.com/somdomato\" target=\"_blank\" rel=\"noopener noreferrer\" aria-label=\"Facebook\" class=\"flex h-10 w-10 items-center justify-center rounded-full bg-white/5 text-neutral-400 transition hover:bg-brand-500/20 hover:text-brand-300\"><svg class=\"h-4 w-4\" viewBox=\"0 0 24 24\" fill=\"currentColor\"><path d=\"M13.5 21v-7.5H16l.4-3H13.5V8.4c0-.87.24-1.46 1.5-1.46H16.5V4.35C16.24 4.31 15.32 4.24 14.24 4.24c-2.24 0-3.78 1.37-3.78 3.88V10.5H8v3H10.46V21h3.04z\"></path></svg></a> <a href=\"https://x.com/radiosomdomato\" target=\"_blank\" rel=\"noopener noreferrer\" aria-label=\"X\" class=\"flex h-10 w-10 items-center justify-center rounded-full bg-white/5 text-neutral-400 transition hover:bg-brand-500/20 hover:text-brand-300\"><svg class=\"h-4 w-4\" viewBox=\"0 0 24 24\" fill=\"currentColor\"><path d=\"M18.9 3H21.6l-5.9 6.75L22.6 21h-5.4l-4.24-5.55L8.1 21H5.4l6.3-7.2L5.4 3h5.53l3.83 5.07L18.9 3zm-.95 16.2h1.5L8.1 4.7H6.5l11.45 14.5z\"></path></svg></a> <span class=\"text-xs text-neutral-500\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var33 string
+		templ_7745c5c3_Var33, templ_7745c5c3_Err = templ.JoinStringErrs("@somdomato")
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/layout.templ`, Line: 308, Col: 57}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var33))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 48, "</span></div><p class=\"text-xs text-neutral-500\">Respondemos o mais rápido possível — geralmente em até 2 dias úteis.</p></div></dialog>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -525,25 +740,25 @@ func CSRFField(token string) templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var26 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var26 == nil {
-			templ_7745c5c3_Var26 = templ.NopComponent
+		templ_7745c5c3_Var34 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var34 == nil {
+			templ_7745c5c3_Var34 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 37, "<input type=\"hidden\" name=\"csrf_token\" value=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 49, "<input type=\"hidden\" name=\"csrf_token\" value=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var27 string
-		templ_7745c5c3_Var27, templ_7745c5c3_Err = templ.ResolveAttributeValue(token)
+		var templ_7745c5c3_Var35 string
+		templ_7745c5c3_Var35, templ_7745c5c3_Err = templ.ResolveAttributeValue(token)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/layout.templ`, Line: 190, Col: 53}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/layout.templ`, Line: 318, Col: 53}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var27)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var35)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 38, "\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 50, "\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
