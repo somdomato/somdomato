@@ -143,7 +143,7 @@ templ SongsTable(songsList []models.Song, csrfToken string, page SongsPageInfo) 
 templ SongEdit(s models.Song, csrfToken string, player *components.PlayerData) {
 	@Shell("Editar música", "songs", player) {
 		<h1 class="text-xl font-bold">Editar música</h1>
-		<form method="POST" action={ templ.SafeURL("/admin/musicas/" + itoa64(s.ID)) } class="mt-4 max-w-md space-y-3">
+		<form method="POST" action={ templ.SafeURL("/admin/musicas/" + itoa64(s.ID)) } hx-boost="true" class="mt-4 max-w-md space-y-3">
 			<input type="hidden" name="csrf_token" value={ csrfToken }/>
 			<label class="block text-sm">
 				Título

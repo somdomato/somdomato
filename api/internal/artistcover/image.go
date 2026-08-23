@@ -111,6 +111,18 @@ func SaveCover(cwebpPath, artistName string, data []byte, coversDir string) (str
 	return "/covers/artistas/" + slug + "/cover.webp", nil
 }
 
+// normalizeArtistName remove acentos e baixa a caixa, preservando espaços —
+// usado para comparar nomes de artista vindos de fontes externas (que podem
+// variar acentuação/caixa) sem virar um slug de diretório.
+func normalizeArtistName(name string) string {
+	t := transform.Chain(norm.NFD, runes.Remove(runes.In(unicode.Mn)), norm.NFC)
+	ascii, _, err := transform.String(t, name)
+	if err != nil {
+		ascii = name
+	}
+	return strings.Join(strings.Fields(strings.ToLower(ascii)), " ")
+}
+
 // slugify normaliza o nome do artista para um componente de diretório:
 // remove acentos, baixa a caixa, troca qualquer sequência fora de [a-z0-9]
 // por um único hífen e apara hífens nas pontas — ex.: "Zezé Di Camargo &

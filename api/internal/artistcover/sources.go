@@ -11,11 +11,19 @@ import (
 
 // fetchDeezer usa a mesma busca pública do Deezer já usada em
 // internal/deezerdl/search.go, mas no endpoint de artista.
+//
+// Nomes de artista comuns (ex. "Daniel", "Zé Felipe") batem com dezenas de
+// artistas homônimos obscuros no catálogo do Deezer, e a API não ordena por
+// relevância/popularidade — o primeiro resultado é frequentemente um
+// artista errado com poucos fãs. Por isso a busca traz vários candidatos e,
+// entre os que têm o nome igual (sem acento/caixa) ao artista buscado,
+// fica com o de maior nb_fan — heurística de que o artista mais popular com
+// aquele nome exato é o que o rádio realmente está tocando.
 func fetchDeezer(ctx context.Context, client *http.Client, artistName string) (string, error) {
 	u := url.URL{Scheme: "https", Host: "api.deezer.com", Path: "/search/artist"}
 	q := u.Query()
 	q.Set("q", artistName)
-	q.Set("limit", "1")
+	q.Set("limit", "15")
 	u.RawQuery = q.Encode()
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u.String(), nil)
@@ -33,6 +41,8 @@ func fetchDeezer(ctx context.Context, client *http.Client, artistName string) (s
 
 	var data struct {
 		Data []struct {
+			Name          string `json:"name"`
+			NbFan         int    `json:"nb_fan"`
 			PictureBig    string `json:"picture_big"`
 			PictureMedium string `json:"picture_medium"`
 		} `json:"data"`
@@ -43,9 +53,23 @@ func fetchDeezer(ctx context.Context, client *http.Client, artistName string) (s
 	if len(data.Data) == 0 {
 		return "", nil
 	}
-	picture := data.Data[0].PictureBig
+
+	best := data.Data[0]
+	wantName := normalizeArtistName(artistName)
+	bestIsExactMatch := false
+	for _, candidate := range data.Data {
+		if normalizeArtistName(candidate.Name) != wantName {
+			continue
+		}
+		if !bestIsExactMatch || candidate.NbFan > best.NbFan {
+			best = candidate
+			bestIsExactMatch = true
+		}
+	}
+
+	picture := best.PictureBig
 	if picture == "" {
-		picture = data.Data[0].PictureMedium
+		picture = best.PictureMedium
 	}
 	if isDeezerPlaceholder(picture) {
 		return "", nil

@@ -164,8 +164,8 @@ templ SearchResultRow(item SongListItem, csrfToken string) {
 }
 
 // ArtistSongRow é usado em /artistas/{artist} — igual ao SearchResultRow
-// (botão de pedir via HTMX), mas com um link "Editar" para admins logados
-// que leva direto ao formulário de edição da música no painel.
+// (botão de pedir via HTMX), mas com um link "Editar" e um botão "Excluir"
+// para admins logados que levam direto às ações equivalentes do painel.
 templ ArtistSongRow(item SongListItem, csrfToken string, isAdmin bool) {
 	<li class="flex items-center gap-3 px-4 py-2" id={ "song-" + itoa(item.ID) }>
 		<img src={ item.Cover } alt={ item.Title } class="h-10 w-10 shrink-0 rounded object-cover"/>
@@ -176,6 +176,17 @@ templ ArtistSongRow(item SongListItem, csrfToken string, isAdmin bool) {
 			<a href={ templ.URL("/admin/musicas/" + itoa(item.ID)) } class="shrink-0 text-xs font-medium text-neutral-400 hover:text-neutral-200 hover:underline">
 				Editar
 			</a>
+			<form
+				hx-post={ "/admin/musicas/" + itoa(item.ID) + "/remover" }
+				hx-target={ "#song-" + itoa(item.ID) }
+				hx-swap="outerHTML"
+				hx-confirm={ "Apagar \"" + item.Title + "\" — " + item.Artist + "? O arquivo de áudio também será removido do disco." }
+			>
+				<input type="hidden" name="csrf_token" value={ csrfToken }/>
+				<button type="submit" class="shrink-0 text-xs font-medium text-red-400 hover:underline">
+					Excluir
+				</button>
+			</form>
 		}
 		<form hx-post="/pedidos/solicitar" hx-target={ "#song-" + itoa(item.ID) } hx-swap="outerHTML">
 			<input type="hidden" name="song_id" value={ itoa(item.ID) }/>
