@@ -19,6 +19,7 @@ import (
 	"github.com/somdomato/somdomato/api/internal/sse"
 	"github.com/somdomato/somdomato/api/internal/uploads"
 	"github.com/somdomato/somdomato/web"
+	"github.com/somdomato/somdomato/web/templates/pages"
 )
 
 // App agrega todas as dependências dos handlers — injetadas uma vez em
@@ -57,8 +58,24 @@ func NewRouter(app *App) http.Handler {
 	fileServer := http.FileServer(http.FS(web.StaticFS()))
 	mux.Handle("GET /static/", http.StripPrefix("/static/", fileServer))
 
-	var handler http.Handler = mux
+	var handler http.Handler = withNotFoundPage(mux)
 	handler = withLogging(app.Log, handler)
 	handler = withRecover(app.Log, handler)
 	return handler
+}
+
+// withNotFoundPage troca a resposta "404 page not found" em texto puro do
+// ServeMux pela página de erro do site — mux.Handler consulta o roteador
+// sem executá-lo, então dá para detectar a ausência de rota (pattern vazio)
+// antes de decidir entre a rota real e a página 404.
+func withNotFoundPage(mux *http.ServeMux) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if _, pattern := mux.Handler(r); pattern == "" {
+			w.Header().Set("Content-Type", "text/html; charset=utf-8")
+			w.WriteHeader(http.StatusNotFound)
+			_ = pages.NotFound().Render(r.Context(), w)
+			return
+		}
+		mux.ServeHTTP(w, r)
+	})
 }
