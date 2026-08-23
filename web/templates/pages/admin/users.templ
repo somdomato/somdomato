@@ -25,15 +25,18 @@ templ UsersList(list []models.User, csrfToken string, player *components.PlayerD
 						<td class="px-3 py-2">
 							<form hx-post={ "/admin/usuarios/" + itoa64(u.ID) + "/papel" } hx-swap="none" class="flex items-center gap-2">
 								<input type="hidden" name="csrf_token" value={ csrfToken }/>
-								<select name="role" class="rounded-lg bg-surface-raised px-2 py-1">
-									for _, r := range rbac.AllRoles {
-										if string(r) == u.Role {
-											<option value={ string(r) } selected>{ rbac.RoleLabels[r] }</option>
-										} else {
-											<option value={ string(r) }>{ rbac.RoleLabels[r] }</option>
+								<span class="relative inline-block">
+									<select name="role" class="appearance-none rounded-lg bg-surface-raised py-1 pl-2 pr-9">
+										for _, r := range rbac.AllRoles {
+											if string(r) == u.Role {
+												<option value={ string(r) } selected>{ rbac.RoleLabels[r] }</option>
+											} else {
+												<option value={ string(r) }>{ rbac.RoleLabels[r] }</option>
+											}
 										}
-									}
-								</select>
+									</select>
+									@components.SelectArrow()
+								</span>
 								<button type="submit" class="text-brand-300 hover:underline">Salvar</button>
 							</form>
 						</td>

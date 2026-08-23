@@ -44,6 +44,12 @@ func registerAdminRoutes(mux *http.ServeMux, app *App) {
 	mux.HandleFunc("GET /admin/pedidos", requirePermission(app, rbac.PermRequestsManage, handleAdminRequestsList(app)))
 	mux.HandleFunc("POST /admin/pedidos/{id}/remover", requirePermission(app, rbac.PermRequestsManage, requireCSRF(handleAdminRequestRemove(app))))
 
+	mux.HandleFunc("GET /admin/envios", requirePermission(app, rbac.PermUploadsManage, handleAdminUploadsList(app)))
+	mux.HandleFunc("GET /admin/envios/{id}", requirePermission(app, rbac.PermUploadsManage, handleAdminUploadEditForm(app)))
+	mux.HandleFunc("POST /admin/envios/{id}", requirePermission(app, rbac.PermUploadsManage, requireCSRF(handleAdminUploadUpdate(app))))
+	mux.HandleFunc("POST /admin/envios/{id}/aprovar", requirePermission(app, rbac.PermUploadsManage, requireCSRF(handleAdminUploadApprove(app))))
+	mux.HandleFunc("POST /admin/envios/{id}/negar", requirePermission(app, rbac.PermUploadsManage, requireCSRF(handleAdminUploadReject(app))))
+
 	mux.HandleFunc("GET /admin/vinhetas", requirePermission(app, rbac.PermJinglesManage, handleAdminJinglesList(app)))
 	mux.HandleFunc("POST /admin/vinhetas/intervalo", requirePermission(app, rbac.PermJinglesManage, requireCSRF(handleAdminJingleInterval(app))))
 	mux.HandleFunc("POST /admin/vinhetas/{id}/alternar", requirePermission(app, rbac.PermJinglesManage, requireCSRF(handleAdminJingleToggle(app))))
@@ -464,6 +470,126 @@ func handleAdminRequestRemove(app *App) http.HandlerFunc {
 		broadcastQueueUpdated(app, r.Context(), string(config.GenreGeral))
 		w.WriteHeader(http.StatusOK)
 	}
+}
+
+// --- Envios ----------------------------------------------------------------
+
+const uploadsPerPage = 20
+
+func handleAdminUploadsList(app *App) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		status := r.URL.Query().Get("status")
+		if _, ok := uploadStatusValues[status]; status != "" && !ok {
+			status = ""
+		}
+		page, _ := strconv.Atoi(r.URL.Query().Get("page"))
+		if page < 1 {
+			page = 1
+		}
+
+		list, err := app.Uploads.ListByStatus(r.Context(), status, uploadsPerPage, (page-1)*uploadsPerPage)
+		if err != nil {
+			app.Log.Error("listando envios (admin)", "error", err)
+		}
+		total, err := app.Uploads.CountByStatus(r.Context(), status)
+		if err != nil {
+			app.Log.Error("contando envios (admin)", "error", err)
+		}
+
+		pageInfo := admintpl.UploadsPageInfo{Status: status, PerPage: uploadsPerPage, Page: page, Total: total}
+
+		token := ensureCSRFCookie(w, r)
+		if isHXRequest(r) {
+			render(w, admintpl.UploadsTable(list, token, pageInfo))
+			return
+		}
+		player := buildPlayerData(r.Context(), app, config.DefaultGenre)
+		render(w, admintpl.UploadsList(list, token, pageInfo, &player))
+	}
+}
+
+var uploadStatusValues = map[string]bool{
+	"pending": true, "evaluating": true, "approved": true, "rejected": true,
+}
+
+func handleAdminUploadEditForm(app *App) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id := pathInt64(r, "id")
+		upload, err := app.Uploads.GetByID(r.Context(), id)
+		if err != nil || upload == nil {
+			http.NotFound(w, r)
+			return
+		}
+		token := ensureCSRFCookie(w, r)
+		player := buildPlayerData(r.Context(), app, config.DefaultGenre)
+		render(w, admintpl.UploadEdit(*upload, token, &player))
+	}
+}
+
+func handleAdminUploadUpdate(app *App) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id := pathInt64(r, "id")
+		title := strings.TrimSpace(r.FormValue("title"))
+		artist := strings.TrimSpace(r.FormValue("artist"))
+		if title == "" || artist == "" {
+			http.Error(w, "título e artista são obrigatórios", http.StatusBadRequest)
+			return
+		}
+		if err := app.Uploads.UpdateMeta(r.Context(), id, title, artist); err != nil {
+			app.Log.Error("atualizando envio", "error", err)
+			http.Error(w, "erro interno", http.StatusInternalServerError)
+			return
+		}
+		http.Redirect(w, r, "/admin/envios", http.StatusSeeOther)
+	}
+}
+
+// handleAdminUploadApprove insere manualmente a faixa no catálogo — mesma
+// lógica usada pelo veredito automático da IA (ver groqeval.Evaluator.approve),
+// só que disparada por um admin em vez do worker de avaliação.
+func handleAdminUploadApprove(app *App) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id := pathInt64(r, "id")
+		genre := r.FormValue("genre")
+		if genre == "" {
+			genre = string(config.DefaultGenre)
+		}
+		if err := app.GroqEval.ManualApprove(r.Context(), id, genre); err != nil {
+			app.Log.Error("aprovando envio manualmente", "error", err)
+			http.Error(w, "erro ao aprovar: "+err.Error(), http.StatusBadRequest)
+			return
+		}
+		respondUploadAction(app, w, r, id)
+	}
+}
+
+func handleAdminUploadReject(app *App) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id := pathInt64(r, "id")
+		if err := app.GroqEval.ManualReject(r.Context(), id, ""); err != nil {
+			app.Log.Error("rejeitando envio manualmente", "error", err)
+			http.Error(w, "erro interno", http.StatusInternalServerError)
+			return
+		}
+		respondUploadAction(app, w, r, id)
+	}
+}
+
+// respondUploadAction devolve o <li> atualizado para os botões Aprovar/Negar
+// da lista (htmx, hx-swap="outerHTML") e um redirect simples para a tela de
+// edição, que usa formulários POST comuns.
+func respondUploadAction(app *App, w http.ResponseWriter, r *http.Request, id int64) {
+	if isHXRequest(r) {
+		upload, err := app.Uploads.GetByID(r.Context(), id)
+		if err != nil || upload == nil {
+			http.NotFound(w, r)
+			return
+		}
+		token := ensureCSRFCookie(w, r)
+		render(w, admintpl.UploadRow(*upload, token))
+		return
+	}
+	http.Redirect(w, r, "/admin/envios", http.StatusSeeOther)
 }
 
 // --- Vinhetas ------------------------------------------------------------

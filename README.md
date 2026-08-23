@@ -250,6 +250,17 @@ HOST=root@outro-host ./scripts/deploy.sh # ou aponte para outro usuário/host
 Só a porta 80/443 (Nginx) e 8000 (Icecast) ficam expostas publicamente — a
 API Go e o Postgres escutam somente em `127.0.0.1`.
 
+**Incidente 2026-08-23 (502 em produção):** a role `POSTGRES_USER` (`sdm`)
+ficou sem nenhum `GRANT` nas tabelas do schema `public` — todas pertenciam à
+role `somdomato` (drift de um provisionamento/migração manual anterior). O
+binário falha ao checar `schema_migrations` no boot (`permission denied for
+table schema_migrations`) e entra em crash-loop, o que o Nginx expõe como
+502. Por isso o playbook agora tem uma tarefa idempotente de "self-heal" que
+roda `GRANT ALL` (tabelas e sequences existentes) + `ALTER DEFAULT
+PRIVILEGES` para `postgres_user` a cada `ansible-playbook` — ver tarefas
+"Garantir privilégios..." na seção `# POSTGRESQL` de `ansible/playbook.yml`.
+Rodar o playbook novamente corrige o drift sem precisar de SQL manual.
+
 ### Deploy contínuo (GitHub Actions)
 
 `.github/workflows/deploy.yml` roda `make vet` + `make test` (com Postgres

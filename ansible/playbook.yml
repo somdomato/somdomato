@@ -195,6 +195,42 @@
         state: present
       tags: [postgres]
 
+    # Self-heal contra drift de ownership: se algum objeto acabar sendo
+    # criado por outra role (migração/psql manual, restore de dump etc.),
+    # {{ postgres_user }} — o role que o binário Go usa — pode ficar sem
+    # acesso e a API entra em crash-loop no boot (nginx expõe isso como
+    # 502). Ver incidente 2026-08-23 no README. Idempotente: seguro rodar
+    # a cada provisionamento.
+    - name: Garantir privilégios da role da aplicação em tabelas existentes
+      become_user: postgres
+      community.postgresql.postgresql_query:
+        db: "{{ postgres_db }}"
+        query: "GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO {{ postgres_user }}"
+      tags: [postgres]
+
+    - name: Garantir privilégios da role da aplicação em sequences existentes
+      become_user: postgres
+      community.postgresql.postgresql_query:
+        db: "{{ postgres_db }}"
+        query: "GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO {{ postgres_user }}"
+      tags: [postgres]
+
+    - name: Garantir privilégios padrão em tabelas futuras criadas pela role legada "somdomato"
+      become_user: postgres
+      community.postgresql.postgresql_query:
+        db: "{{ postgres_db }}"
+        query: "ALTER DEFAULT PRIVILEGES FOR ROLE somdomato IN SCHEMA public GRANT ALL PRIVILEGES ON TABLES TO {{ postgres_user }}"
+      failed_when: false
+      tags: [postgres]
+
+    - name: Garantir privilégios padrão em sequences futuras criadas pela role legada "somdomato"
+      become_user: postgres
+      community.postgresql.postgresql_query:
+        db: "{{ postgres_db }}"
+        query: "ALTER DEFAULT PRIVILEGES FOR ROLE somdomato IN SCHEMA public GRANT ALL PRIVILEGES ON SEQUENCES TO {{ postgres_user }}"
+      failed_when: false
+      tags: [postgres]
+
     # =========================================================================
     # NGINX
     # =========================================================================

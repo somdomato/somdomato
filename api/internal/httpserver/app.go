@@ -12,6 +12,7 @@ import (
 	"github.com/somdomato/somdomato/api/internal/artistcover"
 	"github.com/somdomato/somdomato/api/internal/auth"
 	"github.com/somdomato/somdomato/api/internal/deezerdl"
+	"github.com/somdomato/somdomato/api/internal/groqeval"
 	"github.com/somdomato/somdomato/api/internal/jingles"
 	"github.com/somdomato/somdomato/api/internal/protections"
 	"github.com/somdomato/somdomato/api/internal/queue"
@@ -38,6 +39,7 @@ type App struct {
 	Auth        *auth.Store
 	Hub         *sse.Hub
 	Uploads     *uploads.Store
+	GroqEval    *groqeval.Evaluator
 	Analytics   *analytics.Store
 
 	// ArtistCovers guarda o estado (leitura direta pelos handlers);

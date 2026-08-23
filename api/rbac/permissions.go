@@ -14,6 +14,7 @@ const (
 	PermLogsView       Permission = "logs:view"
 	PermUsersManage    Permission = "users:manage"
 	PermStatsView      Permission = "stats:view"
+	PermUploadsManage  Permission = "uploads:manage"
 )
 
 var PermissionLabels = map[Permission]string{
@@ -25,6 +26,7 @@ var PermissionLabels = map[Permission]string{
 	PermLogsView:       "Ver Logs",
 	PermUsersManage:    "Gerenciar Usuários",
 	PermStatsView:      "Ver Estatísticas",
+	PermUploadsManage:  "Gerenciar Envios",
 }
 
 type Role string

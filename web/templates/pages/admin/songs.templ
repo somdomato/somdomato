@@ -61,13 +61,16 @@ templ SongsTable(songsList []models.Song, csrfToken string, page SongsPageInfo) 
 			<input type="hidden" name="q" value={ page.Query }/>
 			<label class="flex items-center gap-2">
 				Por página
-				<select name="per_page" class="rounded-lg bg-surface-raised px-2 py-1">
-					@songsPerPageOption(20, "20", page.PerPage)
-					@songsPerPageOption(50, "50", page.PerPage)
-					@songsPerPageOption(100, "100", page.PerPage)
-					@songsPerPageOption(200, "200", page.PerPage)
-					@songsPerPageOption(0, "Tudo", page.PerPage)
-				</select>
+				<span class="relative inline-block">
+					<select name="per_page" class="appearance-none rounded-lg bg-surface-raised py-1 pl-2 pr-9">
+						@songsPerPageOption(20, "20", page.PerPage)
+						@songsPerPageOption(50, "50", page.PerPage)
+						@songsPerPageOption(100, "100", page.PerPage)
+						@songsPerPageOption(200, "200", page.PerPage)
+						@songsPerPageOption(0, "Tudo", page.PerPage)
+					</select>
+					@components.SelectArrow()
+				</span>
 			</label>
 		</form>
 	</div>
@@ -157,27 +160,33 @@ templ SongEdit(s models.Song, csrfToken string, player *components.PlayerData) {
 			</label>
 			<label class="block text-sm">
 				Gênero
-				<select name="genre" class="mt-1 w-full rounded-lg bg-surface-raised px-3 py-2">
-					for _, g := range config.AllGenres {
-						if string(g) == s.Genre {
-							<option value={ string(g) } selected>{ g.Label() }</option>
-						} else {
-							<option value={ string(g) }>{ g.Label() }</option>
+				<span class="relative mt-1 block">
+					<select name="genre" class="w-full appearance-none rounded-lg bg-surface-raised py-2 pl-3 pr-9">
+						for _, g := range config.AllGenres {
+							if string(g) == s.Genre {
+								<option value={ string(g) } selected>{ g.Label() }</option>
+							} else {
+								<option value={ string(g) }>{ g.Label() }</option>
+							}
 						}
-					}
-				</select>
+					</select>
+					@components.SelectArrow()
+				</span>
 			</label>
 			<label class="block text-sm">
 				Rotação
-				<select name="rotation" class="mt-1 w-full rounded-lg bg-surface-raised px-3 py-2">
-					for _, r := range []string{"inativo", "ultraleve", "leve", "normal", "pesado", "ultrapesada"} {
-						if r == s.Rotation {
-							<option value={ r } selected>{ r }</option>
-						} else {
-							<option value={ r }>{ r }</option>
+				<span class="relative mt-1 block">
+					<select name="rotation" class="w-full appearance-none rounded-lg bg-surface-raised py-2 pl-3 pr-9">
+						for _, r := range []string{"inativo", "ultraleve", "leve", "normal", "pesado", "ultrapesada"} {
+							if r == s.Rotation {
+								<option value={ r } selected>{ r }</option>
+							} else {
+								<option value={ r }>{ r }</option>
+							}
 						}
-					}
-				</select>
+					</select>
+					@components.SelectArrow()
+				</span>
 			</label>
 			<label class="flex items-center gap-2 text-sm">
 				<input type="checkbox" name="allowed_in_general" checked?={ s.AllowedInGeneral }/>

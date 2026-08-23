@@ -27,6 +27,7 @@ import (
 	"github.com/somdomato/somdomato/api/internal/cover"
 	"github.com/somdomato/somdomato/api/internal/songs"
 	"github.com/somdomato/somdomato/api/internal/uploads"
+	"github.com/somdomato/somdomato/api/models"
 )
 
 const groqEndpoint = "https://api.groq.com/openai/v1/chat/completions"
@@ -112,7 +113,16 @@ func (e *Evaluator) tick(ctx context.Context) {
 		return
 	}
 
-	genre := verdict.Genre
+	if err := e.approve(ctx, upload, verdict.Genre, verdict.Reason); err != nil {
+		e.log.Warn("groqeval: falha ao aprovar upload avaliado pela IA", "upload_id", upload.ID, "error", err)
+	}
+}
+
+// approve cria a música no catálogo a partir de um upload e marca o upload
+// como aprovado. Usado tanto pelo veredito automático da IA (tick) quanto
+// pela aprovação manual de um admin (ManualApprove) — as duas trilhas
+// compartilham a mesma lógica de resolução de capa e inserção em songs.
+func (e *Evaluator) approve(ctx context.Context, upload *models.Upload, genre, reason string) error {
 	if !config.IsValidGenre(genre) {
 		genre = string(config.DefaultGenre)
 	}
@@ -140,19 +150,47 @@ func (e *Evaluator) tick(ctx context.Context) {
 		Genre:     genre,
 	})
 	if err != nil || !created {
-		reason := verdict.Reason
+		rejectReason := reason
 		if err != nil {
-			reason = fmt.Sprintf("aprovada pela IA mas falhou ao inserir no catálogo: %v", err)
+			rejectReason = fmt.Sprintf("aprovada mas falhou ao inserir no catálogo: %v", err)
 		}
-		if rerr := e.uploads.MarkRejected(ctx, upload.ID, reason); rerr != nil {
+		if rerr := e.uploads.MarkRejected(ctx, upload.ID, rejectReason); rerr != nil {
 			e.log.Error("groqeval: marcando rejeitado após falha de inserção", "error", rerr)
 		}
-		return
+		if err == nil {
+			err = fmt.Errorf("música já existe no catálogo")
+		}
+		return err
 	}
 
-	if err := e.uploads.MarkApproved(ctx, upload.ID, songID, genre, verdict.Reason); err != nil {
+	if err := e.uploads.MarkApproved(ctx, upload.ID, songID, genre, reason); err != nil {
 		e.log.Error("groqeval: marcando aprovado", "error", err)
+		return err
 	}
+	return nil
+}
+
+// ManualApprove insere no catálogo um upload pendente/rejeitado por decisão
+// direta de um admin no painel (/admin/envios), fora do ciclo normal de
+// avaliação da IA.
+func (e *Evaluator) ManualApprove(ctx context.Context, uploadID int64, genre string) error {
+	upload, err := e.uploads.GetByID(ctx, uploadID)
+	if err != nil {
+		return err
+	}
+	if upload == nil {
+		return fmt.Errorf("upload não encontrado")
+	}
+	return e.approve(ctx, upload, genre, "aprovado manualmente por admin")
+}
+
+// ManualReject marca um upload como rejeitado por decisão direta de um
+// admin, sem depender do veredito da IA.
+func (e *Evaluator) ManualReject(ctx context.Context, uploadID int64, reason string) error {
+	if reason == "" {
+		reason = "rejeitado manualmente por admin"
+	}
+	return e.uploads.MarkRejected(ctx, uploadID, reason)
 }
 
 type verdict struct {

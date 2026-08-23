@@ -69,6 +69,8 @@ func main() {
 		log.Warn("DEEZER_ARL não configurado — rota /enviar/baixar fica desativada")
 	}
 
+	groqEvaluator := groqeval.New(cfg, uploadsStore, songsStore, log)
+
 	app := &httpserver.App{
 		Cfg:                 cfg,
 		Log:                 log,
@@ -81,6 +83,7 @@ func main() {
 		Auth:                auth.NewStore(pool),
 		Hub:                 hub,
 		Uploads:             uploadsStore,
+		GroqEval:            groqEvaluator,
 		Analytics:           analyticsStore,
 		ArtistCovers:        artistCoverStore,
 		ArtistCoverResolver: artistCoverResolver,
@@ -90,7 +93,7 @@ func main() {
 	// Avaliador Groq: no máximo 1 chamada/min, ver internal/groqeval. Sem
 	// GROQ_API_KEY o worker simplesmente não processa nada (uploads ficam
 	// pendentes) — não impede o boot.
-	go groqeval.New(cfg, uploadsStore, songsStore, log).Run(ctx)
+	go groqEvaluator.Run(ctx)
 
 	// Alimenta o hub SSE com a contagem de ouvintes a cada 10s — mesma
 	// cadência do polling que o front atual fazia em /api/listeners.

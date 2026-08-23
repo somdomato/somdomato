@@ -146,3 +146,67 @@ func (s *Store) ListRecent(ctx context.Context, limit int) ([]models.Upload, err
 	}
 	return out, rows.Err()
 }
+
+func (s *Store) GetByID(ctx context.Context, id int64) (*models.Upload, error) {
+	row := s.pool.QueryRow(ctx, `SELECT `+selectFields+` FROM uploads WHERE id = $1`, id)
+	u, err := scanUpload(row)
+	if err == pgx.ErrNoRows {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("buscando upload: %w", err)
+	}
+	return &u, nil
+}
+
+// ListByStatus lista uploads para a tela /admin/envios, opcionalmente
+// filtrados por status (vazio = todos), paginados por created_at desc.
+func (s *Store) ListByStatus(ctx context.Context, status string, limit, offset int) ([]models.Upload, error) {
+	var rows pgx.Rows
+	var err error
+	if status == "" {
+		rows, err = s.pool.Query(ctx, `SELECT `+selectFields+` FROM uploads ORDER BY created_at DESC LIMIT $1 OFFSET $2`, limit, offset)
+	} else {
+		rows, err = s.pool.Query(ctx, `SELECT `+selectFields+` FROM uploads WHERE status = $1 ORDER BY created_at DESC LIMIT $2 OFFSET $3`, status, limit, offset)
+	}
+	if err != nil {
+		return nil, fmt.Errorf("listando uploads: %w", err)
+	}
+	defer rows.Close()
+
+	var out []models.Upload
+	for rows.Next() {
+		u, err := scanUpload(rows)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, u)
+	}
+	return out, rows.Err()
+}
+
+// CountByStatus conta uploads por status (vazio = todos) — usado pela
+// paginação de /admin/envios.
+func (s *Store) CountByStatus(ctx context.Context, status string) (int, error) {
+	var total int
+	var err error
+	if status == "" {
+		err = s.pool.QueryRow(ctx, `SELECT count(*) FROM uploads`).Scan(&total)
+	} else {
+		err = s.pool.QueryRow(ctx, `SELECT count(*) FROM uploads WHERE status = $1`, status).Scan(&total)
+	}
+	if err != nil {
+		return 0, fmt.Errorf("contando uploads: %w", err)
+	}
+	return total, nil
+}
+
+// UpdateMeta permite ao admin corrigir título/artista de um upload ainda
+// não avaliado (ou já rejeitado) antes de aprová-lo manualmente.
+func (s *Store) UpdateMeta(ctx context.Context, id int64, title, artist string) error {
+	_, err := s.pool.Exec(ctx, `UPDATE uploads SET title = $1, artist = $2 WHERE id = $3`, title, artist, id)
+	if err != nil {
+		return fmt.Errorf("atualizando upload: %w", err)
+	}
+	return nil
+}
