@@ -8,6 +8,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/somdomato/somdomato/api/internal/cover"
 	"github.com/somdomato/somdomato/api/models"
 )
 
@@ -115,6 +116,9 @@ func (s *Store) ListArtistsWithCovers(ctx context.Context) ([]models.ArtistCard,
 		var c models.ArtistCard
 		if err := rows.Scan(&c.Name, &c.Cover, &c.SongCount); err != nil {
 			return nil, err
+		}
+		if c.Cover == "" {
+			c.Cover = cover.DefaultCover
 		}
 		out = append(out, c)
 	}

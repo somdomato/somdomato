@@ -43,10 +43,25 @@ func fetchDeezer(ctx context.Context, client *http.Client, artistName string) (s
 	if len(data.Data) == 0 {
 		return "", nil
 	}
-	if data.Data[0].PictureBig != "" {
-		return data.Data[0].PictureBig, nil
+	picture := data.Data[0].PictureBig
+	if picture == "" {
+		picture = data.Data[0].PictureMedium
 	}
-	return data.Data[0].PictureMedium, nil
+	if isDeezerPlaceholder(picture) {
+		return "", nil
+	}
+	return picture, nil
+}
+
+// deezerPlaceholderHash é o id de imagem que o Deezer usa em toda foto de
+// artista "sem foto" — é o MD5 da string vazia, sempre no mesmo caminho
+// (ex. https://cdn-images.dzcdn.net/images/artist/d41d8cd98f00b204e9800998ecf8427e/500x500-...).
+// Sem esse filtro, a silhueta cinza genérica do Deezer acaba salva como se
+// fosse a capa real do artista.
+const deezerPlaceholderHash = "d41d8cd98f00b204e9800998ecf8427e"
+
+func isDeezerPlaceholder(pictureURL string) bool {
+	return strings.Contains(pictureURL, deezerPlaceholderHash)
 }
 
 // fetchITunes usa a busca pública (sem chave) do iTunes, filtrando por
