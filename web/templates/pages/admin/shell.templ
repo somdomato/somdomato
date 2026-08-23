@@ -22,6 +22,8 @@ templ Shell(title string, active string, player *components.PlayerData) {
 				@navLink("/admin/vinhetas", "Vinhetas", active == "jingles")
 				@navLink("/admin/estatisticas", "Estatísticas", active == "stats")
 				@navLink("/admin/usuarios", "Usuários", active == "users")
+				@navLink("/admin/permissoes", "Permissões", active == "permissions")
+				@navLink("/admin/perfil", "Meu Perfil", active == "profile")
 				<form method="POST" action="/admin/logout" class="pt-3">
 					<button type="submit" class="w-full rounded-lg px-3 py-2 text-left text-red-400 hover:bg-white/5">Sair</button>
 				</form>

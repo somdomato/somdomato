@@ -1,0 +1,36 @@
+package admin
+
+import (
+	"github.com/somdomato/somdomato/api/models"
+	"github.com/somdomato/somdomato/web/templates/components"
+)
+
+templ Profile(user models.User, csrfToken string, message string, isError bool, player *components.PlayerData) {
+	@Shell("Meu Perfil", "profile", player) {
+		<h1 class="text-xl font-bold">Meu Perfil</h1>
+		<p class="mt-1 text-sm text-neutral-400">{ user.Name } · { user.Email }</p>
+		if message != "" {
+			if isError {
+				<p class="mt-4 rounded-lg bg-red-950/50 px-3 py-2 text-sm text-red-300">{ message }</p>
+			} else {
+				<p class="mt-4 rounded-lg bg-green-950/50 px-3 py-2 text-sm text-green-300">{ message }</p>
+			}
+		}
+		<form method="POST" action="/admin/perfil/senha" hx-boost="true" class="mt-4 max-w-md space-y-3">
+			<input type="hidden" name="csrf_token" value={ csrfToken }/>
+			<label class="block text-sm">
+				Senha atual
+				<input type="password" name="current_password" required class="mt-1 w-full rounded-lg bg-surface-raised px-3 py-2"/>
+			</label>
+			<label class="block text-sm">
+				Nova senha
+				<input type="password" name="new_password" required minlength="8" class="mt-1 w-full rounded-lg bg-surface-raised px-3 py-2"/>
+			</label>
+			<label class="block text-sm">
+				Confirmar nova senha
+				<input type="password" name="confirm_password" required minlength="8" class="mt-1 w-full rounded-lg bg-surface-raised px-3 py-2"/>
+			</label>
+			<button type="submit" class="rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-500">Alterar senha</button>
+		</form>
+	}
+}

@@ -3,6 +3,8 @@
 package httpserver
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -14,6 +16,7 @@ import (
 	"time"
 
 	"github.com/bogem/id3v2/v2"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/somdomato/somdomato/api/config"
 	"github.com/somdomato/somdomato/api/internal/artistcover"
 	"github.com/somdomato/somdomato/api/internal/auth"
@@ -55,7 +58,15 @@ func registerAdminRoutes(mux *http.ServeMux, app *App) {
 	mux.HandleFunc("POST /admin/vinhetas/{id}/alternar", requirePermission(app, rbac.PermJinglesManage, requireCSRF(handleAdminJingleToggle(app))))
 
 	mux.HandleFunc("GET /admin/usuarios", requirePermission(app, rbac.PermUsersManage, handleAdminUsersList(app)))
+	mux.HandleFunc("POST /admin/usuarios", requirePermission(app, rbac.PermUsersManage, requireCSRF(handleAdminUserCreate(app))))
 	mux.HandleFunc("POST /admin/usuarios/{id}/papel", requirePermission(app, rbac.PermUsersManage, requireCSRF(handleAdminUserRoleUpdate(app))))
+	mux.HandleFunc("POST /admin/usuarios/{id}/remover", requirePermission(app, rbac.PermUsersManage, requireCSRF(handleAdminUserDelete(app))))
+
+	mux.HandleFunc("GET /admin/permissoes", requirePermission(app, rbac.PermUsersManage, handleAdminPermissionsList(app)))
+	mux.HandleFunc("POST /admin/permissoes/{role}/{permissao}/alternar", requirePermission(app, rbac.PermUsersManage, requireCSRF(handleAdminPermissionToggle(app))))
+
+	mux.HandleFunc("GET /admin/perfil", requireAuth(app, handleAdminProfileForm(app)))
+	mux.HandleFunc("POST /admin/perfil/senha", requireAuth(app, requireCSRF(handleAdminProfilePasswordUpdate(app))))
 
 	mux.HandleFunc("GET /admin/estatisticas", requirePermission(app, rbac.PermStatsView, handleAdminStats(app)))
 }
@@ -684,6 +695,222 @@ func handleAdminUserRoleUpdate(app *App) http.HandlerFunc {
 			return
 		}
 		http.Redirect(w, r, "/admin/usuarios", http.StatusSeeOther)
+	}
+}
+
+// handleAdminUserCreate cadastra um novo admin — a role é restrita aos
+// papéis administrativos (não faz sentido criar um "user" comum por aqui).
+func handleAdminUserCreate(app *App) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		name := strings.TrimSpace(r.FormValue("name"))
+		email := strings.TrimSpace(r.FormValue("email"))
+		password := r.FormValue("password")
+		role := r.FormValue("role")
+
+		if name == "" || email == "" {
+			http.Error(w, "nome e e-mail são obrigatórios", http.StatusBadRequest)
+			return
+		}
+		if len(password) < 8 {
+			http.Error(w, "a senha precisa ter ao menos 8 caracteres", http.StatusBadRequest)
+			return
+		}
+		if !rbac.IsValidRole(role) || !rbac.IsAdminRole(role) {
+			http.Error(w, "papel inválido", http.StatusBadRequest)
+			return
+		}
+
+		hash, err := auth.HashPassword(password)
+		if err != nil {
+			app.Log.Error("gerando hash de senha", "error", err)
+			http.Error(w, "erro interno", http.StatusInternalServerError)
+			return
+		}
+
+		_, err = app.Pool.Exec(r.Context(),
+			`INSERT INTO users (name, email, password_hash, role) VALUES ($1, $2, $3, $4)`,
+			name, email, hash, role)
+		if err != nil {
+			if isUniqueViolation(err) {
+				http.Error(w, "já existe um usuário com esse e-mail", http.StatusConflict)
+				return
+			}
+			app.Log.Error("criando usuário admin", "error", err)
+			http.Error(w, "erro interno", http.StatusInternalServerError)
+			return
+		}
+		http.Redirect(w, r, "/admin/usuarios", http.StatusSeeOther)
+	}
+}
+
+// handleAdminUserDelete remove um admin. Não há FK de outras tabelas para
+// users, então é um DELETE simples; a única trava é impedir que alguém
+// apague a própria conta em sessão (ficaria sem sessão válida e sem
+// ninguém pra desfazer).
+func handleAdminUserDelete(app *App) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id := pathInt64(r, "id")
+		claims := r.Context().Value(claimsCtxKey).(*auth.Claims)
+		if id == claims.UserID {
+			http.Error(w, "não é possível remover a própria conta", http.StatusBadRequest)
+			return
+		}
+		if _, err := app.Pool.Exec(r.Context(), `DELETE FROM users WHERE id = $1`, id); err != nil {
+			app.Log.Error("removendo usuário", "error", err)
+			http.Error(w, "erro interno", http.StatusInternalServerError)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+	}
+}
+
+func isUniqueViolation(err error) bool {
+	var pgErr *pgconn.PgError
+	return errors.As(err, &pgErr) && pgErr.Code == "23505"
+}
+
+// --- Permissões por papel ---------------------------------------------------
+
+func handleAdminPermissionsList(app *App) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		matrix, err := loadPermissionMatrix(r.Context(), app)
+		if err != nil {
+			app.Log.Error("carregando matriz de permissões", "error", err)
+		}
+		token := ensureCSRFCookie(w, r)
+		player := buildPlayerData(r.Context(), app, config.DefaultGenre)
+		render(w, admintpl.PermissionsList(matrix, token, &player))
+	}
+}
+
+func loadPermissionMatrix(ctx context.Context, app *App) (map[rbac.Role]map[rbac.Permission]bool, error) {
+	matrix := make(map[rbac.Role]map[rbac.Permission]bool, len(rbac.AllRoles))
+	for _, role := range rbac.AllRoles {
+		matrix[role] = make(map[rbac.Permission]bool, len(rbac.AllPermissions))
+	}
+	rows, err := app.Pool.Query(ctx, `SELECT role, permission FROM role_permissions`)
+	if err != nil {
+		return matrix, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var role, perm string
+		if err := rows.Scan(&role, &perm); err != nil {
+			return matrix, err
+		}
+		if m, ok := matrix[rbac.Role(role)]; ok {
+			m[rbac.Permission(perm)] = true
+		}
+	}
+	return matrix, rows.Err()
+}
+
+// handleAdminPermissionToggle concede ou revoga uma permissão de um papel —
+// role_permissions não tem coluna booleana, então "alternar" é: se a linha
+// existe, apaga; senão, insere.
+func handleAdminPermissionToggle(app *App) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		role := r.PathValue("role")
+		perm := r.PathValue("permissao")
+		if !rbac.IsValidRole(role) || !isValidPermission(perm) {
+			http.Error(w, "papel ou permissão inválidos", http.StatusBadRequest)
+			return
+		}
+
+		tag, err := app.Pool.Exec(r.Context(), `DELETE FROM role_permissions WHERE role = $1 AND permission = $2`, role, perm)
+		if err != nil {
+			app.Log.Error("removendo permissão", "error", err)
+			http.Error(w, "erro interno", http.StatusInternalServerError)
+			return
+		}
+		if tag.RowsAffected() == 0 {
+			if _, err := app.Pool.Exec(r.Context(), `INSERT INTO role_permissions (role, permission) VALUES ($1, $2)`, role, perm); err != nil {
+				app.Log.Error("concedendo permissão", "error", err)
+				http.Error(w, "erro interno", http.StatusInternalServerError)
+				return
+			}
+		}
+		http.Redirect(w, r, "/admin/permissoes", http.StatusSeeOther)
+	}
+}
+
+func isValidPermission(p string) bool {
+	for _, v := range rbac.AllPermissions {
+		if string(v) == p {
+			return true
+		}
+	}
+	return false
+}
+
+// --- Perfil (própria conta) --------------------------------------------------
+
+func handleAdminProfileForm(app *App) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		claims := r.Context().Value(claimsCtxKey).(*auth.Claims)
+		user, err := app.Auth.GetUserByID(r.Context(), claims.UserID)
+		if err != nil || user == nil {
+			http.Error(w, "erro interno", http.StatusInternalServerError)
+			return
+		}
+		token := ensureCSRFCookie(w, r)
+		player := buildPlayerData(r.Context(), app, config.DefaultGenre)
+		render(w, admintpl.Profile(*user, token, "", false, &player))
+	}
+}
+
+// handleAdminProfilePasswordUpdate deixa qualquer admin logado trocar a
+// própria senha — não passa por requirePermission, só requireAuth, porque
+// isso não é "gerenciar usuários", é autoatendimento.
+func handleAdminProfilePasswordUpdate(app *App) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		claims := r.Context().Value(claimsCtxKey).(*auth.Claims)
+		user, err := app.Auth.GetUserByID(r.Context(), claims.UserID)
+		if err != nil || user == nil {
+			http.Error(w, "erro interno", http.StatusInternalServerError)
+			return
+		}
+
+		fail := func(msg string) {
+			token := ensureCSRFCookie(w, r)
+			player := buildPlayerData(r.Context(), app, config.DefaultGenre)
+			w.WriteHeader(http.StatusBadRequest)
+			render(w, admintpl.Profile(*user, token, msg, true, &player))
+		}
+
+		current := r.FormValue("current_password")
+		next := r.FormValue("new_password")
+		confirm := r.FormValue("confirm_password")
+
+		if !auth.VerifyPassword(user.PasswordHash, current) {
+			fail("Senha atual incorreta.")
+			return
+		}
+		if len(next) < 8 {
+			fail("A nova senha precisa ter ao menos 8 caracteres.")
+			return
+		}
+		if next != confirm {
+			fail("A confirmação não confere com a nova senha.")
+			return
+		}
+
+		hash, err := auth.HashPassword(next)
+		if err != nil {
+			app.Log.Error("gerando hash de senha", "error", err)
+			http.Error(w, "erro interno", http.StatusInternalServerError)
+			return
+		}
+		if _, err := app.Pool.Exec(r.Context(), `UPDATE users SET password_hash = $1, updated_at = now() WHERE id = $2`, hash, claims.UserID); err != nil {
+			app.Log.Error("atualizando senha", "error", err)
+			http.Error(w, "erro interno", http.StatusInternalServerError)
+			return
+		}
+
+		user.PasswordHash = hash
+		token := ensureCSRFCookie(w, r)
+		player := buildPlayerData(r.Context(), app, config.DefaultGenre)
+		render(w, admintpl.Profile(*user, token, "Senha atualizada com sucesso.", false, &player))
 	}
 }
 

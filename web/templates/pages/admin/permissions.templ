@@ -1,0 +1,44 @@
+package admin
+
+import (
+	"github.com/somdomato/somdomato/api/rbac"
+	"github.com/somdomato/somdomato/web/templates/components"
+)
+
+templ PermissionsList(matrix map[rbac.Role]map[rbac.Permission]bool, csrfToken string, player *components.PlayerData) {
+	@Shell("Permissões", "permissions", player) {
+		<h1 class="text-xl font-bold">Permissões por Papel</h1>
+		<p class="mt-1 text-sm text-neutral-400">Clique numa célula para conceder ou revogar a permissão daquele papel.</p>
+		<div class="mt-4 overflow-x-auto">
+			<table class="w-full text-left text-sm">
+				<thead class="text-xs uppercase text-neutral-500">
+					<tr>
+						<th class="px-3 py-2">Permissão</th>
+						for _, r := range rbac.AllRoles {
+							<th class="px-3 py-2 text-center">{ rbac.RoleLabels[r] }</th>
+						}
+					</tr>
+				</thead>
+				<tbody class="divide-y divide-white/5">
+					for _, p := range rbac.AllPermissions {
+						<tr>
+							<td class="px-3 py-2 whitespace-nowrap">{ rbac.PermissionLabels[p] }</td>
+							for _, r := range rbac.AllRoles {
+								<td class="px-3 py-2 text-center">
+									<form hx-post={ "/admin/permissoes/" + string(r) + "/" + string(p) + "/alternar" } hx-swap="none">
+										<input type="hidden" name="csrf_token" value={ csrfToken }/>
+										if matrix[r][p] {
+											<button type="submit" title="Concedida — clique para revogar" class="text-lg text-brand-300 hover:text-brand-200">✓</button>
+										} else {
+											<button type="submit" title="Não concedida — clique para conceder" class="text-lg text-neutral-700 hover:text-neutral-400">—</button>
+										}
+									</form>
+								</td>
+							}
+						</tr>
+					}
+				</tbody>
+			</table>
+		</div>
+	}
+}

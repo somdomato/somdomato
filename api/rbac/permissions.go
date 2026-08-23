@@ -17,6 +17,11 @@ const (
 	PermUploadsManage  Permission = "uploads:manage"
 )
 
+var AllPermissions = []Permission{
+	PermSongsEditTags, PermSongsEditFile, PermSongsDelete, PermRequestsManage,
+	PermJinglesManage, PermLogsView, PermUsersManage, PermStatsView, PermUploadsManage,
+}
+
 var PermissionLabels = map[Permission]string{
 	PermSongsEditTags:  "Editar Tags",
 	PermSongsEditFile:  "Editar Arquivo",
