@@ -15,6 +15,7 @@ type HomeData struct {
 
 templ Home(data HomeData) {
 	@templates.Layout("", &data.Player, data.IsAdmin) {
+		@components.ChatEmbed()
 		<div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
 			<div class="order-1">
 				@components.SongList("Últimas", data.Last, "Ainda não há histórico nesta stream.")
@@ -26,6 +27,5 @@ templ Home(data HomeData) {
 				@components.SongListWithSource("Próximas", data.Next, "A fila está sendo preparada.")
 			</div>
 		</div>
-		@components.ChatEmbed()
 	}
 }
