@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/somdomato/somdomato/api/models"
+	"github.com/somdomato/somdomato/web/templates/components"
 )
 
 type StatsData struct {
@@ -36,8 +37,8 @@ func statsURL(period models.Period) string {
 	return "/admin/estatisticas?periodo=" + string(period)
 }
 
-templ Stats(data StatsData) {
-	@Shell("Estatísticas", "stats") {
+templ Stats(data StatsData, player *components.PlayerData) {
+	@Shell("Estatísticas", "stats", player) {
 		<h1 class="text-xl font-bold">Estatísticas</h1>
 		@StatsContent(data)
 	}

@@ -1,9 +1,12 @@
 package admin
 
-import "github.com/somdomato/somdomato/api/models"
+import (
+	"github.com/somdomato/somdomato/api/models"
+	"github.com/somdomato/somdomato/web/templates/components"
+)
 
-templ JinglesList(list []models.Jingle, interval int, csrfToken string) {
-	@Shell("Vinhetas", "jingles") {
+templ JinglesList(list []models.Jingle, interval int, csrfToken string, player *components.PlayerData) {
+	@Shell("Vinhetas", "jingles", player) {
 		<h1 class="text-xl font-bold">Vinhetas</h1>
 
 		<form method="POST" action="/admin/vinhetas/intervalo" class="mt-4 flex items-end gap-2">

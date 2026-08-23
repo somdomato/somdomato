@@ -1,6 +1,9 @@
 package admin
 
-import "github.com/somdomato/somdomato/api/config"
+import (
+	"github.com/somdomato/somdomato/api/config"
+	"github.com/somdomato/somdomato/web/templates/components"
+)
 
 type DashboardRow struct {
 	Genre     config.Genre
@@ -9,8 +12,8 @@ type DashboardRow struct {
 	Listeners int
 }
 
-templ Dashboard(rows []DashboardRow) {
-	@Shell("Painel", "dashboard") {
+templ Dashboard(rows []DashboardRow, player *components.PlayerData) {
+	@Shell("Painel", "dashboard", player) {
 		<h1 class="text-xl font-bold">Tocando agora</h1>
 		<div class="mt-4 grid gap-3 sm:grid-cols-2">
 			for _, row := range rows {

@@ -124,7 +124,8 @@ func handleAdminDashboard(app *App) http.HandlerFunc {
 			})
 		}
 
-		render(w, admintpl.Dashboard(rows))
+		player := buildPlayerData(ctx, app, config.DefaultGenre)
+		render(w, admintpl.Dashboard(rows, &player))
 	}
 }
 
@@ -186,7 +187,8 @@ func handleAdminSongsList(app *App) http.HandlerFunc {
 			return
 		}
 		token := ensureCSRFCookie(w, r)
-		render(w, admintpl.SongsList(list, query, token, pageInfo))
+		player := buildPlayerData(r.Context(), app, config.DefaultGenre)
+		render(w, admintpl.SongsList(list, query, token, pageInfo, &player))
 	}
 }
 
@@ -199,7 +201,8 @@ func handleAdminSongEditForm(app *App) http.HandlerFunc {
 			return
 		}
 		token := ensureCSRFCookie(w, r)
-		render(w, admintpl.SongEdit(*song, token))
+		player := buildPlayerData(r.Context(), app, config.DefaultGenre)
+		render(w, admintpl.SongEdit(*song, token, &player))
 	}
 }
 
@@ -437,7 +440,8 @@ func handleAdminRequestsList(app *App) http.HandlerFunc {
 			app.Log.Error("listando pedidos (admin)", "error", err)
 		}
 		token := ensureCSRFCookie(w, r)
-		render(w, admintpl.RequestsList(toPendingRows(pending), token))
+		player := buildPlayerData(r.Context(), app, config.DefaultGenre)
+		render(w, admintpl.RequestsList(toPendingRows(pending), token, &player))
 	}
 }
 
@@ -480,7 +484,8 @@ func handleAdminJinglesList(app *App) http.HandlerFunc {
 		}
 		interval, _ := app.Jingles.GetJingleInterval(ctx)
 		token := ensureCSRFCookie(w, r)
-		render(w, admintpl.JinglesList(list, interval, token))
+		player := buildPlayerData(ctx, app, config.DefaultGenre)
+		render(w, admintpl.JinglesList(list, interval, token, &player))
 	}
 }
 
@@ -533,7 +538,8 @@ func handleAdminUsersList(app *App) http.HandlerFunc {
 			}
 		}
 		token := ensureCSRFCookie(w, r)
-		render(w, admintpl.UsersList(list, token))
+		player := buildPlayerData(ctx, app, config.DefaultGenre)
+		render(w, admintpl.UsersList(list, token, &player))
 	}
 }
 
@@ -596,7 +602,8 @@ func handleAdminStats(app *App) http.HandlerFunc {
 			render(w, admintpl.StatsContent(data))
 			return
 		}
-		render(w, admintpl.Stats(data))
+		player := buildPlayerData(ctx, app, config.DefaultGenre)
+		render(w, admintpl.Stats(data, &player))
 	}
 }
 

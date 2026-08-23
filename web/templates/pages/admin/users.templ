@@ -3,10 +3,11 @@ package admin
 import (
 	"github.com/somdomato/somdomato/api/rbac"
 	"github.com/somdomato/somdomato/api/models"
+	"github.com/somdomato/somdomato/web/templates/components"
 )
 
-templ UsersList(list []models.User, csrfToken string) {
-	@Shell("Usuários", "users") {
+templ UsersList(list []models.User, csrfToken string, player *components.PlayerData) {
+	@Shell("Usuários", "users", player) {
 		<h1 class="text-xl font-bold">Usuários</h1>
 		<table class="mt-4 w-full text-left text-sm">
 			<thead class="text-xs uppercase text-neutral-500">

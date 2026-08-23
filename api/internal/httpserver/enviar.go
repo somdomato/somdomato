@@ -226,11 +226,11 @@ func handleEnviarBaixar(app *App) http.HandlerFunc {
 			return
 		}
 		if app.Deezer == nil {
-			http.Error(w, "download de músicas está desativado no momento", http.StatusServiceUnavailable)
+			render(w, components.EnviarBaixarError(trackID, title, artist, "download de músicas está desativado no momento"))
 			return
 		}
 		if activeJobs.Load() >= maxActiveJobs {
-			http.Error(w, "muitos downloads em andamento — tente novamente em alguns minutos", http.StatusServiceUnavailable)
+			render(w, components.EnviarBaixarError(trackID, title, artist, "muitos downloads em andamento — tente novamente em alguns minutos"))
 			return
 		}
 

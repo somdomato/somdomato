@@ -84,3 +84,16 @@ templ EnviarError(title, artist, message string) {
 	<p class="truncate text-sm font-medium">{ title }</p>
 	<p class="truncate text-xs text-red-400">{ artist } · { message }</p>
 }
+
+// EnviarBaixarError substitui a linha de resultado (mesmo alvo/outerHTML de
+// EnviarResultRow) quando POST /enviar/baixar rejeita o pedido antes de criar
+// um job — ex.: Deezer desativado ou limite de downloads simultâneos
+// atingido. Usa 200 (em vez de manter o status HTTP não-2xx do handler) pois
+// htmx não troca o conteúdo do alvo em respostas de erro por padrão.
+templ EnviarBaixarError(trackID, title, artist, message string) {
+	<li class="flex items-center gap-3 px-4 py-2" id={ "track-" + trackID }>
+		<div class="min-w-0 flex-1">
+			@EnviarError(title, artist, message)
+		</div>
+	</li>
+}

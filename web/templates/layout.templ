@@ -101,11 +101,19 @@ templ Layout(title string, player *components.PlayerData, isAdmin bool) {
 	</html>
 }
 
-// Header carrega hx-boost + hx-preserve para que a navegação entre páginas
-// troque só o <main>: o player (áudio, SSE, JS já ligados) segue tocando sem
-// interrupção em vez de recarregar a cada clique no menu.
+// Header carrega hx-boost para que a navegação entre páginas troque só o
+// <main>. O bloco do player (dentro de #player-bar) leva hx-preserve à parte
+// — não o <header> inteiro — porque #player-bar só existe nas páginas que
+// têm player (não existe em /admin). Se o hx-preserve estivesse no <header>
+// (presente em toda página, com ou sem player), o id bateria sempre e o
+// htmx reaproveitaria o <header> atual pra sempre — inclusive uma versão sem
+// player vinda de /admin — e o player nunca mais reapareceria mesmo
+// navegando de volta para uma página que o renderiza. Com o hx-preserve só
+// em #player-bar, o id só bate (preservando áudio/SSE/JS) entre páginas que
+// ambas têm player; ao entrar ou sair de /admin, o bloco é recriado do zero
+// a partir da resposta do servidor, como deveria.
 templ Header(player *components.PlayerData, isAdmin bool) {
-	<header id="site-header" hx-boost="true" hx-preserve="true" class="sticky top-0 z-40 border-b border-white/10 bg-surface-raised/95 backdrop-blur">
+	<header id="site-header" hx-boost="true" class="sticky top-0 z-40 border-b border-white/10 bg-surface-raised/95 backdrop-blur">
 		<div class="mx-auto max-w-5xl px-4">
 			<div class="flex flex-col items-center gap-2 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
 				<a href="/" class="flex shrink-0 items-center gap-2">
@@ -123,10 +131,12 @@ templ Header(player *components.PlayerData, isAdmin bool) {
 				</nav>
 			</div>
 			if player != nil {
-				@components.PlayerBar(*player)
-				<script src={ "/static/js/player.js?v=" + web.AssetVersion() }></script>
-				<script src={ "/static/js/share.js?v=" + web.AssetVersion() }></script>
-				<script src={ "/static/js/analytics.js?v=" + web.AssetVersion() }></script>
+				<div id="player-bar" hx-preserve="true">
+					@components.PlayerBar(*player)
+					<script src={ "/static/js/player.js?v=" + web.AssetVersion() }></script>
+					<script src={ "/static/js/share.js?v=" + web.AssetVersion() }></script>
+					<script src={ "/static/js/analytics.js?v=" + web.AssetVersion() }></script>
+				</div>
 			}
 		</div>
 	</header>

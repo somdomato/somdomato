@@ -3,12 +3,16 @@ package admin
 import (
 	"github.com/somdomato/somdomato/web"
 	"github.com/somdomato/somdomato/web/templates"
+	"github.com/somdomato/somdomato/web/templates/components"
 )
 
 // Shell é o layout comum de todas as telas do painel: navegação lateral +
 // conteúdo. Cada tela chama Shell(...) por dentro em vez de Layout direto.
-templ Shell(title string, active string) {
-	@templates.Layout("Admin · "+title, nil, true) {
+// player vem de buildPlayerData (mesma função usada nas páginas públicas)
+// para que quem administra a rádio também consiga ouvi-la sem sair do
+// painel.
+templ Shell(title string, active string, player *components.PlayerData) {
+	@templates.Layout("Admin · "+title, player, true) {
 		<div class="grid gap-6 md:grid-cols-[180px_1fr]">
 			<nav hx-boost="true" class="space-y-1 text-sm">
 				@navLink("/admin", "Painel", active == "dashboard")

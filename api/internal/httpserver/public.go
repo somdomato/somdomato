@@ -148,7 +148,7 @@ func fetchRecentlyPlayed(ctx context.Context, app *App, genre string, limit int)
 		SELECT s.id, s.title, s.artist, s.cover, qe.ended_at FROM queue_entries qe
 		JOIN songs s ON s.id = qe.song_id
 		WHERE qe.genre = $1 AND qe.status = 'played'
-		ORDER BY qe.id DESC LIMIT $2`, genre, limit)
+		ORDER BY qe.ended_at DESC LIMIT $2`, genre, limit)
 	if err != nil {
 		return nil, err
 	}

@@ -55,6 +55,11 @@
         icecast_relay_password: "{{ app_env.ICECAST_RELAY_PASSWORD }}"
         icecast_admin_password: "{{ app_env.ICECAST_ADMIN_PASSWORD }}"
         harbor_password: "{{ app_env.HARBOR_PASSWORD }}"
+        # Opcionais — feature /enviar (Deezer + avaliação automática via Groq).
+        # Sem eles as rotas ficam desabilitadas, o resto sobe normalmente.
+        deezer_arl: "{{ app_env.DEEZER_ARL | default('') }}"
+        groq_api_key: "{{ app_env.GROQ_API_KEY | default('') }}"
+        groq_model: "{{ app_env.GROQ_MODEL | default('llama-3.1-8b-instant') }}"
       no_log: true
       tags: [always]
 
@@ -151,6 +156,9 @@
           RADIO_INTERNAL_TOKEN={{ radio_internal_token }}
           ICECAST_STATUS_URL=http://127.0.0.1:8000/status-json.xsl
           STREAM_BASE_URL=https://radio.{{ domain }}
+          DEEZER_ARL={{ deezer_arl }}
+          GROQ_API_KEY={{ groq_api_key }}
+          GROQ_MODEL={{ groq_model }}
       no_log: true
       notify: Restart API Go
       tags: [app]
