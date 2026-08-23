@@ -2,11 +2,59 @@ package templates
 
 import (
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/somdomato/somdomato/web"
 	"github.com/somdomato/somdomato/web/templates/components"
 )
+
+// canonicalURL monta a URL pública da rádio atual. A stream "geral" é a raiz
+// do site (sem query string) — as demais levam ?genre=<slug>, replicando a
+// regra usada no botão de compartilhar (share.js) para manter og:url e o
+// link compartilhado sempre idênticos.
+func canonicalURL(genre string) string {
+	if genre == "" || genre == "geral" {
+		return web.SiteURL + "/"
+	}
+	return web.SiteURL + "/?genre=" + genre
+}
+
+// absoluteAssetURL garante que og:image seja sempre uma URL absoluta —
+// crawlers de OpenGraph (WhatsApp, Facebook, X) não resolvem caminhos
+// relativos.
+func absoluteAssetURL(path string) string {
+	if strings.HasPrefix(path, "http://") || strings.HasPrefix(path, "https://") {
+		return path
+	}
+	return web.SiteURL + path
+}
+
+// ogMeta preenche as tags OpenGraph/Twitter Card a partir da faixa tocando
+// agora nesta stream (quando há player) — é o que fica visível na prévia do
+// link ao compartilhar via WhatsApp/X/Facebook.
+templ ogMeta(player *components.PlayerData) {
+	if player != nil {
+		<meta property="og:type" content="music.radio_station"/>
+		<meta property="og:site_name" content="Som do Mato"/>
+		<meta property="og:title" content={ player.Now.Title + " – " + player.Now.Artist }/>
+		<meta property="og:description" content={ "Tocando agora na rádio " + player.Genre.Label() + " da Som do Mato" }/>
+		<meta property="og:url" content={ canonicalURL(string(player.Genre)) }/>
+		<meta property="og:image" content={ absoluteAssetURL(player.Now.Cover) }/>
+		<meta name="twitter:card" content="summary"/>
+		<meta name="twitter:title" content={ player.Now.Title + " – " + player.Now.Artist }/>
+		<meta name="twitter:description" content={ "Tocando agora na rádio " + player.Genre.Label() + " da Som do Mato" }/>
+		<meta name="twitter:image" content={ absoluteAssetURL(player.Now.Cover) }/>
+	} else {
+		<meta property="og:type" content="website"/>
+		<meta property="og:site_name" content="Som do Mato"/>
+		<meta property="og:title" content="Som do Mato"/>
+		<meta property="og:description" content="A rádio sertaneja da galera. Peça sua música, descubra novos artistas e ouça o melhor do sertanejo, 24 horas por dia."/>
+		<meta property="og:url" content={ web.SiteURL + "/" }/>
+		<meta property="og:image" content={ web.SiteURL + "/static/images/logotipo.svg" }/>
+		<meta name="twitter:card" content="summary"/>
+	}
+}
 
 templ Layout(title string, player *components.PlayerData, isAdmin bool) {
 	<!DOCTYPE html>
@@ -19,6 +67,7 @@ templ Layout(title string, player *components.PlayerData, isAdmin bool) {
 			} else {
 				<title>{ title } · Som do Mato</title>
 			}
+			@ogMeta(player)
 			<link rel="icon" type="image/svg+xml" href={ "/static/images/logotipo.svg?v=" + web.AssetVersion() } />
 			<link rel="stylesheet" href={ "/static/css/output.css?v=" + web.AssetVersion() }/>
 			<script src={ "/static/js/htmx.min.js?v=" + web.AssetVersion() }></script>

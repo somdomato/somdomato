@@ -9,6 +9,8 @@ document.querySelectorAll("[data-share]").forEach((root) => {
 
 	const nowTitleEl = popover.querySelector("[data-share-now-title]");
 	const nowArtistEl = popover.querySelector("[data-share-now-artist]");
+	const pickNowInput = popover.querySelector("[data-share-pick-now]");
+	const pickNextInput = popover.querySelector("[data-share-pick-next]");
 	const nextRow = popover.querySelector("[data-share-next-row]");
 	const nextTitleEl = popover.querySelector("[data-share-next-title]");
 	const nextArtistEl = popover.querySelector("[data-share-next-artist]");
@@ -21,19 +23,23 @@ document.querySelectorAll("[data-share]").forEach((root) => {
 	const playerRoot = document.querySelector("[data-player]");
 	const radioName = playerRoot?.dataset.radioName || "Som do Mato";
 
+	// A stream "geral" é a raiz do site — só as demais levam ?genre= na URL
+	// compartilhada (mesma regra do og:url gerado no servidor, ver layout.templ).
 	const shareURL = () => {
+		if (genre === "geral") return new URL("/", window.location.origin).toString();
 		const url = new URL("/", window.location.origin);
 		url.searchParams.set("genre", genre);
 		return url.toString();
 	};
 
-	const buildShareText = (now, next) => {
-		let text = `🎵 Tocando agora na ${radioName}: ${now.title} – ${now.artist}`;
-		if (next) {
-			text += `\nA seguir: ${next.title} – ${next.artist}`;
-		}
-		return text;
+	// Compartilha só a faixa escolhida (atual OU próxima) — nunca as duas
+	// juntas, para o texto não ficar ambíguo sobre qual delas o link leva a ouvir.
+	const buildShareText = (track, isNext) => {
+		const verb = isNext ? "vai tocar a seguir na" : "está tocando agora na";
+		return `🎵 ${track.title} – ${track.artist} ${verb} ${radioName}`;
 	};
+
+	const pickedTrack = (now, next) => (pickNextInput?.checked && next ? next : now);
 
 	let resetLabelTimeout;
 	const resetCopyLabel = () => {
@@ -41,8 +47,9 @@ document.querySelectorAll("[data-share]").forEach((root) => {
 	};
 
 	const applyShareTargets = (now, next) => {
+		const track = pickedTrack(now, next);
 		const url = shareURL();
-		const text = buildShareText(now, next);
+		const text = buildShareText(track, track === next);
 		const fullMessage = `${text}\n${url}`;
 
 		whatsappLink.href = `https://wa.me/?text=${encodeURIComponent(fullMessage)}`;
@@ -61,7 +68,12 @@ document.querySelectorAll("[data-share]").forEach((root) => {
 		};
 	};
 
+	let lastNow = { title: radioName, artist: "" };
+	let lastNext = null;
+
 	const loadNowPlaying = async () => {
+		pickNowInput.checked = true;
+
 		try {
 			const res = await fetch(`/api/now-playing?genre=${encodeURIComponent(genre)}`);
 			if (!res.ok) throw new Error(`status ${res.status}`);
@@ -78,14 +90,21 @@ document.querySelectorAll("[data-share]").forEach((root) => {
 				nextRow.classList.add("hidden");
 			}
 
-			applyShareTargets(data.now, data.next);
+			lastNow = data.now;
+			lastNext = data.next || null;
+			applyShareTargets(lastNow, lastNext);
 		} catch {
+			lastNow = { title: radioName, artist: "" };
+			lastNext = null;
 			nowTitleEl.textContent = radioName;
 			nowArtistEl.textContent = "";
 			nextRow.classList.add("hidden");
-			applyShareTargets({ title: radioName, artist: "" }, null);
+			applyShareTargets(lastNow, lastNext);
 		}
 	};
+
+	pickNowInput.addEventListener("change", () => applyShareTargets(lastNow, lastNext));
+	pickNextInput.addEventListener("change", () => applyShareTargets(lastNow, lastNext));
 
 	popover.addEventListener("toggle", (event) => {
 		if (event.newState === "open") {

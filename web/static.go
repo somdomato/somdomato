@@ -21,6 +21,11 @@ import (
 //go:embed static
 var staticRoot embed.FS
 
+// SiteURL é o domínio canônico público — usado para montar URLs absolutas
+// (og:url, og:image) já que o servidor não tem acesso confiável ao host
+// externo a partir do request (proxy/CDN na frente).
+const SiteURL = "https://somdomato.com"
+
 // StaticFS retorna o filesystem embutido com raiz já dentro de `static/`
 // (assim o handler HTTP expõe /static/js/htmx.min.js, /static/css/output.css etc.
 // diretamente, sem precisar strip-prefixar "static/" toda vez).

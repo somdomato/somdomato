@@ -145,20 +145,22 @@ templ ShareButton(genre config.Genre) {
 			</div>
 
 			<div data-share-tracks class="mb-4 space-y-2">
-				<div class="flex items-center gap-2 rounded-lg bg-white/5 px-2.5 py-2">
+				<label class="flex cursor-pointer items-center gap-2 rounded-lg bg-white/5 px-2.5 py-2 has-checked:ring-1 has-checked:ring-brand-500">
+					<input type="radio" name="share-track" value="now" data-share-pick-now checked class="shrink-0 accent-brand-500"/>
 					<span class="h-1.5 w-1.5 shrink-0 animate-pulse rounded-full bg-red-500"></span>
 					<div class="min-w-0 leading-tight">
 						<p data-share-now-title class="truncate text-sm font-medium">—</p>
 						<p data-share-now-artist class="truncate text-xs text-neutral-400">—</p>
 					</div>
-				</div>
-				<div data-share-next-row class="hidden rounded-lg px-2.5 py-2">
+				</label>
+				<label data-share-next-row class="hidden flex cursor-pointer items-center gap-2 rounded-lg px-2.5 py-2 has-checked:bg-white/5 has-checked:ring-1 has-checked:ring-brand-500">
+					<input type="radio" name="share-track" value="next" data-share-pick-next class="shrink-0 accent-brand-500"/>
 					<div class="min-w-0 leading-tight">
 						<p class="mb-0.5 text-[10px] font-semibold uppercase tracking-wide text-neutral-500">A seguir</p>
 						<p data-share-next-title class="truncate text-sm font-medium text-neutral-300">—</p>
 						<p data-share-next-artist class="truncate text-xs text-neutral-500">—</p>
 					</div>
-				</div>
+				</label>
 			</div>
 
 			<div class="grid grid-cols-2 gap-2">
