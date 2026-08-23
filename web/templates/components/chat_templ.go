@@ -33,7 +33,7 @@ func ChatEmbed() templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<section class=\"mt-6 min-w-0\"><h3 class=\"mb-2 text-sm font-semibold uppercase tracking-wide text-neutral-400\">Chat</h3><div class=\"overflow-hidden rounded-lg bg-surface-raised\"><iframe src=\"https://irc.somdomato.com/\" title=\"Chat da Rádio Som do Mato\" loading=\"lazy\" class=\"h-[420px] w-full border-0 sm:h-[480px]\" referrerpolicy=\"strict-origin-when-cross-origin\"></iframe></div></section>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<section class=\"mt-6 min-w-0\"><h3 class=\"mb-2 text-sm font-semibold uppercase tracking-wide text-neutral-400\">Chat</h3><div class=\"overflow-hidden rounded-lg bg-surface-raised\"><iframe src=\"https://irc.somdomato.com/\" title=\"Chat da Rádio Som do Mato\" loading=\"lazy\" class=\"h-[75vh] min-h-[600px] w-full border-0 sm:h-[80vh] sm:min-h-[700px]\" referrerpolicy=\"strict-origin-when-cross-origin\"></iframe></div></section>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

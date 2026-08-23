@@ -24,6 +24,7 @@ func registerPublicRoutes(mux *http.ServeMux, app *App) {
 	mux.HandleFunc("POST /pedidos/solicitar", withRateLimit(publicRequestLimiter, requireCSRF(handlePedidosSolicitar(app))))
 	mux.HandleFunc("GET /artistas", handleArtistas(app))
 	mux.HandleFunc("GET /artistas/{artist}", handleArtistDetail(app))
+	mux.HandleFunc("GET /api/now-playing", handleNowPlayingAPI(app))
 }
 
 // isAdminRequest indica se a sessão atual pertence a um papel com acesso
@@ -101,6 +102,37 @@ func buildPlayerData(ctx context.Context, app *App, genre config.Genre) componen
 	}
 
 	return components.PlayerData{Genre: genre, StreamURL: app.Cfg.StreamURL(genre), Now: now}
+}
+
+// handleNowPlayingAPI expõe a música atual e a próxima da fila em JSON —
+// usado pelo botão de compartilhar do player para montar o texto/link sem
+// depender do fragmento HTML trocado via SSE (que só cobre a faixa atual).
+func handleNowPlayingAPI(app *App) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		genre := genreFromQuery(r)
+
+		player := buildPlayerData(ctx, app, genre)
+
+		type songJSON struct {
+			Title  string `json:"title"`
+			Artist string `json:"artist"`
+			Cover  string `json:"cover"`
+		}
+		resp := struct {
+			Now  songJSON  `json:"now"`
+			Next *songJSON `json:"next"`
+		}{
+			Now: songJSON{Title: player.Now.Title, Artist: player.Now.Artist, Cover: player.Now.Cover},
+		}
+
+		if queueEntries, err := app.Queue.GetQueue(ctx, string(genre)); err == nil && len(queueEntries) > 0 {
+			head := queueEntries[0]
+			resp.Next = &songJSON{Title: head.Title, Artist: head.Artist, Cover: head.Cover}
+		}
+
+		writeJSON(w, http.StatusOK, resp)
+	}
 }
 
 func fetchRecentlyPlayed(ctx context.Context, app *App, genre string, limit int) ([]components.SongListItem, error) {

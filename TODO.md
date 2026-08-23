@@ -1,1 +1,0 @@
-Crie um botão de compartilhar a música(atual e a próxima), este botão deve mostrar um popover responsivo, bonito, elegante e devem haver botões para: Copiar link, compartilhar no WhatsApp, Facebook, X

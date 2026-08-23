@@ -86,3 +86,17 @@
   0%, 100% { height: 20%; }
   50% { height: 100%; }
 }
+
+/* Popover nativo (atributo popover) do botão de compartilhar — o reset do
+   Tailwind (margin:0 em tudo) sobrescreve o margin:auto que a UA stylesheet
+   usa para centralizar popovers sem anchor; repomos aqui para manter a
+   centralização na viewport, e aproveitamos para animar a entrada. */
+[data-share-popover] {
+  margin: auto;
+  animation: share-pop 150ms ease-out;
+}
+
+@keyframes share-pop {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
+}

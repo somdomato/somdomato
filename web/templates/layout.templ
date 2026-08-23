@@ -56,6 +56,7 @@ templ Header(player *components.PlayerData, isAdmin bool) {
 			if player != nil {
 				@components.PlayerBar(*player)
 				<script src={ "/static/js/player.js?v=" + web.AssetVersion() }></script>
+				<script src={ "/static/js/share.js?v=" + web.AssetVersion() }></script>
 				<script src={ "/static/js/analytics.js?v=" + web.AssetVersion() }></script>
 			}
 		</div>
