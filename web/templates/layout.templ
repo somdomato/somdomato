@@ -9,6 +9,11 @@ import (
 	"github.com/somdomato/somdomato/web/templates/components"
 )
 
+// defaultCoverPath replica cover.DefaultCover (api/internal/cover) — não dá
+// para importar aquele pacote aqui porque "internal" restringe a árvore
+// api/internal/... e web/templates fica fora dela.
+const defaultCoverPath = "/static/images/logotipo.svg"
+
 // canonicalURL monta a URL pública da rádio atual. A stream "geral" é a raiz
 // do site (sem query string) — as demais levam ?genre=<slug>, replicando a
 // regra usada no botão de compartilhar (share.js) para manter og:url e o
@@ -30,6 +35,17 @@ func absoluteAssetURL(path string) string {
 	return web.SiteURL + path
 }
 
+// ogImageURL resolve a URL de og:image a partir da capa da faixa atual.
+// Crawlers de OpenGraph (WhatsApp, Facebook, X) não renderizam SVG como
+// imagem de prévia — por isso o logotipo padrão (cover.DefaultCover, um
+// .svg) precisa ser trocado pela versão rasterizada aqui.
+func ogImageURL(coverPath string) string {
+	if coverPath == defaultCoverPath {
+		return web.SiteURL + "/static/images/logotipo-og.png"
+	}
+	return absoluteAssetURL(coverPath)
+}
+
 // ogMeta preenche as tags OpenGraph/Twitter Card a partir da faixa tocando
 // agora nesta stream (quando há player) — é o que fica visível na prévia do
 // link ao compartilhar via WhatsApp/X/Facebook.
@@ -40,19 +56,19 @@ templ ogMeta(player *components.PlayerData) {
 		<meta property="og:title" content={ player.Now.Title + " – " + player.Now.Artist }/>
 		<meta property="og:description" content={ "Tocando agora na rádio " + player.Genre.Label() + " da Som do Mato" }/>
 		<meta property="og:url" content={ canonicalURL(string(player.Genre)) }/>
-		<meta property="og:image" content={ absoluteAssetURL(player.Now.Cover) }/>
-		<meta name="twitter:card" content="summary"/>
+		<meta property="og:image" content={ ogImageURL(player.Now.Cover) }/>
+		<meta name="twitter:card" content="summary_large_image"/>
 		<meta name="twitter:title" content={ player.Now.Title + " – " + player.Now.Artist }/>
 		<meta name="twitter:description" content={ "Tocando agora na rádio " + player.Genre.Label() + " da Som do Mato" }/>
-		<meta name="twitter:image" content={ absoluteAssetURL(player.Now.Cover) }/>
+		<meta name="twitter:image" content={ ogImageURL(player.Now.Cover) }/>
 	} else {
 		<meta property="og:type" content="website"/>
 		<meta property="og:site_name" content="Som do Mato"/>
 		<meta property="og:title" content="Som do Mato"/>
 		<meta property="og:description" content="A rádio sertaneja da galera. Peça sua música, descubra novos artistas e ouça o melhor do sertanejo, 24 horas por dia."/>
 		<meta property="og:url" content={ web.SiteURL + "/" }/>
-		<meta property="og:image" content={ web.SiteURL + "/static/images/logotipo.svg" }/>
-		<meta name="twitter:card" content="summary"/>
+		<meta property="og:image" content={ web.SiteURL + "/static/images/logotipo-og.png" }/>
+		<meta name="twitter:card" content="summary_large_image"/>
 	}
 }
 

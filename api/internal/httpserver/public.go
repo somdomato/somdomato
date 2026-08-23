@@ -91,9 +91,12 @@ func buildPlayerData(ctx context.Context, app *App, genre config.Genre) componen
 		Cover  string
 	}
 	err := app.Pool.QueryRow(ctx, `
-		SELECT s.id, s.title, s.artist, s.cover FROM queue_entries qe
+		SELECT s.id, s.title, s.artist,
+		       CASE WHEN s.cover = $2 THEN COALESCE(ac.cover_path, s.cover) ELSE s.cover END
+		FROM queue_entries qe
 		JOIN songs s ON s.id = qe.song_id
-		WHERE qe.genre = $1 AND qe.status = 'current' LIMIT 1`, string(genre)).
+		LEFT JOIN artist_covers ac ON ac.artist_name = s.artist
+		WHERE qe.genre = $1 AND qe.status = 'current' LIMIT 1`, string(genre), cover.DefaultCover).
 		Scan(&currentRow.SongID, &currentRow.Title, &currentRow.Artist, &currentRow.Cover)
 	if err == nil {
 		now = components.NowPlaying{ID: currentRow.SongID, Title: currentRow.Title, Artist: currentRow.Artist, Cover: currentRow.Cover, Genre: string(genre)}
