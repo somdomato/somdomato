@@ -12,8 +12,28 @@ type StatsData struct {
 	Period       models.Period
 	Totals       models.AnalyticsTotals
 	Pages        []models.PageStat
+	PagesInfo    PagesPageInfo
 	VisitSeries  []models.VisitPoint
 	ListenSeries []models.ListenerPoint
+}
+
+// PagesPageInfo carrega o estado de paginação da tabela "Visitas e cliques
+// por página" em /admin/estatisticas.
+type PagesPageInfo struct {
+	Page    int
+	PerPage int
+	Total   int
+}
+
+func (p PagesPageInfo) TotalPages() int {
+	if p.PerPage <= 0 {
+		return 1
+	}
+	pages := (p.Total + p.PerPage - 1) / p.PerPage
+	if pages < 1 {
+		return 1
+	}
+	return pages
 }
 
 func pageLabel(path string) string {
@@ -33,8 +53,12 @@ func pageLabel(path string) string {
 	return path
 }
 
-func statsURL(period models.Period) string {
-	return "/admin/estatisticas?periodo=" + string(period)
+func statsURL(period models.Period, page int) string {
+	url := "/admin/estatisticas?periodo=" + string(period)
+	if page > 1 {
+		url += "&page=" + strconv.Itoa(page)
+	}
+	return url
 }
 
 templ Stats(data StatsData, player *components.PlayerData) {
@@ -48,7 +72,7 @@ templ StatsContent(data StatsData) {
 	<div
 		id="stats-content"
 		class="mt-4 space-y-6"
-		hx-get={ statsURL(data.Period) }
+		hx-get={ statsURL(data.Period, data.PagesInfo.Page) }
 		hx-trigger="every 20s"
 		hx-target="this"
 		hx-swap="outerHTML"
@@ -108,8 +132,41 @@ templ StatsContent(data StatsData) {
 					}
 				</tbody>
 			</table>
+			@pagesPager(data.Period, data.PagesInfo)
 		</div>
 	</div>
+}
+
+templ pagesPager(period models.Period, page PagesPageInfo) {
+	if page.TotalPages() > 1 {
+		<div class="mt-4 flex items-center justify-center gap-3 text-sm">
+			if page.Page > 1 {
+				<a
+					href={ templ.URL(statsURL(period, page.Page-1)) }
+					hx-get={ statsURL(period, page.Page-1) }
+					hx-target="#stats-content"
+					hx-swap="outerHTML"
+					hx-push-url="true"
+					class="rounded-lg bg-surface-raised px-3 py-1 hover:bg-surface-raised/70"
+				>Anterior</a>
+			} else {
+				<span class="rounded-lg px-3 py-1 text-neutral-600">Anterior</span>
+			}
+			<span class="text-neutral-400">Página { strconv.Itoa(page.Page) } de { strconv.Itoa(page.TotalPages()) }</span>
+			if page.Page < page.TotalPages() {
+				<a
+					href={ templ.URL(statsURL(period, page.Page+1)) }
+					hx-get={ statsURL(period, page.Page+1) }
+					hx-target="#stats-content"
+					hx-swap="outerHTML"
+					hx-push-url="true"
+					class="rounded-lg bg-surface-raised px-3 py-1 hover:bg-surface-raised/70"
+				>Próxima</a>
+			} else {
+				<span class="rounded-lg px-3 py-1 text-neutral-600">Próxima</span>
+			}
+		</div>
+	}
 }
 
 templ periodTab(p, active models.Period) {
@@ -117,8 +174,8 @@ templ periodTab(p, active models.Period) {
 		<span class="rounded-lg bg-brand-600 px-3 py-1.5 text-sm font-medium text-white">{ p.Label() }</span>
 	} else {
 		<a
-			href={ templ.URL(statsURL(p)) }
-			hx-get={ statsURL(p) }
+			href={ templ.URL(statsURL(p, 1)) }
+			hx-get={ statsURL(p, 1) }
 			hx-target="#stats-content"
 			hx-swap="outerHTML"
 			hx-push-url="true"

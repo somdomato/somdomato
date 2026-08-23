@@ -83,7 +83,7 @@ func (s *Store) Totals(ctx context.Context, since time.Time) (models.AnalyticsTo
 
 // --- Por página ------------------------------------------------------------
 
-func (s *Store) PageStats(ctx context.Context, since time.Time) ([]models.PageStat, error) {
+func (s *Store) PageStats(ctx context.Context, since time.Time, limit, offset int) ([]models.PageStat, error) {
 	rows, err := s.pool.Query(ctx, `
 		SELECT pe.path, COUNT(DISTINCT pe.visitor_id), COUNT(*), COALESCE(o.cnt, 0)
 		FROM page_events pe
@@ -93,7 +93,8 @@ func (s *Store) PageStats(ctx context.Context, since time.Time) ([]models.PageSt
 		) o ON o.path = pe.path
 		WHERE pe.created_at >= $1
 		GROUP BY pe.path, o.cnt
-		ORDER BY COUNT(*) DESC`, sinceOrZero(since), time.Now().Add(-OnlineWindow))
+		ORDER BY COUNT(*) DESC
+		LIMIT $3 OFFSET $4`, sinceOrZero(since), time.Now().Add(-OnlineWindow), limit, offset)
 	if err != nil {
 		return nil, err
 	}
@@ -107,6 +108,16 @@ func (s *Store) PageStats(ctx context.Context, since time.Time) ([]models.PageSt
 		out = append(out, p)
 	}
 	return out, rows.Err()
+}
+
+// CountPages conta as páginas distintas com eventos no período — usado para
+// calcular o total de páginas da tabela paginada em PageStats.
+func (s *Store) CountPages(ctx context.Context, since time.Time) (int, error) {
+	var total int
+	err := s.pool.QueryRow(ctx, `
+		SELECT COUNT(DISTINCT path) FROM page_events WHERE created_at >= $1`,
+		sinceOrZero(since)).Scan(&total)
+	return total, err
 }
 
 // --- Séries temporais (gráficos de linha) -----------------------------------

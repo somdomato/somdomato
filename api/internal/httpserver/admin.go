@@ -563,12 +563,21 @@ func handleAdminUserRoleUpdate(app *App) http.HandlerFunc {
 
 // --- Estatísticas ----------------------------------------------------------
 
+// statsPagesPerPage é o tamanho fixo de página da tabela "Visitas e cliques
+// por página" — a lista de paths costuma ser pequena, então não há seletor
+// de tamanho como em /admin/musicas.
+const statsPagesPerPage = 15
+
 func handleAdminStats(app *App) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		period := models.Period(r.URL.Query().Get("periodo"))
 		if !models.IsValidPeriod(string(period)) {
 			period = models.PeriodMonth
+		}
+		page, _ := strconv.Atoi(r.URL.Query().Get("page"))
+		if page < 1 {
+			page = 1
 		}
 
 		since := period.Since(time.Now())
@@ -577,9 +586,13 @@ func handleAdminStats(app *App) http.HandlerFunc {
 		if err != nil {
 			app.Log.Error("carregando totais de estatísticas", "error", err)
 		}
-		pages, err := app.Analytics.PageStats(ctx, since)
+		pages, err := app.Analytics.PageStats(ctx, since, statsPagesPerPage, (page-1)*statsPagesPerPage)
 		if err != nil {
 			app.Log.Error("carregando estatísticas por página", "error", err)
+		}
+		pagesTotal, err := app.Analytics.CountPages(ctx, since)
+		if err != nil {
+			app.Log.Error("contando páginas nas estatísticas", "error", err)
 		}
 		visitSeries, err := app.Analytics.VisitSeries(ctx, period)
 		if err != nil {
@@ -594,6 +607,7 @@ func handleAdminStats(app *App) http.HandlerFunc {
 			Period:       period,
 			Totals:       totals,
 			Pages:        pages,
+			PagesInfo:    admintpl.PagesPageInfo{Page: page, PerPage: statsPagesPerPage, Total: pagesTotal},
 			VisitSeries:  visitSeries,
 			ListenSeries: listenSeries,
 		}
