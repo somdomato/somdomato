@@ -30,40 +30,64 @@ templ SourceBadge(isRequest bool) {
 }
 
 templ SongList(title string, items []SongListItem, emptyMessage string) {
-	@songList(title, items, emptyMessage, false)
+	<section class="mt-6 min-w-0">
+		<h3 class="mb-2 text-sm font-semibold uppercase tracking-wide text-neutral-400">{ title }</h3>
+		@songListItems(items, emptyMessage, false)
+	</section>
 }
 
 // SongListWithSource é igual a SongList, mas exibe o SourceBadge (Pedido /
 // Auto DJ) em cada item — usado na fila "Próximas", onde a origem da
 // música ainda é relevante para o ouvinte.
 templ SongListWithSource(title string, items []SongListItem, emptyMessage string) {
-	@songList(title, items, emptyMessage, true)
-}
-
-templ songList(title string, items []SongListItem, emptyMessage string, showSource bool) {
 	<section class="mt-6 min-w-0">
 		<h3 class="mb-2 text-sm font-semibold uppercase tracking-wide text-neutral-400">{ title }</h3>
-		if len(items) == 0 {
-			<p class="text-sm text-neutral-500">{ emptyMessage }</p>
-		} else {
-			<ul class="divide-y divide-white/5 rounded-lg bg-surface-raised">
-				for _, item := range items {
-					<li class="flex min-w-0 items-center gap-3 px-4 py-2">
-						<img src={ item.Cover } alt={ item.Title } class="h-10 w-10 shrink-0 rounded object-cover"/>
-						<div class="min-w-0 flex-1">
-							<p class="truncate text-sm font-medium">{ item.Title }</p>
-							<p class="truncate text-xs text-neutral-400">{ item.Artist }</p>
-						</div>
-						if showSource {
-							@SourceBadge(item.IsRequest)
-						} else if !item.PlayedAt.IsZero() {
-							<time datetime={ item.PlayedAt.UTC().Format(time.RFC3339) } data-relative="true" class="shrink-0 self-start text-[9px] font-medium tracking-wide text-neutral-500"></time>
-						}
-					</li>
-				}
-			</ul>
-		}
+		@songListItems(items, emptyMessage, true)
 	</section>
+}
+
+// LiveSongList é igual a SongList/SongListWithSource, mas embrulha o
+// conteúdo num container com id + sse-swap: usado na home para que
+// "Últimas" e "Próximas" se atualizem em tempo real (ver broadcastQueueUpdated
+// e broadcastHistoryUpdated em internal_radio.go) sem recarregar a página.
+// data-flip-list ativa a animação de reordenação em list-animations.js.
+templ LiveSongList(title, id, sseEvent string, items []SongListItem, emptyMessage string, showSource bool) {
+	<section class="mt-6 min-w-0">
+		<h3 class="mb-2 text-sm font-semibold uppercase tracking-wide text-neutral-400">{ title }</h3>
+		<div id={ id } data-flip-list sse-swap={ sseEvent } hx-swap="innerHTML">
+			@songListItems(items, emptyMessage, showSource)
+		</div>
+	</section>
+}
+
+// SongListItemsFragment expõe songListItems para ser renderizado
+// isoladamente (sem a <section> em volta) — usado para montar o payload SSE
+// de "queue-updated-<genre>" / "history-updated-<genre>" em internal_radio.go.
+func SongListItemsFragment(items []SongListItem, emptyMessage string, showSource bool) templ.Component {
+	return songListItems(items, emptyMessage, showSource)
+}
+
+templ songListItems(items []SongListItem, emptyMessage string, showSource bool) {
+	if len(items) == 0 {
+		<p class="text-sm text-neutral-500">{ emptyMessage }</p>
+	} else {
+		<ul class="divide-y divide-white/5 rounded-lg bg-surface-raised">
+			for _, item := range items {
+				<li class="flex min-w-0 items-center gap-3 px-4 py-2 flip-item" data-flip-id={ "song-" + itoa(item.ID) }>
+					<img src={ item.Cover } alt={ item.Title } class="h-10 w-10 shrink-0 rounded object-cover"/>
+					<div class="min-w-0 flex-1">
+						<p class="truncate text-sm font-medium">{ item.Title }</p>
+						<p class="truncate text-xs text-neutral-400">{ item.Artist }</p>
+					</div>
+					if showSource {
+						@SourceBadge(item.IsRequest)
+					} else if !item.PlayedAt.IsZero() {
+						<time datetime={ item.PlayedAt.UTC().Format(time.RFC3339) } data-relative="true" class="shrink-0 self-start text-[9px] font-medium tracking-wide text-neutral-500"></time>
+					}
+				</li>
+			}
+		</ul>
+	}
 }
 
 type TopRequestItem struct {
@@ -76,26 +100,49 @@ type TopRequestItem struct {
 templ TopRequestsList(title string, items []TopRequestItem, emptyMessage string) {
 	<section class="mt-6 min-w-0">
 		<h3 class="mb-2 text-sm font-semibold uppercase tracking-wide text-neutral-400">{ title }</h3>
-		if len(items) == 0 {
-			<p class="text-sm text-neutral-500">{ emptyMessage }</p>
-		} else {
-			<ul class="divide-y divide-white/5 rounded-lg bg-surface-raised">
-				for i, item := range items {
-					<li class="flex min-w-0 items-center gap-3 px-4 py-2">
-						<span class="w-5 shrink-0 text-center text-xs font-semibold text-neutral-500">{ itoa(int64(i + 1)) }</span>
-						<img src={ item.Cover } alt={ item.Title } class="h-10 w-10 shrink-0 rounded object-cover"/>
-						<div class="min-w-0 flex-1">
-							<p class="truncate text-sm font-medium">{ item.Title }</p>
-							<p class="truncate text-xs text-neutral-400">{ item.Artist }</p>
-						</div>
-						<span class="badge-pill self-start bg-amber-500/15 text-amber-300 ring-amber-400/25">
-							{ itoa(int64(item.Count)) }x
-						</span>
-					</li>
-				}
-			</ul>
-		}
+		@topRequestsItems(items, emptyMessage)
 	</section>
+}
+
+// LiveTopRequestsList é igual a TopRequestsList, mas embrulha o conteúdo num
+// container com id + sse-swap para o "Top 10" se atualizar em tempo real a
+// cada novo pedido (ver broadcastTop10Updated em internal_radio.go).
+templ LiveTopRequestsList(title, id, sseEvent string, items []TopRequestItem, emptyMessage string) {
+	<section class="mt-6 min-w-0">
+		<h3 class="mb-2 text-sm font-semibold uppercase tracking-wide text-neutral-400">{ title }</h3>
+		<div id={ id } data-flip-list sse-swap={ sseEvent } hx-swap="innerHTML">
+			@topRequestsItems(items, emptyMessage)
+		</div>
+	</section>
+}
+
+// TopRequestItemsFragment expõe topRequestsItems para ser renderizado
+// isoladamente — usado para montar o payload SSE de "top10-updated" em
+// internal_radio.go.
+func TopRequestItemsFragment(items []TopRequestItem, emptyMessage string) templ.Component {
+	return topRequestsItems(items, emptyMessage)
+}
+
+templ topRequestsItems(items []TopRequestItem, emptyMessage string) {
+	if len(items) == 0 {
+		<p class="text-sm text-neutral-500">{ emptyMessage }</p>
+	} else {
+		<ul class="divide-y divide-white/5 rounded-lg bg-surface-raised">
+			for i, item := range items {
+				<li class="flex min-w-0 items-center gap-3 px-4 py-2 flip-item" data-flip-id={ "song-" + itoa(item.ID) }>
+					<span class="w-5 shrink-0 text-center text-xs font-semibold text-neutral-500">{ itoa(int64(i + 1)) }</span>
+					<img src={ item.Cover } alt={ item.Title } class="h-10 w-10 shrink-0 rounded object-cover"/>
+					<div class="min-w-0 flex-1">
+						<p class="truncate text-sm font-medium">{ item.Title }</p>
+						<p class="truncate text-xs text-neutral-400">{ item.Artist }</p>
+					</div>
+					<span class="badge-pill self-start bg-amber-500/15 text-amber-300 ring-amber-400/25">
+						{ itoa(int64(item.Count)) }x
+					</span>
+				</li>
+			}
+		</ul>
+	}
 }
 
 // SearchResultRow é usado em Pedidos — inclui o botão de solicitar via HTMX.

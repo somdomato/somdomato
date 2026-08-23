@@ -11,9 +11,18 @@ type NowPlaying struct {
 }
 
 type PlayerData struct {
+	Genre        config.Genre
+	StreamURL    string
+	Now          NowPlaying
+	GenreOptions []GenreOption
+}
+
+// GenreOption é uma entrada do seletor de rádio: a URL de stream de cada
+// gênero precisa vir do servidor (depende de STREAM_BASE_URL em runtime) para
+// que a troca de rádio no cliente não dependa de um mapeamento fixo em JS.
+type GenreOption struct {
 	Genre     config.Genre
 	StreamURL string
-	Now       NowPlaying
 }
 
 // PlayerBar é a barra do player embutida no header: capa, controles e troca
@@ -100,7 +109,7 @@ templ PlayerBar(data PlayerData) {
 		@ShareButton(data.Genre)
 
 		<div class="order-last w-full sm:order-none sm:ml-auto sm:w-auto">
-			@GenreSwitcher(data.Genre)
+			@GenreSwitcher(data.Genre, data.GenreOptions)
 		</div>
 	</div>
 }
@@ -204,20 +213,33 @@ templ NowPlayingCard(now NowPlaying) {
 	</div>
 }
 
-templ GenreSwitcher(active config.Genre) {
+// GenreSwitcher troca de rádio sem recarregar a página: o <select> dispara
+// um hx-get que troca só #main-content (últimas/próximas/top 10 da nova
+// rádio) e player.js (evento "change" delegado em document) atualiza a URL
+// do stream e a capa/faixa atual do header a partir dos data-* de cada
+// <option> e de /api/now-playing — o header segue com hx-preserve, então o
+// <audio> nunca é destruído/recriado e a reprodução não é interrompida por
+// causa da troca de rádio em si (só reinicia se já estava tocando, para
+// carregar o novo stream).
+templ GenreSwitcher(active config.Genre, options []GenreOption) {
 	<div class="relative w-full sm:w-44">
 		<select
 			data-genre-select
+			name="genre"
 			aria-label="Selecionar rádio"
-			hx-boost="false"
-			onchange="if (this.value) { sessionStorage.setItem('sdm-autoplay', '1'); window.location.href = this.value; }"
+			hx-get="/"
+			hx-trigger="change"
+			hx-target="#main-content"
+			hx-select="#main-content"
+			hx-swap="outerHTML"
+			hx-push-url="true"
 			class="w-full cursor-pointer appearance-none rounded-lg border border-white/10 bg-surface-raised py-1.5 pl-3 pr-8 text-xs font-medium text-neutral-200 shadow-sm transition hover:border-white/20 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
 		>
-			for _, g := range config.AllGenres {
-				if g == active {
-					<option value={ "/?genre=" + string(g) } selected>{ g.Label() }</option>
+			for _, opt := range options {
+				if opt.Genre == active {
+					<option value={ string(opt.Genre) } data-stream-url={ opt.StreamURL } data-radio-name={ "Som do Mato · " + opt.Genre.Label() } selected>{ opt.Genre.Label() }</option>
 				} else {
-					<option value={ "/?genre=" + string(g) }>{ g.Label() }</option>
+					<option value={ string(opt.Genre) } data-stream-url={ opt.StreamURL } data-radio-name={ "Som do Mato · " + opt.Genre.Label() }>{ opt.Genre.Label() }</option>
 				}
 			}
 		</select>

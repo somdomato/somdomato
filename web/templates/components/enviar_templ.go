@@ -249,7 +249,7 @@ func EnviarLoadMore(query string, offset int) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "\" hx-target=\"this\" hx-swap=\"outerHTML\" hx-trigger=\"click\"><button type=\"button\" class=\"text-xs font-medium text-brand-300 hover:text-brand-200\">Carregar mais</button></li>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "\" hx-target=\"this\" hx-swap=\"outerHTML\" hx-trigger=\"click\"><button type=\"button\" class=\"text-xs font-medium text-brand-300 hover:text-brand-200 cursor-pointer\">Carregar mais</button></li>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

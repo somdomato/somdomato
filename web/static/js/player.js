@@ -11,8 +11,11 @@ document.querySelectorAll("[data-player]").forEach((root) => {
 	const bars = root.querySelector("[data-player-bars]");
 	const volume = root.querySelector("[data-player-volume]");
 	const nowPlaying = document.getElementById("now-playing");
-	const streamURL = root.dataset.streamUrl;
-	const radioName = root.dataset.radioName || "";
+	// streamURL/radioName são atualizados ao trocar de rádio (ver listener de
+	// "change" do <select> no fim do arquivo) sem recriar este <audio> nem a
+	// página — por isso ficam em variáveis, não em const.
+	let streamURL = root.dataset.streamUrl;
+	let radioName = root.dataset.radioName || "";
 	const loadTimeoutMS = 10000;
 	const volumeStorageKey = "sdm-volume";
 	// Falhas de stream costumam ser blips passageiros (Icecast/Liquidsoap
@@ -28,8 +31,9 @@ document.querySelectorAll("[data-player]").forEach((root) => {
 	let retryTimeout;
 	let retryCount = 0;
 
-	// O volume é salvo em localStorage porque trocar de estação recarrega a
-	// página inteira, o que reiniciaria o <audio> com o valor padrão do slider.
+	// O volume é salvo em localStorage para persistir entre sessões/recargas
+	// do navegador (a troca de rádio em si não recria o <audio>, então não
+	// precisa disso para sobreviver à troca de estação).
 	const storedVolume = localStorage.getItem(volumeStorageKey);
 	if (storedVolume !== null) {
 		volume.value = storedVolume;
@@ -249,10 +253,55 @@ document.querySelectorAll("[data-player]").forEach((root) => {
 		localStorage.setItem(volumeStorageKey, volume.value);
 	});
 
-	// Após trocar de estação (GenreSwitcher grava a flag antes de navegar),
-	// a página recarrega — retomamos a reprodução automaticamente aqui.
-	if (sessionStorage.getItem("sdm-autoplay") === "1") {
-		sessionStorage.removeItem("sdm-autoplay");
-		play({ silent: true });
+	// Disparado pelo listener de "change" do GenreSwitcher (abaixo) depois que
+	// ele atualiza data-stream-url/data-radio-name deste root. Só reinicia o
+	// stream se já estava tocando/carregando — se estava parado, a próxima
+	// vez que o usuário der play já usa a streamURL nova.
+	root.addEventListener("sdm:genre-changed", () => {
+		streamURL = root.dataset.streamUrl;
+		radioName = root.dataset.radioName || "";
+		if (!audio.paused) {
+			stop();
+			play();
+		}
+	});
+});
+
+// Troca de rádio: o <select> (GenreSwitcher) já dispara um hx-get que troca
+// só #main-content (últimas/próximas/top 10) — aqui atualizamos o header
+// (stream do player + capa/faixa atual) sem tocar no <audio> nem recarregar
+// a página, então a reprodução não é interrompida pela troca em si.
+document.addEventListener("change", (event) => {
+	const select = event.target.closest("[data-genre-select]");
+	if (!select) return;
+
+	const opt = select.selectedOptions[0];
+	if (!opt) return;
+
+	const playerRoot = document.querySelector("[data-player]");
+	if (playerRoot) {
+		playerRoot.dataset.streamUrl = opt.dataset.streamUrl || "";
+		playerRoot.dataset.radioName = opt.dataset.radioName || "";
+		playerRoot.dispatchEvent(new CustomEvent("sdm:genre-changed"));
 	}
+
+	const nowPlaying = document.getElementById("now-playing");
+	if (!nowPlaying) return;
+
+	fetch(`/api/now-playing?genre=${encodeURIComponent(select.value)}`)
+		.then((res) => (res.ok ? res.json() : null))
+		.then((data) => {
+			if (!data) return;
+			const escape = (text) =>
+				String(text ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+			nowPlaying.innerHTML = `
+				<div class="relative h-11 w-11 shrink-0 sm:h-9 sm:w-9">
+					<img src="${escape(data.now.cover)}" alt="${escape(data.now.title)}" class="h-11 w-11 rounded-lg object-cover shadow-sm ring-1 ring-white/10 sm:h-9 sm:w-9"/>
+				</div>
+				<div class="min-w-0 leading-tight">
+					<p class="max-w-[8rem] truncate text-sm font-semibold sm:max-w-[10rem]">${escape(data.now.title)}</p>
+					<p class="max-w-[8rem] truncate text-xs text-neutral-400 sm:max-w-[10rem]">${escape(data.now.artist)}</p>
+				</div>`;
+		})
+		.catch(() => {});
 });

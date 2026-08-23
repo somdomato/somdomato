@@ -89,10 +89,11 @@ templ Layout(title string, player *components.PlayerData, isAdmin bool) {
 			<script src={ "/static/js/htmx.min.js?v=" + web.AssetVersion() }></script>
 			<script src={ "/static/js/htmx-sse.js?v=" + web.AssetVersion() }></script>
 			<script src={ "/static/js/relative-time.js?v=" + web.AssetVersion() }></script>
+			<script src={ "/static/js/list-animations.js?v=" + web.AssetVersion() }></script>
 		</head>
 		<body class="flex min-h-screen flex-col bg-surface text-neutral-100 font-sans" hx-ext="sse">
 			@Header(player, isAdmin)
-			<main class="mx-auto w-full max-w-5xl flex-1 px-4 py-3">
+			<main id="main-content" class="mx-auto w-full max-w-5xl flex-1 px-4 py-3">
 				{ children... }
 			</main>
 			@Footer()

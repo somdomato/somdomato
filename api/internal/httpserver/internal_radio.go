@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/a-h/templ"
 	"github.com/somdomato/somdomato/api/config"
 	"github.com/somdomato/somdomato/api/internal/cover"
 	"github.com/somdomato/somdomato/api/internal/sse"
@@ -178,6 +179,11 @@ func handleMusicStarted(app *App) http.HandlerFunc {
 			ID: confirmed.SongID, Title: confirmed.Title, Artist: confirmed.Artist,
 			Cover: confirmed.Cover, Genre: confirmed.Genre,
 		})
+		// A troca de faixa move a anterior para "played" (entra em
+		// "Últimas") e libera uma vaga nova em "Próximas" — atualiza os dois
+		// blocos da home em tempo real para quem está ouvindo essa rádio.
+		broadcastHistoryUpdated(app, ctx, genre)
+		broadcastQueueUpdated(app, ctx, genre)
 
 		// Resolução de capa assíncrona (fire-and-forget), só quando a capa
 		// ainda é a padrão — protege capas já definidas pelo admin.
@@ -235,6 +241,66 @@ func broadcastSongChanged(app *App, now components.NowPlaying) {
 	time.AfterFunc(app.Cfg.NowPlayingDelay, func() {
 		app.Hub.Broadcast(sse.Event{Name: eventName, Data: payload})
 	})
+}
+
+// broadcastQueueUpdated renderiza o bloco "Próximas" (mesmo componente do
+// render inicial da home) e publica via SSE — mantém a fila em tempo real em
+// todas as abas abertas nessa rádio sem precisar de poll.
+func broadcastQueueUpdated(app *App, ctx context.Context, genre string) {
+	queueEntries, err := app.Queue.GetQueue(ctx, genre)
+	if err != nil {
+		app.Log.Error("consultando fila para broadcast", "error", err, "genre", genre)
+		return
+	}
+	var next []components.SongListItem
+	for _, e := range queueEntries {
+		if len(next) == 10 {
+			break
+		}
+		next = append(next, components.SongListItem{ID: e.SongID, Title: e.Title, Artist: e.Artist, Cover: e.Cover, IsRequest: e.Source == models.SourceRequest})
+	}
+	broadcastFragment(app, "queue-updated-"+genre, components.SongListItemsFragment(next, "A fila está sendo preparada.", true))
+}
+
+// broadcastHistoryUpdated renderiza o bloco "Últimas" e publica via SSE —
+// disparado sempre que uma faixa nova é confirmada (a anterior acabou de
+// virar "played").
+func broadcastHistoryUpdated(app *App, ctx context.Context, genre string) {
+	last, err := fetchRecentlyPlayed(ctx, app, genre, 10)
+	if err != nil {
+		app.Log.Error("consultando histórico para broadcast", "error", err, "genre", genre)
+		return
+	}
+	broadcastFragment(app, "history-updated-"+genre, components.SongListItemsFragment(last, "Ainda não há histórico nesta stream.", false))
+}
+
+// broadcastTop10Updated renderiza o bloco "Top 10" e publica via SSE. Ao
+// contrário dos outros dois blocos, o ranking não é por gênero (soma pedidos
+// de todas as rádios), então o evento é único ("top10-updated") e atualiza a
+// home de qualquer rádio que esteja aberta.
+func broadcastTop10Updated(app *App, ctx context.Context) {
+	topSongs, err := app.Songs.ListTopRequested(ctx, 10)
+	if err != nil {
+		app.Log.Error("consultando top 10 para broadcast", "error", err)
+		return
+	}
+	var top10 []components.TopRequestItem
+	for _, s := range topSongs {
+		top10 = append(top10, components.TopRequestItem{
+			SongListItem: components.SongListItem{ID: s.ID, Title: s.Title, Artist: s.Artist, Cover: s.Cover},
+			Count:        s.RequestsCount,
+		})
+	}
+	broadcastFragment(app, "top10-updated", components.TopRequestItemsFragment(top10, "Ainda não há pedidos suficientes."))
+}
+
+func broadcastFragment(app *App, eventName string, comp templ.Component) {
+	var buf bytes.Buffer
+	if err := comp.Render(context.Background(), &buf); err != nil {
+		app.Log.Error("renderizando fragmento para SSE", "error", err, "event", eventName)
+		return
+	}
+	app.Hub.Broadcast(sse.Event{Name: eventName, Data: buf.String()})
 }
 
 func writeJSON(w http.ResponseWriter, status int, v any) {

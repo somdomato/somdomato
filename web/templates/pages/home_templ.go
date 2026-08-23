@@ -58,11 +58,11 @@ func Home(data HomeData) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, " <div class=\"grid gap-6 md:grid-cols-2 lg:grid-cols-3\"><div class=\"order-1 min-w-0\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, " <div class=\"grid gap-6 md:grid-cols-2 lg:grid-cols-3\" sse-connect=\"/events\"><div class=\"order-1 min-w-0\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = components.SongList("Últimas", data.Last, "Ainda não há histórico nesta stream.").Render(ctx, templ_7745c5c3_Buffer)
+			templ_7745c5c3_Err = components.LiveSongList("Últimas", "last-list", "history-updated-"+string(data.Player.Genre), data.Last, "Ainda não há histórico nesta stream.", false).Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -70,7 +70,7 @@ func Home(data HomeData) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = components.TopRequestsList("Top 10", data.Top10, "Ainda não há pedidos suficientes.").Render(ctx, templ_7745c5c3_Buffer)
+			templ_7745c5c3_Err = components.LiveTopRequestsList("Top 10", "top10-list", "top10-updated", data.Top10, "Ainda não há pedidos suficientes.").Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -78,7 +78,7 @@ func Home(data HomeData) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = components.SongListWithSource("Próximas", data.Next, "A fila está sendo preparada.").Render(ctx, templ_7745c5c3_Buffer)
+			templ_7745c5c3_Err = components.LiveSongList("Próximas", "next-list", "queue-updated-"+string(data.Player.Genre), data.Next, "A fila está sendo preparada.", true).Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

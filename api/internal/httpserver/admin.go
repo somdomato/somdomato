@@ -326,7 +326,11 @@ func handleAdminPlaySong(app *App) http.HandlerFunc {
 			http.NotFound(w, r)
 			return
 		}
-		_, err = app.Queue.SetCurrent(r.Context(), queueSetCurrentParams(song.Genre, song.ID, false))
+		confirmed, err := app.Queue.SetCurrent(r.Context(), queueSetCurrentParams(song.Genre, song.ID, false))
+		if err == nil && confirmed != nil {
+			broadcastHistoryUpdated(app, r.Context(), song.Genre)
+			broadcastQueueUpdated(app, r.Context(), song.Genre)
+		}
 		if err != nil {
 			app.Log.Error("tocando música manualmente", "error", err)
 			http.Error(w, "erro interno", http.StatusInternalServerError)
@@ -453,6 +457,7 @@ func handleAdminRequestRemove(app *App) http.HandlerFunc {
 			http.Error(w, "erro interno", http.StatusInternalServerError)
 			return
 		}
+		broadcastQueueUpdated(app, r.Context(), string(config.GenreGeral))
 		w.WriteHeader(http.StatusOK)
 	}
 }

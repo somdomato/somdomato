@@ -101,6 +101,39 @@
   to { opacity: 1; transform: scale(1); }
 }
 
+/* Itens dos blocos "Próximas"/"Últimas"/"Top 10" (ver [data-flip-list] em
+   songlist.templ + list-animations.js): quando o SSE troca o conteúdo, cada
+   <li> reordenado desliza da posição antiga para a nova (flip-move) e cada
+   item novo entra com um fade + leve deslize (flip-enter), em vez de só
+   "pular" para o lugar. */
+.flip-item.flip-move {
+  transition:
+    transform 380ms cubic-bezier(0.22, 1, 0.36, 1),
+    background-color 380ms ease;
+}
+.flip-item.flip-enter {
+  animation: flip-item-enter 420ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+@keyframes flip-item-enter {
+  from {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.98);
+    background-color: color-mix(in oklch, var(--color-brand-500) 18%, transparent);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    background-color: transparent;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .flip-item.flip-move,
+  .flip-item.flip-enter {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
 /* Scroll dos modais do rodapé (Termos, Privacidade, Contato) — barra fina
    na cor da marca em vez do scrollbar cinza padrão do navegador, coerente
    com o resto da identidade visual do site. */

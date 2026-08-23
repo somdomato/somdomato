@@ -104,7 +104,12 @@ func buildPlayerData(ctx context.Context, app *App, genre config.Genre) componen
 		now = components.NowPlaying{Title: "Rádio Som do Mato", Artist: "A mais sertaneja", Cover: cover.DefaultCover, Genre: string(genre)}
 	}
 
-	return components.PlayerData{Genre: genre, StreamURL: app.Cfg.StreamURL(genre), Now: now}
+	options := make([]components.GenreOption, 0, len(config.AllGenres))
+	for _, g := range config.AllGenres {
+		options = append(options, components.GenreOption{Genre: g, StreamURL: app.Cfg.StreamURL(g)})
+	}
+
+	return components.PlayerData{Genre: genre, StreamURL: app.Cfg.StreamURL(genre), Now: now, GenreOptions: options}
 }
 
 // handleNowPlayingAPI expõe a música atual e a próxima da fila em JSON —
@@ -226,6 +231,11 @@ func handlePedidosSolicitar(app *App) http.HandlerFunc {
 			_ = components.RequestFeedback(result.Message, false).Render(r.Context(), w)
 			return
 		}
+		// Pedidos só entram na fila do "geral" (ver requests.Store.Add) e
+		// somam no ranking global — atualiza "Próximas" e "Top 10" em tempo
+		// real em quem estiver com a home aberta.
+		broadcastQueueUpdated(app, r.Context(), string(config.GenreGeral))
+		broadcastTop10Updated(app, r.Context())
 		_ = components.RequestFeedback("Pedido adicionado à fila!", true).Render(r.Context(), w)
 	}
 }

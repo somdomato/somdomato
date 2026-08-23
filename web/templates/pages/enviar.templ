@@ -17,7 +17,7 @@ templ Enviar(data EnviarData) {
 	@templates.Layout("Enviar música", &data.Player, data.IsAdmin) {
 		<h1 class="text-xl font-bold">Manda tua música pra rádio</h1>
 		<p class="mt-1 text-sm text-neutral-400">
-			Busque no Deezer e peça o download. Toda música passa por uma avaliação automática antes de entrar no ar
+			Busque na internet e peça o download. Toda música passa por uma avaliação automática antes de entrar no ar
 			— pode levar alguns minutos.
 		</p>
 
@@ -27,7 +27,7 @@ templ Enviar(data EnviarData) {
 				name="q"
 				value={ data.Query }
 				placeholder="Buscar por título ou artista..."
-				class="w-full rounded-lg bg-surface-raised px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-brand-500"
+				class="w-full rounded-lg bg-surface-raised px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-brand-500 cursor-pointer"
 			/>
 		</form>
 

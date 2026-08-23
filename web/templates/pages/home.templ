@@ -16,15 +16,15 @@ type HomeData struct {
 templ Home(data HomeData) {
 	@templates.Layout("", &data.Player, data.IsAdmin) {
 		@components.ChatEmbed()
-		<div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+		<div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3" sse-connect="/events">
 			<div class="order-1 min-w-0">
-				@components.SongList("Últimas", data.Last, "Ainda não há histórico nesta stream.")
+				@components.LiveSongList("Últimas", "last-list", "history-updated-"+string(data.Player.Genre), data.Last, "Ainda não há histórico nesta stream.", false)
 			</div>
 			<div class="order-3 min-w-0 md:order-2">
-				@components.TopRequestsList("Top 10", data.Top10, "Ainda não há pedidos suficientes.")
+				@components.LiveTopRequestsList("Top 10", "top10-list", "top10-updated", data.Top10, "Ainda não há pedidos suficientes.")
 			</div>
 			<div class="order-2 min-w-0 md:order-3">
-				@components.SongListWithSource("Próximas", data.Next, "A fila está sendo preparada.")
+				@components.LiveSongList("Próximas", "next-list", "queue-updated-"+string(data.Player.Genre), data.Next, "A fila está sendo preparada.", true)
 			</div>
 		</div>
 	}
