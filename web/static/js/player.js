@@ -10,6 +10,11 @@ document.querySelectorAll("[data-player]").forEach((root) => {
 	const message = root.querySelector("[data-player-message]");
 	const bars = root.querySelector("[data-player-bars]");
 	const volume = root.querySelector("[data-player-volume]");
+	const muteToggle = root.querySelector("[data-player-mute-toggle]");
+	const iconVolumeMuted = root.querySelector("[data-icon-volume-muted]");
+	const iconVolumeLow = root.querySelector("[data-icon-volume-low]");
+	const iconVolumeMedium = root.querySelector("[data-icon-volume-medium]");
+	const iconVolumeHigh = root.querySelector("[data-icon-volume-high]");
 	const nowPlaying = document.getElementById("now-playing");
 	// streamURL/radioName são atualizados ao trocar de rádio (ver listener de
 	// "change" do <select> no fim do arquivo) sem recriar este <audio> nem a
@@ -248,9 +253,45 @@ document.querySelectorAll("[data-player]").forEach((root) => {
 		}
 	});
 
+	// Quatro estágios de ícone: mudo, mínimo, médio e alto — o nível é
+	// derivado do volume atual (não só de audio.muted), para que arrastar o
+	// slider até perto de zero já pareça "mudo" visualmente.
+	const volumeLevel = () => {
+		if (audio.muted) return "muted";
+		const v = Number(volume.value);
+		if (v <= 0) return "muted";
+		if (v <= 1 / 3) return "low";
+		if (v <= 2 / 3) return "medium";
+		return "high";
+	};
+
+	const updateVolumeIcon = () => {
+		const level = volumeLevel();
+		iconVolumeMuted?.classList.toggle("hidden", level !== "muted");
+		iconVolumeLow?.classList.toggle("hidden", level !== "low");
+		iconVolumeMedium?.classList.toggle("hidden", level !== "medium");
+		iconVolumeHigh?.classList.toggle("hidden", level !== "high");
+		const muted = level === "muted";
+		muteToggle?.setAttribute("aria-label", muted ? "Ativar som" : "Silenciar");
+		muteToggle?.setAttribute("title", muted ? "Ativar som" : "Silenciar");
+	};
+
+	const setMuted = (muted) => {
+		audio.muted = muted;
+		updateVolumeIcon();
+	};
+
+	updateVolumeIcon();
+
 	volume.addEventListener("input", () => {
 		audio.volume = Number(volume.value);
 		localStorage.setItem(volumeStorageKey, volume.value);
+		if (audio.muted && Number(volume.value) > 0) audio.muted = false;
+		updateVolumeIcon();
+	});
+
+	muteToggle?.addEventListener("click", () => {
+		setMuted(!audio.muted);
 	});
 
 	// Disparado pelo listener de "change" do GenreSwitcher (abaixo) depois que
