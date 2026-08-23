@@ -9,6 +9,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/somdomato/somdomato/api/config"
 	"github.com/somdomato/somdomato/api/internal/analytics"
+	"github.com/somdomato/somdomato/api/internal/artistcover"
 	"github.com/somdomato/somdomato/api/internal/auth"
 	"github.com/somdomato/somdomato/api/internal/deezerdl"
 	"github.com/somdomato/somdomato/api/internal/jingles"
@@ -38,6 +39,13 @@ type App struct {
 	Hub         *sse.Hub
 	Uploads     *uploads.Store
 	Analytics   *analytics.Store
+
+	// ArtistCovers guarda o estado (leitura direta pelos handlers);
+	// ArtistCoverResolver é quem sabe buscar/converter/persistir uma capa
+	// nova — chamado fire-and-forget de handleMusicStarted. Ver
+	// api/internal/artistcover para o fluxo completo.
+	ArtistCovers        *artistcover.Store
+	ArtistCoverResolver *artistcover.Resolver
 
 	// Deezer é nil quando DEEZER_ARL não está configurado — /enviar/baixar
 	// responde 503 nesse caso em vez de o processo inteiro falhar ao subir.

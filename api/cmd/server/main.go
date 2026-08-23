@@ -13,6 +13,7 @@ import (
 
 	"github.com/somdomato/somdomato/api/config"
 	"github.com/somdomato/somdomato/api/internal/analytics"
+	"github.com/somdomato/somdomato/api/internal/artistcover"
 	"github.com/somdomato/somdomato/api/internal/auth"
 	"github.com/somdomato/somdomato/api/internal/db"
 	"github.com/somdomato/somdomato/api/internal/deezerdl"
@@ -58,6 +59,8 @@ func main() {
 	songsStore := songs.NewStore(pool)
 	uploadsStore := uploads.NewStore(pool)
 	analyticsStore := analytics.NewStore(pool)
+	artistCoverStore := artistcover.NewStore(pool)
+	artistCoverResolver := artistcover.NewResolver(cfg, artistCoverStore, log)
 
 	var deezerClient *deezerdl.Client
 	if cfg.DeezerARL != "" {
@@ -67,19 +70,21 @@ func main() {
 	}
 
 	app := &httpserver.App{
-		Cfg:         cfg,
-		Log:         log,
-		Pool:        pool,
-		Queue:       queueStore,
-		Protections: protectionsStore,
-		Jingles:     jingles.NewStore(pool),
-		Songs:       songsStore,
-		Requests:    requests.NewStore(pool, protectionsStore, queueStore),
-		Auth:        auth.NewStore(pool),
-		Hub:         hub,
-		Uploads:     uploadsStore,
-		Analytics:   analyticsStore,
-		Deezer:      deezerClient,
+		Cfg:                 cfg,
+		Log:                 log,
+		Pool:                pool,
+		Queue:               queueStore,
+		Protections:         protectionsStore,
+		Jingles:             jingles.NewStore(pool),
+		Songs:               songsStore,
+		Requests:            requests.NewStore(pool, protectionsStore, queueStore),
+		Auth:                auth.NewStore(pool),
+		Hub:                 hub,
+		Uploads:             uploadsStore,
+		Analytics:           analyticsStore,
+		ArtistCovers:        artistCoverStore,
+		ArtistCoverResolver: artistCoverResolver,
+		Deezer:              deezerClient,
 	}
 
 	// Avaliador Groq: no máximo 1 chamada/min, ver internal/groqeval. Sem

@@ -219,12 +219,7 @@ type PageStat struct {
 	Path   string
 	Visits int64
 	Clicks int64
-}
-
-// OnlinePage é a linha da tabela "online agora, por página".
-type OnlinePage struct {
-	Path  string
-	Count int64
+	Online int64
 }
 
 // VisitPoint é um ponto do gráfico de visitas/cliques ao longo do tempo.

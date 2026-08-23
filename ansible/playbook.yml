@@ -70,7 +70,9 @@
 
     - name: Instalar dependências base
       ansible.builtin.apt:
-        name: [curl, ca-certificates, gnupg, git, rsync, jq, openssl, acl, ufw]
+        # webp: fornece o binário cwebp, usado por api/internal/artistcover
+        # pra converter capas de artista pra webp antes de salvar em disco.
+        name: [curl, ca-certificates, gnupg, git, rsync, jq, openssl, acl, ufw, webp]
         state: present
       tags: [base]
 

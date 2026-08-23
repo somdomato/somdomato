@@ -4,6 +4,7 @@ package httpserver
 
 import (
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"os"
@@ -14,6 +15,7 @@ import (
 
 	"github.com/bogem/id3v2/v2"
 	"github.com/somdomato/somdomato/api/config"
+	"github.com/somdomato/somdomato/api/internal/artistcover"
 	"github.com/somdomato/somdomato/api/internal/auth"
 	"github.com/somdomato/somdomato/api/internal/icecastclient"
 	"github.com/somdomato/somdomato/api/internal/requests"
@@ -36,6 +38,8 @@ func registerAdminRoutes(mux *http.ServeMux, app *App) {
 	mux.HandleFunc("POST /admin/musicas/{id}/tocar", requirePermission(app, rbac.PermRequestsManage, requireCSRF(handleAdminPlaySong(app))))
 	mux.HandleFunc("POST /admin/musicas/{id}/remover", requirePermission(app, rbac.PermSongsDelete, requireCSRF(handleAdminSongDelete(app))))
 	mux.HandleFunc("POST /admin/artistas/{artist}/renomear", requirePermission(app, rbac.PermSongsEditTags, requireCSRF(handleAdminArtistRename(app))))
+	mux.HandleFunc("POST /admin/artistas/{artist}/capa", requirePermission(app, rbac.PermSongsEditTags, requireCSRF(handleAdminArtistCoverUpload(app))))
+	mux.HandleFunc("POST /admin/artistas/{artist}/capa/remover", requirePermission(app, rbac.PermSongsEditTags, requireCSRF(handleAdminArtistCoverRemove(app))))
 
 	mux.HandleFunc("GET /admin/pedidos", requirePermission(app, rbac.PermRequestsManage, handleAdminRequestsList(app)))
 	mux.HandleFunc("POST /admin/pedidos/{id}/remover", requirePermission(app, rbac.PermRequestsManage, requireCSRF(handleAdminRequestRemove(app))))
@@ -351,6 +355,75 @@ func handleAdminArtistRename(app *App) http.HandlerFunc {
 	}
 }
 
+// maxArtistCoverUpload limita o upload manual de capa de artista — bem
+// acima de qualquer foto razoável, só uma trava de sanidade.
+const maxArtistCoverUpload = 10 << 20 // 10MB
+
+// handleAdminArtistCoverUpload recebe uma imagem enviada pelo admin,
+// converte pra webp (mesmo helper usado pela busca automática) e marca a
+// capa como manual — a partir daí artistcover.Resolve nunca mais sobrescreve
+// este artista.
+func handleAdminArtistCoverUpload(app *App) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		artist := r.PathValue("artist")
+
+		if err := r.ParseMultipartForm(maxArtistCoverUpload); err != nil {
+			http.Error(w, "arquivo inválido ou grande demais", http.StatusBadRequest)
+			return
+		}
+		file, _, err := r.FormFile("cover")
+		if err != nil {
+			http.Error(w, "capa não enviada", http.StatusBadRequest)
+			return
+		}
+		defer file.Close()
+
+		data, err := io.ReadAll(io.LimitReader(file, maxArtistCoverUpload+1))
+		if err != nil || len(data) == 0 || len(data) > maxArtistCoverUpload {
+			http.Error(w, "arquivo inválido ou grande demais", http.StatusBadRequest)
+			return
+		}
+
+		path, err := artistcover.SaveCover(app.ArtistCoverResolver.CwebpPath(), artist, data, app.Cfg.CoversDir)
+		if err != nil {
+			app.Log.Error("salvando capa manual de artista", "error", err)
+			http.Error(w, "não foi possível processar a imagem enviada", http.StatusInternalServerError)
+			return
+		}
+		if err := app.ArtistCovers.SetManual(r.Context(), artist, path); err != nil {
+			app.Log.Error("gravando capa manual de artista", "error", err)
+			http.Error(w, "erro interno", http.StatusInternalServerError)
+			return
+		}
+
+		http.Redirect(w, r, "/artistas/"+url.PathEscape(artist), http.StatusSeeOther)
+	}
+}
+
+// handleAdminArtistCoverRemove apaga a customização manual, devolvendo o
+// artista à busca automática na próxima vez que uma música dele tocar.
+func handleAdminArtistCoverRemove(app *App) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		artist := r.PathValue("artist")
+
+		oldPath, err := app.ArtistCovers.ClearManual(r.Context(), artist)
+		if err != nil {
+			app.Log.Error("removendo capa manual de artista", "error", err)
+			http.Error(w, "erro interno", http.StatusInternalServerError)
+			return
+		}
+		if oldPath != nil && *oldPath != "" {
+			if rel, ok := strings.CutPrefix(*oldPath, "/covers/"); ok {
+				if err := os.Remove(filepath.Join(app.Cfg.CoversDir, rel)); err != nil && !os.IsNotExist(err) {
+					app.Log.Warn("removendo arquivo de capa antigo", "error", err)
+				}
+			}
+		}
+
+		http.Redirect(w, r, "/artistas/"+url.PathEscape(artist), http.StatusSeeOther)
+	}
+}
+
 // --- Pedidos -------------------------------------------------------------
 
 func handleAdminRequestsList(app *App) http.HandlerFunc {
@@ -497,10 +570,6 @@ func handleAdminStats(app *App) http.HandlerFunc {
 		if err != nil {
 			app.Log.Error("carregando estatísticas por página", "error", err)
 		}
-		online, err := app.Analytics.OnlineByPage(ctx)
-		if err != nil {
-			app.Log.Error("carregando visitantes online", "error", err)
-		}
 		visitSeries, err := app.Analytics.VisitSeries(ctx, period)
 		if err != nil {
 			app.Log.Error("carregando série de visitas", "error", err)
@@ -514,7 +583,6 @@ func handleAdminStats(app *App) http.HandlerFunc {
 			Period:       period,
 			Totals:       totals,
 			Pages:        pages,
-			Online:       online,
 			VisitSeries:  visitSeries,
 			ListenSeries: listenSeries,
 		}

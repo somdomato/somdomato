@@ -85,9 +85,15 @@ func (s *Store) Totals(ctx context.Context, since time.Time) (models.AnalyticsTo
 
 func (s *Store) PageStats(ctx context.Context, since time.Time) ([]models.PageStat, error) {
 	rows, err := s.pool.Query(ctx, `
-		SELECT path, COUNT(DISTINCT visitor_id), COUNT(*)
-		FROM page_events WHERE created_at >= $1
-		GROUP BY path ORDER BY COUNT(*) DESC`, sinceOrZero(since))
+		SELECT pe.path, COUNT(DISTINCT pe.visitor_id), COUNT(*), COALESCE(o.cnt, 0)
+		FROM page_events pe
+		LEFT JOIN (
+			SELECT path, COUNT(*) AS cnt FROM online_visitors
+			WHERE last_seen >= $2 GROUP BY path
+		) o ON o.path = pe.path
+		WHERE pe.created_at >= $1
+		GROUP BY pe.path, o.cnt
+		ORDER BY COUNT(*) DESC`, sinceOrZero(since), time.Now().Add(-OnlineWindow))
 	if err != nil {
 		return nil, err
 	}
@@ -95,27 +101,7 @@ func (s *Store) PageStats(ctx context.Context, since time.Time) ([]models.PageSt
 	var out []models.PageStat
 	for rows.Next() {
 		var p models.PageStat
-		if err := rows.Scan(&p.Path, &p.Visits, &p.Clicks); err != nil {
-			return nil, err
-		}
-		out = append(out, p)
-	}
-	return out, rows.Err()
-}
-
-func (s *Store) OnlineByPage(ctx context.Context) ([]models.OnlinePage, error) {
-	rows, err := s.pool.Query(ctx, `
-		SELECT path, COUNT(*) FROM online_visitors
-		WHERE last_seen >= $1 GROUP BY path ORDER BY COUNT(*) DESC`,
-		time.Now().Add(-OnlineWindow))
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var out []models.OnlinePage
-	for rows.Next() {
-		var p models.OnlinePage
-		if err := rows.Scan(&p.Path, &p.Count); err != nil {
+		if err := rows.Scan(&p.Path, &p.Visits, &p.Clicks, &p.Online); err != nil {
 			return nil, err
 		}
 		out = append(out, p)

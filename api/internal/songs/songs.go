@@ -98,8 +98,13 @@ func (s *Store) ListArtists(ctx context.Context) ([]string, error) {
 // e a contagem de músicas de cada artista — usado para os cards de /artistas.
 func (s *Store) ListArtistsWithCovers(ctx context.Context) ([]models.ArtistCard, error) {
 	rows, err := s.pool.Query(ctx, `
-		SELECT artist, (array_agg(cover ORDER BY created_at DESC))[1], count(*)
-		FROM songs GROUP BY artist ORDER BY artist`)
+		SELECT s.artist,
+		       COALESCE(ac.cover_path, (array_agg(s.cover ORDER BY s.created_at DESC))[1]),
+		       count(*)
+		FROM songs s
+		LEFT JOIN artist_covers ac ON ac.artist_name = s.artist
+		GROUP BY s.artist, ac.cover_path
+		ORDER BY s.artist`)
 	if err != nil {
 		return nil, fmt.Errorf("listando artistas com capa: %w", err)
 	}
@@ -119,8 +124,29 @@ func (s *Store) ListArtistsWithCovers(ctx context.Context) ([]models.ArtistCard,
 // RenameArtist atualiza o nome do artista em todas as músicas dele —
 // usado pelo admin a partir da página de detalhe do artista.
 func (s *Store) RenameArtist(ctx context.Context, oldName, newName string) error {
-	_, err := s.pool.Exec(ctx, `UPDATE songs SET artist = $1 WHERE artist = $2`, newName, oldName)
+	tx, err := s.pool.Begin(ctx)
 	if err != nil {
+		return fmt.Errorf("renomeando artista: %w", err)
+	}
+	defer tx.Rollback(ctx)
+
+	if _, err := tx.Exec(ctx, `UPDATE songs SET artist = $1 WHERE artist = $2`, newName, oldName); err != nil {
+		return fmt.Errorf("renomeando artista: %w", err)
+	}
+
+	// artist_covers segue o mesmo nome livre de songs.artist (não há FK).
+	// Se o nome novo já tinha uma linha própria, ela prevalece — descarta a
+	// do nome antigo em vez de colidir na chave primária.
+	if _, err := tx.Exec(ctx, `
+		DELETE FROM artist_covers WHERE artist_name = $1
+		AND EXISTS (SELECT 1 FROM artist_covers WHERE artist_name = $2)`, oldName, newName); err != nil {
+		return fmt.Errorf("renomeando artista (capa): %w", err)
+	}
+	if _, err := tx.Exec(ctx, `UPDATE artist_covers SET artist_name = $1 WHERE artist_name = $2`, newName, oldName); err != nil {
+		return fmt.Errorf("renomeando artista (capa): %w", err)
+	}
+
+	if err := tx.Commit(ctx); err != nil {
 		return fmt.Errorf("renomeando artista: %w", err)
 	}
 	return nil

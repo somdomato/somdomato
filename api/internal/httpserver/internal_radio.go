@@ -185,6 +185,13 @@ func handleMusicStarted(app *App) http.HandlerFunc {
 			go resolveCoverAsync(app, confirmed.SongID, confirmed.Path)
 		}
 
+		// Resolução de capa de artista assíncrona (fire-and-forget) — só
+		// dispara busca de verdade se ainda não houver capa (automática ou
+		// manual) e o cooldown já tiver passado; ver artistcover.Resolve.
+		if confirmed.Artist != "" {
+			go app.ArtistCoverResolver.Resolve(app.backgroundContext(), confirmed.Artist)
+		}
+
 		writeJSON(w, http.StatusOK, map[string]bool{"success": true})
 	}
 }

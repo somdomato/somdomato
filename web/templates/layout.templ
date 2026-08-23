@@ -203,9 +203,9 @@ templ modalHeader(title string) {
 // posicionado dinamicamente pelo footer-modals.js (abaixo do header, que
 // muda de altura com o player) — nunca cobrindo o header.
 templ termsModal() {
-	<dialog id="terms-modal" data-modal class="w-[92vw] max-w-2xl modal-scroll overflow-y-auto rounded-2xl border border-brand-500/20 bg-surface-raised p-0 text-neutral-100 shadow-2xl shadow-black/50 backdrop:bg-black/70 backdrop:backdrop-blur-sm">
+	<dialog id="terms-modal" data-modal class="w-[92vw] max-w-2xl rounded-2xl border border-brand-500/20 bg-surface-raised p-0 text-neutral-100 shadow-2xl shadow-black/50 backdrop:bg-black/70 backdrop:backdrop-blur-sm">
 		@modalHeader("Termos de uso")
-		<div class="space-y-4 px-5 py-5 text-sm leading-relaxed text-neutral-300 sm:px-6">
+		<div class="modal-scroll min-h-0 space-y-4 overflow-y-auto px-5 py-5 text-sm leading-relaxed text-neutral-300 sm:px-6">
 			<p>
 				Bem-vindo à Som do Mato! Ao acessar o site ou ouvir nossa transmissão, você concorda com os termos abaixo. Eles existem para manter a rádio um lugar bacana para todo mundo.
 			</p>
@@ -239,9 +239,9 @@ templ termsModal() {
 }
 
 templ privacyModal() {
-	<dialog id="privacy-modal" data-modal class="w-[92vw] max-w-2xl modal-scroll overflow-y-auto rounded-2xl border border-brand-500/20 bg-surface-raised p-0 text-neutral-100 shadow-2xl shadow-black/50 backdrop:bg-black/70 backdrop:backdrop-blur-sm">
+	<dialog id="privacy-modal" data-modal class="w-[92vw] max-w-2xl rounded-2xl border border-brand-500/20 bg-surface-raised p-0 text-neutral-100 shadow-2xl shadow-black/50 backdrop:bg-black/70 backdrop:backdrop-blur-sm">
 		@modalHeader("Política de privacidade")
-		<div class="space-y-4 px-5 py-5 text-sm leading-relaxed text-neutral-300 sm:px-6">
+		<div class="modal-scroll min-h-0 space-y-4 overflow-y-auto px-5 py-5 text-sm leading-relaxed text-neutral-300 sm:px-6">
 			<p>
 				Sua privacidade importa pra gente. Esta política explica quais dados coletamos na Som do Mato e como usamos essas informações.
 			</p>
@@ -278,9 +278,9 @@ templ privacyModal() {
 }
 
 templ contactModal() {
-	<dialog id="contact-modal" data-modal class="w-[92vw] max-w-md modal-scroll overflow-y-auto rounded-2xl border border-brand-500/20 bg-surface-raised p-0 text-neutral-100 shadow-2xl shadow-black/50 backdrop:bg-black/70 backdrop:backdrop-blur-sm">
+	<dialog id="contact-modal" data-modal class="w-[92vw] max-w-md rounded-2xl border border-brand-500/20 bg-surface-raised p-0 text-neutral-100 shadow-2xl shadow-black/50 backdrop:bg-black/70 backdrop:backdrop-blur-sm">
 		@modalHeader("Contato")
-		<div class="space-y-5 px-5 py-5 text-sm leading-relaxed text-neutral-300 sm:px-6">
+		<div class="modal-scroll min-h-0 space-y-5 overflow-y-auto px-5 py-5 text-sm leading-relaxed text-neutral-300 sm:px-6">
 			<p>Quer mandar um recado, sugestão ou dúvida pra Som do Mato? Fala com a gente por aqui:</p>
 			<a href="mailto:contato@somdomato.com" class="flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-4 py-3 transition hover:border-brand-500/40 hover:bg-brand-500/10">
 				<span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-500/20 text-brand-300">

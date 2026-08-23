@@ -149,6 +149,68 @@ Sem `DEEZER_ARL`, a rota `/enviar/baixar` responde 503 e o resto da app
 sobe normal. Sem `GROQ_API_KEY`, os uploads baixados ficam em `pending`
 indefinidamente (nada quebra, só não são aprovados sozinhos).
 
+### Capas de artistas (`api/internal/artistcover`)
+
+Além da capa por música (extraída do ID3, `api/internal/cover`), cada
+artista tem uma capa própria — usada nos cards de `/artistas` e no topo de
+`/artistas/{artist}` — guardada na tabela `artist_covers` (chave livre
+`artist_name`, o mesmo texto usado em `songs.artist`; não existe uma tabela
+`artists` separada).
+
+**Gatilho: só quando uma música toca de verdade.** Não há worker varrendo o
+catálogo em busca de artistas sem capa — isso gastaria CPU/rede numa VPS
+pequena por algo que pode esperar. Em vez disso, `handleMusicStarted`
+(`api/internal/httpserver/internal_radio.go`), o callback `on_track` do
+Liquidsoap, dispara `ArtistCoverResolver.Resolve(ctx, artist)` como
+fire-and-forget assim que a música é confirmada como tocando — o mesmo
+padrão já usado ali para a capa da própria música
+(`resolveCoverAsync`). Se não houver tempo de aparecer *nessa* execução, a
+capa fica pronta pra próxima vez que o artista tocar.
+
+`Resolve` decide se vale a pena buscar antes de fazer qualquer chamada de
+rede: sai cedo se a capa já foi definida manualmente (`is_manual`), se já
+existe uma capa encontrada automaticamente, ou se a última tentativa sem
+sucesso foi há menos de **7 dias** (`coverCooldown`, `last_attempt_at` +
+`attempts`) — isso evita martelar as APIs externas toda vez que uma música
+de um artista sem capa encontrável toca.
+
+**Fontes, em ordem, parando na primeira que encontrar algo** (todas
+públicas, sem chave de API):
+
+1. **Deezer** (`api.deezer.com/search/artist`) — mesma API pública usada em
+   `internal/deezerdl/search.go`, agora no endpoint de artista.
+2. **iTunes Search API** (`itunes.apple.com/search`).
+3. **Wikidata via MusicBrainz** — o fallback mais caro (até 4 requisições
+   HTTP em cadeia), só tentado se as duas fontes anteriores falharem.
+   MusicBrainz não serve foto de artista diretamente (Cover Art Archive é só
+   de release), então a cadeia é: busca o artista no MusicBrainz → MBID →
+   relações (`inc=url-rels`) → link para a entidade correspondente no
+   Wikidata → claim `P18` (imagem) → arquivo resolvido via Wikimedia Commons
+   (`Special:FilePath`). As chamadas ao MusicBrainz respeitam o limite de
+   uso justo deles (~1 req/s) via um rate-gate simples no processo, com
+   `User-Agent` identificando o app.
+
+**Conversão e armazenamento.** A imagem baixada é gravada num arquivo
+temporário, convertida para webp via `cwebp` (binário do pacote `webp`,
+qualidade 78, redimensionada para no máximo 600px no maior lado) e movida
+(rename atômico) para `[COVERS_DIR]/artistas/<slug-do-artista>/cover.webp`
+— servida publicamente em `/covers/artistas/<slug>/cover.webp` pelo mesmo
+`http.FileServer` que já serve as capas de música. `cwebp` é resolvido uma
+vez via `exec.LookPath`; se ausente, a busca de capa de artista vira no-op
+(loga um aviso, não impede o boot) — mesmo padrão de degradação usado para
+`DEEZER_ARL`/`GROQ_API_KEY` ausentes. Em produção o pacote `webp` já é
+instalado pelo Ansible; em dev local (a API roda nativa no host, não em
+container) é preciso instalar manualmente: `brew install webp` (Mac) ou
+`apt install webp` (Linux).
+
+**Override manual no admin.** Em `/artistas/{artist}`, o admin pode enviar
+uma imagem própria (`POST /admin/artistas/{artist}/capa`) — passa pelo mesmo
+`SaveCover` (temp → webp → path final) e marca `is_manual = true`: a partir
+daí `Resolve` nunca mais sobrescreve esse artista automaticamente. Um botão
+"Remover capa customizada" (`POST /admin/artistas/{artist}/capa/remover`)
+zera a flag e o cooldown, devolvendo o artista à busca automática na
+próxima vez que uma música dele tocar.
+
 ## Produção
 
 O `.env` na raiz é a única fonte de verdade para o provisionamento: contém

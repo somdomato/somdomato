@@ -122,16 +122,28 @@
   background-color: var(--color-brand-500);
 }
 
-/* dialog nativo não fica sobre o header: footer-modals.js calcula --modal-top
-   (altura do header + respiro) e o posiciona logo abaixo. Definimos a
-   posição inteira aqui (em vez de confiar no inset-block/margin:auto que o
-   UA aplica a dialog:modal) para não depender de como cada navegador
-   resolve a centralização quando só o "top" é sobrescrito. */
+/* dialog nativo fica centralizado no eixo vertical dentro do espaço livre
+   abaixo do header (que muda de altura com o player/vinheta ligados) —
+   footer-modals.js calcula --modal-top como o centro desse espaço e
+   --modal-max-h como a altura disponível. Definimos a posição inteira aqui
+   (em vez de confiar no inset-block/margin:auto que o UA aplica a
+   dialog:modal) para não depender de como cada navegador resolve a
+   centralização quando "top" é sobrescrito. */
 dialog[data-modal] {
   position: fixed;
-  top: var(--modal-top, 4rem);
+  top: var(--modal-top, 50%);
   left: 50%;
-  transform: translateX(-50%);
+  transform: translate(-50%, -50%);
   margin: 0;
   max-height: var(--modal-max-h, 80vh);
+}
+/* display:flex só quando [open]: a classe "flex" do Tailwind teria
+   especificidade maior que a regra da UA "dialog:not([open]) { display:
+   none }", mantendo o modal visível mesmo fechado — por isso o layout em
+   coluna fica aqui, condicionado a [open], em vez de nas classes do
+   elemento. */
+dialog[data-modal][open] {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }

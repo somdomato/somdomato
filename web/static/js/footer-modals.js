@@ -3,16 +3,25 @@
 // modais podem ser reabertos várias vezes na mesma página (htmx boost não
 // recarrega o footer entre navegações).
 //
-// O topo do modal é calculado a partir da altura real do header (que muda
-// com o player/vinheta ligados) para que o modal nunca fique por cima dele
-// — só a --modal-top/--modal-max-h (ver .modal-scroll em input.css) mudam,
-// a centralização horizontal continua por conta do <dialog> nativo.
+// O modal fica centralizado no centro real da tela (--modal-top = metade de
+// window.innerHeight), não no centro do espaço abaixo do header — centrar
+// nesse espaço em vez do viewport inteiro empurra o modal visivelmente para
+// baixo (metade da altura do header) e foi percebido como "recuado para
+// baixo" mesmo depois de dar respiro nas bordas. Para não ficar por cima do
+// header (que muda de altura com o player/vinheta ligados), --modal-max-h é
+// reduzida — nunca deslocada — até caber no menor dos dois espaços entre o
+// centro e cada borda (header/rodapé da tela), mantendo o modal simétrico
+// em volta do centro real mesmo quando precisa encolher.
 function positionModal(dialog) {
 	const header = document.getElementById("site-header");
 	const headerBottom = header ? Math.ceil(header.getBoundingClientRect().bottom) : 64;
-	const top = Math.max(headerBottom, 0) + 16;
-	dialog.style.setProperty("--modal-top", `${top}px`);
-	dialog.style.setProperty("--modal-max-h", `calc(100vh - ${top}px - 1rem)`);
+	const gap = 16;
+	const availableTop = Math.max(headerBottom, 0) + gap;
+	const availableBottom = window.innerHeight - gap;
+	const center = window.innerHeight / 2;
+	const halfHeight = Math.max(Math.min(center - availableTop, availableBottom - center), 0);
+	dialog.style.setProperty("--modal-top", `${center}px`);
+	dialog.style.setProperty("--modal-max-h", `${halfHeight * 2}px`);
 }
 
 document.body.addEventListener("click", (evt) => {

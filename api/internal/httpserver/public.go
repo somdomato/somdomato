@@ -252,9 +252,25 @@ func handleArtistDetail(app *App) http.HandlerFunc {
 		for _, s := range songList {
 			items = append(items, components.SongListItem{ID: s.ID, Title: s.Title, Artist: s.Artist, Cover: s.Cover})
 		}
+
+		artistCover := cover.DefaultCover
+		if len(items) > 0 {
+			artistCover = items[0].Cover
+		}
+		isManualCover := false
+		if row, err := app.ArtistCovers.Get(r.Context(), artist); err != nil {
+			app.Log.Error("buscando capa do artista", "error", err)
+		} else if row != nil {
+			isManualCover = row.IsManual
+			if row.CoverPath != nil && *row.CoverPath != "" {
+				artistCover = *row.CoverPath
+			}
+		}
+
 		token := ensureCSRFCookie(w, r)
 		render(w, pages.ArtistDetail(pages.ArtistDetailData{
-			Artist: artist, Songs: items, Player: buildPlayerData(r.Context(), app, config.DefaultGenre),
+			Artist: artist, Songs: items, Cover: artistCover, IsManualCover: isManualCover,
+			Player:    buildPlayerData(r.Context(), app, config.DefaultGenre),
 			CSRFToken: token, IsAdmin: isAdminRequest(app, r),
 		}))
 	}
