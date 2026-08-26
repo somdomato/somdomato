@@ -27,18 +27,24 @@ templ songDislikeIcon() {
 	</svg>
 }
 
-// SongVotePanel é o painel de curtir/descurtir mostrado ao pairar (desktop,
-// via group-hover CSS) ou tocar (mobile/touch, via .is-open — ver
-// data-song-cover-trigger em web/static/js/song-vote.js) na capa da música
-// tocando agora. Vem vazio (contagens em branco, JS preenche no open via
-// GET /api/songs/{id}/votes) porque este mesmo fragmento é reusado no
-// broadcast SSE de troca de faixa, compartilhado por todos os ouvintes
-// conectados — não dá pra embutir aqui o placar nem o voto de um visitante
-// específico.
+// SongVotePanel é o painel de curtir/descurtir mostrado ao pairar (desktop)
+// ou tocar (mobile/touch) na capa da música tocando agora — a classe
+// .is-open é inteiramente controlada por web/static/js/song-vote.js, não por
+// CSS :hover: a capa é pequena (36-44px) e há um espaço (mt-2) até o
+// painel, então group-hover puro fecha o painel assim que o ponteiro cruza
+// esse espaço, antes do usuário conseguir clicar em curtir/descurtir. O JS
+// abre no mouseover e só fecha ~300ms depois do mouseout (cancelado se o
+// ponteiro reentrar em qualquer parte do bloco), dando tempo de sobra para
+// atravessar o espaço até o painel.
+//
+// Vem vazio (contagens em branco, JS preenche no open via GET
+// /api/songs/{id}/votes) porque este mesmo fragmento é reusado no broadcast
+// SSE de troca de faixa, compartilhado por todos os ouvintes conectados —
+// não dá pra embutir aqui o placar nem o voto de um visitante específico.
 templ SongVotePanel(id int64, title, artist, cover_ string) {
 	<div
 		data-song-panel
-		class="pointer-events-none absolute left-0 top-full z-50 mt-2 w-64 max-w-[calc(100vw-2rem)] origin-top-left scale-95 rounded-2xl border border-white/10 bg-surface-raised p-4 text-neutral-100 opacity-0 shadow-2xl shadow-black/40 transition duration-150 sm:group-hover/song-cover:pointer-events-auto sm:group-hover/song-cover:scale-100 sm:group-hover/song-cover:opacity-100 [&.is-open]:pointer-events-auto [&.is-open]:scale-100 [&.is-open]:opacity-100"
+		class="pointer-events-none absolute left-0 top-full z-50 mt-2 w-64 max-w-[calc(100vw-2rem)] origin-top-left scale-95 rounded-2xl border border-white/10 bg-surface-raised p-4 text-neutral-100 opacity-0 shadow-2xl shadow-black/40 transition duration-150 [&.is-open]:pointer-events-auto [&.is-open]:scale-100 [&.is-open]:opacity-100"
 	>
 		<div class="flex items-start gap-3">
 			<img src={ cover_ } alt={ title } class="h-16 w-16 shrink-0 rounded-lg object-cover shadow-sm ring-1 ring-white/10"/>
@@ -290,14 +296,14 @@ templ ShareButton(genre config.Genre) {
 }
 
 // NowPlayingCard mostra a capa/título/artista tocando agora. A capa carrega
-// um painel de curtir/descurtir (SongVotePanel): revelado no hover em
-// desktop via CSS (group-hover/song-cover) e no toque em mobile via a
-// classe .is-open, alternada por web/static/js/song-vote.js — o placar em
-// si só é buscado nesse momento (GET /api/songs/{id}/votes), porque este
-// componente é reusado no broadcast SSE compartilhado por todos os
-// ouvintes conectados.
+// um painel de curtir/descurtir (SongVotePanel), revelado no hover
+// (desktop) ou toque (mobile) via a classe .is-open, inteiramente
+// controlada por web/static/js/song-vote.js (ver comentário em
+// SongVotePanel) — o placar em si só é buscado nesse momento (GET
+// /api/songs/{id}/votes), porque este componente é reusado no broadcast SSE
+// compartilhado por todos os ouvintes conectados.
 templ NowPlayingCard(now NowPlaying) {
-	<div class="group/song-cover relative h-11 w-11 shrink-0 sm:h-9 sm:w-9" data-song-cover data-song-id={ fmt.Sprintf("%d", now.ID) }>
+	<div class="relative h-11 w-11 shrink-0 sm:h-9 sm:w-9" data-song-cover data-song-id={ fmt.Sprintf("%d", now.ID) }>
 		<img
 			src={ now.Cover }
 			alt={ now.Title }

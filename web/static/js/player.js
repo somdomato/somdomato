@@ -339,11 +339,11 @@ document.addEventListener("change", (event) => {
 			// gatilho/painel de curtir-descurtir (song-vote.js) para que ele
 			// continue funcionando depois de trocar de rádio pelo <select>.
 			nowPlaying.innerHTML = `
-				<div class="group/song-cover relative h-11 w-11 shrink-0 sm:h-9 sm:w-9" data-song-cover data-song-id="${escape(data.now.id)}">
+				<div class="relative h-11 w-11 shrink-0 sm:h-9 sm:w-9" data-song-cover data-song-id="${escape(data.now.id)}">
 					<img src="${escape(data.now.cover)}" alt="${escape(data.now.title)}" data-song-cover-trigger class="h-11 w-11 cursor-pointer rounded-lg object-cover shadow-sm ring-1 ring-white/10 sm:h-9 sm:w-9"/>
 					${
 						data.now.id
-							? `<div data-song-panel class="pointer-events-none absolute left-0 top-full z-50 mt-2 w-64 max-w-[calc(100vw-2rem)] origin-top-left scale-95 rounded-2xl border border-white/10 bg-surface-raised p-4 text-neutral-100 opacity-0 shadow-2xl shadow-black/40 transition duration-150 sm:group-hover/song-cover:pointer-events-auto sm:group-hover/song-cover:scale-100 sm:group-hover/song-cover:opacity-100 [&.is-open]:pointer-events-auto [&.is-open]:scale-100 [&.is-open]:opacity-100">
+							? `<div data-song-panel class="pointer-events-none absolute left-0 top-full z-50 mt-2 w-64 max-w-[calc(100vw-2rem)] origin-top-left scale-95 rounded-2xl border border-white/10 bg-surface-raised p-4 text-neutral-100 opacity-0 shadow-2xl shadow-black/40 transition duration-150 [&.is-open]:pointer-events-auto [&.is-open]:scale-100 [&.is-open]:opacity-100">
 								<div class="flex items-start gap-3">
 									<img src="${escape(data.now.cover)}" alt="${escape(data.now.title)}" class="h-16 w-16 shrink-0 rounded-lg object-cover shadow-sm ring-1 ring-white/10"/>
 									<div class="min-w-0 leading-tight">

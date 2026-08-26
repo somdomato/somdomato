@@ -50,6 +50,7 @@
         jwt_secret: "{{ app_env.JWT_SECRET }}"
         radio_internal_token: "{{ app_env.RADIO_INTERNAL_TOKEN }}"
         letsencrypt_email: "{{ app_env.LETSENCRYPT_EMAIL }}"
+        cloudflare_api_token: "{{ app_env.CLOUDFLARE_API_TOKEN }}"
         icecast_admin_email: "{{ app_env.ICECAST_ADMIN_EMAIL }}"
         icecast_source_password: "{{ app_env.ICECAST_SOURCE_PASSWORD }}"
         icecast_relay_password: "{{ app_env.ICECAST_RELAY_PASSWORD }}"
@@ -256,12 +257,20 @@
       notify: Reload Nginx
       tags: [nginx]
 
+    - name: Copiar configuração Nginx - subdomínios wildcard
+      ansible.builtin.template:
+        src: etc/nginx/sites.d/04-wildcard.somdomato.com.conf.j2
+        dest: /etc/nginx/sites-available/04-wildcard.somdomato.com.conf
+        mode: "0644"
+      notify: Reload Nginx
+      tags: [nginx]
+
     - name: Habilitar sites Nginx (symlinks)
       ansible.builtin.file:
         src: "/etc/nginx/sites-available/{{ item }}"
         dest: "/etc/nginx/sites-enabled/{{ item }}"
         state: link
-      loop: [03-somdomato.com.conf, 02-radio.somdomato.com.conf]
+      loop: [03-somdomato.com.conf, 02-radio.somdomato.com.conf, 04-wildcard.somdomato.com.conf]
       notify: Reload Nginx
       tags: [nginx]
 
@@ -395,12 +404,24 @@
       tags: [deploy]
 
     # =========================================================================
-    # SSL (Let's Encrypt)
+    # SSL (Let's Encrypt) — wildcard via desafio DNS-01 na Cloudflare, pois o
+    # HTTP-01 (--nginx) não consegue provar posse de *.{{ domain }}.
     # =========================================================================
-    - name: Instalar Certbot
+    - name: Instalar Certbot e plugin DNS da Cloudflare
       ansible.builtin.apt:
-        name: [certbot, python3-certbot-nginx]
+        name: [certbot, python3-certbot-dns-cloudflare]
         state: present
+      tags: [ssl]
+
+    - name: Gerar credenciais da Cloudflare para o certbot
+      ansible.builtin.copy:
+        dest: /etc/letsencrypt/cloudflare.ini
+        owner: root
+        group: root
+        mode: "0600"
+        content: |
+          dns_cloudflare_api_token = {{ cloudflare_api_token }}
+      no_log: true
       tags: [ssl]
 
     - name: Verificar se certificado existe
@@ -409,10 +430,11 @@
       register: ssl_cert
       tags: [ssl]
 
-    - name: Obter certificado SSL (primeira vez)
+    - name: Obter certificado SSL wildcard (primeira vez)
       ansible.builtin.command: >
-        certbot certonly --nginx
-        -d {{ domain }} -d www.{{ domain }} -d radio.{{ domain }}
+        certbot certonly --dns-cloudflare
+        --dns-cloudflare-credentials /etc/letsencrypt/cloudflare.ini
+        -d {{ domain }} -d *.{{ domain }}
         --non-interactive --agree-tos --email {{ letsencrypt_email }}
       when: not ssl_cert.stat.exists
       changed_when: false

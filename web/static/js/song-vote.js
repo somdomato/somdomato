@@ -1,9 +1,13 @@
 // Curtir/descurtir a música tocando agora, a partir da capa no header do
-// player. Em desktop o painel (components.SongVotePanel) já é revelado só
-// com CSS (group-hover, ver player.templ); aqui só precisamos buscar o
-// placar quando ele abre e reagir aos cliques em curtir/descurtir. Em
-// mobile/touch (sem hover confiável) o toque na capa alterna a classe
-// .is-open, que o CSS trata igual ao group-hover.
+// player. O painel (components.SongVotePanel) é inteiramente controlado por
+// aqui via a classe .is-open — não por CSS :hover: a capa é pequena
+// (36-44px) e há um espaço até o painel (mt-2), então um group-hover puro
+// fecharia o painel assim que o ponteiro cruzasse esse espaço, antes do
+// usuário conseguir clicar em curtir/descurtir. Por isso abrimos no
+// mouseover e só fechamos ~300ms depois do mouseout — cancelado se o
+// ponteiro reentrar em qualquer parte do bloco (capa OU painel) antes
+// disso — dando tempo de sobra para atravessar o espaço. Em touch (sem
+// mouseover real) o toque na capa alterna .is-open diretamente.
 //
 // Tudo é delegado em `document` (nunca ligado a um elemento específico)
 // porque a capa/o painel são recriados o tempo todo: substituídos via
@@ -11,6 +15,8 @@
 // rádio pelo <select> (ver player.js) — listeners presos ao elemento
 // antigo seriam perdidos a cada uma dessas trocas.
 (() => {
+	const CLOSE_DELAY_MS = 300;
+
 	const getCookie = (name) => {
 		const match = document.cookie.match(new RegExp(`(?:^|; )${name}=([^;]*)`));
 		return match ? decodeURIComponent(match[1]) : "";
@@ -62,20 +68,52 @@
 			.catch(() => {});
 	};
 
-	// Desktop: buscar o placar assim que o ponteiro entra na capa (o painel
-	// em si já aparece só com CSS via group-hover).
+	const closeTimers = new WeakMap();
+
+	const openPanel = (cover) => {
+		const panel = panelFor(cover);
+		if (!panel) return;
+		window.clearTimeout(closeTimers.get(cover));
+		closeTimers.delete(cover);
+		panel.classList.add("is-open");
+		loadVotes(cover);
+	};
+
+	const scheduleClose = (cover) => {
+		const panel = panelFor(cover);
+		if (!panel) return;
+		window.clearTimeout(closeTimers.get(cover));
+		closeTimers.set(
+			cover,
+			window.setTimeout(() => panel.classList.remove("is-open"), CLOSE_DELAY_MS),
+		);
+	};
+
+	// mouseover/mouseout (ao contrário de mouseenter/mouseleave) borbulham,
+	// então dá pra delegar em document — a checagem de relatedTarget filtra
+	// só as transições que realmente entram/saem do bloco capa+painel.
 	document.addEventListener("mouseover", (event) => {
 		const cover = event.target.closest("[data-song-cover]");
 		if (!cover || cover.contains(event.relatedTarget)) return;
-		loadVotes(cover);
+		openPanel(cover);
+	});
+
+	document.addEventListener("mouseout", (event) => {
+		const cover = event.target.closest("[data-song-cover]");
+		if (!cover || cover.contains(event.relatedTarget)) return;
+		scheduleClose(cover);
 	});
 
 	document.addEventListener("click", (event) => {
 		const trigger = event.target.closest("[data-song-cover-trigger]");
 		if (trigger) {
+			// Toque em touch (sem hover real, ver mídia abaixo): alterna o
+			// painel. Em desktop o hover já abre; um clique na capa só fecha
+			// de novo, o que é um comportamento razoável em qualquer caso.
 			const cover = trigger.closest("[data-song-cover]");
 			const panel = panelFor(cover);
 			if (panel) {
+				window.clearTimeout(closeTimers.get(cover));
 				const isOpen = panel.classList.toggle("is-open");
 				if (isOpen) loadVotes(cover);
 			}

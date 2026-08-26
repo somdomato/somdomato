@@ -1,0 +1,29 @@
+server {
+    listen 80;
+    listen [::]:80;
+    server_name *.{{ domain }};
+    return 301 https://$host$request_uri;
+}
+
+# Qualquer subdomínio sem bloco próprio (ex: test.{{ domain }}) cai aqui e
+# recebe o mesmo proxy da API Go — útil para ambientes de teste/staging
+# apontando pro mesmo backend. Nginx sempre prioriza o server_name mais
+# específico, então radio.{{ domain }} continua batendo no bloco dele
+# (02-radio.somdomato.com.conf), não neste.
+server {
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    http2 on;
+    server_name *.{{ domain }};
+
+    ssl_certificate     /etc/letsencrypt/live/{{ domain }}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/{{ domain }}/privkey.pem;
+
+    location / {
+        proxy_pass http://127.0.0.1:{{ api_http_port }};
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
