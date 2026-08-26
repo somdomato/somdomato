@@ -79,19 +79,36 @@ func (s *Store) UpsertFound(ctx context.Context, artistName, coverPath, source s
 	return nil
 }
 
-// SetManual grava uma capa enviada manualmente pelo admin — a partir daqui
-// a busca automática nunca mais roda para este artista (ver Resolve).
-func (s *Store) SetManual(ctx context.Context, artistName, coverPath string) error {
+// SetManual grava uma capa escolhida explicitamente pelo admin — seja um
+// upload direto ou uma capa candidata escolhida na busca forçada (ver
+// artistcover.Resolver.ApplyCandidate) — e trava a busca automática: a
+// partir daqui artistcover.Resolve nunca mais sobrescreve este artista.
+// source identifica a origem só pra fins informativos (ex.: "manual",
+// "deezer", "itunes", "wikidata"); "" vira "manual".
+func (s *Store) SetManual(ctx context.Context, artistName, coverPath, source string) error {
+	if source == "" {
+		source = "manual"
+	}
 	_, err := s.pool.Exec(ctx, `
 		INSERT INTO artist_covers (artist_name, cover_path, source, is_manual)
-		VALUES ($1, $2, 'manual', true)
+		VALUES ($1, $2, $3, true)
 		ON CONFLICT (artist_name) DO UPDATE
-		SET cover_path = $2, source = 'manual', is_manual = true, updated_at = now()`,
-		artistName, coverPath)
+		SET cover_path = $2, source = $3, is_manual = true, updated_at = now()`,
+		artistName, coverPath, source)
 	if err != nil {
 		return fmt.Errorf("gravando capa manual: %w", err)
 	}
 	return nil
+}
+
+// SetDefault fixa a capa do artista na capa padrão do site (cover.DefaultCover)
+// e trava a busca automática, pelo mesmo mecanismo de SetManual — usado pelo
+// botão "Apagar capa" do admin pra descartar uma capa ruim (ex.: silhueta
+// genérica salva antes do filtro de placeholder existir, ver
+// isDeezerPlaceholder) sem que Resolve tente de novo na próxima música do
+// artista.
+func (s *Store) SetDefault(ctx context.Context, artistName, defaultCoverPath string) error {
+	return s.SetManual(ctx, artistName, defaultCoverPath, "default")
 }
 
 // ClearManual remove a customização manual e reseta o cooldown, devolvendo

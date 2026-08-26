@@ -284,11 +284,28 @@ func handleArtistDetail(app *App) http.HandlerFunc {
 			}
 		}
 
+		isAdmin := isAdminRequest(app, r)
+		var candidates []pages.CoverCandidate
+		searchedCovers := false
+		// ?buscar_capa=1 é o "forçar busca" do admin (ver Resolver.FindCandidates)
+		// — só roda pra quem já está autenticado como admin, pra não deixar
+		// qualquer visitante disparar buscas nas APIs externas só navegando com
+		// a query string.
+		if isAdmin && r.URL.Query().Get("buscar_capa") == "1" {
+			searchedCovers = true
+			for _, c := range app.ArtistCoverResolver.FindCandidates(r.Context(), artist) {
+				candidates = append(candidates, pages.CoverCandidate{Source: c.Source, ThumbURL: c.ThumbURL, FullURL: c.FullURL})
+			}
+		}
+
 		token := ensureCSRFCookie(w, r)
 		render(w, pages.ArtistDetail(pages.ArtistDetailData{
 			Artist: artist, Songs: items, Cover: artistCover, IsManualCover: isManualCover,
-			Player:    buildPlayerData(r.Context(), app, config.DefaultGenre),
-			CSRFToken: token, IsAdmin: isAdminRequest(app, r),
+			Player:          buildPlayerData(r.Context(), app, config.DefaultGenre),
+			CSRFToken:       token,
+			IsAdmin:         isAdmin,
+			CoverCandidates: candidates,
+			SearchedCovers:  searchedCovers,
 		}))
 	}
 }

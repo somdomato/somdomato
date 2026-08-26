@@ -20,6 +20,7 @@ import (
 	"github.com/somdomato/somdomato/api/config"
 	"github.com/somdomato/somdomato/api/internal/artistcover"
 	"github.com/somdomato/somdomato/api/internal/auth"
+	"github.com/somdomato/somdomato/api/internal/cover"
 	"github.com/somdomato/somdomato/api/internal/icecastclient"
 	"github.com/somdomato/somdomato/api/internal/requests"
 	"github.com/somdomato/somdomato/api/internal/songs"
@@ -43,6 +44,8 @@ func registerAdminRoutes(mux *http.ServeMux, app *App) {
 	mux.HandleFunc("POST /admin/artistas/{artist}/renomear", requirePermission(app, rbac.PermSongsEditTags, requireCSRF(handleAdminArtistRename(app))))
 	mux.HandleFunc("POST /admin/artistas/{artist}/capa", requirePermission(app, rbac.PermSongsEditTags, requireCSRF(handleAdminArtistCoverUpload(app))))
 	mux.HandleFunc("POST /admin/artistas/{artist}/capa/remover", requirePermission(app, rbac.PermSongsEditTags, requireCSRF(handleAdminArtistCoverRemove(app))))
+	mux.HandleFunc("POST /admin/artistas/{artist}/capa/apagar", requirePermission(app, rbac.PermSongsEditTags, requireCSRF(handleAdminArtistCoverDelete(app))))
+	mux.HandleFunc("POST /admin/artistas/{artist}/capa/escolher", requirePermission(app, rbac.PermSongsEditTags, requireCSRF(handleAdminArtistCoverChoose(app))))
 
 	mux.HandleFunc("GET /admin/pedidos", requirePermission(app, rbac.PermRequestsManage, handleAdminRequestsList(app)))
 	mux.HandleFunc("POST /admin/pedidos/{id}/remover", requirePermission(app, rbac.PermRequestsManage, requireCSRF(handleAdminRequestRemove(app))))
@@ -414,7 +417,7 @@ func handleAdminArtistCoverUpload(app *App) http.HandlerFunc {
 			http.Error(w, "não foi possível processar a imagem enviada", http.StatusInternalServerError)
 			return
 		}
-		if err := app.ArtistCovers.SetManual(r.Context(), artist, path); err != nil {
+		if err := app.ArtistCovers.SetManual(r.Context(), artist, path, "manual"); err != nil {
 			app.Log.Error("gravando capa manual de artista", "error", err)
 			http.Error(w, "erro interno", http.StatusInternalServerError)
 			return
@@ -437,11 +440,90 @@ func handleAdminArtistCoverRemove(app *App) http.HandlerFunc {
 			return
 		}
 		if oldPath != nil && *oldPath != "" {
-			if rel, ok := strings.CutPrefix(*oldPath, "/covers/"); ok {
-				if err := os.Remove(filepath.Join(app.Cfg.CoversDir, rel)); err != nil && !os.IsNotExist(err) {
-					app.Log.Warn("removendo arquivo de capa antigo", "error", err)
-				}
-			}
+			removeArtistCoverFile(app, *oldPath)
+		}
+
+		http.Redirect(w, r, "/artistas/"+url.PathEscape(artist), http.StatusSeeOther)
+	}
+}
+
+// removeArtistCoverFile apaga do disco o arquivo apontado por um cover_path
+// salvo em artist_covers, se ele for um arquivo local gerenciado por nós
+// (prefixo /covers/) — usado antes de sobrescrever uma capa antiga, tanto em
+// handleAdminArtistCoverRemove (acima) quanto em handleAdminArtistCoverDelete.
+func removeArtistCoverFile(app *App, coverPath string) {
+	rel, ok := strings.CutPrefix(coverPath, "/covers/")
+	if !ok {
+		return
+	}
+	if err := os.Remove(filepath.Join(app.Cfg.CoversDir, rel)); err != nil && !os.IsNotExist(err) {
+		app.Log.Warn("removendo arquivo de capa antigo", "error", err)
+	}
+}
+
+// handleAdminArtistCoverDelete descarta a capa atual do artista (automática
+// ou manual) e volta pro logotipo padrão do site, travando a busca
+// automática — ver Store.SetDefault. Existe separado de
+// handleAdminArtistCoverRemove: "remover" devolve o artista à busca
+// automática (útil quando uma capa manual foi um engano), "apagar" é o
+// oposto — pra descartar de vez uma capa ruim (ex.: a silhueta genérica que
+// artistcover.Resolve podia salvar antes do filtro de placeholder existir)
+// sem que a próxima música do artista dispare uma nova tentativa.
+func handleAdminArtistCoverDelete(app *App) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		artist := r.PathValue("artist")
+
+		existing, err := app.ArtistCovers.Get(r.Context(), artist)
+		if err != nil {
+			app.Log.Error("buscando capa de artista antes de apagar", "error", err)
+			http.Error(w, "erro interno", http.StatusInternalServerError)
+			return
+		}
+
+		if err := app.ArtistCovers.SetDefault(r.Context(), artist, cover.DefaultCover); err != nil {
+			app.Log.Error("apagando capa de artista", "error", err)
+			http.Error(w, "erro interno", http.StatusInternalServerError)
+			return
+		}
+
+		if existing != nil && existing.CoverPath != nil && *existing.CoverPath != "" {
+			removeArtistCoverFile(app, *existing.CoverPath)
+		}
+
+		http.Redirect(w, r, "/artistas/"+url.PathEscape(artist), http.StatusSeeOther)
+	}
+}
+
+// handleAdminArtistCoverChoose baixa, converte e grava a capa candidata que
+// o admin escolheu na busca forçada (ver handleArtistDetail em public.go,
+// acionado por ?buscar_capa=1, e Resolver.FindCandidates) — troca por
+// completo a capa anterior do artista, então também remove o arquivo antigo
+// do disco se ele era um arquivo local nosso.
+func handleAdminArtistCoverChoose(app *App) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		artist := r.PathValue("artist")
+		chosenURL := r.FormValue("url")
+		source := r.FormValue("source")
+		if chosenURL == "" {
+			http.Error(w, "capa não informada", http.StatusBadRequest)
+			return
+		}
+
+		existing, err := app.ArtistCovers.Get(r.Context(), artist)
+		if err != nil {
+			app.Log.Error("buscando capa de artista antes de escolher candidata", "error", err)
+			http.Error(w, "erro interno", http.StatusInternalServerError)
+			return
+		}
+
+		if _, err := app.ArtistCoverResolver.ApplyCandidate(r.Context(), artist, source, chosenURL); err != nil {
+			app.Log.Error("aplicando capa candidata", "artist", artist, "error", err)
+			http.Error(w, "não foi possível salvar a capa escolhida", http.StatusInternalServerError)
+			return
+		}
+
+		if existing != nil && existing.CoverPath != nil && *existing.CoverPath != "" {
+			removeArtistCoverFile(app, *existing.CoverPath)
 		}
 
 		http.Redirect(w, r, "/artistas/"+url.PathEscape(artist), http.StatusSeeOther)

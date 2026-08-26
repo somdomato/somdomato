@@ -24,6 +24,7 @@ package artistcover
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"os/exec"
@@ -125,6 +126,66 @@ func (r *Resolver) Resolve(ctx context.Context, artistName string) {
 	if err := r.Store.UpsertFound(ctx, artistName, path, source); err != nil {
 		r.log.Error("artistcover: persistindo capa encontrada", "artist", artistName, "error", err)
 	}
+}
+
+// FindCandidates busca capas candidatas em Deezer, iTunes e Wikidata para o
+// admin escolher manualmente ("forçar busca", ver handleArtistDetail em
+// httpserver/public.go) — ao contrário de Resolve, não escreve nada no
+// banco, não respeita coverCooldown e não para na primeira fonte que
+// encontrar algo: reúne o que cada fonte tiver pra que o admin veja as
+// opções (ver ApplyCandidate, chamado quando uma é escolhida).
+func (r *Resolver) FindCandidates(ctx context.Context, artistName string) []Candidate {
+	artistName = strings.TrimSpace(artistName)
+	if artistName == "" {
+		return nil
+	}
+
+	var out []Candidate
+	if cands, err := deezerCandidates(ctx, r.httpClient, artistName); err != nil {
+		r.log.Warn("artistcover: candidatos deezer falharam", "artist", artistName, "error", err)
+	} else {
+		out = append(out, cands...)
+	}
+	if cands, err := itunesCandidates(ctx, r.httpClient, artistName); err != nil {
+		r.log.Warn("artistcover: candidatos itunes falharam", "artist", artistName, "error", err)
+	} else {
+		out = append(out, cands...)
+	}
+	if imageURL, err := r.fetchWikidata(ctx, artistName); err != nil {
+		r.log.Warn("artistcover: candidato wikidata falhou", "artist", artistName, "error", err)
+	} else if imageURL != "" {
+		out = append(out, Candidate{Source: "wikidata", ThumbURL: imageURL, FullURL: imageURL})
+	}
+	return out
+}
+
+// ApplyCandidate baixa, converte pra webp e grava como capa manual do
+// artista uma das opções devolvidas por FindCandidates — usado quando o
+// admin clica numa das miniaturas da busca forçada. Trava a busca
+// automática (mesmo mecanismo de um upload manual, ver Store.SetManual): foi
+// uma escolha explícita, então Resolve não deve tentar sobrescrevê-la depois.
+func (r *Resolver) ApplyCandidate(ctx context.Context, artistName, source, fullURL string) (string, error) {
+	if r.cwebpPath == "" {
+		return "", fmt.Errorf("cwebp não está disponível neste ambiente")
+	}
+	if !allowedCoverURL(fullURL) {
+		return "", fmt.Errorf("origem de imagem não permitida: %s", fullURL)
+	}
+
+	data, err := downloadImage(ctx, r.httpClient, fullURL)
+	if err != nil {
+		return "", fmt.Errorf("baixando capa escolhida: %w", err)
+	}
+
+	path, err := SaveCover(r.cwebpPath, artistName, data, r.coversDir)
+	if err != nil {
+		return "", fmt.Errorf("salvando capa escolhida: %w", err)
+	}
+
+	if err := r.Store.SetManual(ctx, artistName, path, source); err != nil {
+		return "", fmt.Errorf("persistindo capa escolhida: %w", err)
+	}
+	return path, nil
 }
 
 func (r *Resolver) findImageURL(ctx context.Context, artistName string) (imageURL, source string) {
