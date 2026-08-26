@@ -335,9 +335,35 @@ document.addEventListener("change", (event) => {
 			if (!data) return;
 			const escape = (text) =>
 				String(text ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+			// Espelha components.NowPlayingCard (ver player.templ) — inclui o
+			// gatilho/painel de curtir-descurtir (song-vote.js) para que ele
+			// continue funcionando depois de trocar de rádio pelo <select>.
 			nowPlaying.innerHTML = `
-				<div class="relative h-11 w-11 shrink-0 sm:h-9 sm:w-9">
-					<img src="${escape(data.now.cover)}" alt="${escape(data.now.title)}" class="h-11 w-11 rounded-lg object-cover shadow-sm ring-1 ring-white/10 sm:h-9 sm:w-9"/>
+				<div class="group/song-cover relative h-11 w-11 shrink-0 sm:h-9 sm:w-9" data-song-cover data-song-id="${escape(data.now.id)}">
+					<img src="${escape(data.now.cover)}" alt="${escape(data.now.title)}" data-song-cover-trigger class="h-11 w-11 cursor-pointer rounded-lg object-cover shadow-sm ring-1 ring-white/10 sm:h-9 sm:w-9"/>
+					${
+						data.now.id
+							? `<div data-song-panel class="pointer-events-none absolute left-0 top-full z-50 mt-2 w-64 max-w-[calc(100vw-2rem)] origin-top-left scale-95 rounded-2xl border border-white/10 bg-surface-raised p-4 text-neutral-100 opacity-0 shadow-2xl shadow-black/40 transition duration-150 sm:group-hover/song-cover:pointer-events-auto sm:group-hover/song-cover:scale-100 sm:group-hover/song-cover:opacity-100 [&.is-open]:pointer-events-auto [&.is-open]:scale-100 [&.is-open]:opacity-100">
+								<div class="flex items-start gap-3">
+									<img src="${escape(data.now.cover)}" alt="${escape(data.now.title)}" class="h-16 w-16 shrink-0 rounded-lg object-cover shadow-sm ring-1 ring-white/10"/>
+									<div class="min-w-0 leading-tight">
+										<p class="truncate text-sm font-semibold">${escape(data.now.title)}</p>
+										<p class="truncate text-xs text-neutral-400">${escape(data.now.artist)}</p>
+									</div>
+								</div>
+								<div class="mt-3 flex items-center gap-2">
+									<button type="button" data-song-vote-like data-song-id="${escape(data.now.id)}" aria-pressed="false" aria-label="Curtir música" class="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-white/5 px-3 py-1.5 text-xs font-medium text-neutral-300 transition hover:bg-white/10 active:scale-95 aria-pressed:bg-brand-500/20 aria-pressed:text-brand-400 aria-pressed:ring-1 aria-pressed:ring-brand-500/40">
+										<svg class="h-3.5 w-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"></path></svg>
+										<span data-song-like-count>—</span>
+									</button>
+									<button type="button" data-song-vote-dislike data-song-id="${escape(data.now.id)}" aria-pressed="false" aria-label="Descurtir música" class="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-white/5 px-3 py-1.5 text-xs font-medium text-neutral-300 transition hover:bg-white/10 active:scale-95 aria-pressed:bg-red-500/15 aria-pressed:text-red-400 aria-pressed:ring-1 aria-pressed:ring-red-500/40">
+										<svg class="h-3.5 w-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 14V2"></path><path d="M9 18.12 10 14H4.17a2 2 0 0 1-1.92-2.56l2.33-8A2 2 0 0 1 6.5 2H20a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-2.76a2 2 0 0 0-1.79 1.11L12 22a3.13 3.13 0 0 1-3-3.88Z"></path></svg>
+										<span data-song-dislike-count>—</span>
+									</button>
+								</div>
+							</div>`
+							: ""
+					}
 				</div>
 				<div class="min-w-0 leading-tight">
 					<p class="max-w-[8rem] truncate text-sm font-semibold sm:max-w-[10rem]">${escape(data.now.title)}</p>

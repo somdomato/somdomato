@@ -8,7 +8,9 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/somdomato/somdomato/api/config"
 	"github.com/somdomato/somdomato/api/internal/cover"
+	"github.com/somdomato/somdomato/api/internal/rotation"
 	"github.com/somdomato/somdomato/api/models"
 )
 
@@ -65,11 +67,16 @@ func (s *Store) ListByArtist(ctx context.Context, artist string) ([]models.Song,
 
 // ListTopRequested retorna as músicas mais pedidas (requests_count > 0),
 // ordenadas por contagem decrescente — usado no bloco "Top 10" da home.
+// ListTopRequested inclui, além dos campos padrão, quantas vezes cada
+// música já tocou (PlaysCount) — usado para exibir o contador no bloco
+// "Top 10". Por trazer essa coluna extra, não reusa scanSong/selectFields
+// (compartilhados com consultas que não precisam desse dado).
 func (s *Store) ListTopRequested(ctx context.Context, limit int) ([]models.Song, error) {
 	rows, err := s.pool.Query(ctx, `
 		SELECT s.id, s.title, s.artist, s.album, s.path,
 		       CASE WHEN s.cover = $2 THEN COALESCE(ac.cover_path, s.cover) ELSE s.cover END,
-		       s.time_slots, s.rotation, s.genre, s.allowed_in_general, s.requests_count, s.likes_count, s.created_at
+		       s.time_slots, s.rotation, s.genre, s.allowed_in_general, s.requests_count, s.likes_count, s.created_at,
+		       (SELECT count(*) FROM queue_entries qe WHERE qe.song_id = s.id AND qe.status = 'played')
 		FROM songs s
 		LEFT JOIN artist_covers ac ON ac.artist_name = s.artist
 		WHERE s.requests_count > 0
@@ -78,7 +85,48 @@ func (s *Store) ListTopRequested(ctx context.Context, limit int) ([]models.Song,
 		return nil, fmt.Errorf("listando músicas mais pedidas: %w", err)
 	}
 	defer rows.Close()
-	return scanAll(rows)
+
+	var out []models.Song
+	for rows.Next() {
+		var song models.Song
+		if err := rows.Scan(&song.ID, &song.Title, &song.Artist, &song.Album, &song.Path, &song.Cover, &song.TimeSlots,
+			&song.Rotation, &song.Genre, &song.AllowedInGeneral, &song.RequestsCount, &song.LikesCount, &song.CreatedAt, &song.PlaysCount); err != nil {
+			return nil, err
+		}
+		out = append(out, song)
+	}
+	return out, rows.Err()
+}
+
+// PlayCounts devolve, para cada id em `songIDs`, quantas vezes a música já
+// tocou (queue_entries com status 'played') — usado para os blocos
+// "Últimas"/"Próximas" a partir de uma lista de ids já resolvida em outro
+// lugar (fila, histórico). IDs sem nenhuma execução simplesmente não
+// aparecem no mapa — trate ausência como zero.
+func (s *Store) PlayCounts(ctx context.Context, songIDs []int64) (map[int64]int, error) {
+	out := make(map[int64]int, len(songIDs))
+	if len(songIDs) == 0 {
+		return out, nil
+	}
+
+	rows, err := s.pool.Query(ctx, `
+		SELECT song_id, count(*) FROM queue_entries
+		WHERE song_id = ANY($1) AND status = 'played'
+		GROUP BY song_id`, songIDs)
+	if err != nil {
+		return nil, fmt.Errorf("contando execuções: %w", err)
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var id int64
+		var count int
+		if err := rows.Scan(&id, &count); err != nil {
+			return nil, err
+		}
+		out[id] = count
+	}
+	return out, rows.Err()
 }
 
 func (s *Store) ListArtists(ctx context.Context) ([]string, error) {
@@ -127,6 +175,114 @@ func (s *Store) ListArtistsWithCovers(ctx context.Context) ([]models.ArtistCard,
 		out = append(out, c)
 	}
 	return out, rows.Err()
+}
+
+// VoteResult é o estado de curtidas/descurtidas de uma música após um
+// GetVotes ou um Vote — usado para renderizar o popover de hover do player.
+type VoteResult struct {
+	Likes    int
+	Dislikes int
+	UserVote int // -1, 0 ou 1: voto do IP que fez a requisição
+	Rotation config.RotationType
+}
+
+// GetVotes retorna o placar atual de uma música e o voto (se houver) do IP
+// informado — usado ao abrir o popover/painel de curtir no player.
+func (s *Store) GetVotes(ctx context.Context, songID int64, voterIP string) (VoteResult, error) {
+	var res VoteResult
+	var rotationStr string
+	err := s.pool.QueryRow(ctx, `SELECT likes_count, dislikes_count, rotation FROM songs WHERE id = $1`, songID).
+		Scan(&res.Likes, &res.Dislikes, &rotationStr)
+	if err != nil {
+		return VoteResult{}, fmt.Errorf("buscando votos da música: %w", err)
+	}
+	res.Rotation = config.RotationType(rotationStr)
+
+	err = s.pool.QueryRow(ctx, `SELECT vote FROM song_votes WHERE song_id = $1 AND voter_ip = $2`, songID, voterIP).Scan(&res.UserVote)
+	if err != nil && err != pgx.ErrNoRows {
+		return VoteResult{}, fmt.Errorf("buscando voto do visitante: %w", err)
+	}
+	return res, nil
+}
+
+// Vote registra (ou alterna) o voto de `voterIP` numa música: votar de novo
+// com o mesmo valor remove o voto, votar com o valor oposto troca. A cada
+// mudança, o saldo líquido de curtidas/descurtidas pode deslocar a rotação
+// da música um degrau (ver rotation.ApplyVoteShift) — músicas mais curtidas
+// tocam com mais frequência, mais descurtidas com menos, sempre respeitando
+// as restrições de repetição de música/artista já aplicadas na fila.
+func (s *Store) Vote(ctx context.Context, songID int64, voterIP string, vote int) (VoteResult, error) {
+	if vote != 1 && vote != -1 {
+		return VoteResult{}, fmt.Errorf("voto inválido: %d", vote)
+	}
+
+	tx, err := s.pool.Begin(ctx)
+	if err != nil {
+		return VoteResult{}, fmt.Errorf("votando: %w", err)
+	}
+	defer tx.Rollback(ctx)
+
+	var existing int
+	err = tx.QueryRow(ctx, `SELECT vote FROM song_votes WHERE song_id = $1 AND voter_ip = $2 FOR UPDATE`, songID, voterIP).Scan(&existing)
+	if err != nil && err != pgx.ErrNoRows {
+		return VoteResult{}, fmt.Errorf("votando: %w", err)
+	}
+
+	likeDelta, dislikeDelta := 0, 0
+	switch {
+	case err == pgx.ErrNoRows:
+		if _, err := tx.Exec(ctx, `INSERT INTO song_votes (song_id, voter_ip, vote) VALUES ($1, $2, $3)`, songID, voterIP, vote); err != nil {
+			return VoteResult{}, fmt.Errorf("votando: %w", err)
+		}
+		if vote == 1 {
+			likeDelta = 1
+		} else {
+			dislikeDelta = 1
+		}
+	case existing == vote:
+		if _, err := tx.Exec(ctx, `DELETE FROM song_votes WHERE song_id = $1 AND voter_ip = $2`, songID, voterIP); err != nil {
+			return VoteResult{}, fmt.Errorf("removendo voto: %w", err)
+		}
+		if vote == 1 {
+			likeDelta = -1
+		} else {
+			dislikeDelta = -1
+		}
+		vote = 0 // sem voto após remover
+	default:
+		if _, err := tx.Exec(ctx, `UPDATE song_votes SET vote = $1, created_at = now() WHERE song_id = $2 AND voter_ip = $3`, vote, songID, voterIP); err != nil {
+			return VoteResult{}, fmt.Errorf("trocando voto: %w", err)
+		}
+		if vote == 1 {
+			likeDelta, dislikeDelta = 1, -1
+		} else {
+			likeDelta, dislikeDelta = -1, 1
+		}
+	}
+
+	var rotationStr string
+	var currentShift, likes, dislikes int
+	err = tx.QueryRow(ctx, `
+		UPDATE songs SET likes_count = likes_count + $1, dislikes_count = dislikes_count + $2
+		WHERE id = $3
+		RETURNING likes_count, dislikes_count, rotation, vote_shift`, likeDelta, dislikeDelta, songID).
+		Scan(&likes, &dislikes, &rotationStr, &currentShift)
+	if err != nil {
+		return VoteResult{}, fmt.Errorf("atualizando placar: %w", err)
+	}
+
+	newRotation, newShift := rotation.ApplyVoteShift(config.RotationType(rotationStr), currentShift, likes, dislikes)
+	if newRotation != config.RotationType(rotationStr) || newShift != currentShift {
+		if _, err := tx.Exec(ctx, `UPDATE songs SET rotation = $1, vote_shift = $2 WHERE id = $3`, string(newRotation), newShift, songID); err != nil {
+			return VoteResult{}, fmt.Errorf("ajustando rotação por votos: %w", err)
+		}
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return VoteResult{}, fmt.Errorf("votando: %w", err)
+	}
+
+	return VoteResult{Likes: likes, Dislikes: dislikes, UserVote: vote, Rotation: newRotation}, nil
 }
 
 // RenameArtist atualiza o nome do artista em todas as músicas dele —

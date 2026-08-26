@@ -1,0 +1,1 @@
+DROP INDEX queue_entries_song_status_idx;

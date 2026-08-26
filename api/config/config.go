@@ -76,6 +76,23 @@ var RotationWeights = map[RotationType]int{
 	RotationUltrapesada: 8,
 }
 
+// RotationTiers é RotationWeights em ordem crescente de peso, excluindo
+// "inativo" (essa é uma desativação manual do admin — votos nunca ativam
+// nem desativam uma música automaticamente). Usada pelo ajuste de rotação
+// por curtidas/descurtidas (ver internal/rotation.ApplyVoteShift).
+var RotationTiers = []RotationType{
+	RotationUltraleve,
+	RotationLeve,
+	RotationNormal,
+	RotationPesado,
+	RotationUltrapesada,
+}
+
+// VoteRotationThreshold é o número de curtidas (ou descurtidas) líquidas
+// necessário para deslocar uma música um degrau de RotationTiers acima
+// (ou abaixo).
+const VoteRotationThreshold = 5
+
 // TimeSlot é uma máscara de bits: 1=madrugada 2=manhã 4=tarde 8=noite, 15=todos.
 type TimeSlot int
 

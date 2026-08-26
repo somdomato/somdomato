@@ -16,7 +16,14 @@ type Song struct {
 	AllowedInGeneral bool
 	RequestsCount    int
 	LikesCount       int
-	CreatedAt        time.Time
+	DislikesCount    int
+	VoteShift        int
+	// PlaysCount é quantas vezes a música já tocou (queue_entries com
+	// status 'played') — só preenchido por consultas que pedem
+	// explicitamente esse dado (ver songs.Store.ListTopRequested e
+	// songs.Store.PlayCounts), fica zero nas demais.
+	PlaysCount int
+	CreatedAt  time.Time
 }
 
 // ArtistCard resume um artista para o grid de /artistas: nome, uma capa

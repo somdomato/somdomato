@@ -9,6 +9,27 @@ type SongListItem struct {
 	Cover     string
 	IsRequest bool
 	PlayedAt  time.Time
+	// Weight é o peso de rotação atual da música (config.RotationWeights do
+	// rotation.RotationType salvo em songs.rotation), que já reflete o
+	// ajuste do admin somado ao deslocamento por curtidas/descurtidas (ver
+	// rotation.ApplyVoteShift) — só preenchido para o bloco "Últimas"
+	// (ver fetchRecentlyPlayed em httpserver/public.go).
+	Weight int
+	// PlayCount é quantas vezes a música já tocou (queue_entries com status
+	// 'played') — mostrado nos três blocos (Últimas/Próximas/Top 10), ver
+	// songs.Store.PlayCounts e songs.Store.ListTopRequested.
+	PlayCount int
+}
+
+// playCountBadge mostra quantas vezes a música já tocou — usado nos três
+// blocos (Últimas, Próximas e Top 10).
+templ playCountBadge(n int) {
+	<span title="Vezes que já tocou" class="badge-pill self-end bg-neutral-800 text-neutral-400 ring-white/10">
+		<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-2.5 w-2.5 shrink-0">
+			<path d="M8 5v14l11-7z"></path>
+		</svg>
+		{ itoa(int64(n)) }x
+	</span>
 }
 
 // SourceBadge sinaliza se a música entrou na fila por pedido de um ouvinte
@@ -80,9 +101,20 @@ templ songListItems(items []SongListItem, emptyMessage string, showSource bool) 
 						<p class="truncate text-xs text-neutral-400">{ item.Artist }</p>
 					</div>
 					if showSource {
-						@SourceBadge(item.IsRequest)
+						<div class="flex shrink-0 flex-col items-end gap-1">
+							@SourceBadge(item.IsRequest)
+							@playCountBadge(item.PlayCount)
+						</div>
 					} else if !item.PlayedAt.IsZero() {
-						<time datetime={ item.PlayedAt.UTC().Format(time.RFC3339) } data-relative="true" class="shrink-0 self-start text-[9px] font-medium tracking-wide text-neutral-500"></time>
+						<div class="flex shrink-0 flex-col items-end gap-1">
+							<time datetime={ item.PlayedAt.UTC().Format(time.RFC3339) } data-relative="true" class="self-end text-[9px] font-medium tracking-wide text-neutral-500"></time>
+							<div class="flex items-center gap-1">
+								<span title="Peso de rotação atual" class="badge-pill bg-neutral-800 text-neutral-400 ring-white/10">
+									Peso { itoa(int64(item.Weight)) }
+								</span>
+								@playCountBadge(item.PlayCount)
+							</div>
+						</div>
 					}
 				</li>
 			}
@@ -136,9 +168,12 @@ templ topRequestsItems(items []TopRequestItem, emptyMessage string) {
 						<p class="truncate text-sm font-medium">{ item.Title }</p>
 						<p class="truncate text-xs text-neutral-400">{ item.Artist }</p>
 					</div>
-					<span class="badge-pill self-start bg-amber-500/15 text-amber-300 ring-amber-400/25">
-						{ itoa(int64(item.Count)) }x
-					</span>
+					<div class="flex shrink-0 flex-col items-end gap-1">
+						<span title="Vezes pedida" class="badge-pill self-end bg-amber-500/15 text-amber-300 ring-amber-400/25">
+							{ itoa(int64(item.Count)) }x
+						</span>
+						@playCountBadge(item.PlayCount)
+					</div>
 				</li>
 			}
 		</ul>

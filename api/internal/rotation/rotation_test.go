@@ -4,6 +4,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/somdomato/somdomato/api/config"
 	"github.com/somdomato/somdomato/api/models"
 )
 
@@ -66,6 +67,37 @@ func TestWeightedPickAndRemove_AlwaysPicksFromNonZeroWeight(t *testing.T) {
 		if len(remaining) != 1 {
 			t.Fatalf("esperava 1 restante, obteve %d", len(remaining))
 		}
+	}
+}
+
+func TestApplyVoteShift(t *testing.T) {
+	cases := []struct {
+		name         string
+		rotation     config.RotationType
+		shift        int
+		likes        int
+		dislikes     int
+		wantRotation config.RotationType
+		wantShift    int
+	}{
+		{"saldo abaixo do limiar não desloca", config.RotationNormal, 0, 4, 0, config.RotationNormal, 0},
+		{"5 curtidas líquidas sobe um degrau", config.RotationNormal, 0, 5, 0, config.RotationPesado, 1},
+		{"10 curtidas líquidas sobe dois degraus", config.RotationNormal, 0, 10, 0, config.RotationUltrapesada, 2},
+		{"5 descurtidas líquidas desce um degrau", config.RotationNormal, 0, 0, 5, config.RotationLeve, -1},
+		{"não desce abaixo de ultraleve", config.RotationUltraleve, 0, 0, 50, config.RotationUltraleve, -10},
+		{"não sobe acima de ultrapesada", config.RotationUltrapesada, 0, 50, 0, config.RotationUltrapesada, 10},
+		{"inativo nunca é deslocado por voto", config.RotationInativo, 0, 20, 0, config.RotationInativo, 4},
+		{"desfazer uma curtida desce de volta", config.RotationPesado, 1, 4, 0, config.RotationNormal, 0},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			gotRotation, gotShift := ApplyVoteShift(tc.rotation, tc.shift, tc.likes, tc.dislikes)
+			if gotRotation != tc.wantRotation || gotShift != tc.wantShift {
+				t.Errorf("ApplyVoteShift(%q, %d, %d, %d) = (%q, %d), want (%q, %d)",
+					tc.rotation, tc.shift, tc.likes, tc.dislikes, gotRotation, gotShift, tc.wantRotation, tc.wantShift)
+			}
+		})
 	}
 }
 

@@ -5,6 +5,7 @@ package httpserver
 import (
 	"context"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/somdomato/somdomato/api/config"
@@ -16,6 +17,7 @@ import (
 )
 
 var publicRequestLimiter = newIPRateLimiter(10, time.Minute)
+var songVoteLimiter = newIPRateLimiter(20, time.Minute)
 
 func registerPublicRoutes(mux *http.ServeMux, app *App) {
 	mux.HandleFunc("GET /{$}", handleHome(app))
@@ -25,6 +27,8 @@ func registerPublicRoutes(mux *http.ServeMux, app *App) {
 	mux.HandleFunc("GET /artistas", handleArtistas(app))
 	mux.HandleFunc("GET /artistas/{artist}", handleArtistDetail(app))
 	mux.HandleFunc("GET /api/now-playing", handleNowPlayingAPI(app))
+	mux.HandleFunc("GET /api/songs/{id}/votes", handleSongVotesGet(app))
+	mux.HandleFunc("POST /api/songs/{id}/votes", withRateLimit(songVoteLimiter, requireCSRFHeader(handleSongVotesPost(app))))
 }
 
 // isAdminRequest indica se a sessão atual pertence a um papel com acesso
@@ -47,28 +51,22 @@ func handleHome(app *App) http.HandlerFunc {
 		ctx := r.Context()
 		genre := genreFromQuery(r)
 		trackPageView(app, w, r, r.URL.Path)
+		// Garante o cookie sdm_csrf mesmo em quem só visita a home — o
+		// popover de curtir/descurtir do player precisa dele (ver
+		// requireCSRFHeader) e a home costuma ser a primeira página visitada.
+		ensureCSRFCookie(w, r)
 
 		last, _ := fetchRecentlyPlayed(ctx, app, string(genre), 10)
 		queueEntries, err := app.Queue.GetQueue(ctx, string(genre))
 		var next []components.SongListItem
 		if err == nil {
-			for _, e := range queueEntries {
-				if len(next) == 10 {
-					break
-				}
-				next = append(next, components.SongListItem{ID: e.SongID, Title: e.Title, Artist: e.Artist, Cover: e.Cover, IsRequest: e.Source == models.SourceRequest})
-			}
+			next = buildNextSongList(ctx, app, queueEntries)
 		}
 
 		topSongs, err := app.Songs.ListTopRequested(ctx, 10)
 		var top10 []components.TopRequestItem
 		if err == nil {
-			for _, s := range topSongs {
-				top10 = append(top10, components.TopRequestItem{
-					SongListItem: components.SongListItem{ID: s.ID, Title: s.Title, Artist: s.Artist, Cover: s.Cover},
-					Count:        s.RequestsCount,
-				})
-			}
+			top10 = buildTop10List(topSongs)
 		} else {
 			app.Log.Error("listando top 10 pedidos", "error", err)
 		}
@@ -123,6 +121,7 @@ func handleNowPlayingAPI(app *App) http.HandlerFunc {
 		player := buildPlayerData(ctx, app, genre)
 
 		type songJSON struct {
+			ID     int64  `json:"id"`
 			Title  string `json:"title"`
 			Artist string `json:"artist"`
 			Cover  string `json:"cover"`
@@ -131,7 +130,7 @@ func handleNowPlayingAPI(app *App) http.HandlerFunc {
 			Now  songJSON  `json:"now"`
 			Next *songJSON `json:"next"`
 		}{
-			Now: songJSON{Title: player.Now.Title, Artist: player.Now.Artist, Cover: player.Now.Cover},
+			Now: songJSON{ID: player.Now.ID, Title: player.Now.Title, Artist: player.Now.Artist, Cover: player.Now.Cover},
 		}
 
 		if queueEntries, err := app.Queue.GetQueue(ctx, string(genre)); err == nil && len(queueEntries) > 0 {
@@ -143,11 +142,105 @@ func handleNowPlayingAPI(app *App) http.HandlerFunc {
 	}
 }
 
+type songVoteResponse struct {
+	Likes    int `json:"likes"`
+	Dislikes int `json:"dislikes"`
+	UserVote int `json:"userVote"`
+}
+
+// handleSongVotesGet devolve o placar de curtidas/descurtidas de uma
+// música e o voto (se houver) do visitante atual — chamado ao abrir o
+// popover/painel de curtir no player, antes de qualquer clique.
+func handleSongVotesGet(app *App) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		songID, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+		if err != nil || songID == 0 {
+			http.Error(w, "id inválido", http.StatusBadRequest)
+			return
+		}
+		res, err := app.Songs.GetVotes(r.Context(), songID, clientIP(r))
+		if err != nil {
+			app.Log.Error("buscando votos da música", "error", err, "song_id", songID)
+			http.Error(w, "erro interno", http.StatusInternalServerError)
+			return
+		}
+		writeJSON(w, http.StatusOK, songVoteResponse{Likes: res.Likes, Dislikes: res.Dislikes, UserVote: res.UserVote})
+	}
+}
+
+// handleSongVotesPost registra o clique em curtir/descurtir do visitante
+// atual (identificado por IP — mesma estratégia usada em uploads). Clicar
+// de novo no mesmo voto remove; clicar no oposto troca. O placar resultante
+// pode deslocar a rotação da música (ver songs.Store.Vote).
+func handleSongVotesPost(app *App) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		songID, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+		if err != nil || songID == 0 {
+			http.Error(w, "id inválido", http.StatusBadRequest)
+			return
+		}
+		vote, err := strconv.Atoi(r.URL.Query().Get("vote"))
+		if err != nil || (vote != 1 && vote != -1) {
+			http.Error(w, "vote inválido (use 1 ou -1)", http.StatusBadRequest)
+			return
+		}
+		res, err := app.Songs.Vote(r.Context(), songID, clientIP(r), vote)
+		if err != nil {
+			app.Log.Error("registrando voto", "error", err, "song_id", songID)
+			http.Error(w, "erro interno", http.StatusInternalServerError)
+			return
+		}
+		writeJSON(w, http.StatusOK, songVoteResponse{Likes: res.Likes, Dislikes: res.Dislikes, UserVote: res.UserVote})
+	}
+}
+
+// buildNextSongList monta os até 10 primeiros itens da fila como
+// SongListItem, com PlayCount preenchido (ver songs.Store.PlayCounts) —
+// compartilhado entre o render inicial da home e o broadcast SSE de
+// "Próximas" (ver broadcastQueueUpdated em internal_radio.go).
+func buildNextSongList(ctx context.Context, app *App, queueEntries []models.QueueEntry) []components.SongListItem {
+	next := make([]components.SongListItem, 0, 10)
+	ids := make([]int64, 0, 10)
+	for _, e := range queueEntries {
+		if len(next) == 10 {
+			break
+		}
+		next = append(next, components.SongListItem{ID: e.SongID, Title: e.Title, Artist: e.Artist, Cover: e.Cover, IsRequest: e.Source == models.SourceRequest})
+		ids = append(ids, e.SongID)
+	}
+
+	counts, err := app.Songs.PlayCounts(ctx, ids)
+	if err != nil {
+		app.Log.Error("contando execuções para 'Próximas'", "error", err)
+		return next
+	}
+	for i := range next {
+		next[i].PlayCount = counts[next[i].ID]
+	}
+	return next
+}
+
+// buildTop10List converte o resultado de ListTopRequested (que já traz
+// PlaysCount) para o formato exibido no bloco "Top 10" — compartilhado
+// entre o render inicial da home e o broadcast SSE (ver
+// broadcastTop10Updated em internal_radio.go).
+func buildTop10List(topSongs []models.Song) []components.TopRequestItem {
+	top10 := make([]components.TopRequestItem, 0, len(topSongs))
+	for _, s := range topSongs {
+		top10 = append(top10, components.TopRequestItem{
+			SongListItem: components.SongListItem{ID: s.ID, Title: s.Title, Artist: s.Artist, Cover: s.Cover, PlayCount: s.PlaysCount},
+			Count:        s.RequestsCount,
+		})
+	}
+	return top10
+}
+
 func fetchRecentlyPlayed(ctx context.Context, app *App, genre string, limit int) ([]components.SongListItem, error) {
 	rows, err := app.Pool.Query(ctx, `
 		SELECT s.id, s.title, s.artist,
 		       CASE WHEN s.cover = $3 THEN COALESCE(ac.cover_path, s.cover) ELSE s.cover END,
-		       qe.ended_at
+		       qe.ended_at, s.rotation,
+		       (SELECT count(*) FROM queue_entries qe2 WHERE qe2.song_id = s.id AND qe2.status = 'played')
 		FROM queue_entries qe
 		JOIN songs s ON s.id = qe.song_id
 		LEFT JOIN artist_covers ac ON ac.artist_name = s.artist
@@ -162,12 +255,14 @@ func fetchRecentlyPlayed(ctx context.Context, app *App, genre string, limit int)
 	for rows.Next() {
 		var item components.SongListItem
 		var endedAt *time.Time
-		if err := rows.Scan(&item.ID, &item.Title, &item.Artist, &item.Cover, &endedAt); err != nil {
+		var rotation string
+		if err := rows.Scan(&item.ID, &item.Title, &item.Artist, &item.Cover, &endedAt, &rotation, &item.PlayCount); err != nil {
 			return nil, err
 		}
 		if endedAt != nil {
 			item.PlayedAt = *endedAt
 		}
+		item.Weight = config.RotationWeights[config.RotationType(rotation)]
 		out = append(out, item)
 	}
 	return out, rows.Err()
@@ -247,6 +342,7 @@ func handlePedidosSolicitar(app *App) http.HandlerFunc {
 func handleArtistas(app *App) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		trackPageView(app, w, r, r.URL.Path)
+		ensureCSRFCookie(w, r)
 		artists, err := app.Songs.ListArtistsWithCovers(r.Context())
 		if err != nil {
 			app.Log.Error("listando artistas", "error", err)

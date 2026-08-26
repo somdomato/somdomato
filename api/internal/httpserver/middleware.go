@@ -169,3 +169,23 @@ func requireCSRF(next http.HandlerFunc) http.HandlerFunc {
 		next(w, r)
 	}
 }
+
+const csrfHeaderName = "X-CSRF-Token"
+
+// requireCSRFHeader é a variante de requireCSRF para chamadas fetch/JSON
+// (ex.: curtir/descurtir no player): o card "tocando agora" é o mesmo HTML
+// enviado a todos os ouvintes conectados via SSE, então não dá pra embutir
+// um token por requisição nele como nos formulários — em vez disso o JS lê
+// o cookie sdm_csrf (não é HttpOnly) e reenvia no header, mesma garantia do
+// double-submit: só JS rodando na própria origem consegue ler o cookie.
+func requireCSRFHeader(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		cookieToken := csrfTokenFromRequest(r)
+		headerToken := r.Header.Get(csrfHeaderName)
+		if cookieToken == "" || headerToken == "" || cookieToken != headerToken {
+			http.Error(w, "token CSRF inválido", http.StatusForbidden)
+			return
+		}
+		next(w, r)
+	}
+}

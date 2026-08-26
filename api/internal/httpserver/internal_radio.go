@@ -252,13 +252,7 @@ func broadcastQueueUpdated(app *App, ctx context.Context, genre string) {
 		app.Log.Error("consultando fila para broadcast", "error", err, "genre", genre)
 		return
 	}
-	var next []components.SongListItem
-	for _, e := range queueEntries {
-		if len(next) == 10 {
-			break
-		}
-		next = append(next, components.SongListItem{ID: e.SongID, Title: e.Title, Artist: e.Artist, Cover: e.Cover, IsRequest: e.Source == models.SourceRequest})
-	}
+	next := buildNextSongList(ctx, app, queueEntries)
 	broadcastFragment(app, "queue-updated-"+genre, components.SongListItemsFragment(next, "A fila está sendo preparada.", true))
 }
 
@@ -284,13 +278,7 @@ func broadcastTop10Updated(app *App, ctx context.Context) {
 		app.Log.Error("consultando top 10 para broadcast", "error", err)
 		return
 	}
-	var top10 []components.TopRequestItem
-	for _, s := range topSongs {
-		top10 = append(top10, components.TopRequestItem{
-			SongListItem: components.SongListItem{ID: s.ID, Title: s.Title, Artist: s.Artist, Cover: s.Cover},
-			Count:        s.RequestsCount,
-		})
-	}
+	top10 := buildTop10List(topSongs)
 	broadcastFragment(app, "top10-updated", components.TopRequestItemsFragment(top10, "Ainda não há pedidos suficientes."))
 }
 

@@ -134,6 +134,7 @@ templ Header(player *components.PlayerData, isAdmin bool) {
 				<div id="player-bar" hx-preserve="true">
 					@components.PlayerBar(*player)
 					<script src={ "/static/js/player.js?v=" + web.AssetVersion() }></script>
+					<script src={ "/static/js/song-vote.js?v=" + web.AssetVersion() }></script>
 					<script src={ "/static/js/share.js?v=" + web.AssetVersion() }></script>
 					<script src={ "/static/js/analytics.js?v=" + web.AssetVersion() }></script>
 				</div>
