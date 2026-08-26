@@ -469,6 +469,60 @@ func (s *Store) fetchGenrePool(ctx context.Context, genre string, ignoreTimeSlot
 	return out, rows.Err()
 }
 
+// genreHasSongs indica se existe alguma música cadastrada no gênero (ou,
+// para "geral", também as marcadas allowed_in_general), ignorando horário,
+// proteções e exclusões — é a checagem de catálogo, não de disponibilidade
+// momentânea.
+func (s *Store) genreHasSongs(ctx context.Context, genre string) (bool, error) {
+	var query string
+	var args []any
+	if genre == "geral" {
+		query = `SELECT EXISTS(SELECT 1 FROM songs WHERE genre = 'geral' OR allowed_in_general = true)`
+	} else {
+		query = `SELECT EXISTS(SELECT 1 FROM songs WHERE genre = $1)`
+		args = append(args, genre)
+	}
+	var exists bool
+	if err := s.pool.QueryRow(ctx, query, args...).Scan(&exists); err != nil {
+		return false, fmt.Errorf("checando catálogo do gênero: %w", err)
+	}
+	return exists, nil
+}
+
+// fetchAllSongsPool busca músicas de qualquer gênero, usado apenas quando o
+// gênero alvo não tem nenhuma música própria cadastrada.
+func (s *Store) fetchAllSongsPool(ctx context.Context, ignoreTimeSlot bool) ([]models.Song, error) {
+	query := `
+		SELECT id, title, artist, album, path, cover, time_slots, rotation, genre, allowed_in_general, requests_count, likes_count, created_at
+		FROM songs`
+	var args []any
+
+	if !ignoreTimeSlot {
+		now := time.Now()
+		slot := currentTimeSlotBit(now)
+		query += ` WHERE (time_slots & $1) > 0`
+		args = append(args, slot)
+	}
+
+	rows, err := s.pool.Query(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("consultando pool geral (todos os gêneros): %w", err)
+	}
+	defer rows.Close()
+
+	var out []models.Song
+	for rows.Next() {
+		var song models.Song
+		if err := rows.Scan(&song.ID, &song.Title, &song.Artist, &song.Album, &song.Path,
+			&song.Cover, &song.TimeSlots, &song.Rotation, &song.Genre, &song.AllowedInGeneral,
+			&song.RequestsCount, &song.LikesCount, &song.CreatedAt); err != nil {
+			return nil, err
+		}
+		out = append(out, song)
+	}
+	return out, rows.Err()
+}
+
 func currentTimeSlotBit(now time.Time) int {
 	hour := now.Hour()
 	switch {
@@ -503,55 +557,49 @@ func applyProtections(songs []models.Song, blocked protections.Blocked, excludeI
 	return out
 }
 
-// pickAutoDJCandidates busca o pool de músicas disponíveis para o gênero
-// SEM nunca relaxar as proteções de repetição. A única coisa que se amplia
-// quando o catálogo é pequeno demais é o filtro de horário e, por fim, o
-// fallback para o pool do "geral" — nenhuma das duas ampliações afeta a
-// garantia de não-repetição.
+// pickAutoDJCandidates busca o pool de músicas disponíveis para o gênero SEM
+// nunca relaxar as proteções de repetição. Um estilo com música própria
+// cadastrada toca APENAS as músicas atribuídas a ele (a única ampliação
+// possível é o filtro de horário, quando o catálogo do próprio gênero no
+// slot atual é insuficiente) — nunca é completado com músicas de outros
+// gêneros só para bater a quantidade da fila. Cair para o catálogo inteiro
+// (qualquer gênero) só acontece quando o estilo não tem NENHUMA música
+// própria cadastrada.
 func (s *Store) pickAutoDJCandidates(ctx context.Context, genre string, excludeIDs map[int64]bool, needed int) ([]models.Song, error) {
-	tryGenre := func(g string) ([]models.Song, error) {
-		blocked, err := s.protections.GetBlockedSongIDs(ctx, g)
-		if err != nil {
-			return nil, err
-		}
-
-		inSlot, err := s.fetchGenrePool(ctx, g, false)
-		if err != nil {
-			return nil, err
-		}
-		pool := applyProtections(inSlot, blocked, excludeIDs)
-		if len(pool) >= needed {
-			return pool, nil
-		}
-
-		anySlot, err := s.fetchGenrePool(ctx, g, true)
-		if err != nil {
-			return nil, err
-		}
-		relaxed := applyProtections(anySlot, blocked, excludeIDs)
-		if len(relaxed) > len(pool) {
-			pool = relaxed
-		}
-		return pool, nil
-	}
-
-	pool, err := tryGenre(genre)
+	blocked, err := s.protections.GetBlockedSongIDs(ctx, genre)
 	if err != nil {
 		return nil, err
 	}
 
-	// Gêneros com poucas músicas podem ficar sem candidatos suficientes
-	// mesmo respeitando as travas — cai para o pool do "geral" também (sem
-	// relaxar proteções).
-	if len(pool) < needed && genre != "geral" {
-		generalPool, err := tryGenre("geral")
+	hasSongs, err := s.genreHasSongs(ctx, genre)
+	if err != nil {
+		return nil, err
+	}
+
+	if !hasSongs {
+		anySlot, err := s.fetchAllSongsPool(ctx, true)
 		if err != nil {
 			return nil, err
 		}
-		if len(generalPool) > len(pool) {
-			pool = generalPool
-		}
+		return applyProtections(anySlot, blocked, excludeIDs), nil
 	}
 
+	inSlot, err := s.fetchGenrePool(ctx, genre, false)
+	if err != nil {
+		return nil, err
+	}
+	pool := applyProtections(inSlot, blocked, excludeIDs)
+	if len(pool) >= needed {
+		return pool, nil
+	}
+
+	anySlot, err := s.fetchGenrePool(ctx, genre, true)
+	if err != nil {
+		return nil, err
+	}
+	relaxed := applyProtections(anySlot, blocked, excludeIDs)
+	if len(relaxed) > len(pool) {
+		pool = relaxed
+	}
 	return pool, nil
 }
