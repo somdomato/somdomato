@@ -13,6 +13,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/somdomato/somdomato/api/config"
+	"github.com/somdomato/somdomato/api/internal/cover"
 	"github.com/somdomato/somdomato/api/internal/protections"
 	"github.com/somdomato/somdomato/api/internal/rotation"
 	"github.com/somdomato/somdomato/api/models"
@@ -34,11 +35,20 @@ func fileExists(path string) bool {
 	return err == nil
 }
 
+// coverFallbackSQL troca a capa da música pela capa do artista (artist_covers,
+// resolvida automaticamente em artistcover.Resolve) sempre que a música ainda
+// está no logo padrão — evita que "Últimas"/"Próximas"/"Top 10" fiquem cheios
+// do logotipo enquanto /artistas já mostra a foto certa do mesmo artista,
+// já que cada música só ganha uma capa própria se tiver arte no ID3 (ver
+// cover.ExtractAndSave) ou vier do Deezer no download/upload.
+const coverFallbackSQL = `CASE WHEN s.cover = '` + cover.DefaultCover + `' THEN COALESCE(ac.cover_path, s.cover) ELSE s.cover END`
+
 const queueEntrySelect = `
-	SELECT qe.id, s.id, s.title, s.artist, s.path, s.cover, s.genre,
+	SELECT qe.id, s.id, s.title, s.artist, s.path, ` + coverFallbackSQL + `, s.genre,
 	       s.allowed_in_general, qe.source, qe.request_id, qe.requested_at
 	FROM queue_entries qe
 	JOIN songs s ON s.id = qe.song_id
+	LEFT JOIN artist_covers ac ON ac.artist_name = s.artist
 `
 
 func scanQueueEntry(row pgx.Row) (models.QueueEntry, error) {
@@ -310,7 +320,10 @@ type SetCurrentParams struct {
 func (s *Store) SetCurrent(ctx context.Context, p SetCurrentParams) (*models.ConfirmedCurrent, error) {
 	var song models.Song
 	err := s.pool.QueryRow(ctx, `
-		SELECT id, title, artist, path, cover, genre, allowed_in_general FROM songs WHERE id = $1`, p.SongID).
+		SELECT s.id, s.title, s.artist, s.path, `+coverFallbackSQL+`, s.genre, s.allowed_in_general
+		FROM songs s
+		LEFT JOIN artist_covers ac ON ac.artist_name = s.artist
+		WHERE s.id = $1`, p.SongID).
 		Scan(&song.ID, &song.Title, &song.Artist, &song.Path, &song.Cover, &song.Genre, &song.AllowedInGeneral)
 	if err == pgx.ErrNoRows {
 		return nil, nil
@@ -392,9 +405,10 @@ func (s *Store) FlushStalePending(ctx context.Context, genre string, exceptQueue
 	var scheduledAt time.Time
 	var source string
 	err := s.pool.QueryRow(ctx, `
-		SELECT qe.id, qe.scheduled_at, qe.source, s.id, s.title, s.artist, s.cover
+		SELECT qe.id, qe.scheduled_at, qe.source, s.id, s.title, s.artist, `+coverFallbackSQL+`
 		FROM queue_entries qe
 		JOIN songs s ON s.id = qe.song_id
+		LEFT JOIN artist_covers ac ON ac.artist_name = s.artist
 		WHERE qe.genre = $1 AND qe.status = 'pending' AND qe.id != $2
 		ORDER BY qe.id DESC LIMIT 1`, genre, exceptQueueEntryID).
 		Scan(&queueEntryID, &scheduledAt, &source, &stale.SongID, &stale.Title, &stale.Artist, &stale.Cover)

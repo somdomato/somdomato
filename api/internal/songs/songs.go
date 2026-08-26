@@ -67,9 +67,13 @@ func (s *Store) ListByArtist(ctx context.Context, artist string) ([]models.Song,
 // ordenadas por contagem decrescente — usado no bloco "Top 10" da home.
 func (s *Store) ListTopRequested(ctx context.Context, limit int) ([]models.Song, error) {
 	rows, err := s.pool.Query(ctx, `
-		SELECT `+selectFields+` FROM songs
-		WHERE requests_count > 0
-		ORDER BY requests_count DESC, title ASC LIMIT $1`, limit)
+		SELECT s.id, s.title, s.artist, s.album, s.path,
+		       CASE WHEN s.cover = $2 THEN COALESCE(ac.cover_path, s.cover) ELSE s.cover END,
+		       s.time_slots, s.rotation, s.genre, s.allowed_in_general, s.requests_count, s.likes_count, s.created_at
+		FROM songs s
+		LEFT JOIN artist_covers ac ON ac.artist_name = s.artist
+		WHERE s.requests_count > 0
+		ORDER BY s.requests_count DESC, s.title ASC LIMIT $1`, limit, cover.DefaultCover)
 	if err != nil {
 		return nil, fmt.Errorf("listando músicas mais pedidas: %w", err)
 	}

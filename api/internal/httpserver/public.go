@@ -145,10 +145,14 @@ func handleNowPlayingAPI(app *App) http.HandlerFunc {
 
 func fetchRecentlyPlayed(ctx context.Context, app *App, genre string, limit int) ([]components.SongListItem, error) {
 	rows, err := app.Pool.Query(ctx, `
-		SELECT s.id, s.title, s.artist, s.cover, qe.ended_at FROM queue_entries qe
+		SELECT s.id, s.title, s.artist,
+		       CASE WHEN s.cover = $3 THEN COALESCE(ac.cover_path, s.cover) ELSE s.cover END,
+		       qe.ended_at
+		FROM queue_entries qe
 		JOIN songs s ON s.id = qe.song_id
+		LEFT JOIN artist_covers ac ON ac.artist_name = s.artist
 		WHERE qe.genre = $1 AND qe.status = 'played'
-		ORDER BY qe.ended_at DESC LIMIT $2`, genre, limit)
+		ORDER BY qe.ended_at DESC LIMIT $2`, genre, limit, cover.DefaultCover)
 	if err != nil {
 		return nil, err
 	}
