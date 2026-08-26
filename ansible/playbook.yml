@@ -59,7 +59,7 @@
         # Sem eles as rotas ficam desabilitadas, o resto sobe normalmente.
         deezer_arl: "{{ app_env.DEEZER_ARL | default('') }}"
         groq_api_key: "{{ app_env.GROQ_API_KEY | default('') }}"
-        groq_model: "{{ app_env.GROQ_MODEL | default('llama-3.1-8b-instant') }}"
+        groq_model: "{{ app_env.GROQ_MODEL | default('openai/gpt-oss-20b') }}"
       no_log: true
       tags: [always]
 

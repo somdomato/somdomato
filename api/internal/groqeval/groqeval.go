@@ -234,7 +234,7 @@ func (e *Evaluator) callGroq(ctx context.Context, title, artist string) (*verdic
 		return nil, err
 	}
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("groq respondeu %d: %s", resp.StatusCode, strings.TrimSpace(string(respBody)))
+		return nil, fmt.Errorf("%s", humanizeGroqError(resp.StatusCode, respBody))
 	}
 
 	var completion struct {
@@ -257,4 +257,36 @@ func (e *Evaluator) callGroq(ctx context.Context, title, artist string) (*verdic
 	}
 
 	return &v, nil
+}
+
+// humanizeGroqError traduz uma resposta de erro da Groq (HTTP status +
+// corpo JSON no formato {"error":{"message","code",...}}) numa frase em
+// português adequada para exibição direta ao admin em /admin/envios — sem
+// o JSON cru nem o status code.
+func humanizeGroqError(status int, body []byte) string {
+	var parsed struct {
+		Error struct {
+			Message string `json:"message"`
+			Code    string `json:"code"`
+		} `json:"error"`
+	}
+	msg := strings.TrimSpace(string(body))
+	code := ""
+	if err := json.Unmarshal(body, &parsed); err == nil && parsed.Error.Message != "" {
+		msg = parsed.Error.Message
+		code = parsed.Error.Code
+	}
+
+	switch {
+	case status == http.StatusNotFound || code == "model_not_found":
+		return fmt.Sprintf("o modelo de IA configurado (GROQ_MODEL) não existe ou foi descontinuado na Groq: %s", msg)
+	case status == http.StatusUnauthorized:
+		return "a chave da API da Groq (GROQ_API_KEY) é inválida ou expirou"
+	case status == http.StatusTooManyRequests:
+		return "a Groq recusou a chamada por excesso de requisições (limite do plano atingido)"
+	case status >= 500:
+		return fmt.Sprintf("a Groq está indisponível no momento (erro %d do servidor deles)", status)
+	default:
+		return fmt.Sprintf("a Groq recusou a requisição (%d): %s", status, msg)
+	}
 }

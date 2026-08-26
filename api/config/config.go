@@ -141,7 +141,7 @@ func Load() (*Config, error) {
 		DeezerARL:          os.Getenv("DEEZER_ARL"),
 		UploadsDir:         getEnv("UPLOADS_DIR", getEnv("MUSIC_PATH", "/var/music/sdm")+"/uploads"),
 		GroqAPIKey:         os.Getenv("GROQ_API_KEY"),
-		GroqModel:          getEnv("GROQ_MODEL", "llama-3.1-8b-instant"),
+		GroqModel:          getEnv("GROQ_MODEL", "openai/gpt-oss-20b"),
 		NowPlayingDelay:    time.Duration(getEnvInt("RADIO_NOWPLAYING_DELAY_SECONDS", 8)) * time.Second,
 	}
 
