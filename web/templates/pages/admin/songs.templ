@@ -143,6 +143,31 @@ templ SongsTable(songsList []models.Song, csrfToken string, page SongsPageInfo) 
 templ SongEdit(s models.Song, csrfToken string, player *components.PlayerData) {
 	@Shell("Editar música", "songs", player) {
 		<h1 class="text-xl font-bold">Editar música</h1>
+		<div class="mt-4 flex max-w-md items-start gap-4">
+			<img
+				src={ songCoverSrc(s.Cover) }
+				alt="Capa atual"
+				class="h-24 w-24 shrink-0 rounded-lg object-cover bg-surface-raised"
+			/>
+			<div class="flex-1 space-y-2">
+				<form
+					method="POST"
+					action={ templ.SafeURL("/admin/musicas/" + itoa64(s.ID) + "/capa") }
+					enctype="multipart/form-data"
+					class="space-y-2"
+				>
+					<input type="hidden" name="csrf_token" value={ csrfToken }/>
+					<input type="file" name="cover" accept="image/*" required class="block w-full text-xs"/>
+					<button type="submit" class="rounded-lg bg-surface-raised px-3 py-1.5 text-xs font-semibold hover:bg-surface-raised/70">Enviar capa</button>
+				</form>
+				if s.Cover != "" {
+					<form method="POST" action={ templ.SafeURL("/admin/musicas/" + itoa64(s.ID) + "/capa/remover") }>
+						<input type="hidden" name="csrf_token" value={ csrfToken }/>
+						<button type="submit" class="text-xs text-red-400 hover:underline">Remover capa</button>
+					</form>
+				}
+			</div>
+		</div>
 		<form method="POST" action={ templ.SafeURL("/admin/musicas/" + itoa64(s.ID)) } hx-boost="true" class="mt-4 max-w-md space-y-3">
 			<input type="hidden" name="csrf_token" value={ csrfToken }/>
 			<label class="block text-sm">

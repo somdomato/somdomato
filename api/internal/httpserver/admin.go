@@ -41,6 +41,8 @@ func registerAdminRoutes(mux *http.ServeMux, app *App) {
 	mux.HandleFunc("POST /admin/musicas/{id}", requirePermission(app, rbac.PermSongsEditTags, requireCSRF(handleAdminSongUpdate(app))))
 	mux.HandleFunc("POST /admin/musicas/{id}/tocar", requirePermission(app, rbac.PermRequestsManage, requireCSRF(handleAdminPlaySong(app))))
 	mux.HandleFunc("POST /admin/musicas/{id}/remover", requirePermission(app, rbac.PermSongsDelete, requireCSRF(handleAdminSongDelete(app))))
+	mux.HandleFunc("POST /admin/musicas/{id}/capa", requirePermission(app, rbac.PermSongsEditTags, requireCSRF(handleAdminSongCoverUpload(app))))
+	mux.HandleFunc("POST /admin/musicas/{id}/capa/remover", requirePermission(app, rbac.PermSongsEditTags, requireCSRF(handleAdminSongCoverRemove(app))))
 	mux.HandleFunc("POST /admin/artistas/{artist}/renomear", requirePermission(app, rbac.PermSongsEditTags, requireCSRF(handleAdminArtistRename(app))))
 	mux.HandleFunc("POST /admin/artistas/{artist}/capa", requirePermission(app, rbac.PermSongsEditTags, requireCSRF(handleAdminArtistCoverUpload(app))))
 	mux.HandleFunc("POST /admin/artistas/{artist}/capa/remover", requirePermission(app, rbac.PermSongsEditTags, requireCSRF(handleAdminArtistCoverRemove(app))))
@@ -336,6 +338,75 @@ func handleAdminSongDelete(app *App) http.HandlerFunc {
 			app.Log.Error("removendo arquivo de música do disco", "error", err, "path", song.Path)
 		}
 		w.WriteHeader(http.StatusOK)
+	}
+}
+
+// maxSongCoverUpload limita o upload manual de capa de música — mesmo teto
+// usado para capa de artista, só uma trava de sanidade.
+const maxSongCoverUpload = 10 << 20 // 10MB
+
+// handleAdminSongCoverUpload recebe uma imagem enviada pelo admin em
+// /admin/musicas/{id}, converte para webp e grava como capa da música.
+// Como resolveCoverAsync só sobrescreve capas vazias/padrão (ver
+// internal_radio.go), a capa enviada aqui nunca é sobrescrita automaticamente.
+func handleAdminSongCoverUpload(app *App) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id := pathInt64(r, "id")
+		song, err := app.Songs.GetByID(r.Context(), id)
+		if err != nil || song == nil {
+			http.NotFound(w, r)
+			return
+		}
+
+		if err := r.ParseMultipartForm(maxSongCoverUpload); err != nil {
+			http.Error(w, "arquivo inválido ou grande demais", http.StatusBadRequest)
+			return
+		}
+		file, _, err := r.FormFile("cover")
+		if err != nil {
+			http.Error(w, "capa não enviada", http.StatusBadRequest)
+			return
+		}
+		defer file.Close()
+
+		data, err := io.ReadAll(io.LimitReader(file, maxSongCoverUpload+1))
+		if err != nil || len(data) == 0 || len(data) > maxSongCoverUpload {
+			http.Error(w, "arquivo inválido ou grande demais", http.StatusBadRequest)
+			return
+		}
+
+		path, err := cover.SaveUploaded(app.ArtistCoverResolver.CwebpPath(), id, data, app.Cfg.CoversDir)
+		if err != nil {
+			app.Log.Error("salvando capa manual de música", "error", err)
+			http.Error(w, "não foi possível processar a imagem enviada", http.StatusInternalServerError)
+			return
+		}
+		if err := app.Songs.UpdateCover(r.Context(), id, path); err != nil {
+			app.Log.Error("gravando capa manual de música", "error", err)
+			http.Error(w, "erro interno", http.StatusInternalServerError)
+			return
+		}
+
+		http.Redirect(w, r, "/admin/musicas/"+strconv.FormatInt(id, 10), http.StatusSeeOther)
+	}
+}
+
+// handleAdminSongCoverRemove limpa a capa manual da música, devolvendo-a à
+// resolução automática (extração de ID3 na próxima vez que ela tocar).
+func handleAdminSongCoverRemove(app *App) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id := pathInt64(r, "id")
+		song, err := app.Songs.GetByID(r.Context(), id)
+		if err != nil || song == nil {
+			http.NotFound(w, r)
+			return
+		}
+		if err := app.Songs.UpdateCover(r.Context(), id, ""); err != nil {
+			app.Log.Error("removendo capa de música", "error", err)
+			http.Error(w, "erro interno", http.StatusInternalServerError)
+			return
+		}
+		http.Redirect(w, r, "/admin/musicas/"+strconv.FormatInt(id, 10), http.StatusSeeOther)
 	}
 }
 

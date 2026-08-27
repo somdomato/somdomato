@@ -9,7 +9,10 @@ import (
 	"encoding/hex"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"strconv"
+	"strings"
 
 	"github.com/dhowden/tag"
 )
@@ -51,6 +54,54 @@ func ExtractAndSave(mp3Path, coversDir string) (string, error) {
 	}
 
 	return "/covers/" + filename, nil
+}
+
+// SaveUploaded recebe os bytes crus de uma capa enviada manualmente pelo
+// admin em /admin/musicas/{id}, converte para webp via cwebp e grava em
+// [coversDir]/musicas/[id]/cover.webp — retorna a URL pública
+// (/covers/musicas/[id]/cover.webp). Espelha artistcover.SaveCover, mas
+// indexado por ID da música em vez de slug de artista.
+//
+// cwebpPath é o caminho resolvido do binário cwebp (via exec.LookPath) —
+// vazio significa que a conversão não está disponível neste ambiente.
+func SaveUploaded(cwebpPath string, songID int64, data []byte, coversDir string) (string, error) {
+	if cwebpPath == "" {
+		return "", fmt.Errorf("cwebp não está disponível neste ambiente")
+	}
+
+	srcFile, err := os.CreateTemp("", "song-cover-src-*")
+	if err != nil {
+		return "", fmt.Errorf("criando arquivo temporário: %w", err)
+	}
+	srcPath := srcFile.Name()
+	defer os.Remove(srcPath)
+	if _, err := srcFile.Write(data); err != nil {
+		srcFile.Close()
+		return "", fmt.Errorf("gravando imagem temporária: %w", err)
+	}
+	if err := srcFile.Close(); err != nil {
+		return "", fmt.Errorf("fechando imagem temporária: %w", err)
+	}
+
+	idStr := strconv.FormatInt(songID, 10)
+	finalDir := filepath.Join(coversDir, "musicas", idStr)
+	if err := os.MkdirAll(finalDir, 0o755); err != nil {
+		return "", fmt.Errorf("criando diretório de capa da música: %w", err)
+	}
+	finalPath := filepath.Join(finalDir, "cover.webp")
+	tmpDest := finalPath + ".tmp"
+	defer os.Remove(tmpDest)
+
+	cmd := exec.Command(cwebpPath, "-quiet", "-q", "78", "-resize", "600", "0", srcPath, "-o", tmpDest)
+	if out, err := cmd.CombinedOutput(); err != nil {
+		return "", fmt.Errorf("convertendo capa para webp: %w (%s)", err, strings.TrimSpace(string(out)))
+	}
+
+	if err := os.Rename(tmpDest, finalPath); err != nil {
+		return "", fmt.Errorf("movendo capa para o caminho final: %w", err)
+	}
+
+	return "/covers/musicas/" + idStr + "/cover.webp", nil
 }
 
 func extensionForMIME(mimeType, tagExt string) string {
