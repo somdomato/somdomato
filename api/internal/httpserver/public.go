@@ -6,6 +6,7 @@ import (
 	"context"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/somdomato/somdomato/api/config"
@@ -287,7 +288,7 @@ func handlePedidos(app *App) http.HandlerFunc {
 
 func handlePedidosBuscar(app *App) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		query := r.URL.Query().Get("q")
+		query := strings.TrimSpace(r.URL.Query().Get("q"))
 		token := csrfTokenFromRequest(r)
 
 		var results []components.SongListItem

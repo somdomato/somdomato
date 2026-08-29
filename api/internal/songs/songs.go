@@ -42,12 +42,13 @@ func (s *Store) GetByID(ctx context.Context, id int64) (*models.Song, error) {
 	return &song, nil
 }
 
-// Search retorna músicas cujo título ou artista contém `query` (case
-// insensitive), limitado a `limit` resultados — usado em Pedidos.
+// Search retorna músicas cujo título ou artista contém `query` (case e
+// acento insensitive — "voce" encontra "Você"), limitado a `limit`
+// resultados — usado em Pedidos.
 func (s *Store) Search(ctx context.Context, query string, limit int) ([]models.Song, error) {
 	rows, err := s.pool.Query(ctx, `
 		SELECT `+selectFields+` FROM songs
-		WHERE title ILIKE '%' || $1 || '%' OR artist ILIKE '%' || $1 || '%'
+		WHERE unaccent(title) ILIKE unaccent('%' || $1 || '%') OR unaccent(artist) ILIKE unaccent('%' || $1 || '%')
 		ORDER BY artist, title LIMIT $2`, query, limit)
 	if err != nil {
 		return nil, fmt.Errorf("buscando músicas: %w", err)
