@@ -28,6 +28,12 @@ func downloadImage(ctx context.Context, client *http.Client, url string) ([]byte
 	if err != nil {
 		return nil, err
 	}
+	// Wikimedia rejeita com 403 requisições sem User-Agent identificável
+	// (mesma política que já vale pra chamada da API em wikidata.go) — as
+	// candidatas do Wikidata carregam bem no navegador do admin (que manda
+	// seu próprio User-Agent), mas o download server-side aqui falhava sem
+	// isso, mesmo com uma URL válida.
+	req.Header.Set("User-Agent", musicbrainzUserAgent)
 	resp, err := client.Do(req)
 	if err != nil {
 		return nil, err

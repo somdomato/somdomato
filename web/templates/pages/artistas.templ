@@ -34,6 +34,7 @@ templ Artistas(data ArtistasData) {
 				<li>
 					<a
 						href={ templ.URL("/artistas/" + url.PathEscape(artist.Name)) }
+						hx-boost="true"
 						class="group block overflow-hidden rounded-xl bg-surface-raised shadow-lg ring-1 ring-white/5 transition duration-200 hover:-translate-y-0.5 hover:shadow-brand-500/10 hover:ring-brand-400/40"
 					>
 						<div class="relative aspect-square overflow-hidden">
