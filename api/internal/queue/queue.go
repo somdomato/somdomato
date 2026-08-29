@@ -35,16 +35,8 @@ func fileExists(path string) bool {
 	return err == nil
 }
 
-// coverFallbackSQL troca a capa da música pela capa do artista (artist_covers,
-// resolvida automaticamente em artistcover.Resolve) sempre que a música ainda
-// está no logo padrão — evita que "Últimas"/"Próximas"/"Top 10" fiquem cheios
-// do logotipo enquanto /artistas já mostra a foto certa do mesmo artista,
-// já que cada música só ganha uma capa própria se tiver arte no ID3 (ver
-// cover.ExtractAndSave) ou vier do Deezer no download/upload.
-const coverFallbackSQL = `CASE WHEN s.cover = '` + cover.DefaultCover + `' THEN COALESCE(ac.cover_path, s.cover) ELSE s.cover END`
-
 const queueEntrySelect = `
-	SELECT qe.id, s.id, s.title, s.artist, s.path, ` + coverFallbackSQL + `, s.genre,
+	SELECT qe.id, s.id, s.title, s.artist, s.path, ` + cover.FallbackSQL + `, s.genre,
 	       s.allowed_in_general, qe.source, qe.request_id, qe.requested_at
 	FROM queue_entries qe
 	JOIN songs s ON s.id = qe.song_id
@@ -320,7 +312,7 @@ type SetCurrentParams struct {
 func (s *Store) SetCurrent(ctx context.Context, p SetCurrentParams) (*models.ConfirmedCurrent, error) {
 	var song models.Song
 	err := s.pool.QueryRow(ctx, `
-		SELECT s.id, s.title, s.artist, s.path, `+coverFallbackSQL+`, s.genre, s.allowed_in_general
+		SELECT s.id, s.title, s.artist, s.path, `+cover.FallbackSQL+`, s.genre, s.allowed_in_general
 		FROM songs s
 		LEFT JOIN artist_covers ac ON ac.artist_name = s.artist
 		WHERE s.id = $1`, p.SongID).
@@ -405,7 +397,7 @@ func (s *Store) FlushStalePending(ctx context.Context, genre string, exceptQueue
 	var scheduledAt time.Time
 	var source string
 	err := s.pool.QueryRow(ctx, `
-		SELECT qe.id, qe.scheduled_at, qe.source, s.id, s.title, s.artist, `+coverFallbackSQL+`
+		SELECT qe.id, qe.scheduled_at, qe.source, s.id, s.title, s.artist, `+cover.FallbackSQL+`
 		FROM queue_entries qe
 		JOIN songs s ON s.id = qe.song_id
 		LEFT JOIN artist_covers ac ON ac.artist_name = s.artist

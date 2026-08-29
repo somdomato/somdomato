@@ -19,6 +19,16 @@ import (
 
 const DefaultCover = "/static/images/logotipo.svg"
 
+// FallbackSQL sempre prioriza a capa do artista (artist_covers, resolvida
+// automaticamente em artistcover.Resolve ou definida manualmente pelo
+// admin) sobre a capa própria da música, caindo pra capa da música só
+// quando o artista não tem nenhuma — mesma prioridade usada por
+// songs.Store.ListArtistsWithCovers em /artistas, pra que o player, a
+// busca e a lista de músicas do artista nunca mostrem uma capa diferente
+// da que aparece no card do artista. Espera um LEFT JOIN artist_covers ac
+// ON ac.artist_name = s.artist na query.
+const FallbackSQL = `COALESCE(ac.cover_path, s.cover)`
+
 // ExtractAndSave lê a tag ID3 do arquivo em mp3Path e, se houver capa
 // embutida, salva um .jpg/.png determinístico (hash do path) em coversDir e
 // retorna a URL pública (/covers/<hash>.<ext>). Retorna "" se não houver

@@ -8,6 +8,7 @@ import (
 	"fmt"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/somdomato/somdomato/api/internal/cover"
 	"github.com/somdomato/somdomato/api/internal/protections"
 	"github.com/somdomato/somdomato/api/internal/queue"
 	"github.com/somdomato/somdomato/api/models"
@@ -78,8 +79,10 @@ type PendingRequest struct {
 
 func (s *Store) ListPending(ctx context.Context) ([]PendingRequest, error) {
 	rows, err := s.pool.Query(ctx, `
-		SELECT r.id, s.id, s.title, s.artist, s.cover, s.path
-		FROM requests r JOIN songs s ON s.id = r.song_id
+		SELECT r.id, s.id, s.title, s.artist, `+cover.FallbackSQL+`, s.path
+		FROM requests r
+		JOIN songs s ON s.id = r.song_id
+		LEFT JOIN artist_covers ac ON ac.artist_name = s.artist
 		ORDER BY r."order" ASC, r.created_at ASC`)
 	if err != nil {
 		return nil, fmt.Errorf("listando pedidos pendentes: %w", err)

@@ -22,7 +22,12 @@ func NewStore(pool *pgxpool.Pool) *Store {
 	return &Store{pool: pool}
 }
 
-const selectFields = `id, title, artist, album, path, cover, time_slots, rotation, genre, allowed_in_general, requests_count, likes_count, created_at`
+// selectFields usa a capa da música com fallback pra capa do artista (ver
+// cover.FallbackSQL) — exige `FROM songs s LEFT JOIN artist_covers ac ON
+// ac.artist_name = s.artist` na query.
+const selectFields = `s.id, s.title, s.artist, s.album, s.path, ` + cover.FallbackSQL + `, s.time_slots, s.rotation, s.genre, s.allowed_in_general, s.requests_count, s.likes_count, s.created_at`
+
+const selectFrom = `FROM songs s LEFT JOIN artist_covers ac ON ac.artist_name = s.artist`
 
 func scanSong(row pgx.Row) (models.Song, error) {
 	var s models.Song
@@ -32,7 +37,7 @@ func scanSong(row pgx.Row) (models.Song, error) {
 }
 
 func (s *Store) GetByID(ctx context.Context, id int64) (*models.Song, error) {
-	song, err := scanSong(s.pool.QueryRow(ctx, `SELECT `+selectFields+` FROM songs WHERE id = $1`, id))
+	song, err := scanSong(s.pool.QueryRow(ctx, `SELECT `+selectFields+` `+selectFrom+` WHERE s.id = $1`, id))
 	if err == pgx.ErrNoRows {
 		return nil, nil
 	}
@@ -47,9 +52,9 @@ func (s *Store) GetByID(ctx context.Context, id int64) (*models.Song, error) {
 // resultados — usado em Pedidos.
 func (s *Store) Search(ctx context.Context, query string, limit int) ([]models.Song, error) {
 	rows, err := s.pool.Query(ctx, `
-		SELECT `+selectFields+` FROM songs
-		WHERE unaccent(title) ILIKE unaccent('%' || $1 || '%') OR unaccent(artist) ILIKE unaccent('%' || $1 || '%')
-		ORDER BY artist, title LIMIT $2`, query, limit)
+		SELECT `+selectFields+` `+selectFrom+`
+		WHERE unaccent(s.title) ILIKE unaccent('%' || $1 || '%') OR unaccent(s.artist) ILIKE unaccent('%' || $1 || '%')
+		ORDER BY s.artist, s.title LIMIT $2`, query, limit)
 	if err != nil {
 		return nil, fmt.Errorf("buscando músicas: %w", err)
 	}
@@ -58,7 +63,7 @@ func (s *Store) Search(ctx context.Context, query string, limit int) ([]models.S
 }
 
 func (s *Store) ListByArtist(ctx context.Context, artist string) ([]models.Song, error) {
-	rows, err := s.pool.Query(ctx, `SELECT `+selectFields+` FROM songs WHERE artist = $1 ORDER BY title`, artist)
+	rows, err := s.pool.Query(ctx, `SELECT `+selectFields+` `+selectFrom+` WHERE s.artist = $1 ORDER BY s.title`, artist)
 	if err != nil {
 		return nil, fmt.Errorf("listando músicas do artista: %w", err)
 	}
@@ -74,14 +79,13 @@ func (s *Store) ListByArtist(ctx context.Context, artist string) ([]models.Song,
 // (compartilhados com consultas que não precisam desse dado).
 func (s *Store) ListTopRequested(ctx context.Context, limit int) ([]models.Song, error) {
 	rows, err := s.pool.Query(ctx, `
-		SELECT s.id, s.title, s.artist, s.album, s.path,
-		       CASE WHEN s.cover = $2 THEN COALESCE(ac.cover_path, s.cover) ELSE s.cover END,
+		SELECT s.id, s.title, s.artist, s.album, s.path, `+cover.FallbackSQL+`,
 		       s.time_slots, s.rotation, s.genre, s.allowed_in_general, s.requests_count, s.likes_count, s.created_at,
 		       (SELECT count(*) FROM queue_entries qe WHERE qe.song_id = s.id AND qe.status = 'played')
 		FROM songs s
 		LEFT JOIN artist_covers ac ON ac.artist_name = s.artist
 		WHERE s.requests_count > 0
-		ORDER BY s.requests_count DESC, s.title ASC LIMIT $1`, limit, cover.DefaultCover)
+		ORDER BY s.requests_count DESC, s.title ASC LIMIT $1`, limit)
 	if err != nil {
 		return nil, fmt.Errorf("listando músicas mais pedidas: %w", err)
 	}
@@ -223,6 +227,16 @@ func (s *Store) Vote(ctx context.Context, songID int64, voterIP string, vote int
 	}
 	defer tx.Rollback(ctx)
 
+	// Trava consultiva por (song_id, voter_ip): `SELECT ... FOR UPDATE`
+	// abaixo não protege contra dois votos concorrentes do mesmo visitante
+	// quando a linha ainda não existe (nada a travar), permitindo que ambas
+	// as transações caiam no ramo de INSERT e uma delas viole a constraint
+	// UNIQUE. A trava aqui serializa qualquer par de votos concorrentes do
+	// mesmo visitante na mesma música, independente de a linha já existir.
+	if _, err := tx.Exec(ctx, `SELECT pg_advisory_xact_lock(hashtext($1))`, fmt.Sprintf("%d:%s", songID, voterIP)); err != nil {
+		return VoteResult{}, fmt.Errorf("votando: %w", err)
+	}
+
 	var existing int
 	err = tx.QueryRow(ctx, `SELECT vote FROM song_votes WHERE song_id = $1 AND voter_ip = $2 FOR UPDATE`, songID, voterIP).Scan(&existing)
 	if err != nil && err != pgx.ErrNoRows {
@@ -321,9 +335,9 @@ func (s *Store) RenameArtist(ctx context.Context, oldName, newName string) error
 // significa "sem limite" (retorna todos os resultados a partir de offset).
 func (s *Store) ListPaged(ctx context.Context, query string, limit, offset int) ([]models.Song, error) {
 	rows, err := s.pool.Query(ctx, `
-		SELECT `+selectFields+` FROM songs
-		WHERE $1 = '' OR title ILIKE '%' || $1 || '%' OR artist ILIKE '%' || $1 || '%'
-		ORDER BY created_at DESC LIMIT NULLIF($2, 0) OFFSET $3`, query, limit, offset)
+		SELECT `+selectFields+` `+selectFrom+`
+		WHERE $1 = '' OR s.title ILIKE '%' || $1 || '%' OR s.artist ILIKE '%' || $1 || '%'
+		ORDER BY s.created_at DESC LIMIT NULLIF($2, 0) OFFSET $3`, query, limit, offset)
 	if err != nil {
 		return nil, fmt.Errorf("listando músicas (admin): %w", err)
 	}

@@ -53,9 +53,13 @@
 			.catch(() => {});
 	};
 
+	const pendingVotes = new WeakSet();
+
 	const castVote = (cover, vote) => {
 		const songId = cover?.dataset.songId;
 		if (!songId || songId === "0") return;
+		if (pendingVotes.has(cover)) return; // evita duplo clique/toque disparando 2 requisições
+		pendingVotes.add(cover);
 
 		fetch(`/api/songs/${encodeURIComponent(songId)}/votes?vote=${vote}`, {
 			method: "POST",
@@ -65,7 +69,8 @@
 			.then((data) => {
 				if (data) applyVoteState(cover, data);
 			})
-			.catch(() => {});
+			.catch(() => {})
+			.finally(() => pendingVotes.delete(cover));
 	};
 
 	const closeTimers = new WeakMap();
