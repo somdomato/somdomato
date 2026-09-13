@@ -21,6 +21,17 @@ type EnviarData struct {
 	IsAdmin   bool
 }
 
+// enviarSearchTrigger dispara a busca assim que a página carrega quando o
+// campo já vem preenchido (deep link de /pedidos com "?q=" — ver
+// SearchNoResults em components/songlist.templ), além dos triggers normais
+// de digitação.
+func enviarSearchTrigger(query string) string {
+	if query == "" {
+		return "input changed delay:300ms, search"
+	}
+	return "load, input changed delay:300ms, search"
+}
+
 func Enviar(data EnviarData) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
@@ -54,20 +65,33 @@ func Enviar(data EnviarData) templ.Component {
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<h1 class=\"text-xl font-bold\">Manda tua música pra rádio</h1><p class=\"mt-1 text-sm text-neutral-400\">Busque na internet e peça o download. Toda música passa por uma avaliação automática antes de entrar no ar — pode levar alguns minutos.</p><form class=\"mt-4\" hx-get=\"/enviar/buscar\" hx-target=\"#search-results\" hx-trigger=\"input changed delay:300ms, search\"><input type=\"search\" name=\"q\" value=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<h1 class=\"text-xl font-bold\">Manda tua música pra rádio</h1><p class=\"mt-1 text-sm text-neutral-400\">Busque na internet e peça o download. Toda música passa por uma avaliação automática antes de entrar no ar — pode levar alguns minutos.</p><form class=\"mt-4\" hx-get=\"/enviar/buscar\" hx-target=\"#search-results\" hx-trigger=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var3 string
-			templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.ResolveAttributeValue(data.Query)
+			templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.ResolveAttributeValue(enviarSearchTrigger(data.Query))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/pages/enviar.templ`, Line: 28, Col: 22}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/pages/enviar.templ`, Line: 35, Col: 117}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var3)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "\" placeholder=\"Buscar por título ou artista...\" class=\"w-full rounded-lg bg-surface-raised px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-brand-500 cursor-pointer\"></form><ul id=\"search-results\" class=\"mt-3 divide-y divide-white/5 rounded-lg bg-surface-raised\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "\"><input type=\"search\" name=\"q\" value=\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var4 string
+			templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.ResolveAttributeValue(data.Query)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/pages/enviar.templ`, Line: 39, Col: 22}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var4)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "\" placeholder=\"Buscar por título ou artista...\" class=\"w-full rounded-lg bg-surface-raised px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-brand-500 cursor-pointer\"></form><ul id=\"search-results\" class=\"mt-3 divide-y divide-white/5 rounded-lg bg-surface-raised\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -77,7 +101,7 @@ func Enviar(data EnviarData) templ.Component {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "</ul>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "</ul>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

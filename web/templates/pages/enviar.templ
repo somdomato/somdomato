@@ -13,6 +13,17 @@ type EnviarData struct {
 	IsAdmin   bool
 }
 
+// enviarSearchTrigger dispara a busca assim que a página carrega quando o
+// campo já vem preenchido (deep link de /pedidos com "?q=" — ver
+// SearchNoResults em components/songlist.templ), além dos triggers normais
+// de digitação.
+func enviarSearchTrigger(query string) string {
+	if query == "" {
+		return "input changed delay:300ms, search"
+	}
+	return "load, input changed delay:300ms, search"
+}
+
 templ Enviar(data EnviarData) {
 	@templates.Layout("Enviar música", &data.Player, data.IsAdmin) {
 		<h1 class="text-xl font-bold">Manda tua música pra rádio</h1>
@@ -21,7 +32,7 @@ templ Enviar(data EnviarData) {
 			— pode levar alguns minutos.
 		</p>
 
-		<form class="mt-4" hx-get="/enviar/buscar" hx-target="#search-results" hx-trigger="input changed delay:300ms, search">
+		<form class="mt-4" hx-get="/enviar/buscar" hx-target="#search-results" hx-trigger={ enviarSearchTrigger(data.Query) }>
 			<input
 				type="search"
 				name="q"

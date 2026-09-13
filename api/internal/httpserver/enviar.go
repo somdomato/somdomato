@@ -43,8 +43,9 @@ func handleEnviar(app *App) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		trackPageView(app, w, r, r.URL.Path)
 		token := ensureCSRFCookie(w, r)
+		query := strings.TrimSpace(r.URL.Query().Get("q"))
 		render(w, pages.Enviar(pages.EnviarData{
-			Player: buildPlayerData(r.Context(), app, config.DefaultGenre), CSRFToken: token, IsAdmin: isAdminRequest(app, r),
+			Player: buildPlayerData(r.Context(), app, config.DefaultGenre), CSRFToken: token, IsAdmin: isAdminRequest(app, r), Query: query,
 		}))
 	}
 }

@@ -1,6 +1,9 @@
 package components
 
-import "time"
+import (
+	"net/url"
+	"time"
+)
 
 type SongListItem struct {
 	ID        int64
@@ -195,6 +198,18 @@ templ SearchResultRow(item SongListItem, csrfToken string) {
 				Pedir
 			</button>
 		</form>
+	</li>
+}
+
+// SearchNoResults aparece quando a busca de pedidos não encontra nada na
+// biblioteca local — oferece um link para pedir o download da mesma busca
+// em /enviar, já com o termo preenchido.
+templ SearchNoResults(query string) {
+	<li class="px-4 py-3 text-sm text-neutral-400">
+		Nenhuma música encontrada para "{ query }".
+		<a href={ templ.URL("/enviar?q=" + url.QueryEscape(query)) } class="text-brand-400 underline hover:text-brand-300">
+			Buscar para baixar
+		</a>
 	</li>
 }
 

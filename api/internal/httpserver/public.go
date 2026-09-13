@@ -302,6 +302,11 @@ func handlePedidosBuscar(app *App) http.HandlerFunc {
 			}
 		}
 
+		if len(results) == 0 && len(query) >= 2 {
+			_ = components.SearchNoResults(query).Render(r.Context(), w)
+			return
+		}
+
 		for _, item := range results {
 			_ = components.SearchResultRow(item, token).Render(r.Context(), w)
 		}
