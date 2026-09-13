@@ -302,9 +302,9 @@ func PlayerBar(data PlayerData) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var13 string
-		templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.ResolveAttributeValue("Som do Mato · " + data.Genre.Label())
+		templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.ResolveAttributeValue(data.Genre.RadioName())
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/components/player.templ`, Line: 121, Col: 151}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/components/player.templ`, Line: 121, Col: 135}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var13)
 		if templ_7745c5c3_Err != nil {
@@ -558,9 +558,9 @@ func GenreSwitcher(active config.Genre, options []GenreOption) templ.Component {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var25 string
-				templ_7745c5c3_Var25, templ_7745c5c3_Err = templ.ResolveAttributeValue("Som do Mato · " + opt.Genre.Label())
+				templ_7745c5c3_Var25, templ_7745c5c3_Err = templ.ResolveAttributeValue(opt.Genre.RadioName())
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/components/player.templ`, Line: 348, Col: 130}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/components/player.templ`, Line: 348, Col: 114}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var25)
 				if templ_7745c5c3_Err != nil {
@@ -573,7 +573,7 @@ func GenreSwitcher(active config.Genre, options []GenreOption) templ.Component {
 				var templ_7745c5c3_Var26 string
 				templ_7745c5c3_Var26, templ_7745c5c3_Err = templ.JoinStringErrs(opt.Genre.Label())
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/components/player.templ`, Line: 348, Col: 161}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/components/player.templ`, Line: 348, Col: 145}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var26))
 				if templ_7745c5c3_Err != nil {
@@ -615,9 +615,9 @@ func GenreSwitcher(active config.Genre, options []GenreOption) templ.Component {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var29 string
-				templ_7745c5c3_Var29, templ_7745c5c3_Err = templ.ResolveAttributeValue("Som do Mato · " + opt.Genre.Label())
+				templ_7745c5c3_Var29, templ_7745c5c3_Err = templ.ResolveAttributeValue(opt.Genre.RadioName())
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/components/player.templ`, Line: 350, Col: 130}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/components/player.templ`, Line: 350, Col: 114}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var29)
 				if templ_7745c5c3_Err != nil {
@@ -630,7 +630,7 @@ func GenreSwitcher(active config.Genre, options []GenreOption) templ.Component {
 				var templ_7745c5c3_Var30 string
 				templ_7745c5c3_Var30, templ_7745c5c3_Err = templ.JoinStringErrs(opt.Genre.Label())
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/components/player.templ`, Line: 350, Col: 152}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/components/player.templ`, Line: 350, Col: 136}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var30))
 				if templ_7745c5c3_Err != nil {

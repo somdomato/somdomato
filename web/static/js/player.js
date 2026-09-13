@@ -326,6 +326,12 @@ document.addEventListener("change", (event) => {
 		playerRoot.dispatchEvent(new CustomEvent("sdm:genre-changed"));
 	}
 
+	// O botão de compartilhar guarda o gênero atual em data-genre — sem
+	// atualizar aqui, o link/texto compartilhado continuaria apontando para
+	// a rádio de quando a página carregou, não para a que está tocando.
+	const shareRoot = document.querySelector("[data-share]");
+	if (shareRoot) shareRoot.dataset.genre = select.value;
+
 	const nowPlaying = document.getElementById("now-playing");
 	if (!nowPlaying) return;
 

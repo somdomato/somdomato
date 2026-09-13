@@ -118,7 +118,7 @@ templ PlayerBar(data PlayerData) {
 			@NowPlayingCard(data.Now)
 		</div>
 
-		<div class="flex shrink-0 items-center gap-3" data-player data-stream-url={ data.StreamURL } data-radio-name={ "Som do Mato · " + data.Genre.Label() }>
+		<div class="flex shrink-0 items-center gap-3" data-player data-stream-url={ data.StreamURL } data-radio-name={ data.Genre.RadioName() }>
 			<div class="relative">
 				<button
 					type="button"
@@ -345,9 +345,9 @@ templ GenreSwitcher(active config.Genre, options []GenreOption) {
 		>
 			for _, opt := range options {
 				if opt.Genre == active {
-					<option value={ string(opt.Genre) } data-stream-url={ opt.StreamURL } data-radio-name={ "Som do Mato · " + opt.Genre.Label() } selected>{ opt.Genre.Label() }</option>
+					<option value={ string(opt.Genre) } data-stream-url={ opt.StreamURL } data-radio-name={ opt.Genre.RadioName() } selected>{ opt.Genre.Label() }</option>
 				} else {
-					<option value={ string(opt.Genre) } data-stream-url={ opt.StreamURL } data-radio-name={ "Som do Mato · " + opt.Genre.Label() }>{ opt.Genre.Label() }</option>
+					<option value={ string(opt.Genre) } data-stream-url={ opt.StreamURL } data-radio-name={ opt.Genre.RadioName() }>{ opt.Genre.Label() }</option>
 				}
 			}
 		</select>

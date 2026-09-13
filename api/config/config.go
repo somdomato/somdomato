@@ -45,6 +45,16 @@ func (g Genre) Label() string {
 	return string(g)
 }
 
+// RadioName é o nome de exibição da rádio para este gênero. A stream
+// "geral" é a rádio principal e não leva sufixo — só as demais mostram
+// "Som do Mato · <Label>".
+func (g Genre) RadioName() string {
+	if g == GenreGeral {
+		return "Som do Mato"
+	}
+	return "Som do Mato · " + g.Label()
+}
+
 func IsValidGenre(g string) bool {
 	for _, v := range AllGenres {
 		if string(v) == g {

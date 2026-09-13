@@ -240,7 +240,8 @@ func handleEnviarBaixar(app *App) http.HandlerFunc {
 		activeJobs.Add(1)
 
 		clientIP := clientIP(r)
-		go runDownloadJob(app, job, jobID, trackID, title, artist, thumbnail, clientIP)
+		isAdmin := isAdminRequest(app, r)
+		go runDownloadJob(app, job, jobID, trackID, title, artist, thumbnail, clientIP, isAdmin)
 
 		render(w, components.EnviarJobStarted(jobID, title, artist))
 	}
@@ -250,7 +251,7 @@ func handleEnviarBaixar(app *App) http.HandlerFunc {
 // disparou já respondeu antes dela terminar, então usa um contexto próprio
 // (não o da requisição, que seria cancelado no fim do handler) com um
 // timeout generoso.
-func runDownloadJob(app *App, job *downloadJob, jobID, trackID, title, artist, thumbnail, clientIP string) {
+func runDownloadJob(app *App, job *downloadJob, jobID, trackID, title, artist, thumbnail, clientIP string, isAdmin bool) {
 	defer func() {
 		activeJobs.Add(-1)
 		job.finish()
@@ -273,7 +274,7 @@ func runDownloadJob(app *App, job *downloadJob, jobID, trackID, title, artist, t
 	})
 	if err != nil {
 		app.Log.Warn("download deezer falhou", "track_id", trackID, "ip", clientIP, "error", err)
-		job.publish(renderFragment(ctx, components.EnviarError(title, artist, downloadErrorMessage(err))))
+		job.publish(renderFragment(ctx, components.EnviarError(title, artist, downloadErrorMessage(err, isAdmin))))
 		return
 	}
 
@@ -289,7 +290,19 @@ func runDownloadJob(app *App, job *downloadJob, jobID, trackID, title, artist, t
 	job.publish(renderFragment(ctx, components.EnviarDone(result.Title, result.Artist)))
 }
 
-func downloadErrorMessage(err error) string {
+// downloadErrorMessage monta a mensagem exibida no lugar da linha de
+// progresso. Para admins (isAdmin), anexa o erro original — útil para
+// diagnosticar falhas sem precisar ir atrás de logs — enquanto usuários
+// comuns veem só a mensagem genérica.
+func downloadErrorMessage(err error, isAdmin bool) string {
+	msg := genericDownloadErrorMessage(err)
+	if isAdmin {
+		return fmt.Sprintf("%s (%v)", msg, err)
+	}
+	return msg
+}
+
+func genericDownloadErrorMessage(err error) string {
 	switch {
 	case errors.Is(err, deezerdl.ErrTooLong):
 		return fmt.Sprintf("música maior que %d minutos", deezerdl.MaxDurationSeconds/60)
