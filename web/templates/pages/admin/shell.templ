@@ -33,6 +33,7 @@ templ Shell(title string, active string, player *components.PlayerData) {
 			</div>
 		</div>
 		@confirmDialog()
+		@songEditDialog()
 		<script src={ "/static/js/admin.js?v=" + web.AssetVersion() }></script>
 	}
 }
@@ -48,6 +49,22 @@ templ confirmDialog() {
 				<button type="button" data-confirm-no class="rounded-lg px-3 py-2 text-sm text-neutral-300 hover:bg-white/5">Cancelar</button>
 				<button type="button" data-confirm-yes class="rounded-lg bg-red-600 px-3 py-2 text-sm font-semibold text-white hover:bg-red-500">Confirmar</button>
 			</div>
+		</div>
+	</dialog>
+}
+
+// songEditDialog é o <dialog> vazio que recebe, via htmx, o fragmento
+// SongEditFields ao clicar em "Editar" na lista de músicas (ver
+// SongsTable). Fica montado uma vez no Shell; o conteúdo troca a cada
+// abertura (ver static/js/admin.js para abrir/fechar).
+templ songEditDialog() {
+	<dialog id="song-edit-dialog" class="w-[92vw] max-w-lg rounded-2xl border border-white/10 bg-surface-raised p-0 text-neutral-100 backdrop:bg-black/70 backdrop:backdrop-blur-sm">
+		<div class="flex items-center justify-between border-b border-white/10 px-5 py-3">
+			<h2 class="text-sm font-semibold">Editar música</h2>
+			<button type="button" data-modal-close aria-label="Fechar" class="text-neutral-400 hover:text-neutral-100">✕</button>
+		</div>
+		<div id="song-edit-dialog-content" class="modal-scroll max-h-[75vh] overflow-y-auto p-5">
+			<!-- preenchido via hx-get ao abrir -->
 		</div>
 	</dialog>
 }

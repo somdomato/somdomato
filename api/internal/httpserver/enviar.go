@@ -30,12 +30,23 @@ import (
 var (
 	enviarSearchLimiter   = newIPRateLimiter(20, time.Minute)
 	enviarDownloadLimiter = newIPRateLimiter(5, time.Hour)
+	// enviarDownloadGlobalLimiter protege a conta Deezer em si (não um IP
+	// específico): admins pulam o limite por IP acima (útil ao testar o
+	// site), mas continuam contando aqui, junto com todo mundo — assim a
+	// soma de downloads de admin + usuários públicos não pode ultrapassar o
+	// teto que a conta Deezer tolera, mesmo que nenhum IP individual estoure.
+	enviarDownloadGlobalLimiter = newIPRateLimiter(45, time.Hour)
 )
+
+// enviarDownloadGlobalKey é a única chave usada em enviarDownloadGlobalLimiter
+// — ipRateLimiter é genérico por string, então reaproveitamos a mesma
+// estrutura para um contador global em vez de um por IP.
+const enviarDownloadGlobalKey = "global"
 
 func registerEnviarRoutes(mux *http.ServeMux, app *App) {
 	mux.HandleFunc("GET /enviar", handleEnviar(app))
 	mux.HandleFunc("GET /enviar/buscar", withRateLimit(enviarSearchLimiter, handleEnviarBuscar(app)))
-	mux.HandleFunc("POST /enviar/baixar", withRateLimit(enviarDownloadLimiter, requireCSRF(handleEnviarBaixar(app))))
+	mux.HandleFunc("POST /enviar/baixar", requireCSRF(handleEnviarBaixar(app)))
 	mux.HandleFunc("GET /enviar/progresso/{jobId}", handleEnviarProgresso(app))
 }
 
@@ -226,6 +237,19 @@ func handleEnviarBaixar(app *App) http.HandlerFunc {
 			http.Error(w, "dados inválidos", http.StatusBadRequest)
 			return
 		}
+		// Checado aqui (em vez de em middleware, como enviarSearchLimiter) para
+		// poder renderizar EnviarBaixarError — um 429 puro de middleware chega
+		// antes do handler e o htmx não troca o conteúdo do alvo em respostas
+		// não-2xx por padrão, então o usuário não via mensagem nenhuma.
+		isAdmin := isAdminRequest(app, r)
+		if !isAdmin && !enviarDownloadLimiter.Allow(clientIP(r)) {
+			render(w, components.EnviarBaixarError(trackID, title, artist, "limite de downloads atingido — tente novamente mais tarde"))
+			return
+		}
+		if !enviarDownloadGlobalLimiter.Allow(enviarDownloadGlobalKey) {
+			render(w, components.EnviarBaixarError(trackID, title, artist, "limite de downloads atingido — tente novamente mais tarde"))
+			return
+		}
 		if app.Deezer == nil {
 			render(w, components.EnviarBaixarError(trackID, title, artist, "download de músicas está desativado no momento"))
 			return
@@ -241,7 +265,6 @@ func handleEnviarBaixar(app *App) http.HandlerFunc {
 		activeJobs.Add(1)
 
 		clientIP := clientIP(r)
-		isAdmin := isAdminRequest(app, r)
 		go runDownloadJob(app, job, jobID, trackID, title, artist, thumbnail, clientIP, isAdmin)
 
 		render(w, components.EnviarJobStarted(jobID, title, artist))

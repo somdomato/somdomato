@@ -223,6 +223,23 @@ func handleAdminSongEditForm(app *App) http.HandlerFunc {
 			return
 		}
 		token := ensureCSRFCookie(w, r)
+
+		if isHXRequest(r) {
+			// Aberto a partir do modal em /admin/musicas: devolve só o
+			// fragmento do formulário, carregando junto o estado de
+			// busca/paginação da lista (ver songEditQueryString) pra que o
+			// POST de salvar devolva a tabela no mesmo lugar.
+			perPage, _ := strconv.Atoi(r.URL.Query().Get("per_page"))
+			page, _ := strconv.Atoi(r.URL.Query().Get("page"))
+			pageInfo := admintpl.SongsPageInfo{
+				Query:   r.URL.Query().Get("q"),
+				PerPage: perPage,
+				Page:    page,
+			}
+			render(w, admintpl.SongEditFields(*song, token, pageInfo, true))
+			return
+		}
+
 		player := buildPlayerData(r.Context(), app, config.DefaultGenre)
 		render(w, admintpl.SongEdit(*song, token, &player))
 	}
@@ -267,6 +284,36 @@ func handleAdminSongUpdate(app *App) http.HandlerFunc {
 		if err := app.Songs.Update(r.Context(), id, in); err != nil {
 			app.Log.Error("atualizando música", "error", err)
 			http.Error(w, "erro interno", http.StatusInternalServerError)
+			return
+		}
+
+		if r.FormValue("modal") == "1" {
+			// Salvo a partir do modal: devolve a tabela atualizada no mesmo
+			// estado de busca/paginação em que o admin estava (ver
+			// songEditQueryString) e dispara o fechamento do <dialog> via
+			// HX-Trigger (ver static/js/admin.js).
+			query := r.FormValue("q")
+			perPage, _ := strconv.Atoi(r.FormValue("per_page"))
+			page, _ := strconv.Atoi(r.FormValue("page"))
+			if page < 1 {
+				page = 1
+			}
+			offset := 0
+			if perPage > 0 {
+				offset = (page - 1) * perPage
+			}
+			list, err := app.Songs.ListPaged(r.Context(), query, perPage, offset)
+			if err != nil {
+				app.Log.Error("listando músicas (admin)", "error", err)
+			}
+			total, err := app.Songs.CountFiltered(r.Context(), query)
+			if err != nil {
+				app.Log.Error("contando músicas (admin)", "error", err)
+			}
+			pageInfo := admintpl.SongsPageInfo{Query: query, PerPage: perPage, Page: page, Total: total}
+			token := ensureCSRFCookie(w, r)
+			w.Header().Set("HX-Trigger", "songSaved")
+			render(w, admintpl.SongsTable(list, token, pageInfo))
 			return
 		}
 		http.Redirect(w, r, "/admin/musicas", http.StatusSeeOther)

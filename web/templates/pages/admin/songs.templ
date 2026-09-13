@@ -1,7 +1,9 @@
 package admin
 
 import (
+	"net/url"
 	"path/filepath"
+	"strconv"
 
 	"github.com/somdomato/somdomato/api/config"
 	"github.com/somdomato/somdomato/api/models"
@@ -39,6 +41,28 @@ templ SongsList(songsList []models.Song, query, csrfToken string, page SongsPage
 			@SongsTable(songsList, csrfToken, page)
 		</div>
 	}
+}
+
+// songEditQueryString carrega o estado atual de busca/paginação da lista
+// para dentro do link "Editar", para que o fragmento do modal (e o POST de
+// salvar) devolvam a tabela na mesma página/posição em que o admin estava.
+func songEditQueryString(page SongsPageInfo) string {
+	v := url.Values{}
+	v.Set("q", page.Query)
+	v.Set("per_page", strconv.Itoa(page.PerPage))
+	v.Set("page", strconv.Itoa(page.Page))
+	return v.Encode()
+}
+
+// rotationOptionLabel exibe o peso numérico ao lado do nome da rotação, já
+// que é isso que de fato controla a chance de a música ser sorteada pelo
+// AutoDJ (ver config.RotationWeights e internal/rotation.WeightedPickAndRemove).
+func rotationOptionLabel(r string) string {
+	weight, ok := config.RotationWeights[config.RotationType(r)]
+	if !ok {
+		return r
+	}
+	return r + " (peso " + strconv.Itoa(weight) + ")"
 }
 
 templ songsPerPageOption(value int, label string, current int) {
@@ -93,7 +117,12 @@ templ SongsTable(songsList []models.Song, csrfToken string, page SongsPageInfo) 
 					<td class="px-3 py-2">{ s.Rotation }</td>
 					<td class="px-3 py-2">
 						<div class="flex items-center justify-end gap-3">
-							<a href={ templ.URL("/admin/musicas/" + itoa64(s.ID)) } class="text-neutral-300 hover:underline">Editar</a>
+							<button
+								type="button"
+								hx-get={ "/admin/musicas/" + itoa64(s.ID) + "?" + songEditQueryString(page) }
+								hx-target="#song-edit-dialog-content"
+								class="text-neutral-300 hover:underline"
+							>Editar</button>
 							<form hx-post={ "/admin/musicas/" + itoa64(s.ID) + "/tocar" } hx-swap="none">
 								<input type="hidden" name="csrf_token" value={ csrfToken }/>
 								<button type="submit" class="text-brand-300 hover:underline">Tocar</button>
@@ -140,106 +169,147 @@ templ SongsTable(songsList []models.Song, csrfToken string, page SongsPageInfo) 
 	}
 }
 
+// SongEdit é a página completa de edição, usada como fallback acessível
+// (navegação direta a /admin/musicas/{id}, sem JS). A edição do dia a dia
+// acontece no modal (ver SongEditFields + songEditDialog em shell.templ).
 templ SongEdit(s models.Song, csrfToken string, player *components.PlayerData) {
 	@Shell("Editar música", "songs", player) {
 		<h1 class="text-xl font-bold">Editar música</h1>
-		<div class="mt-4 flex max-w-md items-start gap-4">
-			<img
-				src={ songCoverSrc(s.Cover) }
-				alt="Capa atual"
-				class="h-24 w-24 shrink-0 rounded-lg object-cover bg-surface-raised"
-			/>
-			<div class="flex-1 space-y-2">
-				<form
-					method="POST"
-					action={ templ.SafeURL("/admin/musicas/" + itoa64(s.ID) + "/capa") }
-					enctype="multipart/form-data"
-					class="space-y-2"
-				>
-					<input type="hidden" name="csrf_token" value={ csrfToken }/>
-					<input type="file" name="cover" accept="image/*" required class="block w-full text-xs"/>
-					<button type="submit" class="rounded-lg bg-surface-raised px-3 py-1.5 text-xs font-semibold hover:bg-surface-raised/70">Enviar capa</button>
-				</form>
-				if s.Cover != "" {
-					<form method="POST" action={ templ.SafeURL("/admin/musicas/" + itoa64(s.ID) + "/capa/remover") }>
-						<input type="hidden" name="csrf_token" value={ csrfToken }/>
-						<button type="submit" class="text-xs text-red-400 hover:underline">Remover capa</button>
-					</form>
-				}
-			</div>
+		<div class="mt-4 max-w-md">
+			@SongEditFields(s, csrfToken, SongsPageInfo{}, false)
 		</div>
-		<form method="POST" action={ templ.SafeURL("/admin/musicas/" + itoa64(s.ID)) } hx-boost="true" class="mt-4 max-w-md space-y-3">
-			<input type="hidden" name="csrf_token" value={ csrfToken }/>
-			<label class="block text-sm">
-				Título
-				<input type="text" name="title" value={ s.Title } class="mt-1 w-full rounded-lg bg-surface-raised px-3 py-2"/>
-			</label>
-			<label class="block text-sm">
-				Artista
-				<input type="text" name="artist" value={ s.Artist } class="mt-1 w-full rounded-lg bg-surface-raised px-3 py-2"/>
-			</label>
-			<label class="block text-sm">
-				Nome do arquivo
-				<input type="text" name="filename" value={ filepath.Base(s.Path) } class="mt-1 w-full rounded-lg bg-surface-raised px-3 py-2 font-mono text-xs"/>
-				<span class="mt-1 block text-xs text-neutral-500">Renomeia o arquivo em disco (fica na mesma pasta). Título e artista também são gravados nas tags ID3 do arquivo.</span>
-			</label>
-			<label class="block text-sm">
-				Gênero
-				<span class="relative mt-1 block">
-					<select name="genre" class="w-full appearance-none rounded-lg bg-surface-raised py-2 pl-3 pr-9">
-						for _, g := range config.AllGenres {
-							if string(g) == s.Genre {
-								<option value={ string(g) } selected>{ g.Label() }</option>
-							} else {
-								<option value={ string(g) }>{ g.Label() }</option>
-							}
-						}
-					</select>
-					@components.SelectArrow()
-				</span>
-			</label>
-			<label class="block text-sm">
-				Rotação
-				<span class="relative mt-1 block">
-					<select name="rotation" class="w-full appearance-none rounded-lg bg-surface-raised py-2 pl-3 pr-9">
-						for _, r := range []string{"inativo", "ultraleve", "leve", "normal", "pesado", "ultrapesada"} {
-							if r == s.Rotation {
-								<option value={ r } selected>{ r }</option>
-							} else {
-								<option value={ r }>{ r }</option>
-							}
-						}
-					</select>
-					@components.SelectArrow()
-				</span>
-			</label>
-			<div class="text-sm">
-				<span class="block">Horários (AutoDJ)</span>
-				<span class="mt-1 block text-xs text-neutral-500">Nenhum ou todos marcados = toca em qualquer horário. Não afeta pedidos, só o AutoDJ.</span>
-				<div class="mt-2 flex flex-wrap gap-3">
-					<label class="flex items-center gap-1.5">
-						<input type="checkbox" name="time_slots" value="1" checked?={ s.TimeSlots&int(config.SlotMadrugada) != 0 }/>
-						Madrugada
-					</label>
-					<label class="flex items-center gap-1.5">
-						<input type="checkbox" name="time_slots" value="2" checked?={ s.TimeSlots&int(config.SlotManha) != 0 }/>
-						Manhã
-					</label>
-					<label class="flex items-center gap-1.5">
-						<input type="checkbox" name="time_slots" value="4" checked?={ s.TimeSlots&int(config.SlotTarde) != 0 }/>
-						Tarde
-					</label>
-					<label class="flex items-center gap-1.5">
-						<input type="checkbox" name="time_slots" value="8" checked?={ s.TimeSlots&int(config.SlotNoite) != 0 }/>
-						Noite
-					</label>
-				</div>
-			</div>
-			<label class="flex items-center gap-2 text-sm">
-				<input type="checkbox" name="allowed_in_general" checked?={ s.AllowedInGeneral }/>
-				Permitir no Geral
-			</label>
-			<button type="submit" class="rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white">Salvar</button>
+	}
+}
+
+// SongEditFields é o formulário de edição em si — usado tanto pela página
+// de fallback (SongEdit) quanto pelo fragmento carregado dentro do modal
+// (ver handleAdminSongEditForm). inModal controla o alvo/comportamento do
+// submit: dentro do modal, o POST devolve a tabela atualizada (preservando
+// busca/página/scroll) e fecha o diálogo; fora dele, é uma navegação normal.
+templ SongEditFields(s models.Song, csrfToken string, page SongsPageInfo, inModal bool) {
+	<div class="flex items-start gap-4">
+		<img
+			src={ songCoverSrc(s.Cover) }
+			alt="Capa atual"
+			class="h-24 w-24 shrink-0 rounded-lg object-cover bg-surface-raised"
+		/>
+		<div class="flex-1 space-y-2">
+			<form
+				method="POST"
+				action={ templ.SafeURL("/admin/musicas/" + itoa64(s.ID) + "/capa") }
+				enctype="multipart/form-data"
+				class="space-y-2"
+			>
+				<input type="hidden" name="csrf_token" value={ csrfToken }/>
+				<input type="file" name="cover" accept="image/*" required class="block w-full text-xs"/>
+				<button type="submit" class="rounded-lg bg-surface-raised px-3 py-1.5 text-xs font-semibold hover:bg-surface-raised/70">Enviar capa</button>
+			</form>
+			if s.Cover != "" {
+				<form method="POST" action={ templ.SafeURL("/admin/musicas/" + itoa64(s.ID) + "/capa/remover") }>
+					<input type="hidden" name="csrf_token" value={ csrfToken }/>
+					<button type="submit" class="text-xs text-red-400 hover:underline">Remover capa</button>
+				</form>
+			}
+		</div>
+	</div>
+	if inModal {
+		<form
+			method="POST"
+			action={ templ.SafeURL("/admin/musicas/" + itoa64(s.ID)) }
+			hx-post={ "/admin/musicas/" + itoa64(s.ID) }
+			hx-target="#songs-table"
+			hx-swap="innerHTML"
+			class="mt-4 space-y-3"
+		>
+			<input type="hidden" name="modal" value="1"/>
+			<input type="hidden" name="q" value={ page.Query }/>
+			<input type="hidden" name="per_page" value={ strconv.Itoa(page.PerPage) }/>
+			<input type="hidden" name="page" value={ strconv.Itoa(page.Page) }/>
+			@songEditFormBody(s, csrfToken)
+		</form>
+	} else {
+		<form
+			method="POST"
+			action={ templ.SafeURL("/admin/musicas/" + itoa64(s.ID)) }
+			hx-boost="true"
+			class="mt-4 space-y-3"
+		>
+			@songEditFormBody(s, csrfToken)
 		</form>
 	}
+}
+
+templ songEditFormBody(s models.Song, csrfToken string) {
+	<input type="hidden" name="csrf_token" value={ csrfToken }/>
+	<label class="block text-sm">
+			Título
+			<input type="text" name="title" value={ s.Title } class="mt-1 w-full rounded-lg bg-surface-raised px-3 py-2"/>
+		</label>
+		<label class="block text-sm">
+			Artista
+			<input type="text" name="artist" value={ s.Artist } class="mt-1 w-full rounded-lg bg-surface-raised px-3 py-2"/>
+		</label>
+		<label class="block text-sm">
+			Nome do arquivo
+			<input type="text" name="filename" value={ filepath.Base(s.Path) } class="mt-1 w-full rounded-lg bg-surface-raised px-3 py-2 font-mono text-xs"/>
+			<span class="mt-1 block text-xs text-neutral-500">Renomeia o arquivo em disco (fica na mesma pasta). Título e artista também são gravados nas tags ID3 do arquivo.</span>
+		</label>
+		<label class="block text-sm">
+			Gênero
+			<span class="relative mt-1 block">
+				<select name="genre" class="w-full appearance-none rounded-lg bg-surface-raised py-2 pl-3 pr-9">
+					for _, g := range config.AllGenres {
+						if string(g) == s.Genre {
+							<option value={ string(g) } selected>{ g.Label() }</option>
+						} else {
+							<option value={ string(g) }>{ g.Label() }</option>
+						}
+					}
+				</select>
+				@components.SelectArrow()
+			</span>
+		</label>
+		<label class="block text-sm">
+			Rotação (peso no sorteio do AutoDJ)
+			<span class="relative mt-1 block">
+				<select name="rotation" class="w-full appearance-none rounded-lg bg-surface-raised py-2 pl-3 pr-9">
+					for _, r := range []string{"inativo", "ultraleve", "leve", "normal", "pesado", "ultrapesada"} {
+						if r == s.Rotation {
+							<option value={ r } selected>{ rotationOptionLabel(r) }</option>
+						} else {
+							<option value={ r }>{ rotationOptionLabel(r) }</option>
+						}
+					}
+				</select>
+				@components.SelectArrow()
+			</span>
+			<span class="mt-1 block text-xs text-neutral-500">Peso maior = mais chance de ser sorteada. Restrições de música/artista repetido continuam sendo respeitadas.</span>
+		</label>
+		<div class="text-sm">
+			<span class="block">Horários (AutoDJ)</span>
+			<span class="mt-1 block text-xs text-neutral-500">Nenhum ou todos marcados = toca em qualquer horário. Não afeta pedidos, só o AutoDJ.</span>
+			<div class="mt-2 flex flex-wrap gap-3">
+				<label class="flex items-center gap-1.5">
+					<input type="checkbox" name="time_slots" value="1" checked?={ s.TimeSlots&int(config.SlotMadrugada) != 0 }/>
+					Madrugada
+				</label>
+				<label class="flex items-center gap-1.5">
+					<input type="checkbox" name="time_slots" value="2" checked?={ s.TimeSlots&int(config.SlotManha) != 0 }/>
+					Manhã
+				</label>
+				<label class="flex items-center gap-1.5">
+					<input type="checkbox" name="time_slots" value="4" checked?={ s.TimeSlots&int(config.SlotTarde) != 0 }/>
+					Tarde
+				</label>
+				<label class="flex items-center gap-1.5">
+					<input type="checkbox" name="time_slots" value="8" checked?={ s.TimeSlots&int(config.SlotNoite) != 0 }/>
+					Noite
+				</label>
+			</div>
+		</div>
+		<label class="flex items-center gap-2 text-sm">
+			<input type="checkbox" name="allowed_in_general" checked?={ s.AllowedInGeneral }/>
+			Permitir no Geral
+		</label>
+	<button type="submit" class="rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white">Salvar</button>
 }
