@@ -213,6 +213,28 @@ templ SongEdit(s models.Song, csrfToken string, player *components.PlayerData) {
 					@components.SelectArrow()
 				</span>
 			</label>
+			<div class="text-sm">
+				<span class="block">Horários (AutoDJ)</span>
+				<span class="mt-1 block text-xs text-neutral-500">Nenhum ou todos marcados = toca em qualquer horário. Não afeta pedidos, só o AutoDJ.</span>
+				<div class="mt-2 flex flex-wrap gap-3">
+					<label class="flex items-center gap-1.5">
+						<input type="checkbox" name="time_slots" value="1" checked?={ s.TimeSlots&int(config.SlotMadrugada) != 0 }/>
+						Madrugada
+					</label>
+					<label class="flex items-center gap-1.5">
+						<input type="checkbox" name="time_slots" value="2" checked?={ s.TimeSlots&int(config.SlotManha) != 0 }/>
+						Manhã
+					</label>
+					<label class="flex items-center gap-1.5">
+						<input type="checkbox" name="time_slots" value="4" checked?={ s.TimeSlots&int(config.SlotTarde) != 0 }/>
+						Tarde
+					</label>
+					<label class="flex items-center gap-1.5">
+						<input type="checkbox" name="time_slots" value="8" checked?={ s.TimeSlots&int(config.SlotNoite) != 0 }/>
+						Noite
+					</label>
+				</div>
+			</div>
 			<label class="flex items-center gap-2 text-sm">
 				<input type="checkbox" name="allowed_in_general" checked?={ s.AllowedInGeneral }/>
 				Permitir no Geral

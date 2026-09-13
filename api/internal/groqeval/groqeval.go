@@ -150,7 +150,7 @@ func (e *Evaluator) approve(ctx context.Context, upload *models.Upload, genre, r
 		Genre:     genre,
 	})
 	if err != nil || !created {
-		rejectReason := reason
+		rejectReason := "música já existe no catálogo"
 		if err != nil {
 			rejectReason = fmt.Sprintf("aprovada mas falhou ao inserir no catálogo: %v", err)
 		}

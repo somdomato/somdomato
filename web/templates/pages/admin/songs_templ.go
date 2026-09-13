@@ -912,17 +912,57 @@ func SongEdit(s models.Song, csrfToken string, player *components.PlayerData) te
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 72, "</span></label> <label class=\"flex items-center gap-2 text-sm\"><input type=\"checkbox\" name=\"allowed_in_general\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 72, "</span></label><div class=\"text-sm\"><span class=\"block\">Horários (AutoDJ)</span> <span class=\"mt-1 block text-xs text-neutral-500\">Nenhum ou todos marcados = toca em qualquer horário. Não afeta pedidos, só o AutoDJ.</span><div class=\"mt-2 flex flex-wrap gap-3\"><label class=\"flex items-center gap-1.5\"><input type=\"checkbox\" name=\"time_slots\" value=\"1\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			if s.AllowedInGeneral {
+			if s.TimeSlots&int(config.SlotMadrugada) != 0 {
 				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 73, " checked")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 74, "> Permitir no Geral</label> <button type=\"submit\" class=\"rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white\">Salvar</button></form>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 74, "> Madrugada</label> <label class=\"flex items-center gap-1.5\"><input type=\"checkbox\" name=\"time_slots\" value=\"2\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			if s.TimeSlots&int(config.SlotManha) != 0 {
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 75, " checked")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 76, "> Manhã</label> <label class=\"flex items-center gap-1.5\"><input type=\"checkbox\" name=\"time_slots\" value=\"4\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			if s.TimeSlots&int(config.SlotTarde) != 0 {
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 77, " checked")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 78, "> Tarde</label> <label class=\"flex items-center gap-1.5\"><input type=\"checkbox\" name=\"time_slots\" value=\"8\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			if s.TimeSlots&int(config.SlotNoite) != 0 {
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 79, " checked")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 80, "> Noite</label></div></div><label class=\"flex items-center gap-2 text-sm\"><input type=\"checkbox\" name=\"allowed_in_general\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			if s.AllowedInGeneral {
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 81, " checked")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 82, "> Permitir no Geral</label> <button type=\"submit\" class=\"rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white\">Salvar</button></form>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

@@ -236,8 +236,17 @@ func handleAdminSongUpdate(app *App) http.HandlerFunc {
 			http.NotFound(w, r)
 			return
 		}
-		timeSlots, _ := strconv.Atoi(r.FormValue("time_slots"))
+		if err := r.ParseForm(); err != nil {
+			http.Error(w, "formulário inválido", http.StatusBadRequest)
+			return
+		}
+		timeSlots := 0
+		for _, v := range r.Form["time_slots"] {
+			bit, _ := strconv.Atoi(v)
+			timeSlots |= bit
+		}
 		if timeSlots == 0 {
+			// Sem horário nenhum marcado (ou todos) = sem restrição de horário.
 			timeSlots = int(config.SlotTodos)
 		}
 		title := r.FormValue("title")
