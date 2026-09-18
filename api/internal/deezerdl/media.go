@@ -7,7 +7,9 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
+	"net/url"
 )
 
 type media struct {
@@ -101,12 +103,34 @@ func mediaStream(ctx context.Context, sess *session, m *media) (io.ReadCloser, i
 
 	resp, err := streamingClient.Do(req)
 	if err != nil {
+		// TODO(debug): remover após diagnosticar o 403 em prod.
+		slog.Error("deezerdl: falha ao conectar no stream", "url_host", redactedHost(m.url()), "error", err)
 		return nil, 0, err
 	}
 	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(io.LimitReader(resp.Body, 2048))
 		resp.Body.Close()
+		// TODO(debug): remover após diagnosticar o 403 em prod.
+		slog.Error("deezerdl: status inesperado no stream",
+			"status", resp.StatusCode,
+			"url_host", redactedHost(m.url()),
+			"format", m.format(),
+			"response_headers", resp.Header,
+			"response_body", string(body),
+		)
 		return nil, 0, fmt.Errorf("deezerdl: status inesperado no stream: %d", resp.StatusCode)
 	}
 
 	return resp.Body, resp.ContentLength, nil
+}
+
+// redactedHost devolve só esquema+host+path da URL de stream, sem os
+// parâmetros de query (que carregam tokens sensíveis) — seguro para log.
+func redactedHost(rawURL string) string {
+	u, err := url.Parse(rawURL)
+	if err != nil {
+		return "url inválida"
+	}
+	u.RawQuery = ""
+	return u.String()
 }
