@@ -35,6 +35,7 @@ func registerAdminRoutes(mux *http.ServeMux, app *App) {
 	mux.HandleFunc("POST /admin/logout", requireAuth(app, handleAdminLogout(app)))
 
 	mux.HandleFunc("GET /admin", requireAuth(app, handleAdminDashboard(app)))
+	mux.HandleFunc("POST /admin/streams/{genre}/pular", requireAuth(app, requireCSRF(handleAdminSkipStream(app))))
 
 	mux.HandleFunc("GET /admin/musicas", requirePermission(app, rbac.PermSongsEditTags, handleAdminSongsList(app)))
 	mux.HandleFunc("GET /admin/musicas/{id}", requirePermission(app, rbac.PermSongsEditTags, handleAdminSongEditForm(app)))
@@ -146,8 +147,45 @@ func handleAdminDashboard(app *App) http.HandlerFunc {
 			})
 		}
 
+		token := ensureCSRFCookie(w, r)
 		player := buildPlayerData(ctx, app, config.DefaultGenre)
-		render(w, admintpl.Dashboard(rows, &player))
+		render(w, admintpl.Dashboard(rows, token, &player))
+	}
+}
+
+// handleAdminSkipStream pula a faixa atual do AutoDJ da stream pedindo ao
+// Liquidsoap; a próxima faixa é a do pedido (se houver) ou a do AutoDJ, pois
+// /internal/music já prioriza a fila de pedidos.
+func handleAdminSkipStream(app *App) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		genre := r.PathValue("genre")
+		if !config.IsValidGenre(genre) {
+			http.NotFound(w, r)
+			return
+		}
+
+		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+		defer cancel()
+		endpoint := app.Cfg.LiquidsoapSkipURL + "?genre=" + url.QueryEscape(genre)
+		req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, nil)
+		if err != nil {
+			app.Log.Error("montando requisição de skip", "error", err)
+			http.Error(w, "erro interno", http.StatusInternalServerError)
+			return
+		}
+		resp, err := http.DefaultClient.Do(req)
+		if err != nil {
+			app.Log.Error("pulando faixa no liquidsoap", "error", err, "genre", genre)
+			http.Error(w, "não foi possível falar com o Liquidsoap", http.StatusBadGateway)
+			return
+		}
+		defer resp.Body.Close()
+		if resp.StatusCode != http.StatusOK {
+			app.Log.Error("liquidsoap recusou o skip", "status", resp.StatusCode, "genre", genre)
+			http.Error(w, "o Liquidsoap recusou o skip", http.StatusBadGateway)
+			return
+		}
+		w.WriteHeader(http.StatusNoContent)
 	}
 }
 

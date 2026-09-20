@@ -136,6 +136,10 @@ type Config struct {
 	// Icecast (para poll de ouvintes)
 	IcecastStatusURL string
 
+	// LiquidsoapSkipURL é o endpoint HTTP do Liquidsoap (harbor) que pula a
+	// faixa atual do AutoDJ de uma stream: POST <url>?genre=X.
+	LiquidsoapSkipURL string
+
 	// Rádio
 	StreamBaseURL string // ex: https://radio.somdomato.com
 
@@ -164,6 +168,7 @@ func Load() (*Config, error) {
 		JWTSecret:          os.Getenv("JWT_SECRET"),
 		InternalRadioToken: os.Getenv("RADIO_INTERNAL_TOKEN"),
 		IcecastStatusURL:   getEnv("ICECAST_STATUS_URL", "http://localhost:8000/status-json.xsl"),
+		LiquidsoapSkipURL:  getEnv("LIQUIDSOAP_SKIP_URL", "http://127.0.0.1:8081/skip"),
 		StreamBaseURL:      getEnv("STREAM_BASE_URL", "https://radio.somdomato.com"),
 		DeezerARL:          os.Getenv("DEEZER_ARL"),
 		UploadsDir:         getEnv("UPLOADS_DIR", getEnv("MUSIC_PATH", "/var/music/sdm")+"/uploads"),

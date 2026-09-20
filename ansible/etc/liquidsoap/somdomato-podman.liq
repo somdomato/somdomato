@@ -67,11 +67,42 @@ autodj_romantico.on_track(fun (m) -> notify_started("romantico", m))
 
 queue = request.queue(id="manual_queue")
 
-def skip_handler(_, req) =
-  autodj_geral.skip()
-  ignore(req.status_code(200))
-  ignore(req.content_type("text/plain"))
-  ignore(req.html("OK"))
+def skip_genre(genre) =
+  if genre == "geral" then
+    autodj_geral.skip()
+    true
+  elsif genre == "gaucha" then
+    autodj_gaucha.skip()
+    true
+  elsif genre == "modao" then
+    autodj_modao.skip()
+    true
+  elsif genre == "arrocha" then
+    autodj_arrocha.skip()
+    true
+  elsif genre == "romantico" then
+    autodj_romantico.skip()
+    true
+  else
+    false
+  end
+end
+
+# POST /skip?genre=X — pula a faixa atual do AutoDJ da stream (o autodj já
+# inclui os pedidos: a próxima vem de /internal/music, que prioriza a fila
+# de pedidos). Sem `genre` mantém o comportamento antigo (geral).
+def skip_handler(request, response) =
+  genre = list.assoc(default="geral", "genre", request.query)
+  if skip_genre(genre) then
+    log("[#{genre}] Skip solicitado pelo admin")
+    response.status_code(200)
+    response.content_type("text/plain")
+    response.html("OK")
+  else
+    response.status_code(400)
+    response.content_type("text/plain")
+    response.html("genre inválido")
+  end
 end
 
 harbor.http.register(port=8081, method="POST", "/skip", skip_handler)

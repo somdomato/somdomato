@@ -12,7 +12,7 @@ type DashboardRow struct {
 	Listeners int
 }
 
-templ Dashboard(rows []DashboardRow, player *components.PlayerData) {
+templ Dashboard(rows []DashboardRow, csrfToken string, player *components.PlayerData) {
 	@Shell("Painel", "dashboard", player) {
 		<h1 class="text-xl font-bold">Tocando agora</h1>
 		<div class="mt-4 grid gap-3 sm:grid-cols-2">
@@ -21,7 +21,22 @@ templ Dashboard(rows []DashboardRow, player *components.PlayerData) {
 					<p class="text-xs font-semibold uppercase text-brand-300">{ row.Genre.Label() }</p>
 					<p class="mt-1 font-medium">{ row.NowTitle }</p>
 					<p class="text-sm text-neutral-400">{ row.NowArtist }</p>
-					<p class="mt-2 text-xs text-neutral-500">{ itoaInt(row.Listeners) } ouvinte(s)</p>
+					<div class="mt-2 flex items-center justify-between gap-2">
+						<p class="text-xs text-neutral-500">{ itoaInt(row.Listeners) } ouvinte(s)</p>
+						<form
+							hx-post={ "/admin/streams/" + string(row.Genre) + "/pular" }
+							hx-swap="none"
+							hx-disabled-elt="find button"
+							hx-on::after-request="setTimeout(() => location.reload(), 2000)"
+						>
+							<input type="hidden" name="csrf_token" value={ csrfToken }/>
+							<button
+								type="submit"
+								title="Pular para a próxima música (pedido ou AutoDJ)"
+								class="rounded-lg bg-white/5 px-3 py-1 text-xs font-medium text-neutral-200 hover:bg-white/10 disabled:opacity-50"
+							>Pular ⏭</button>
+						</form>
+					</div>
 				</div>
 			}
 		</div>
