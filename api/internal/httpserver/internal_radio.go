@@ -121,12 +121,11 @@ func handleGetMusic(app *App) http.HandlerFunc {
 		}
 
 		// Flush: se havia um "pending" anterior que nunca recebeu on_track,
-		// marca como "skipped" e avisa os clientes conectados via SSE.
-		if stale, err := app.Queue.FlushStalePending(ctx, genre, selected.QueueEntryID); err == nil && stale != nil {
-			broadcastSongChanged(app, components.NowPlaying{
-				ID: stale.SongID, Title: stale.Title, Artist: stale.Artist,
-				Cover: stale.Cover, Genre: stale.Genre,
-			})
+		// marca como "skipped". NÃO publica song-changed: essa faixa nunca
+		// tocou (ex.: sobrou de um restart do Liquidsoap no deploy), então
+		// exibi-la como "tocando agora" mostraria uma música que não está no ar.
+		if _, err := app.Queue.FlushStalePending(ctx, genre, selected.QueueEntryID); err != nil {
+			app.Log.Error("flush de pending órfã", "error", err, "genre", genre)
 		}
 
 		app.Jingles.IncrementSongCounter(genre)

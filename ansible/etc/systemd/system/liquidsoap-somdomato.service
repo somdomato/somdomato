@@ -1,7 +1,12 @@
 [Unit]
 Description=Liquidsoap - Som do Mato
 After=network.target icecast2-somdomato.service somdomato-api.service
-Requires=icecast2-somdomato.service somdomato-api.service
+Requires=icecast2-somdomato.service
+# Wants (não Requires) na API: com Requires, `systemctl restart somdomato-api`
+# (feito a cada deploy) propaga o restart para este serviço, derrubando as
+# streams e re-sorteando faixas em todas as rádios. Com Wants o Liquidsoap
+# continua tocando durante o deploy e só re-tenta a API se ela falhar.
+Wants=somdomato-api.service
 
 [Service]
 Type=simple
