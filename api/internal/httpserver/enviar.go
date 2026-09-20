@@ -76,9 +76,19 @@ const maxSearchCacheEntries = 2000
 // busca quanto em cada "carregar mais".
 const searchPageSize = 15
 
+// rawSearchPageSize e maxRawSearchPages: o filtro de gênero descarta parte
+// dos resultados, então cada página é completada buscando mais resultados
+// brutos (até esse teto, para não estourar a cota do Deezer).
+const (
+	rawSearchPageSize = 25
+	maxRawSearchPages = 3
+)
+
 type searchCacheEntry struct {
-	results []deezerdl.SearchResult
-	expires time.Time
+	results    []deezerdl.SearchResult
+	nextOffset int
+	hasMore    bool
+	expires    time.Time
 }
 
 var (
@@ -96,7 +106,7 @@ func handleEnviarBuscar(app *App) http.HandlerFunc {
 			return
 		}
 
-		results, err := searchDeezerCached(r.Context(), query, offset)
+		results, nextOffset, hasMore, err := searchDeezerCached(r.Context(), query, offset)
 		if err != nil {
 			app.Log.Error("buscando no deezer", "error", err)
 			return
@@ -109,10 +119,8 @@ func handleEnviarBuscar(app *App) http.HandlerFunc {
 			_ = components.EnviarResultRow(item, token).Render(r.Context(), w)
 		}
 
-		// Página cheia sugere que há mais resultados — oferece "carregar
-		// mais"; se a API devolveu menos que uma página, essa é a última.
-		if len(results) == searchPageSize {
-			_ = components.EnviarLoadMore(query, offset+searchPageSize).Render(r.Context(), w)
+		if hasMore {
+			_ = components.EnviarLoadMore(query, nextOffset).Render(r.Context(), w)
 		}
 	}
 }
@@ -128,29 +136,76 @@ func parseNonNegativeInt(s string) int {
 	return n
 }
 
-func searchDeezerCached(ctx context.Context, query string, offset int) ([]deezerdl.SearchResult, error) {
+// searchDeezerCached devolve uma página de resultados sertanejos. offset é
+// o índice na busca bruta do Deezer (não na lista filtrada); nextOffset é
+// de onde a próxima página continua e hasMore indica se vale oferecer
+// "carregar mais".
+func searchDeezerCached(ctx context.Context, query string, offset int) (results []deezerdl.SearchResult, nextOffset int, hasMore bool, err error) {
 	cacheKey := fmt.Sprintf("%s|%d", query, offset)
 
 	searchCacheMu.Lock()
 	if entry, ok := searchCache[cacheKey]; ok && time.Now().Before(entry.expires) {
 		searchCacheMu.Unlock()
-		return entry.results, nil
+		return entry.results, entry.nextOffset, entry.hasMore, nil
 	}
 	searchCacheMu.Unlock()
 
-	results, err := deezerdl.Search(ctx, query, searchPageSize, offset)
+	results, nextOffset, hasMore, err = searchSertanejo(ctx, query, offset)
 	if err != nil {
-		return nil, err
+		return nil, 0, false, err
 	}
 
 	searchCacheMu.Lock()
 	if len(searchCache) >= maxSearchCacheEntries {
 		searchCache = map[string]searchCacheEntry{}
 	}
-	searchCache[cacheKey] = searchCacheEntry{results: results, expires: time.Now().Add(searchCacheTTL)}
+	searchCache[cacheKey] = searchCacheEntry{
+		results: results, nextOffset: nextOffset, hasMore: hasMore,
+		expires: time.Now().Add(searchCacheTTL),
+	}
 	searchCacheMu.Unlock()
 
-	return results, nil
+	return results, nextOffset, hasMore, nil
+}
+
+// searchSertanejo busca no Deezer e mantém só faixas de álbuns Sertanejo,
+// consumindo páginas brutas até encher searchPageSize resultados.
+func searchSertanejo(ctx context.Context, query string, offset int) ([]deezerdl.SearchResult, int, bool, error) {
+	results := make([]deezerdl.SearchResult, 0, searchPageSize)
+	idx := offset
+
+	for page := 0; page < maxRawSearchPages; page++ {
+		raw, err := deezerdl.Search(ctx, query, rawSearchPageSize, idx)
+		if err != nil {
+			// Já temos resultados de páginas anteriores: melhor mostrá-los.
+			if len(results) > 0 {
+				return results, idx, true, nil
+			}
+			return nil, 0, false, err
+		}
+
+		kept := deezerdl.FilterSertanejo(ctx, raw)
+		keptIDs := make(map[string]struct{}, len(kept))
+		for _, k := range kept {
+			keptIDs[k.ID] = struct{}{}
+		}
+
+		for i, res := range raw {
+			if _, ok := keptIDs[res.ID]; !ok {
+				continue
+			}
+			results = append(results, res)
+			if len(results) == searchPageSize {
+				return results, idx + i + 1, true, nil
+			}
+		}
+
+		idx += len(raw)
+		if len(raw) < rawSearchPageSize {
+			return results, idx, false, nil
+		}
+	}
+	return results, idx, true, nil
 }
 
 // --- Download em background com progresso via SSE ---------------------------

@@ -20,6 +20,10 @@ type SearchResult struct {
 	Artist    string `json:"artist"`
 	Thumbnail string `json:"thumbnail"`
 	Duration  int    `json:"duration"`
+	// AlbumID serve só para consultar o gênero (Deezer não expõe gênero na
+	// faixa); não vai para o cliente.
+	AlbumID  int64 `json:"-"`
+	ArtistID int64 `json:"-"`
 }
 
 // Search consulta a busca pública do Deezer — sem custo de autenticação,
@@ -62,9 +66,11 @@ func Search(ctx context.Context, query string, limit, offset int) ([]SearchResul
 			Title    string `json:"title"`
 			Duration int    `json:"duration"`
 			Artist   struct {
+				ID   int64  `json:"id"`
 				Name string `json:"name"`
 			} `json:"artist"`
 			Album struct {
+				ID          int64  `json:"id"`
 				CoverMedium string `json:"cover_medium"`
 				CoverSmall  string `json:"cover_small"`
 			} `json:"album"`
@@ -90,6 +96,8 @@ func Search(ctx context.Context, query string, limit, offset int) ([]SearchResul
 			Artist:    item.Artist.Name,
 			Thumbnail: thumb,
 			Duration:  item.Duration,
+			AlbumID:   item.Album.ID,
+			ArtistID:  item.Artist.ID,
 		})
 	}
 	return results, nil

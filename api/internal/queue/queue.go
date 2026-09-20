@@ -556,7 +556,8 @@ func applyProtections(songs []models.Song, blocked protections.Blocked, excludeI
 // slot atual é insuficiente) — nunca é completado com músicas de outros
 // gêneros só para bater a quantidade da fila. Cair para o catálogo inteiro
 // (qualquer gênero) só acontece quando o estilo não tem NENHUMA música
-// própria cadastrada.
+// própria cadastrada ou quando, com as proteções aplicadas, não sobra
+// nenhuma candidata (catálogo minúsculo) — para a rádio nunca ficar muda.
 func (s *Store) pickAutoDJCandidates(ctx context.Context, genre string, excludeIDs map[int64]bool, needed int) ([]models.Song, error) {
 	blocked, err := s.protections.GetBlockedSongIDs(ctx, genre)
 	if err != nil {
@@ -593,5 +594,17 @@ func (s *Store) pickAutoDJCandidates(ctx context.Context, genre string, excludeI
 	if len(relaxed) > len(pool) {
 		pool = relaxed
 	}
-	return pool, nil
+	if len(pool) > 0 {
+		return pool, nil
+	}
+
+	// Catálogo próprio pequeno demais: com poucas músicas/artistas, as
+	// proteções (últimas 20 tocadas, 10 artistas recentes) esgotam o gênero
+	// e a rádio ficaria muda. Só nesse caso — pool totalmente vazio — usa o
+	// catálogo inteiro, ainda respeitando as proteções.
+	all, err := s.fetchAllSongsPool(ctx, true)
+	if err != nil {
+		return nil, err
+	}
+	return applyProtections(all, blocked, excludeIDs), nil
 }
