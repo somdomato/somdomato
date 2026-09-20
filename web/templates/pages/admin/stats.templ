@@ -137,35 +137,76 @@ templ StatsContent(data StatsData) {
 	</div>
 }
 
+// pagerItems devolve as entradas do paginador "three dots": as 3 primeiras
+// páginas, a atual com seus vizinhos e as 3 últimas. Lacunas viram 0
+// (reticências).
+func pagerItems(current, total int) []int {
+	show := map[int]bool{}
+	for _, p := range []int{1, 2, 3, current - 1, current, current + 1, total - 2, total - 1, total} {
+		if p >= 1 && p <= total {
+			show[p] = true
+		}
+	}
+	items := []int{}
+	last := 0
+	for p := 1; p <= total; p++ {
+		if !show[p] {
+			continue
+		}
+		if last != 0 && p > last+1 {
+			items = append(items, 0)
+		}
+		items = append(items, p)
+		last = p
+	}
+	return items
+}
+
+templ pagerLink(period models.Period, target int, label, title string) {
+	<a
+		href={ templ.URL(statsURL(period, target)) }
+		hx-get={ statsURL(period, target) }
+		hx-target="#stats-content"
+		hx-swap="outerHTML"
+		hx-push-url="true"
+		title={ title }
+		aria-label={ title }
+		class="rounded-lg bg-surface-raised px-3 py-1 hover:bg-surface-raised/70"
+	>{ label }</a>
+}
+
+templ pagerDisabled(label string) {
+	<span class="rounded-lg px-3 py-1 text-neutral-600">{ label }</span>
+}
+
 templ pagesPager(period models.Period, page PagesPageInfo) {
 	if page.TotalPages() > 1 {
-		<div class="mt-4 flex items-center justify-center gap-3 text-sm">
+		<nav class="mt-4 flex flex-wrap items-center justify-center gap-1.5 text-sm" aria-label="Paginação">
+			<span class="mr-1 text-neutral-400">Páginas:</span>
 			if page.Page > 1 {
-				<a
-					href={ templ.URL(statsURL(period, page.Page-1)) }
-					hx-get={ statsURL(period, page.Page-1) }
-					hx-target="#stats-content"
-					hx-swap="outerHTML"
-					hx-push-url="true"
-					class="rounded-lg bg-surface-raised px-3 py-1 hover:bg-surface-raised/70"
-				>Anterior</a>
+				@pagerLink(period, 1, "«", "Primeira página")
+				@pagerLink(period, page.Page-1, "‹", "Página anterior")
 			} else {
-				<span class="rounded-lg px-3 py-1 text-neutral-600">Anterior</span>
+				@pagerDisabled("«")
+				@pagerDisabled("‹")
 			}
-			<span class="text-neutral-400">Página { strconv.Itoa(page.Page) } de { strconv.Itoa(page.TotalPages()) }</span>
+			for _, n := range pagerItems(page.Page, page.TotalPages()) {
+				if n == 0 {
+					<span class="px-1 text-neutral-500">…</span>
+				} else if n == page.Page {
+					<span class="rounded-lg bg-brand-600 px-3 py-1 font-medium text-white" aria-current="page">{ strconv.Itoa(n) }</span>
+				} else {
+					@pagerLink(period, n, strconv.Itoa(n), "Página "+strconv.Itoa(n))
+				}
+			}
 			if page.Page < page.TotalPages() {
-				<a
-					href={ templ.URL(statsURL(period, page.Page+1)) }
-					hx-get={ statsURL(period, page.Page+1) }
-					hx-target="#stats-content"
-					hx-swap="outerHTML"
-					hx-push-url="true"
-					class="rounded-lg bg-surface-raised px-3 py-1 hover:bg-surface-raised/70"
-				>Próxima</a>
+				@pagerLink(period, page.Page+1, "›", "Próxima página")
+				@pagerLink(period, page.TotalPages(), "»", "Última página")
 			} else {
-				<span class="rounded-lg px-3 py-1 text-neutral-600">Próxima</span>
+				@pagerDisabled("›")
+				@pagerDisabled("»")
 			}
-		</div>
+		</nav>
 	}
 }
 
