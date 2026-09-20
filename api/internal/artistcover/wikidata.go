@@ -15,8 +15,11 @@ import (
 // ("image") — resolvida por fim como um arquivo do Wikimedia Commons.
 // Até 4 requisições HTTP em cadeia, por isso só roda depois de Deezer/iTunes
 // falharem, e respeita o rate limit do MusicBrainz via rateLimitMusicBrainz.
-func (r *Resolver) fetchWikidata(ctx context.Context, artistName string) (string, error) {
-	mbid, err := r.musicbrainzSearchArtist(ctx, artistName)
+//
+// Como o nome sozinho é ambíguo, com titles o artista do MusicBrainz é
+// confirmado pelas músicas do catálogo (ver musicbrainzSearchArtist).
+func (r *Resolver) fetchWikidata(ctx context.Context, artistName string, titles []string) (string, error) {
+	mbid, err := r.musicbrainzSearchArtist(ctx, artistName, titles)
 	if err != nil || mbid == "" {
 		return "", err
 	}
@@ -34,26 +37,71 @@ func (r *Resolver) fetchWikidata(ctx context.Context, artistName string) (string
 	return "https://commons.wikimedia.org/wiki/Special:FilePath/" + url.PathEscape(filename) + "?width=600", nil
 }
 
-func (r *Resolver) musicbrainzSearchArtist(ctx context.Context, artistName string) (string, error) {
+// musicbrainzSearchArtist devolve o MBID do artista. Com titles, procura as
+// músicas como gravações de artistName e usa o artista delas (de nome exato);
+// sem nenhuma confirmação, devolve "" em vez de chutar um homônimo. Sem
+// titles, aceita o primeiro resultado cujo nome seja exatamente artistName.
+func (r *Resolver) musicbrainzSearchArtist(ctx context.Context, artistName string, titles []string) (string, error) {
+	want := normalizeArtistName(artistName)
+
+	if len(titles) > 0 {
+		for i, title := range titles {
+			if i == maxVerifyTitles {
+				break
+			}
+			u := url.URL{Scheme: "https", Host: "musicbrainz.org", Path: "/ws/2/recording/"}
+			q := u.Query()
+			q.Set("query", "recording:"+searchQuote(title)+" AND artist:"+searchQuote(artistName))
+			q.Set("fmt", "json")
+			q.Set("limit", "5")
+			u.RawQuery = q.Encode()
+
+			var data struct {
+				Recordings []struct {
+					ArtistCredit []struct {
+						Artist struct {
+							ID   string `json:"id"`
+							Name string `json:"name"`
+						} `json:"artist"`
+					} `json:"artist-credit"`
+				} `json:"recordings"`
+			}
+			if err := r.musicbrainzGet(ctx, u.String(), &data); err != nil {
+				return "", err
+			}
+			for _, rec := range data.Recordings {
+				for _, ac := range rec.ArtistCredit {
+					if normalizeArtistName(ac.Artist.Name) == want {
+						return ac.Artist.ID, nil
+					}
+				}
+			}
+		}
+		return "", nil
+	}
+
 	u := url.URL{Scheme: "https", Host: "musicbrainz.org", Path: "/ws/2/artist/"}
 	q := u.Query()
-	q.Set("query", "artist:"+artistName)
+	q.Set("query", "artist:"+searchQuote(artistName))
 	q.Set("fmt", "json")
-	q.Set("limit", "1")
+	q.Set("limit", "5")
 	u.RawQuery = q.Encode()
 
 	var data struct {
 		Artists []struct {
-			ID string `json:"id"`
+			ID   string `json:"id"`
+			Name string `json:"name"`
 		} `json:"artists"`
 	}
 	if err := r.musicbrainzGet(ctx, u.String(), &data); err != nil {
 		return "", err
 	}
-	if len(data.Artists) == 0 {
-		return "", nil
+	for _, a := range data.Artists {
+		if normalizeArtistName(a.Name) == want {
+			return a.ID, nil
+		}
 	}
-	return data.Artists[0].ID, nil
+	return "", nil
 }
 
 func (r *Resolver) musicbrainzWikidataID(ctx context.Context, mbid string) (string, error) {

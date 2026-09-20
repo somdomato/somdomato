@@ -71,6 +71,29 @@ func (s *Store) ListByArtist(ctx context.Context, artist string) ([]models.Song,
 	return scanAll(rows)
 }
 
+// ListTitlesByArtist devolve os títulos (distintos) das músicas do artista,
+// as mais pedidas primeiro — usado por artistcover.Resolver pra confirmar
+// nas fontes externas que a capa encontrada é do artista certo.
+func (s *Store) ListTitlesByArtist(ctx context.Context, artist string) ([]string, error) {
+	rows, err := s.pool.Query(ctx, `
+		SELECT title FROM songs WHERE artist = $1 AND title <> ''
+		GROUP BY title ORDER BY max(requests_count) DESC, title LIMIT 5`, artist)
+	if err != nil {
+		return nil, fmt.Errorf("listando títulos do artista: %w", err)
+	}
+	defer rows.Close()
+
+	var out []string
+	for rows.Next() {
+		var t string
+		if err := rows.Scan(&t); err != nil {
+			return nil, err
+		}
+		out = append(out, t)
+	}
+	return out, rows.Err()
+}
+
 // ListTopRequested retorna as músicas mais pedidas (requests_count > 0),
 // ordenadas por contagem decrescente — usado no bloco "Top 10" da home.
 // ListTopRequested inclui, além dos campos padrão, quantas vezes cada

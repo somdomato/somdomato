@@ -45,10 +45,16 @@ const musicbrainzMinInterval = 1100 * time.Millisecond
 
 const musicbrainzUserAgent = "SomDoMatoBot/1.0 (+https://somdomato.com)"
 
+// TitleLister devolve os títulos das músicas de um artista no catálogo —
+// usados pra confirmar, nas fontes externas, que a capa encontrada é do
+// artista certo e não de um homônimo (ver fetchDeezer).
+type TitleLister func(ctx context.Context, artistName string) ([]string, error)
+
 type Resolver struct {
 	Store      *Store // exportado: handlers HTTP leem o estado atual via app.ArtistCoverResolver.Store
 	coversDir  string
 	cwebpPath  string // "" = cwebp ausente, feature vira no-op
+	titles     TitleLister
 	log        *slog.Logger
 	httpClient *http.Client
 
@@ -62,7 +68,7 @@ func (r *Resolver) CwebpPath() string {
 	return r.cwebpPath
 }
 
-func NewResolver(cfg *config.Config, store *Store, log *slog.Logger) *Resolver {
+func NewResolver(cfg *config.Config, store *Store, titles TitleLister, log *slog.Logger) *Resolver {
 	cwebpPath, err := exec.LookPath("cwebp")
 	if err != nil {
 		log.Warn("artistcover: binário cwebp não encontrado no PATH, busca de capa de artista desligada (instale o pacote 'webp')")
@@ -72,6 +78,7 @@ func NewResolver(cfg *config.Config, store *Store, log *slog.Logger) *Resolver {
 		Store:      store,
 		coversDir:  cfg.CoversDir,
 		cwebpPath:  cwebpPath,
+		titles:     titles,
 		log:        log,
 		httpClient: &http.Client{Timeout: 10 * time.Second},
 	}
@@ -140,18 +147,19 @@ func (r *Resolver) FindCandidates(ctx context.Context, artistName string) []Cand
 		return nil
 	}
 
+	titles := r.catalogTitles(ctx, artistName)
 	var out []Candidate
-	if cands, err := deezerCandidates(ctx, r.httpClient, artistName); err != nil {
+	if cands, err := deezerCandidates(ctx, r.httpClient, artistName, titles); err != nil {
 		r.log.Warn("artistcover: candidatos deezer falharam", "artist", artistName, "error", err)
 	} else {
 		out = append(out, cands...)
 	}
-	if cands, err := itunesCandidates(ctx, r.httpClient, artistName); err != nil {
+	if cands, err := itunesCandidates(ctx, r.httpClient, artistName, titles); err != nil {
 		r.log.Warn("artistcover: candidatos itunes falharam", "artist", artistName, "error", err)
 	} else {
 		out = append(out, cands...)
 	}
-	if imageURL, err := r.fetchWikidata(ctx, artistName); err != nil {
+	if imageURL, err := r.fetchWikidata(ctx, artistName, titles); err != nil {
 		r.log.Warn("artistcover: candidato wikidata falhou", "artist", artistName, "error", err)
 	} else if imageURL != "" {
 		out = append(out, Candidate{Source: "wikidata", ThumbURL: imageURL, FullURL: imageURL})
@@ -188,20 +196,35 @@ func (r *Resolver) ApplyCandidate(ctx context.Context, artistName, source, fullU
 	return path, nil
 }
 
+// catalogTitles devolve as músicas do artista no catálogo; falha na consulta
+// só vira log e a busca segue sem confirmação por título.
+func (r *Resolver) catalogTitles(ctx context.Context, artistName string) []string {
+	if r.titles == nil {
+		return nil
+	}
+	titles, err := r.titles(ctx, artistName)
+	if err != nil {
+		r.log.Warn("artistcover: listando músicas do artista", "artist", artistName, "error", err)
+		return nil
+	}
+	return titles
+}
+
 func (r *Resolver) findImageURL(ctx context.Context, artistName string) (imageURL, source string) {
-	if u, err := fetchDeezer(ctx, r.httpClient, artistName); err != nil {
+	titles := r.catalogTitles(ctx, artistName)
+	if u, err := fetchDeezer(ctx, r.httpClient, artistName, titles); err != nil {
 		r.log.Warn("artistcover: busca no deezer falhou", "artist", artistName, "error", err)
 	} else if u != "" {
 		return u, "deezer"
 	}
 
-	if u, err := fetchITunes(ctx, r.httpClient, artistName); err != nil {
+	if u, err := fetchITunes(ctx, r.httpClient, artistName, titles); err != nil {
 		r.log.Warn("artistcover: busca no itunes falhou", "artist", artistName, "error", err)
 	} else if u != "" {
 		return u, "itunes"
 	}
 
-	if u, err := r.fetchWikidata(ctx, artistName); err != nil {
+	if u, err := r.fetchWikidata(ctx, artistName, titles); err != nil {
 		r.log.Warn("artistcover: busca no wikidata falhou", "artist", artistName, "error", err)
 	} else if u != "" {
 		return u, "wikidata"

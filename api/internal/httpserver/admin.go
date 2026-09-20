@@ -681,13 +681,17 @@ func handleAdminArtistCoverChoose(app *App) http.HandlerFunc {
 			return
 		}
 
-		if _, err := app.ArtistCoverResolver.ApplyCandidate(r.Context(), artist, source, chosenURL); err != nil {
+		newPath, err := app.ArtistCoverResolver.ApplyCandidate(r.Context(), artist, source, chosenURL)
+		if err != nil {
 			app.Log.Error("aplicando capa candidata", "artist", artist, "error", err)
 			http.Error(w, "não foi possível salvar a capa escolhida", http.StatusInternalServerError)
 			return
 		}
 
-		if existing != nil && existing.CoverPath != nil && *existing.CoverPath != "" {
+		// O caminho é determinístico por artista (…/<slug>/cover.webp), então
+		// normalmente o arquivo antigo é o mesmo que acabou de ser
+		// sobrescrito — apagá-lo aqui deixaria a capa nova quebrada.
+		if existing != nil && existing.CoverPath != nil && *existing.CoverPath != "" && *existing.CoverPath != newPath {
 			removeArtistCoverFile(app, *existing.CoverPath)
 		}
 

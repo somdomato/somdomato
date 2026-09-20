@@ -60,7 +60,7 @@ func main() {
 	uploadsStore := uploads.NewStore(pool)
 	analyticsStore := analytics.NewStore(pool)
 	artistCoverStore := artistcover.NewStore(pool)
-	artistCoverResolver := artistcover.NewResolver(cfg, artistCoverStore, log)
+	artistCoverResolver := artistcover.NewResolver(cfg, artistCoverStore, songsStore.ListTitlesByArtist, log)
 
 	var deezerClient *deezerdl.Client
 	if cfg.DeezerARL != "" {
