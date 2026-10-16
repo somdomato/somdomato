@@ -90,16 +90,6 @@ type ConfirmedCurrent struct {
 	RequestedAt      *time.Time
 }
 
-type FlushedStale struct {
-	SongID       int64
-	Title        string
-	Artist       string
-	Cover        string
-	Genre        string
-	WasRequested bool
-	SelectedAt   time.Time
-}
-
 type Jingle struct {
 	ID       int64
 	Title    string

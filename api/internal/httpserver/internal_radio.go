@@ -120,8 +120,9 @@ func handleGetMusic(app *App) http.HandlerFunc {
 			return
 		}
 
-		// Flush: se havia um "pending" anterior que nunca recebeu on_track,
-		// marca como "skipped". NÃO publica song-changed: essa faixa nunca
+		// Flush: pendings anteriores que nunca receberam on_track viram
+		// "skipped" (preservando a recém-servida, cujo on_track pode estar
+		// chegando agora — ver FlushStalePending). NÃO publica song-changed: essa faixa nunca
 		// tocou (ex.: sobrou de um restart do Liquidsoap no deploy), então
 		// exibi-la como "tocando agora" mostraria uma música que não está no ar.
 		if _, err := app.Queue.FlushStalePending(ctx, genre, selected.QueueEntryID); err != nil {

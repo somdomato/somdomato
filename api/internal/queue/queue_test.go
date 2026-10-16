@@ -167,7 +167,69 @@ func TestSetCurrent_OnlyOneCurrentPerGenre(t *testing.T) {
 	}
 }
 
-func TestFlushStalePending_MarksOrphanAsSkipped(t *testing.T) {
+// insertPending cria uma linha "pending" servida há `ago` atrás.
+func insertPending(t *testing.T, pool *pgxpool.Pool, songID int64, ago string) int64 {
+	t.Helper()
+	var id int64
+	err := pool.QueryRow(context.Background(), `
+		INSERT INTO queue_entries (genre, song_id, status, source, served_at)
+		VALUES ('geral', $1, 'pending', 'autodj', now() - $2::interval) RETURNING id`, songID, ago).Scan(&id)
+	if err != nil {
+		t.Fatalf("inserindo pending: %v", err)
+	}
+	return id
+}
+
+func statusOf(t *testing.T, pool *pgxpool.Pool, id int64) string {
+	t.Helper()
+	var status string
+	if err := pool.QueryRow(context.Background(), `SELECT status FROM queue_entries WHERE id = $1`, id).Scan(&status); err != nil {
+		t.Fatalf("lendo status: %v", err)
+	}
+	return status
+}
+
+func TestFlushStalePending_KeepsInFlightAndSkipsOlder(t *testing.T) {
+	pool := testPool(t)
+	store := queue.NewStore(pool, protections.NewStore(pool))
+	ctx := context.Background()
+
+	songA := insertSong(t, pool, "SongA", "ArtistA", "geral", "normal")
+	songB := insertSong(t, pool, "SongB", "ArtistB", "geral", "normal")
+	songC := insertSong(t, pool, "SongC", "ArtistC", "geral", "normal")
+
+	orphan := insertPending(t, pool, songA, "10 minutes")  // nunca tocou
+	inFlight := insertPending(t, pool, songB, "4 minutes") // on_track a caminho
+	next := insertPending(t, pool, songC, "0 seconds")     // recém-servida
+
+	flushed, err := store.FlushStalePending(ctx, "geral", next)
+	if err != nil {
+		t.Fatalf("FlushStalePending: %v", err)
+	}
+	if flushed != 1 {
+		t.Fatalf("esperava 1 pending descartada, obteve %d", flushed)
+	}
+	if got := statusOf(t, pool, orphan); got != "skipped" {
+		t.Fatalf("pending órfã: esperava skipped, obteve %s", got)
+	}
+	if got := statusOf(t, pool, inFlight); got != "pending" {
+		t.Fatalf("pending em trânsito: esperava continuar pending, obteve %s", got)
+	}
+
+	// O on_track da faixa em trânsito chega depois do prefetch: deve
+	// promover a própria linha, não criar uma "admin" avulsa.
+	if _, err := store.SetCurrent(ctx, queue.SetCurrentParams{Genre: "geral", SongID: songB}); err != nil {
+		t.Fatalf("SetCurrent: %v", err)
+	}
+	if got := statusOf(t, pool, inFlight); got != "current" {
+		t.Fatalf("faixa em trânsito: esperava current, obteve %s", got)
+	}
+	if got := statusOf(t, pool, next); got != "pending" {
+		t.Fatalf("próxima faixa: esperava continuar pending, obteve %s", got)
+	}
+}
+
+func TestSetCurrent_SkipsPendingServedBefore(t *testing.T) {
 	pool := testPool(t)
 	store := queue.NewStore(pool, protections.NewStore(pool))
 	ctx := context.Background()
@@ -175,31 +237,17 @@ func TestFlushStalePending_MarksOrphanAsSkipped(t *testing.T) {
 	songA := insertSong(t, pool, "SongA", "ArtistA", "geral", "normal")
 	songB := insertSong(t, pool, "SongB", "ArtistB", "geral", "normal")
 
-	var pendingA, pendingB int64
-	err := pool.QueryRow(ctx, `
-		INSERT INTO queue_entries (genre, song_id, status, source) VALUES ('geral', $1, 'pending', 'autodj') RETURNING id`, songA).Scan(&pendingA)
-	if err != nil {
-		t.Fatalf("inserindo pending A: %v", err)
-	}
-	err = pool.QueryRow(ctx, `
-		INSERT INTO queue_entries (genre, song_id, status, source) VALUES ('geral', $1, 'pending', 'autodj') RETURNING id`, songB).Scan(&pendingB)
-	if err != nil {
-		t.Fatalf("inserindo pending B: %v", err)
-	}
+	// Ex.: restart do Liquidsoap — A foi servida e nunca tocou; B tocou.
+	orphan := insertPending(t, pool, songA, "5 minutes")
+	playing := insertPending(t, pool, songB, "0 seconds")
 
-	stale, err := store.FlushStalePending(ctx, "geral", pendingB)
-	if err != nil {
-		t.Fatalf("FlushStalePending: %v", err)
+	if _, err := store.SetCurrent(ctx, queue.SetCurrentParams{Genre: "geral", SongID: songB}); err != nil {
+		t.Fatalf("SetCurrent: %v", err)
 	}
-	if stale == nil || stale.SongID != songA {
-		t.Fatalf("esperava flush da música A (pending órfã), obteve %+v", stale)
+	if got := statusOf(t, pool, orphan); got != "skipped" {
+		t.Fatalf("pending anterior: esperava skipped, obteve %s", got)
 	}
-
-	var status string
-	if err := pool.QueryRow(ctx, `SELECT status FROM queue_entries WHERE id = $1`, pendingA).Scan(&status); err != nil {
-		t.Fatalf("lendo status: %v", err)
-	}
-	if status != "skipped" {
-		t.Fatalf("esperava status=skipped para a pending órfã, obteve %s", status)
+	if got := statusOf(t, pool, playing); got != "current" {
+		t.Fatalf("faixa no ar: esperava current, obteve %s", got)
 	}
 }

@@ -89,7 +89,7 @@ func (s *Store) PopNext(ctx context.Context, genre string) (*models.QueueEntry, 
 		return nil, fmt.Errorf("buscando cabeça da fila: %w", err)
 	}
 
-	if _, err := s.pool.Exec(ctx, `UPDATE queue_entries SET status = 'pending' WHERE id = $1`, entry.QueueEntryID); err != nil {
+	if _, err := s.pool.Exec(ctx, `UPDATE queue_entries SET status = 'pending', served_at = clock_timestamp() WHERE id = $1`, entry.QueueEntryID); err != nil {
 		return nil, fmt.Errorf("promovendo para pending: %w", err)
 	}
 	return &entry, nil
@@ -332,12 +332,12 @@ func (s *Store) SetCurrent(ctx context.Context, p SetCurrentParams) (*models.Con
 
 	var pendingID int64
 	var pendingSource string
-	var pendingRequestedAt *time.Time
+	var pendingRequestedAt, pendingServedAt *time.Time
 	hasPending := true
 	err = tx.QueryRow(ctx, `
-		SELECT id, source, requested_at FROM queue_entries
+		SELECT id, source, requested_at, served_at FROM queue_entries
 		WHERE genre = $1 AND status = 'pending' AND song_id = $2
-		ORDER BY id DESC LIMIT 1`, p.Genre, p.SongID).Scan(&pendingID, &pendingSource, &pendingRequestedAt)
+		ORDER BY id DESC LIMIT 1`, p.Genre, p.SongID).Scan(&pendingID, &pendingSource, &pendingRequestedAt, &pendingServedAt)
 	if err == pgx.ErrNoRows {
 		hasPending = false
 	} else if err != nil {
@@ -358,6 +358,16 @@ func (s *Store) SetCurrent(ctx context.Context, p SetCurrentParams) (*models.Con
 		if _, err := tx.Exec(ctx, `
 			UPDATE queue_entries SET status = 'current', started_at = now() WHERE id = $1`, pendingID); err != nil {
 			return nil, fmt.Errorf("promovendo pending para current: %w", err)
+		}
+		// Toda pending servida antes desta nunca vai tocar (o Liquidsoap
+		// toca na ordem em que pede) — ex.: sobrou de um restart.
+		if pendingServedAt != nil {
+			if _, err := tx.Exec(ctx, `
+				UPDATE queue_entries SET status = 'skipped', ended_at = now()
+				WHERE genre = $1 AND status = 'pending'
+				  AND (served_at IS NULL OR served_at < $2)`, p.Genre, *pendingServedAt); err != nil {
+				return nil, fmt.Errorf("descartando pending anteriores: %w", err)
+			}
 		}
 		wasRequested = pendingSource == string(models.SourceRequest)
 		requestedAt = pendingRequestedAt
@@ -388,38 +398,26 @@ func (s *Store) SetCurrent(ctx context.Context, p SetCurrentParams) (*models.Con
 	}, nil
 }
 
-// FlushStalePending marca como "skipped" (nunca confirmada) qualquer linha
-// "pending" órfã do gênero — sobrou de uma seleção anterior cujo on_track
-// nunca chegou antes da próxima música ser selecionada.
-func (s *Store) FlushStalePending(ctx context.Context, genre string, exceptQueueEntryID int64) (*models.FlushedStale, error) {
-	var stale models.FlushedStale
-	var queueEntryID int64
-	var scheduledAt time.Time
-	var source string
-	err := s.pool.QueryRow(ctx, `
-		SELECT qe.id, qe.scheduled_at, qe.source, s.id, s.title, s.artist, `+cover.FallbackSQL+`
-		FROM queue_entries qe
-		JOIN songs s ON s.id = qe.song_id
-		LEFT JOIN artist_covers ac ON ac.artist_name = s.artist
-		WHERE qe.genre = $1 AND qe.status = 'pending' AND qe.id != $2
-		ORDER BY qe.id DESC LIMIT 1`, genre, exceptQueueEntryID).
-		Scan(&queueEntryID, &scheduledAt, &source, &stale.SongID, &stale.Title, &stale.Artist, &stale.Cover)
-	if err == pgx.ErrNoRows {
-		return nil, nil
-	}
+// FlushStalePending marca como "skipped" (nunca confirmadas) as linhas
+// "pending" órfãs do gênero, ao servir exceptQueueEntryID ao Liquidsoap.
+// Preserva a pending servida mais recentemente antes dela: o Liquidsoap pede
+// a próxima faixa no mesmo instante em que a anterior começa a tocar, então
+// essa ainda pode estar com o on_track a caminho. Ela só é descartada aqui
+// na entrega seguinte (ou pelo SetCurrent de uma faixa servida depois dela).
+// Retorna quantas linhas foram descartadas.
+func (s *Store) FlushStalePending(ctx context.Context, genre string, exceptQueueEntryID int64) (int64, error) {
+	tag, err := s.pool.Exec(ctx, `
+		UPDATE queue_entries SET status = 'skipped', ended_at = now()
+		WHERE genre = $1 AND status = 'pending' AND id <> $2
+		  AND id <> (
+		    SELECT id FROM queue_entries
+		    WHERE genre = $1 AND status = 'pending' AND id <> $2
+		    ORDER BY served_at DESC NULLS LAST, id DESC LIMIT 1
+		  )`, genre, exceptQueueEntryID)
 	if err != nil {
-		return nil, fmt.Errorf("buscando pending órfã: %w", err)
+		return 0, fmt.Errorf("descartando pending órfãs: %w", err)
 	}
-
-	if _, err := s.pool.Exec(ctx, `
-		UPDATE queue_entries SET status = 'skipped', ended_at = now() WHERE id = $1`, queueEntryID); err != nil {
-		return nil, fmt.Errorf("marcando pending como skipped: %w", err)
-	}
-
-	stale.Genre = genre
-	stale.WasRequested = source == string(models.SourceRequest)
-	stale.SelectedAt = scheduledAt
-	return &stale, nil
+	return tag.RowsAffected(), nil
 }
 
 func (s *Store) fetchGenrePool(ctx context.Context, genre string, ignoreTimeSlot bool) ([]models.Song, error) {
