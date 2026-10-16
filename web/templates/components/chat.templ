@@ -4,8 +4,14 @@ package components
 // client.json de lá já entra direto no canal #somdomato em modo restrito
 // (sem troca de servidor/canal pelo usuário), então o iframe só precisa da
 // URL raiz — sem parâmetros de query.
+//
+// hx-preserve (com id estável) evita que a troca de rádio pelo
+// GenreSwitcher — que substitui #main-content inteiro — recrie o iframe e
+// recarregue o chat: o htmx 2 reaproveita o nó existente via moveBefore,
+// mantendo a conexão IRC (em navegadores sem moveBefore o iframe ainda
+// recarrega, como antes).
 templ ChatEmbed() {
-	<section class="mb-6 min-w-0">
+	<section id="chat-embed" hx-preserve="true" class="mb-6 min-w-0">
 		<h3 class="mb-2 text-sm font-semibold uppercase tracking-wide text-neutral-400">Chat</h3>
 		<div class="overflow-hidden rounded-lg bg-surface-raised">
 			<iframe

@@ -15,6 +15,8 @@ type source struct {
 	ListenURL    string `json:"listenurl"`
 	Listeners    int    `json:"listeners"`
 	ListenerPeak int    `json:"listener_peak"`
+	Title        string `json:"title"`
+	Artist       string `json:"artist"`
 }
 
 type statusResponse struct {
@@ -28,6 +30,11 @@ type MountpointListeners struct {
 	Label      string `json:"label"`
 	Listeners  int    `json:"listeners"`
 	Peak       int    `json:"peak"`
+	// Title/Artist vêm dos metadados que o Liquidsoap envia ao Icecast —
+	// refletem o que está de fato no ar, mesmo sem linha "current" no banco.
+	// Sem tag de artista, o Icecast costuma trazer "Artista - Título" em Title.
+	Title  string `json:"title,omitempty"`
+	Artist string `json:"artist,omitempty"`
 }
 
 type Snapshot struct {
@@ -85,15 +92,18 @@ func Fetch(ctx context.Context, client *http.Client, statusURL string) Snapshot 
 	for _, g := range config.AllGenres {
 		suffix := "/" + string(g)
 		var listeners, peak int
+		var title, artist string
 		for _, s := range sources {
 			if len(s.ListenURL) >= len(suffix) && s.ListenURL[len(s.ListenURL)-len(suffix):] == suffix {
 				listeners = s.Listeners
 				peak = s.ListenerPeak
+				title, artist = s.Title, s.Artist
 				break
 			}
 		}
 		snapshot.Mountpoints = append(snapshot.Mountpoints, MountpointListeners{
 			Mountpoint: string(g), Label: g.Label(), Listeners: listeners, Peak: peak,
+			Title: title, Artist: artist,
 		})
 		snapshot.Total += listeners
 		snapshot.TotalPeak += peak

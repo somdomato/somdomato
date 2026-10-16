@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/bogem/id3v2/v2"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/somdomato/somdomato/api/config"
 	"github.com/somdomato/somdomato/api/internal/artistcover"
@@ -128,22 +129,32 @@ func handleAdminDashboard(app *App) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		snapshot := icecastclient.Fetch(ctx, http.DefaultClient, app.Cfg.IcecastStatusURL)
-		listenersByGenre := map[string]int{}
+		mounts := map[string]icecastclient.MountpointListeners{}
 		for _, m := range snapshot.Mountpoints {
-			listenersByGenre[m.Mountpoint] = m.Listeners
+			mounts[m.Mountpoint] = m
 		}
 
 		var rows []admintpl.DashboardRow
 		for _, g := range config.AllGenres {
 			var title, artist string
-			_ = app.Pool.QueryRow(ctx, `
+			err := app.Pool.QueryRow(ctx, `
 				SELECT s.title, s.artist FROM queue_entries qe JOIN songs s ON s.id = qe.song_id
 				WHERE qe.genre = $1 AND qe.status = 'current' LIMIT 1`, string(g)).Scan(&title, &artist)
+			if err != nil && !errors.Is(err, pgx.ErrNoRows) {
+				app.Log.Error("dashboard: buscando faixa atual", "error", err, "genre", g)
+			}
+			// Sem linha "current" (ex.: on_track não confirmado, ou a música
+			// foi apagada e levou a linha junto via CASCADE), mostra o que o
+			// Icecast diz estar no ar em vez de um card vazio.
+			if title == "" {
+				m := mounts[string(g)]
+				title, artist = m.Title, m.Artist
+			}
 			if title == "" {
 				title = "—"
 			}
 			rows = append(rows, admintpl.DashboardRow{
-				Genre: g, NowTitle: title, NowArtist: artist, Listeners: listenersByGenre[string(g)],
+				Genre: g, NowTitle: title, NowArtist: artist, Listeners: mounts[string(g)].Listeners,
 			})
 		}
 

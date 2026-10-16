@@ -132,6 +132,14 @@ func (c *Client) Download(ctx context.Context, trackID, uploadsDir string, onPro
 		// está correto e completo, só sem metadados embutidos.
 	}
 
+	// os.CreateTemp cria o .part com modo 0600 e o Rename preserva esse
+	// modo — o Liquidsoap roda com outro usuário e precisaria de leitura,
+	// senão o request falha com "Read permission denied" e a rádio só toca
+	// vinhetas. Feito depois do tagMP3 porque ele regrava o arquivo.
+	if err := os.Chmod(outputPath, 0o644); err != nil {
+		return nil, fmt.Errorf("ajustando permissão do arquivo baixado: %w", err)
+	}
+
 	duration, _ := strconv.Atoi(track.Duration)
 	return &Result{
 		Path:     outputPath,
