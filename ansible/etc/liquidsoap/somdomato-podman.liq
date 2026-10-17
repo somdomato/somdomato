@@ -16,16 +16,16 @@ def next(genre) =
   def request_function() =
     api_url = "#{api_base}/internal/music?genre=#{genre}"
     result = process.read.lines(
-      "curl -s -H 'X-Internal-Token: #{internal_token}' '#{api_url}'"
+      "curl -s --max-time 10 -H 'X-Internal-Token: #{internal_token}' '#{api_url}'"
     )
     json = list.hd(default="", result)
 
-    path = list.hd(default="", process.read.lines("echo '#{json}' | jq -r '.path'"))
-    title = list.hd(default="", process.read.lines("echo '#{json}' | jq -r '.title'"))
-    artist = list.hd(default="", process.read.lines("echo '#{json}' | jq -r '.artist'"))
-    song_id = list.hd(default="", process.read.lines("echo '#{json}' | jq -r '.id'"))
-    was_requested = list.hd(default="0", process.read.lines("echo '#{json}' | jq -r 'if .wasRequested then \"1\" else \"0\" end'"))
-    is_jingle = list.hd(default="0", process.read.lines("echo '#{json}' | jq -r 'if .isJingle then \"1\" else \"0\" end'"))
+    path = list.hd(default="", process.read.lines("printf '%s' #{process.quote(json)} | jq -r '.path'"))
+    title = list.hd(default="", process.read.lines("printf '%s' #{process.quote(json)} | jq -r '.title'"))
+    artist = list.hd(default="", process.read.lines("printf '%s' #{process.quote(json)} | jq -r '.artist'"))
+    song_id = list.hd(default="", process.read.lines("printf '%s' #{process.quote(json)} | jq -r '.id'"))
+    was_requested = list.hd(default="0", process.read.lines("printf '%s' #{process.quote(json)} | jq -r 'if .wasRequested then \"1\" else \"0\" end'"))
+    is_jingle = list.hd(default="0", process.read.lines("printf '%s' #{process.quote(json)} | jq -r 'if .isJingle then \"1\" else \"0\" end'"))
 
     if path == "" or path == "null" then
       log("[#{genre}] Nenhuma música retornada pela API - aguardando 5s")
@@ -47,9 +47,12 @@ def notify_started(genre, m) =
   if song_id != "" and song_id != "null" and is_jingle != "1" then
     api_url = "#{api_base}/internal/music/started?songId=#{song_id}&genre=#{genre}&wasRequested=#{was_requested}"
     log("[#{genre}] Notificando início: songId=#{song_id}")
-    ignore(process.read.lines(
-      "curl -s -X POST -H 'X-Internal-Token: #{internal_token}' '#{api_url}'"
-    ))
+    # Fora do clock: on_track roda na thread de streaming, compartilhada
+    # pelas cinco rádios — um curl bloqueante aqui (API lenta ou reiniciando
+    # no deploy) congelava todas as streams até a API responder.
+    thread.run(fun () -> ignore(process.read.lines(
+      "curl -s --max-time 10 -X POST -H 'X-Internal-Token: #{internal_token}' '#{api_url}'"
+    )))
   end
 end
 
