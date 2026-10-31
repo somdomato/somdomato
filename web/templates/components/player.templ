@@ -2,9 +2,20 @@ package components
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/somdomato/somdomato/api/config"
 )
+
+// songChangedEvents lista "song-changed-<genre>" de todas as rádios, no
+// formato de sse-swap (separado por vírgula) — ver PlayerBar.
+func songChangedEvents() string {
+	names := make([]string, len(config.AllGenres))
+	for i, g := range config.AllGenres {
+		names[i] = "song-changed-" + string(g)
+	}
+	return strings.Join(names, ",")
+}
 
 type NowPlaying struct {
 	ID     int64
@@ -106,11 +117,20 @@ type GenreOption struct {
 // as cinco rádios avançam suas filas de forma independente, e um nome
 // genérico faria o player trocar de música toda vez que QUALQUER rádio
 // confirmasse uma faixa nova — não só a que esta página está tocando.
+//
+// Mesmo assim o card assina as cinco rádios: o header tem hx-preserve e a
+// extensão SSE amarra o listener ao nome do evento só quando o nó é
+// processado, então trocar de rádio pelo <select> não muda a assinatura.
+// Assinando só a rádio do carregamento, quem trocava de "geral" para outra
+// rádio voltava a ver a música da "geral" na próxima troca de faixa dela.
+// player.js descarta (htmx:sseBeforeMessage) os eventos de rádios diferentes
+// de data-genre, que ele atualiza a cada troca.
 templ PlayerBar(data PlayerData) {
 	<div class="flex flex-wrap items-center gap-3 border-t border-white/5 py-2.5 sm:flex-nowrap" sse-connect="/events">
 		<div
 			id="now-playing"
-			sse-swap={ "song-changed-" + string(data.Genre) }
+			data-genre={ string(data.Genre) }
+			sse-swap={ songChangedEvents() }
 			hx-swap="innerHTML"
 			data-htmx-fade
 			class="flex min-w-0 flex-1 items-center gap-3 sm:flex-none"

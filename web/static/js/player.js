@@ -308,6 +308,16 @@ document.querySelectorAll("[data-player]").forEach((root) => {
 	});
 });
 
+// #now-playing assina song-changed de todas as rádios (ver PlayerBar em
+// player.templ); só deixa passar o da rádio selecionada agora.
+document.addEventListener("htmx:sseBeforeMessage", (event) => {
+	const nowPlaying = document.getElementById("now-playing");
+	if (event.target !== nowPlaying) return;
+	if (event.detail.type !== `song-changed-${nowPlaying.dataset.genre}`) {
+		event.preventDefault();
+	}
+});
+
 // Troca de rádio: o <select> (GenreSwitcher) já dispara um hx-get que troca
 // só #main-content (últimas/próximas/top 10) — aqui atualizamos o header
 // (stream do player + capa/faixa atual) sem tocar no <audio> nem recarregar
@@ -335,10 +345,15 @@ document.addEventListener("change", (event) => {
 	const nowPlaying = document.getElementById("now-playing");
 	if (!nowPlaying) return;
 
-	fetch(`/api/now-playing?genre=${encodeURIComponent(select.value)}`)
+	// Passa a aceitar só o song-changed da nova rádio (ver filtro abaixo).
+	const genre = select.value;
+	nowPlaying.dataset.genre = genre;
+
+	fetch(`/api/now-playing?genre=${encodeURIComponent(genre)}`)
 		.then((res) => (res.ok ? res.json() : null))
 		.then((data) => {
-			if (!data) return;
+			// Ignora a resposta se o usuário já trocou de rádio de novo.
+			if (!data || nowPlaying.dataset.genre !== genre) return;
 			const escape = (text) =>
 				String(text ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 			// Espelha components.NowPlayingCard (ver player.templ) — inclui o

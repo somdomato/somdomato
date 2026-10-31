@@ -10,9 +10,20 @@ import templruntime "github.com/a-h/templ/runtime"
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/somdomato/somdomato/api/config"
 )
+
+// songChangedEvents lista "song-changed-<genre>" de todas as rádios, no
+// formato de sse-swap (separado por vírgula) — ver PlayerBar.
+func songChangedEvents() string {
+	names := make([]string, len(config.AllGenres))
+	for i, g := range config.AllGenres {
+		names[i] = "song-changed-" + string(g)
+	}
+	return strings.Join(names, ",")
+}
 
 type NowPlaying struct {
 	ID     int64
@@ -122,7 +133,7 @@ func SongVotePanel(id int64, title, artist, cover_ string) templ.Component {
 		var templ_7745c5c3_Var4 string
 		templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.ResolveAttributeValue(cover_)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/components/player.templ`, Line: 51, Col: 20}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/components/player.templ`, Line: 62, Col: 20}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var4)
 		if templ_7745c5c3_Err != nil {
@@ -135,7 +146,7 @@ func SongVotePanel(id int64, title, artist, cover_ string) templ.Component {
 		var templ_7745c5c3_Var5 string
 		templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.ResolveAttributeValue(title)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/components/player.templ`, Line: 51, Col: 34}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/components/player.templ`, Line: 62, Col: 34}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var5)
 		if templ_7745c5c3_Err != nil {
@@ -148,7 +159,7 @@ func SongVotePanel(id int64, title, artist, cover_ string) templ.Component {
 		var templ_7745c5c3_Var6 string
 		templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(title)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/components/player.templ`, Line: 53, Col: 53}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/components/player.templ`, Line: 64, Col: 53}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 		if templ_7745c5c3_Err != nil {
@@ -161,7 +172,7 @@ func SongVotePanel(id int64, title, artist, cover_ string) templ.Component {
 		var templ_7745c5c3_Var7 string
 		templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(artist)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/components/player.templ`, Line: 54, Col: 57}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/components/player.templ`, Line: 65, Col: 57}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 		if templ_7745c5c3_Err != nil {
@@ -174,7 +185,7 @@ func SongVotePanel(id int64, title, artist, cover_ string) templ.Component {
 		var templ_7745c5c3_Var8 string
 		templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", id))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/components/player.templ`, Line: 61, Col: 40}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/components/player.templ`, Line: 72, Col: 40}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var8)
 		if templ_7745c5c3_Err != nil {
@@ -195,7 +206,7 @@ func SongVotePanel(id int64, title, artist, cover_ string) templ.Component {
 		var templ_7745c5c3_Var9 string
 		templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", id))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/components/player.templ`, Line: 72, Col: 40}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/components/player.templ`, Line: 83, Col: 40}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var9)
 		if templ_7745c5c3_Err != nil {
@@ -242,6 +253,14 @@ type GenreOption struct {
 // as cinco rádios avançam suas filas de forma independente, e um nome
 // genérico faria o player trocar de música toda vez que QUALQUER rádio
 // confirmasse uma faixa nova — não só a que esta página está tocando.
+//
+// Mesmo assim o card assina as cinco rádios: o header tem hx-preserve e a
+// extensão SSE amarra o listener ao nome do evento só quando o nó é
+// processado, então trocar de rádio pelo <select> não muda a assinatura.
+// Assinando só a rádio do carregamento, quem trocava de "geral" para outra
+// rádio voltava a ver a música da "geral" na próxima troca de faixa dela.
+// player.js descarta (htmx:sseBeforeMessage) os eventos de rádios diferentes
+// de data-genre, que ele atualiza a cada troca.
 func PlayerBar(data PlayerData) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
@@ -263,20 +282,33 @@ func PlayerBar(data PlayerData) templ.Component {
 			templ_7745c5c3_Var10 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "<div class=\"flex flex-wrap items-center gap-3 border-t border-white/5 py-2.5 sm:flex-nowrap\" sse-connect=\"/events\"><div id=\"now-playing\" sse-swap=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "<div class=\"flex flex-wrap items-center gap-3 border-t border-white/5 py-2.5 sm:flex-nowrap\" sse-connect=\"/events\"><div id=\"now-playing\" data-genre=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var11 string
-		templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.ResolveAttributeValue("song-changed-" + string(data.Genre))
+		templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.ResolveAttributeValue(string(data.Genre))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/components/player.templ`, Line: 113, Col: 50}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/components/player.templ`, Line: 132, Col: 34}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var11)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "\" hx-swap=\"innerHTML\" data-htmx-fade class=\"flex min-w-0 flex-1 items-center gap-3 sm:flex-none\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "\" sse-swap=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var12 string
+		templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.ResolveAttributeValue(songChangedEvents())
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/components/player.templ`, Line: 133, Col: 33}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var12)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "\" hx-swap=\"innerHTML\" data-htmx-fade class=\"flex min-w-0 flex-1 items-center gap-3 sm:flex-none\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -284,33 +316,33 @@ func PlayerBar(data PlayerData) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "</div><div class=\"flex shrink-0 items-center gap-3\" data-player data-stream-url=\"")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		var templ_7745c5c3_Var12 string
-		templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.ResolveAttributeValue(data.StreamURL)
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/components/player.templ`, Line: 121, Col: 92}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var12)
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "\" data-radio-name=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "</div><div class=\"flex shrink-0 items-center gap-3\" data-player data-stream-url=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var13 string
-		templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.ResolveAttributeValue(data.Genre.RadioName())
+		templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.ResolveAttributeValue(data.StreamURL)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/components/player.templ`, Line: 121, Col: 135}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/components/player.templ`, Line: 141, Col: 92}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var13)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "\"><div class=\"relative\"><button type=\"button\" data-player-toggle aria-label=\"Reproduzir\" class=\"flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-b from-brand-500 to-brand-600 text-white shadow-md shadow-brand-900/30 ring-1 ring-white/10 transition hover:from-brand-400 hover:to-brand-500 hover:shadow-lg hover:shadow-brand-900/40 active:scale-90 active:shadow-sm\"><svg data-icon-play class=\"h-3.5 w-3.5 translate-x-[1px]\" viewBox=\"0 0 24 24\" fill=\"currentColor\"><path d=\"M8 5v14l11-7z\"></path></svg> <svg data-icon-pause class=\"hidden h-3.5 w-3.5\" viewBox=\"0 0 24 24\" fill=\"currentColor\"><path d=\"M6 5h4v14H6zM14 5h4v14h-4z\"></path></svg> <svg data-icon-loading class=\"hidden h-3.5 w-3.5 animate-spin\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\"><path d=\"M21 12a9 9 0 1 1-9-9\" opacity=\"0.9\"></path></svg></button></div><button type=\"button\" data-player-reload aria-label=\"Recarregar transmissão\" title=\"Recarregar transmissão\" class=\"flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-neutral-400 transition hover:bg-white/10 hover:text-neutral-200 active:scale-95\"><svg class=\"h-3.5 w-3.5\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21 12a9 9 0 1 1-2.64-6.36\"></path> <path d=\"M21 3v6h-6\"></path></svg></button> <button type=\"button\" data-player-mute-toggle aria-label=\"Silenciar\" title=\"Silenciar\" class=\"hidden h-7 w-7 shrink-0 items-center justify-center rounded-full text-neutral-400 transition hover:bg-white/10 hover:text-neutral-200 active:scale-95 lg:flex\"><svg data-icon-volume-muted class=\"hidden h-4 w-4 shrink-0\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><polygon points=\"11 5 6 9 2 9 2 15 6 15 11 19 11 5\"></polygon> <line x1=\"23\" y1=\"9\" x2=\"17\" y2=\"15\"></line> <line x1=\"17\" y1=\"9\" x2=\"23\" y2=\"15\"></line></svg> <svg data-icon-volume-low class=\"hidden h-4 w-4 shrink-0\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><polygon points=\"11 5 6 9 2 9 2 15 6 15 11 19 11 5\"></polygon></svg> <svg data-icon-volume-medium class=\"hidden h-4 w-4 shrink-0\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><polygon points=\"11 5 6 9 2 9 2 15 6 15 11 19 11 5\"></polygon> <path d=\"M15.54 8.46a5 5 0 0 1 0 7.07\"></path></svg> <svg data-icon-volume-high class=\"h-4 w-4 shrink-0\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><polygon points=\"11 5 6 9 2 9 2 15 6 15 11 19 11 5\"></polygon> <path d=\"M15.54 8.46a5 5 0 0 1 0 7.07\"></path> <path d=\"M19.07 4.93a10 10 0 0 1 0 14.14\"></path></svg></button> <input type=\"range\" data-player-volume min=\"0\" max=\"1\" step=\"0.01\" value=\"0.8\" aria-label=\"Volume\" class=\"hidden h-1 w-16 shrink-0 cursor-pointer accent-brand-500 lg:block\"> <audio data-player-audio preload=\"none\"></audio><p data-player-message class=\"hidden max-w-44 text-xs text-red-400\" role=\"status\" aria-live=\"polite\"></p></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "\" data-radio-name=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var14 string
+		templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.ResolveAttributeValue(data.Genre.RadioName())
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/components/player.templ`, Line: 141, Col: 135}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var14)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "\"><div class=\"relative\"><button type=\"button\" data-player-toggle aria-label=\"Reproduzir\" class=\"flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-b from-brand-500 to-brand-600 text-white shadow-md shadow-brand-900/30 ring-1 ring-white/10 transition hover:from-brand-400 hover:to-brand-500 hover:shadow-lg hover:shadow-brand-900/40 active:scale-90 active:shadow-sm\"><svg data-icon-play class=\"h-3.5 w-3.5 translate-x-[1px]\" viewBox=\"0 0 24 24\" fill=\"currentColor\"><path d=\"M8 5v14l11-7z\"></path></svg> <svg data-icon-pause class=\"hidden h-3.5 w-3.5\" viewBox=\"0 0 24 24\" fill=\"currentColor\"><path d=\"M6 5h4v14H6zM14 5h4v14h-4z\"></path></svg> <svg data-icon-loading class=\"hidden h-3.5 w-3.5 animate-spin\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\"><path d=\"M21 12a9 9 0 1 1-9-9\" opacity=\"0.9\"></path></svg></button></div><button type=\"button\" data-player-reload aria-label=\"Recarregar transmissão\" title=\"Recarregar transmissão\" class=\"flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-neutral-400 transition hover:bg-white/10 hover:text-neutral-200 active:scale-95\"><svg class=\"h-3.5 w-3.5\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21 12a9 9 0 1 1-2.64-6.36\"></path> <path d=\"M21 3v6h-6\"></path></svg></button> <button type=\"button\" data-player-mute-toggle aria-label=\"Silenciar\" title=\"Silenciar\" class=\"hidden h-7 w-7 shrink-0 items-center justify-center rounded-full text-neutral-400 transition hover:bg-white/10 hover:text-neutral-200 active:scale-95 lg:flex\"><svg data-icon-volume-muted class=\"hidden h-4 w-4 shrink-0\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><polygon points=\"11 5 6 9 2 9 2 15 6 15 11 19 11 5\"></polygon> <line x1=\"23\" y1=\"9\" x2=\"17\" y2=\"15\"></line> <line x1=\"17\" y1=\"9\" x2=\"23\" y2=\"15\"></line></svg> <svg data-icon-volume-low class=\"hidden h-4 w-4 shrink-0\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><polygon points=\"11 5 6 9 2 9 2 15 6 15 11 19 11 5\"></polygon></svg> <svg data-icon-volume-medium class=\"hidden h-4 w-4 shrink-0\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><polygon points=\"11 5 6 9 2 9 2 15 6 15 11 19 11 5\"></polygon> <path d=\"M15.54 8.46a5 5 0 0 1 0 7.07\"></path></svg> <svg data-icon-volume-high class=\"h-4 w-4 shrink-0\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><polygon points=\"11 5 6 9 2 9 2 15 6 15 11 19 11 5\"></polygon> <path d=\"M15.54 8.46a5 5 0 0 1 0 7.07\"></path> <path d=\"M19.07 4.93a10 10 0 0 1 0 14.14\"></path></svg></button> <input type=\"range\" data-player-volume min=\"0\" max=\"1\" step=\"0.01\" value=\"0.8\" aria-label=\"Volume\" class=\"hidden h-1 w-16 shrink-0 cursor-pointer accent-brand-500 lg:block\"> <audio data-player-audio preload=\"none\"></audio><p data-player-message class=\"hidden max-w-44 text-xs text-red-400\" role=\"status\" aria-live=\"polite\"></p></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -318,7 +350,7 @@ func PlayerBar(data PlayerData) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "<div class=\"order-last w-full sm:order-none sm:ml-auto sm:w-auto\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "<div class=\"order-last w-full sm:order-none sm:ml-auto sm:w-auto\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -326,7 +358,7 @@ func PlayerBar(data PlayerData) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "</div></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "</div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -355,25 +387,25 @@ func ShareButton(genre config.Genre) templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var14 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var14 == nil {
-			templ_7745c5c3_Var14 = templ.NopComponent
+		templ_7745c5c3_Var15 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var15 == nil {
+			templ_7745c5c3_Var15 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "<div class=\"relative shrink-0\" data-share data-genre=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "<div class=\"relative shrink-0\" data-share data-genre=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var15 string
-		templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.ResolveAttributeValue(string(genre))
+		var templ_7745c5c3_Var16 string
+		templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.ResolveAttributeValue(string(genre))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/components/player.templ`, Line: 216, Col: 69}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/components/player.templ`, Line: 236, Col: 69}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var15)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var16)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "\"><button type=\"button\" popovertarget=\"share-popover\" data-share-trigger aria-label=\"Compartilhar música\" title=\"Compartilhar música\" class=\"flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-neutral-400 transition hover:bg-white/10 hover:text-neutral-200 active:scale-95\"><svg class=\"h-3.5 w-3.5\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"18\" cy=\"5\" r=\"3\"></circle> <circle cx=\"6\" cy=\"12\" r=\"3\"></circle> <circle cx=\"18\" cy=\"19\" r=\"3\"></circle> <line x1=\"8.59\" y1=\"13.51\" x2=\"15.42\" y2=\"17.49\"></line> <line x1=\"15.41\" y1=\"6.51\" x2=\"8.59\" y2=\"10.49\"></line></svg></button><div id=\"share-popover\" popover data-share-popover class=\"w-[calc(100vw-2rem)] max-w-xs rounded-2xl border border-white/10 bg-surface-raised p-4 text-neutral-100 shadow-2xl shadow-black/40 backdrop:bg-black/40\"><div class=\"mb-3 flex items-center justify-between gap-2\"><h2 class=\"text-sm font-semibold\">Compartilhar música</h2><button type=\"button\" popovertarget=\"share-popover\" popovertargetaction=\"hide\" aria-label=\"Fechar\" class=\"flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-neutral-400 transition hover:bg-white/10 hover:text-neutral-200\"><svg class=\"h-3.5 w-3.5\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M18 6 6 18M6 6l12 12\"></path></svg></button></div><div data-share-tracks class=\"mb-4 space-y-2\"><label class=\"flex cursor-pointer items-center gap-2 rounded-lg bg-white/5 px-2.5 py-2 has-checked:ring-1 has-checked:ring-brand-500\"><input type=\"radio\" name=\"share-track\" value=\"now\" data-share-pick-now checked class=\"shrink-0 accent-brand-500\"> <span class=\"h-1.5 w-1.5 shrink-0 animate-pulse rounded-full bg-red-500\"></span><div class=\"min-w-0 leading-tight\"><p data-share-now-title class=\"truncate text-sm font-medium\">—</p><p data-share-now-artist class=\"truncate text-xs text-neutral-400\">—</p></div></label> <label data-share-next-row class=\"hidden flex cursor-pointer items-center gap-2 rounded-lg px-2.5 py-2 has-checked:bg-white/5 has-checked:ring-1 has-checked:ring-brand-500\"><input type=\"radio\" name=\"share-track\" value=\"next\" data-share-pick-next class=\"shrink-0 accent-brand-500\"><div class=\"min-w-0 leading-tight\"><p class=\"mb-0.5 text-[10px] font-semibold uppercase tracking-wide text-neutral-500\">A seguir</p><p data-share-next-title class=\"truncate text-sm font-medium text-neutral-300\">—</p><p data-share-next-artist class=\"truncate text-xs text-neutral-500\">—</p></div></label></div><div class=\"grid grid-cols-2 gap-2\"><button type=\"button\" data-share-copy class=\"flex items-center justify-center gap-2 rounded-lg bg-white/10 px-3 py-2 text-xs font-medium text-neutral-100 transition hover:bg-white/15 active:scale-95\"><svg class=\"h-3.5 w-3.5 shrink-0\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"9\" y=\"9\" width=\"13\" height=\"13\" rx=\"2\"></rect> <path d=\"M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1\"></path></svg> <span data-share-copy-label>Copiar link</span></button> <a data-share-whatsapp target=\"_blank\" rel=\"noopener noreferrer\" class=\"flex items-center justify-center gap-2 rounded-lg bg-[#25D366]/15 px-3 py-2 text-xs font-medium text-[#25D366] transition hover:bg-[#25D366]/25 active:scale-95\"><svg class=\"h-3.5 w-3.5 shrink-0\" viewBox=\"0 0 24 24\" fill=\"currentColor\"><path d=\"M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2 22l5.29-1.39a9.9 9.9 0 0 0 4.75 1.21h.01c5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.86 9.86 0 0 0 12.04 2zm5.8 14.14c-.24.68-1.4 1.3-1.93 1.38-.5.08-1.12.11-1.81-.11-.42-.13-.95-.31-1.64-.6-2.89-1.25-4.77-4.15-4.92-4.34-.14-.2-1.18-1.57-1.18-3 0-1.42.75-2.12 1.02-2.41.27-.29.58-.36.78-.36.2 0 .39 0 .56.01.18.01.42-.07.66.5.24.58.82 2 .89 2.15.07.15.12.32.02.51-.1.2-.15.32-.29.49-.15.17-.31.39-.44.52-.15.15-.3.31-.13.6.17.29.75 1.24 1.62 2 1.11 1 2.05 1.31 2.34 1.46.29.15.46.12.63-.07.17-.2.72-.84.92-1.13.19-.29.39-.24.65-.14.27.1 1.69.8 1.98.94.29.15.48.22.55.34.07.13.07.75-.17 1.43z\"></path></svg> WhatsApp</a> <a data-share-facebook target=\"_blank\" rel=\"noopener noreferrer\" class=\"flex items-center justify-center gap-2 rounded-lg bg-[#1877F2]/15 px-3 py-2 text-xs font-medium text-[#1877F2] transition hover:bg-[#1877F2]/25 active:scale-95\"><svg class=\"h-3.5 w-3.5 shrink-0\" viewBox=\"0 0 24 24\" fill=\"currentColor\"><path d=\"M13.5 21v-7.5H16l.5-3.5h-3V7.7c0-1 .3-1.7 1.7-1.7H16.5V2.8C16.2 2.8 15.2 2.7 14 2.7c-2.5 0-4.2 1.5-4.2 4.3v2H7v3.5h2.8V21h3.7z\"></path></svg> Facebook</a> <a data-share-x target=\"_blank\" rel=\"noopener noreferrer\" class=\"flex items-center justify-center gap-2 rounded-lg bg-white/10 px-3 py-2 text-xs font-medium text-neutral-100 transition hover:bg-white/20 active:scale-95\"><svg class=\"h-3.5 w-3.5 shrink-0\" viewBox=\"0 0 24 24\" fill=\"currentColor\"><path d=\"M18.9 2H22l-7.6 8.7L23.3 22h-7.1l-5.5-7.2L4.4 22H1.3l8.1-9.3L1 2h7.3l5 6.6L18.9 2zm-1.2 18h1.9L7.4 4h-2l12.3 16z\"></path></svg> X</a></div></div></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 21, "\"><button type=\"button\" popovertarget=\"share-popover\" data-share-trigger aria-label=\"Compartilhar música\" title=\"Compartilhar música\" class=\"flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-neutral-400 transition hover:bg-white/10 hover:text-neutral-200 active:scale-95\"><svg class=\"h-3.5 w-3.5\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"18\" cy=\"5\" r=\"3\"></circle> <circle cx=\"6\" cy=\"12\" r=\"3\"></circle> <circle cx=\"18\" cy=\"19\" r=\"3\"></circle> <line x1=\"8.59\" y1=\"13.51\" x2=\"15.42\" y2=\"17.49\"></line> <line x1=\"15.41\" y1=\"6.51\" x2=\"8.59\" y2=\"10.49\"></line></svg></button><div id=\"share-popover\" popover data-share-popover class=\"w-[calc(100vw-2rem)] max-w-xs rounded-2xl border border-white/10 bg-surface-raised p-4 text-neutral-100 shadow-2xl shadow-black/40 backdrop:bg-black/40\"><div class=\"mb-3 flex items-center justify-between gap-2\"><h2 class=\"text-sm font-semibold\">Compartilhar música</h2><button type=\"button\" popovertarget=\"share-popover\" popovertargetaction=\"hide\" aria-label=\"Fechar\" class=\"flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-neutral-400 transition hover:bg-white/10 hover:text-neutral-200\"><svg class=\"h-3.5 w-3.5\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M18 6 6 18M6 6l12 12\"></path></svg></button></div><div data-share-tracks class=\"mb-4 space-y-2\"><label class=\"flex cursor-pointer items-center gap-2 rounded-lg bg-white/5 px-2.5 py-2 has-checked:ring-1 has-checked:ring-brand-500\"><input type=\"radio\" name=\"share-track\" value=\"now\" data-share-pick-now checked class=\"shrink-0 accent-brand-500\"> <span class=\"h-1.5 w-1.5 shrink-0 animate-pulse rounded-full bg-red-500\"></span><div class=\"min-w-0 leading-tight\"><p data-share-now-title class=\"truncate text-sm font-medium\">—</p><p data-share-now-artist class=\"truncate text-xs text-neutral-400\">—</p></div></label> <label data-share-next-row class=\"hidden flex cursor-pointer items-center gap-2 rounded-lg px-2.5 py-2 has-checked:bg-white/5 has-checked:ring-1 has-checked:ring-brand-500\"><input type=\"radio\" name=\"share-track\" value=\"next\" data-share-pick-next class=\"shrink-0 accent-brand-500\"><div class=\"min-w-0 leading-tight\"><p class=\"mb-0.5 text-[10px] font-semibold uppercase tracking-wide text-neutral-500\">A seguir</p><p data-share-next-title class=\"truncate text-sm font-medium text-neutral-300\">—</p><p data-share-next-artist class=\"truncate text-xs text-neutral-500\">—</p></div></label></div><div class=\"grid grid-cols-2 gap-2\"><button type=\"button\" data-share-copy class=\"flex items-center justify-center gap-2 rounded-lg bg-white/10 px-3 py-2 text-xs font-medium text-neutral-100 transition hover:bg-white/15 active:scale-95\"><svg class=\"h-3.5 w-3.5 shrink-0\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"9\" y=\"9\" width=\"13\" height=\"13\" rx=\"2\"></rect> <path d=\"M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1\"></path></svg> <span data-share-copy-label>Copiar link</span></button> <a data-share-whatsapp target=\"_blank\" rel=\"noopener noreferrer\" class=\"flex items-center justify-center gap-2 rounded-lg bg-[#25D366]/15 px-3 py-2 text-xs font-medium text-[#25D366] transition hover:bg-[#25D366]/25 active:scale-95\"><svg class=\"h-3.5 w-3.5 shrink-0\" viewBox=\"0 0 24 24\" fill=\"currentColor\"><path d=\"M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2 22l5.29-1.39a9.9 9.9 0 0 0 4.75 1.21h.01c5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.86 9.86 0 0 0 12.04 2zm5.8 14.14c-.24.68-1.4 1.3-1.93 1.38-.5.08-1.12.11-1.81-.11-.42-.13-.95-.31-1.64-.6-2.89-1.25-4.77-4.15-4.92-4.34-.14-.2-1.18-1.57-1.18-3 0-1.42.75-2.12 1.02-2.41.27-.29.58-.36.78-.36.2 0 .39 0 .56.01.18.01.42-.07.66.5.24.58.82 2 .89 2.15.07.15.12.32.02.51-.1.2-.15.32-.29.49-.15.17-.31.39-.44.52-.15.15-.3.31-.13.6.17.29.75 1.24 1.62 2 1.11 1 2.05 1.31 2.34 1.46.29.15.46.12.63-.07.17-.2.72-.84.92-1.13.19-.29.39-.24.65-.14.27.1 1.69.8 1.98.94.29.15.48.22.55.34.07.13.07.75-.17 1.43z\"></path></svg> WhatsApp</a> <a data-share-facebook target=\"_blank\" rel=\"noopener noreferrer\" class=\"flex items-center justify-center gap-2 rounded-lg bg-[#1877F2]/15 px-3 py-2 text-xs font-medium text-[#1877F2] transition hover:bg-[#1877F2]/25 active:scale-95\"><svg class=\"h-3.5 w-3.5 shrink-0\" viewBox=\"0 0 24 24\" fill=\"currentColor\"><path d=\"M13.5 21v-7.5H16l.5-3.5h-3V7.7c0-1 .3-1.7 1.7-1.7H16.5V2.8C16.2 2.8 15.2 2.7 14 2.7c-2.5 0-4.2 1.5-4.2 4.3v2H7v3.5h2.8V21h3.7z\"></path></svg> Facebook</a> <a data-share-x target=\"_blank\" rel=\"noopener noreferrer\" class=\"flex items-center justify-center gap-2 rounded-lg bg-white/10 px-3 py-2 text-xs font-medium text-neutral-100 transition hover:bg-white/20 active:scale-95\"><svg class=\"h-3.5 w-3.5 shrink-0\" viewBox=\"0 0 24 24\" fill=\"currentColor\"><path d=\"M18.9 2H22l-7.6 8.7L23.3 22h-7.1l-5.5-7.2L4.4 22H1.3l8.1-9.3L1 2h7.3l5 6.6L18.9 2zm-1.2 18h1.9L7.4 4h-2l12.3 16z\"></path></svg> X</a></div></div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -404,51 +436,51 @@ func NowPlayingCard(now NowPlaying) templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var16 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var16 == nil {
-			templ_7745c5c3_Var16 = templ.NopComponent
+		templ_7745c5c3_Var17 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var17 == nil {
+			templ_7745c5c3_Var17 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 21, "<div class=\"relative h-11 w-11 shrink-0 sm:h-9 sm:w-9\" data-song-cover data-song-id=\"")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		var templ_7745c5c3_Var17 string
-		templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", now.ID))
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/components/player.templ`, Line: 307, Col: 112}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var17)
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "\"><img src=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "<div class=\"relative h-11 w-11 shrink-0 sm:h-9 sm:w-9\" data-song-cover data-song-id=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var18 string
-		templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.ResolveAttributeValue(now.Cover)
+		templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", now.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/components/player.templ`, Line: 309, Col: 18}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/components/player.templ`, Line: 327, Col: 112}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var18)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "\" alt=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "\"><img src=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var19 string
-		templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.ResolveAttributeValue(now.Title)
+		templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.ResolveAttributeValue(now.Cover)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/components/player.templ`, Line: 310, Col: 18}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/components/player.templ`, Line: 329, Col: 18}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var19)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "\" data-song-cover-trigger class=\"h-11 w-11 cursor-pointer rounded-lg object-cover shadow-sm ring-1 ring-white/10 sm:h-9 sm:w-9\"> ")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "\" alt=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var20 string
+		templ_7745c5c3_Var20, templ_7745c5c3_Err = templ.ResolveAttributeValue(now.Title)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/components/player.templ`, Line: 330, Col: 18}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var20)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, "\" data-song-cover-trigger class=\"h-11 w-11 cursor-pointer rounded-lg object-cover shadow-sm ring-1 ring-white/10 sm:h-9 sm:w-9\"> ")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -458,33 +490,33 @@ func NowPlayingCard(now NowPlaying) templ.Component {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, "</div><div class=\"min-w-0 leading-tight\"><p class=\"max-w-[8rem] truncate text-sm font-semibold sm:max-w-[10rem]\">")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		var templ_7745c5c3_Var20 string
-		templ_7745c5c3_Var20, templ_7745c5c3_Err = templ.JoinStringErrs(now.Title)
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/components/player.templ`, Line: 319, Col: 85}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var20))
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, "</p><p class=\"max-w-[8rem] truncate text-xs text-neutral-400 sm:max-w-[10rem]\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, "</div><div class=\"min-w-0 leading-tight\"><p class=\"max-w-[8rem] truncate text-sm font-semibold sm:max-w-[10rem]\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var21 string
-		templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.JoinStringErrs(now.Artist)
+		templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.JoinStringErrs(now.Title)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/components/player.templ`, Line: 320, Col: 89}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/components/player.templ`, Line: 339, Col: 85}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var21))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 27, "</p></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 27, "</p><p class=\"max-w-[8rem] truncate text-xs text-neutral-400 sm:max-w-[10rem]\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var22 string
+		templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.JoinStringErrs(now.Artist)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/components/player.templ`, Line: 340, Col: 89}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var22))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 28, "</p></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -516,133 +548,133 @@ func GenreSwitcher(active config.Genre, options []GenreOption) templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var22 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var22 == nil {
-			templ_7745c5c3_Var22 = templ.NopComponent
+		templ_7745c5c3_Var23 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var23 == nil {
+			templ_7745c5c3_Var23 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 28, "<div class=\"relative w-full sm:w-44\"><select data-genre-select name=\"genre\" aria-label=\"Selecionar rádio\" hx-get=\"/\" hx-trigger=\"change\" hx-target=\"#main-content\" hx-select=\"#main-content\" hx-swap=\"outerHTML\" hx-push-url=\"true\" class=\"w-full cursor-pointer appearance-none rounded-lg border border-white/10 bg-surface-raised py-1.5 pl-3 pr-9 text-xs font-medium text-neutral-200 shadow-sm transition hover:border-white/20 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 29, "<div class=\"relative w-full sm:w-44\"><select data-genre-select name=\"genre\" aria-label=\"Selecionar rádio\" hx-get=\"/\" hx-trigger=\"change\" hx-target=\"#main-content\" hx-select=\"#main-content\" hx-swap=\"outerHTML\" hx-push-url=\"true\" class=\"w-full cursor-pointer appearance-none rounded-lg border border-white/10 bg-surface-raised py-1.5 pl-3 pr-9 text-xs font-medium text-neutral-200 shadow-sm transition hover:border-white/20 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		for _, opt := range options {
 			if opt.Genre == active {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 29, "<option value=\"")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				var templ_7745c5c3_Var23 string
-				templ_7745c5c3_Var23, templ_7745c5c3_Err = templ.ResolveAttributeValue(string(opt.Genre))
-				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/components/player.templ`, Line: 348, Col: 38}
-				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var23)
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 30, "\" data-stream-url=\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 30, "<option value=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var24 string
-				templ_7745c5c3_Var24, templ_7745c5c3_Err = templ.ResolveAttributeValue(opt.StreamURL)
+				templ_7745c5c3_Var24, templ_7745c5c3_Err = templ.ResolveAttributeValue(string(opt.Genre))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/components/player.templ`, Line: 348, Col: 72}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/components/player.templ`, Line: 368, Col: 38}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var24)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 31, "\" data-radio-name=\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 31, "\" data-stream-url=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var25 string
-				templ_7745c5c3_Var25, templ_7745c5c3_Err = templ.ResolveAttributeValue(opt.Genre.RadioName())
+				templ_7745c5c3_Var25, templ_7745c5c3_Err = templ.ResolveAttributeValue(opt.StreamURL)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/components/player.templ`, Line: 348, Col: 114}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/components/player.templ`, Line: 368, Col: 72}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var25)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 32, "\" selected>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 32, "\" data-radio-name=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var26 string
-				templ_7745c5c3_Var26, templ_7745c5c3_Err = templ.JoinStringErrs(opt.Genre.Label())
+				templ_7745c5c3_Var26, templ_7745c5c3_Err = templ.ResolveAttributeValue(opt.Genre.RadioName())
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/components/player.templ`, Line: 348, Col: 145}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/components/player.templ`, Line: 368, Col: 114}
 				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var26))
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 33, "</option>")
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var26)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-			} else {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 34, "<option value=\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 33, "\" selected>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var27 string
-				templ_7745c5c3_Var27, templ_7745c5c3_Err = templ.ResolveAttributeValue(string(opt.Genre))
+				templ_7745c5c3_Var27, templ_7745c5c3_Err = templ.JoinStringErrs(opt.Genre.Label())
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/components/player.templ`, Line: 350, Col: 38}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/components/player.templ`, Line: 368, Col: 145}
 				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var27)
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var27))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 35, "\" data-stream-url=\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 34, "</option>")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			} else {
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 35, "<option value=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var28 string
-				templ_7745c5c3_Var28, templ_7745c5c3_Err = templ.ResolveAttributeValue(opt.StreamURL)
+				templ_7745c5c3_Var28, templ_7745c5c3_Err = templ.ResolveAttributeValue(string(opt.Genre))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/components/player.templ`, Line: 350, Col: 72}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/components/player.templ`, Line: 370, Col: 38}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var28)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 36, "\" data-radio-name=\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 36, "\" data-stream-url=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var29 string
-				templ_7745c5c3_Var29, templ_7745c5c3_Err = templ.ResolveAttributeValue(opt.Genre.RadioName())
+				templ_7745c5c3_Var29, templ_7745c5c3_Err = templ.ResolveAttributeValue(opt.StreamURL)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/components/player.templ`, Line: 350, Col: 114}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/components/player.templ`, Line: 370, Col: 72}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var29)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 37, "\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 37, "\" data-radio-name=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var30 string
-				templ_7745c5c3_Var30, templ_7745c5c3_Err = templ.JoinStringErrs(opt.Genre.Label())
+				templ_7745c5c3_Var30, templ_7745c5c3_Err = templ.ResolveAttributeValue(opt.Genre.RadioName())
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/components/player.templ`, Line: 350, Col: 136}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/components/player.templ`, Line: 370, Col: 114}
 				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var30))
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var30)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 38, "</option>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 38, "\">")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var31 string
+				templ_7745c5c3_Var31, templ_7745c5c3_Err = templ.JoinStringErrs(opt.Genre.Label())
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/components/player.templ`, Line: 370, Col: 136}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var31))
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 39, "</option>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 39, "</select> <svg class=\"pointer-events-none absolute right-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-neutral-400\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m6 9 6 6 6-6\"></path></svg></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 40, "</select> <svg class=\"pointer-events-none absolute right-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-neutral-400\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m6 9 6 6 6-6\"></path></svg></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
