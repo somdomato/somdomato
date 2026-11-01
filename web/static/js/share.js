@@ -3,6 +3,10 @@
 // WhatsApp/Facebook/X e o botão de copiar — sem depender do fragmento SSE
 // do player, que só cobre a faixa que já começou a tocar.
 document.querySelectorAll("[data-share]").forEach((root) => {
+	// Reexecutado a cada navegação via hx-boost (ver guarda em player.js).
+	if (window.sdmShareRoot?.isConnected) return;
+	window.sdmShareRoot = root;
+
 	// Lido a cada uso (não guardado numa const) porque a troca de rádio
 	// (GenreSwitcher, ver player.js) atualiza root.dataset.genre em vez de
 	// recriar este elemento — uma const capturaria só o gênero do load

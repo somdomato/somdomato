@@ -3,6 +3,11 @@
 // pageview sozinho não cobre alguém parado ouvindo rádio por horas na
 // mesma página). Fire-and-forget via sendBeacon, sem resposta esperada.
 (function () {
+  // Reexecutado a cada navegação via hx-boost (ver player.js): sem a guarda,
+  // cada navegação somava mais um setInterval e mais um listener.
+  if (window.sdmAnalyticsInit) return;
+  window.sdmAnalyticsInit = true;
+
   function ping() {
     var url = "/track/ping?path=" + encodeURIComponent(location.pathname);
     if (navigator.sendBeacon) {

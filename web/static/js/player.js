@@ -1,6 +1,18 @@
 // Controla o <audio> da rádio: play/pause, volume e o indicador visual
 // (barras animadas) — sem depender de framework algum.
+// Este script fica dentro de #player-bar (hx-preserve). Com moveBefore, o
+// htmx 2 guarda o #player-bar atual num "pantry", insere o da resposta (cujos
+// <script> rodam de novo) e depois devolve o antigo — ou seja, a cada
+// navegação via hx-boost este arquivo é reexecutado com o player antigo
+// ainda no DOM. Sem esta guarda, o mesmo botão ganhava um listener de click
+// extra por navegação: com dois, um clique chamava stop() e logo play(), e
+// era impossível pausar. Guardamos o root vivo em window (em vez de um flag
+// simples) para que, ao voltar de /admin — onde o player é recriado do
+// zero — o novo root seja inicializado normalmente.
 document.querySelectorAll("[data-player]").forEach((root) => {
+	if (window.sdmPlayerRoot?.isConnected) return;
+	window.sdmPlayerRoot = root;
+
 	const audio = root.querySelector("[data-player-audio]");
 	const toggle = root.querySelector("[data-player-toggle]");
 	const reload = root.querySelector("[data-player-reload]");
@@ -308,6 +320,11 @@ document.querySelectorAll("[data-player]").forEach((root) => {
 	});
 });
 
+// Listeners delegados em document: instalados uma única vez por página,
+// mesmo que este script seja reexecutado (ver guarda no topo do arquivo).
+if (!window.sdmPlayerDocumentListeners) {
+window.sdmPlayerDocumentListeners = true;
+
 // #now-playing assina song-changed de todas as rádios (ver PlayerBar em
 // player.templ); só deixa passar o da rádio selecionada agora.
 document.addEventListener("htmx:sseBeforeMessage", (event) => {
@@ -393,3 +410,4 @@ document.addEventListener("change", (event) => {
 		})
 		.catch(() => {});
 });
+}

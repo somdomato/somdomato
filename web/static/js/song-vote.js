@@ -18,6 +18,11 @@
 // rádio pelo <select> (ver player.js) — listeners presos ao elemento
 // antigo seriam perdidos a cada uma dessas trocas.
 (() => {
+	// Tudo é delegado em document: basta instalar uma vez, mesmo que o
+	// script seja reexecutado a cada navegação via hx-boost (ver player.js).
+	if (window.sdmSongVoteInit) return;
+	window.sdmSongVoteInit = true;
+
 	const CLOSE_DELAY_MS = 300;
 
 	const getCookie = (name) => {
