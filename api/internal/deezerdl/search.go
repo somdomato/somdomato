@@ -45,12 +45,7 @@ func Search(ctx context.Context, query string, limit, offset int) ([]SearchResul
 	q.Set("index", fmt.Sprintf("%d", offset))
 	u.RawQuery = q.Encode()
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	resp, err := searchHTTPClient.Do(req)
+	resp, err := doPublicGet(ctx, u.String())
 	if err != nil {
 		return nil, err
 	}

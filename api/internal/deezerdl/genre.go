@@ -126,11 +126,7 @@ func lookupAll(ctx context.Context, ids []int64, cache map[int64]bool, fn func(c
 // deezerGet faz GET numa URL da API pública e decodifica o JSON em v,
 // tratando o objeto "error" que a API devolve com status 200 (cota).
 func deezerGet(ctx context.Context, url string, v any) error {
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
-	if err != nil {
-		return err
-	}
-	resp, err := searchHTTPClient.Do(req)
+	resp, err := doPublicGet(ctx, url)
 	if err != nil {
 		return err
 	}

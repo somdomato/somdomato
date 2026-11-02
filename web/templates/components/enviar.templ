@@ -56,6 +56,33 @@ templ EnviarLoadMore(query string, offset int) {
 	</li>
 }
 
+// EnviarNoResults aparece quando a busca no Deezer não encontra nenhuma
+// faixa sertaneja para o termo.
+templ EnviarNoResults(query string) {
+	<li class="px-4 py-3 text-sm text-neutral-400">
+		Nenhuma música encontrada para "{ query }".
+	</li>
+}
+
+// EnviarSearchError aparece quando o Deezer falha mesmo após as novas
+// tentativas (ver deezerdl.doPublicGet) — sem isso a lista ficava vazia e
+// parecia que a música não existia. O botão repete a mesma busca (ou a
+// mesma página, no "carregar mais") e se substitui pelo resultado.
+templ EnviarSearchError(query string, offset int) {
+	<li class="px-4 py-3 text-sm text-neutral-400">
+		A busca está indisponível no momento.
+		<button
+			type="button"
+			class="text-brand-400 underline hover:text-brand-300 cursor-pointer"
+			hx-get={ fmt.Sprintf("/enviar/buscar?q=%s&offset=%d", url.QueryEscape(query), offset) }
+			hx-target="closest li"
+			hx-swap="outerHTML"
+		>
+			Tentar de novo
+		</button>
+	</li>
+}
+
 // EnviarJobStarted substitui a linha de resultado assim que o download é
 // aceito: abre a conexão SSE (sse-connect) que vai atualizar #job-<id> com
 // EnviarProgress/EnviarDone/EnviarError conforme os eventos chegam.

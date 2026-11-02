@@ -109,6 +109,12 @@ func handleEnviarBuscar(app *App) http.HandlerFunc {
 		results, nextOffset, hasMore, err := searchDeezerCached(r.Context(), query, offset)
 		if err != nil {
 			app.Log.Error("buscando no deezer", "error", err)
+			_ = components.EnviarSearchError(query, offset).Render(r.Context(), w)
+			return
+		}
+
+		if len(results) == 0 && offset == 0 && !hasMore {
+			_ = components.EnviarNoResults(query).Render(r.Context(), w)
 			return
 		}
 
