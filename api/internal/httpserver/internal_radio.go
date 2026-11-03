@@ -52,7 +52,13 @@ func handleGetMusic(app *App) http.HandlerFunc {
 			app.Log.Error("lendo intervalo de vinheta", "error", err)
 			interval = 5
 		}
-		if app.Jingles.GetSongCounter(genre) >= interval {
+		// "Tocar" do admin: a faixa escolhida tem que entrar logo, sem
+		// vinheta na frente.
+		adminHead, err := app.Queue.HeadIsAdmin(ctx, genre)
+		if err != nil {
+			app.Log.Error("verificando cabeça da fila", "error", err, "genre", genre)
+		}
+		if !adminHead && app.Jingles.GetSongCounter(genre) >= interval {
 			jingle, err := app.Jingles.GetRandomJingle(ctx)
 			if err != nil {
 				app.Log.Error("buscando vinheta", "error", err)

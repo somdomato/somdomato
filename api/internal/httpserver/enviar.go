@@ -28,7 +28,10 @@ import (
 // pedidos (pedidos só grava uma linha; baixar consome banda, CPU e um slot
 // da conta Deezer) — mesmo teto do sistema antigo.
 var (
-	enviarSearchLimiter   = newIPRateLimiter(20, time.Minute)
+	// enviarSearchLimiter: com o debounce do cliente cada busca já
+	// representa uma pausa na digitação; 30/min cobre quem refina o termo
+	// algumas vezes e ainda clica em "carregar mais".
+	enviarSearchLimiter   = newIPRateLimiter(30, time.Minute)
 	enviarDownloadLimiter = newIPRateLimiter(5, time.Hour)
 	// enviarDownloadGlobalLimiter protege a conta Deezer em si (não um IP
 	// específico): admins pulam o limite por IP acima (útil ao testar o
@@ -45,7 +48,7 @@ const enviarDownloadGlobalKey = "global"
 
 func registerEnviarRoutes(mux *http.ServeMux, app *App) {
 	mux.HandleFunc("GET /enviar", handleEnviar(app))
-	mux.HandleFunc("GET /enviar/buscar", withRateLimit(enviarSearchLimiter, handleEnviarBuscar(app)))
+	mux.HandleFunc("GET /enviar/buscar", handleEnviarBuscar(app))
 	mux.HandleFunc("POST /enviar/baixar", requireCSRF(handleEnviarBaixar(app)))
 	mux.HandleFunc("GET /enviar/progresso/{jobId}", handleEnviarProgresso(app))
 }
@@ -63,7 +66,8 @@ func handleEnviar(app *App) http.HandlerFunc {
 
 // searchCacheTTL absorve buscas repetidas (usuário digitando, aba
 // recarregando) sem golpear a API pública do Deezer a cada tecla — o
-// hx-trigger já debounça 300ms no cliente, isso cobre o resto.
+// hx-trigger já debounça no cliente (e aborta a busca anterior via
+// hx-sync), e deezerdl.publicAPIThrottle espaça as chamadas que sobram.
 const searchCacheTTL = 60 * time.Second
 
 // maxSearchCacheEntries: acima disso o cache inteiro é descartado em vez de
@@ -106,8 +110,21 @@ func handleEnviarBuscar(app *App) http.HandlerFunc {
 			return
 		}
 
+		// Checado aqui (e não via withRateLimit) pelo mesmo motivo de
+		// handleEnviarBaixar: um 429 puro não é trocado pelo htmx e a lista
+		// ficava parada, parecendo que a busca não existia.
+		if !enviarSearchLimiter.Allow(clientIP(r)) {
+			_ = components.EnviarSearchError(query, offset).Render(r.Context(), w)
+			return
+		}
+
 		results, nextOffset, hasMore, err := searchDeezerCached(r.Context(), query, offset)
 		if err != nil {
+			// Busca abortada pelo cliente (hx-sync substituiu por uma mais
+			// nova): ninguém vai ler a resposta, e não é falha do Deezer.
+			if r.Context().Err() != nil {
+				return
+			}
 			app.Log.Error("buscando no deezer", "error", err)
 			_ = components.EnviarSearchError(query, offset).Render(r.Context(), w)
 			return
@@ -158,6 +175,12 @@ func searchDeezerCached(ctx context.Context, query string, offset int) (results 
 
 	results, nextOffset, hasMore, err = searchSertanejo(ctx, query, offset)
 	if err != nil {
+		return nil, 0, false, err
+	}
+	// Cancelado no meio do filtro de gênero: FilterSertanejo é fail-open,
+	// então o resultado pode trazer faixas que não deveriam passar — não
+	// cacheia (nem devolve) um resultado incompleto.
+	if err := ctx.Err(); err != nil {
 		return nil, 0, false, err
 	}
 

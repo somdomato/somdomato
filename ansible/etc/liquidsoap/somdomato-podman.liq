@@ -70,34 +70,50 @@ autodj_romantico.on_track(fun (m) -> notify_started("romantico", m))
 
 queue = request.queue(id="manual_queue")
 
-def skip_genre(genre) =
+# Com flush=true, descarta as faixas que o request.dynamic já pré-carregou
+# e busca uma nova em /internal/music ANTES de pular — usado pelo "Tocar" do
+# admin, que acabou de colocar a música escolhida na cabeça da fila. Sem
+# isso, o skip tocaria a faixa pré-carregada, não a escolhida.
+def skip_source(s, flush) =
+  if flush then
+    old = s.queue()
+    s.set_queue([])
+    list.iter(request.destroy, old)
+    ignore(s.fetch())
+  end
+  s.skip()
+end
+
+def skip_genre(genre, flush) =
   if genre == "geral" then
-    autodj_geral.skip()
+    skip_source(autodj_geral, flush)
     true
   elsif genre == "gaucha" then
-    autodj_gaucha.skip()
+    skip_source(autodj_gaucha, flush)
     true
   elsif genre == "modao" then
-    autodj_modao.skip()
+    skip_source(autodj_modao, flush)
     true
   elsif genre == "arrocha" then
-    autodj_arrocha.skip()
+    skip_source(autodj_arrocha, flush)
     true
   elsif genre == "romantico" then
-    autodj_romantico.skip()
+    skip_source(autodj_romantico, flush)
     true
   else
     false
   end
 end
 
-# POST /skip?genre=X — pula a faixa atual do AutoDJ da stream (o autodj já
-# inclui os pedidos: a próxima vem de /internal/music, que prioriza a fila
-# de pedidos). Sem `genre` mantém o comportamento antigo (geral).
+# POST /skip?genre=X[&flush=1] — pula a faixa atual do AutoDJ da stream (o
+# autodj já inclui os pedidos: a próxima vem de /internal/music, que
+# prioriza a fila de pedidos). Sem `genre` mantém o comportamento antigo
+# (geral).
 def skip_handler(request, response) =
   genre = list.assoc(default="geral", "genre", request.query)
-  if skip_genre(genre) then
-    log("[#{genre}] Skip solicitado pelo admin")
+  flush = list.assoc(default="0", "flush", request.query) == "1"
+  if skip_genre(genre, flush) then
+    log("[#{genre}] Skip solicitado pelo admin (flush=#{flush})")
     response.status_code(200)
     response.content_type("text/plain")
     response.html("OK")

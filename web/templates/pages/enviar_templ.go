@@ -25,12 +25,13 @@ type EnviarData struct {
 // enviarSearchTrigger dispara a busca assim que a página carrega quando o
 // campo já vem preenchido (deep link de /pedidos com "?q=" — ver
 // SearchNoResults em components/songlist.templ), além dos triggers normais
-// de digitação.
+// de digitação. O "delay" é o debounce: só busca após 500ms sem digitar
+// (cada busca pode virar dezenas de consultas de gênero no Deezer).
 func enviarSearchTrigger(query string) string {
 	if query == "" {
-		return "input changed delay:300ms, search"
+		return "input changed delay:500ms, search"
 	}
-	return "load, input changed delay:300ms, search"
+	return "load, input changed delay:500ms, search"
 }
 
 func Enviar(data EnviarData) templ.Component {
@@ -69,20 +70,20 @@ func Enviar(data EnviarData) templ.Component {
 			var templ_7745c5c3_Var3 string
 			templ_7745c5c3_Var3, templ_7745c5c3_Err = templruntime.NewAttributeExpression(enviarSearchTrigger(data.Query)).Resolve(ctx)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/pages/enviar.templ`, Line: 35, Col: 117}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/pages/enviar.templ`, Line: 36, Col: 117}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var3)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "\" onsubmit=\"event.preventDefault()\"><input type=\"search\" name=\"q\" value=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "\" hx-sync=\"this:replace\" onsubmit=\"event.preventDefault()\"><input type=\"search\" name=\"q\" value=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var4 string
 			templ_7745c5c3_Var4, templ_7745c5c3_Err = templruntime.NewAttributeExpression(data.Query).Resolve(ctx)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/pages/enviar.templ`, Line: 39, Col: 22}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/pages/enviar.templ`, Line: 40, Col: 22}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var4)
 			if templ_7745c5c3_Err != nil {

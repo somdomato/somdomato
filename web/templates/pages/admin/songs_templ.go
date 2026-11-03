@@ -1957,7 +1957,7 @@ func songEditFormBody(s models.Song, csrfToken string, inModal bool) templ.Compo
 			}
 			templ.ReleaseBuffer(templ_7745c5c3_Buffer)
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 153, ">Nenhum ou todos marcados = toca em qualquer horário. Não afeta pedidos, só o AutoDJ.</span></fieldset><label class=\"flex cursor-pointer items-center justify-between gap-4 rounded-xl border border-white/10 bg-surface px-4 py-3\"><span><span class=\"block text-sm font-semibold\">Permitir no Geral</span> <span class=\"block text-xs text-neutral-500\">Além do próprio gênero, também entra no sorteio do Geral.</span></span> <input type=\"checkbox\" name=\"allowed_in_general\" class=\"h-4 w-4 accent-brand-500\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 153, ">Nenhum ou todos marcados = toca em qualquer horário. Não afeta pedidos, só o AutoDJ.</span></fieldset><label class=\"flex cursor-pointer items-center justify-between gap-4 rounded-xl border border-white/10 bg-surface px-4 py-3\"><span><span class=\"block text-sm font-semibold\">Permitir no Geral</span> <span class=\"block text-xs text-neutral-500\">Além do próprio gênero, também entra no sorteio do Geral. Não faz diferença para músicas do gênero Geral.</span></span> <input type=\"checkbox\" name=\"allowed_in_general\" class=\"h-4 w-4 accent-brand-500\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

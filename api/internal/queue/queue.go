@@ -95,6 +95,58 @@ func (s *Store) PopNext(ctx context.Context, genre string) (*models.QueueEntry, 
 	return &entry, nil
 }
 
+// PlayNext coloca a música na cabeça da fila "scheduled" do gênero (antes
+// até dos pedidos), com source "admin" — usado pelo "Tocar" do admin. Não
+// marca nada como "current": isso só acontece quando o Liquidsoap de fato
+// começa a tocá-la (on_track -> SetCurrent), para a UI nunca exibir uma
+// faixa que não está no ar. Remove entradas "admin" agendadas anteriores
+// do gênero, para que cliques repetidos não empilhem músicas.
+func (s *Store) PlayNext(ctx context.Context, genre string, songID int64) error {
+	tx, err := s.pool.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+
+	if _, err := tx.Exec(ctx, `
+		DELETE FROM queue_entries
+		WHERE genre = $1 AND status = 'scheduled' AND source = 'admin'`, genre); err != nil {
+		return fmt.Errorf("limpando músicas do admin agendadas: %w", err)
+	}
+
+	var minPos int
+	if err := tx.QueryRow(ctx, `
+		SELECT COALESCE(MIN(position), 0) FROM queue_entries
+		WHERE genre = $1 AND status = 'scheduled'`, genre).Scan(&minPos); err != nil {
+		return fmt.Errorf("calculando posição da cabeça: %w", err)
+	}
+
+	if _, err := tx.Exec(ctx, `
+		INSERT INTO queue_entries (genre, song_id, status, source, position)
+		VALUES ($1, $2, 'scheduled', 'admin', $3)`, genre, songID, minPos-1); err != nil {
+		return fmt.Errorf("inserindo música do admin na fila: %w", err)
+	}
+	return tx.Commit(ctx)
+}
+
+// HeadIsAdmin informa se a próxima faixa "scheduled" do gênero foi colocada
+// pelo admin (PlayNext) — nesse caso /internal/music não deve intercalar
+// uma vinheta antes dela.
+func (s *Store) HeadIsAdmin(ctx context.Context, genre string) (bool, error) {
+	var source string
+	err := s.pool.QueryRow(ctx, `
+		SELECT source FROM queue_entries
+		WHERE genre = $1 AND status = 'scheduled'
+		ORDER BY position ASC, id ASC LIMIT 1`, genre).Scan(&source)
+	if err == pgx.ErrNoRows {
+		return false, nil
+	}
+	if err != nil {
+		return false, fmt.Errorf("consultando cabeça da fila: %w", err)
+	}
+	return source == string(models.SourceAdmin), nil
+}
+
 // RemoveMissingSong remove uma música (e registros relacionados) quando seu
 // arquivo não é mais encontrado em disco.
 func (s *Store) RemoveMissingSong(ctx context.Context, songID int64) error {

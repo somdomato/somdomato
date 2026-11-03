@@ -331,7 +331,7 @@ templ songEditFormBody(s models.Song, csrfToken string, inModal bool) {
 		<label class="flex cursor-pointer items-center justify-between gap-4 rounded-xl border border-white/10 bg-surface px-4 py-3">
 			<span>
 				<span class="block text-sm font-semibold">Permitir no Geral</span>
-				<span class="block text-xs text-neutral-500">Além do próprio gênero, também entra no sorteio do Geral.</span>
+				<span class="block text-xs text-neutral-500">Além do próprio gênero, também entra no sorteio do Geral. Não faz diferença para músicas do gênero Geral.</span>
 			</span>
 			<input type="checkbox" name="allowed_in_general" class="h-4 w-4 accent-brand-500" checked?={ s.AllowedInGeneral }/>
 		</label>

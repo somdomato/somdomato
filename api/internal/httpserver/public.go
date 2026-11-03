@@ -90,12 +90,11 @@ func buildPlayerData(ctx context.Context, app *App, genre config.Genre) componen
 		Cover  string
 	}
 	err := app.Pool.QueryRow(ctx, `
-		SELECT s.id, s.title, s.artist,
-		       CASE WHEN s.cover = $2 THEN COALESCE(ac.cover_path, s.cover) ELSE s.cover END
+		SELECT s.id, s.title, s.artist, `+cover.FallbackSQL+`
 		FROM queue_entries qe
 		JOIN songs s ON s.id = qe.song_id
 		LEFT JOIN artist_covers ac ON ac.artist_name = s.artist
-		WHERE qe.genre = $1 AND qe.status = 'current' LIMIT 1`, string(genre), cover.DefaultCover).
+		WHERE qe.genre = $1 AND qe.status = 'current' LIMIT 1`, string(genre)).
 		Scan(&currentRow.SongID, &currentRow.Title, &currentRow.Artist, &currentRow.Cover)
 	if err == nil {
 		now = components.NowPlaying{ID: currentRow.SongID, Title: currentRow.Title, Artist: currentRow.Artist, Cover: currentRow.Cover, Genre: string(genre)}
@@ -239,14 +238,14 @@ func buildTop10List(topSongs []models.Song) []components.TopRequestItem {
 func fetchRecentlyPlayed(ctx context.Context, app *App, genre string, limit int) ([]components.SongListItem, error) {
 	rows, err := app.Pool.Query(ctx, `
 		SELECT s.id, s.title, s.artist,
-		       CASE WHEN s.cover = $3 THEN COALESCE(ac.cover_path, s.cover) ELSE s.cover END,
+		       `+cover.FallbackSQL+`,
 		       qe.ended_at, s.rotation,
 		       (SELECT count(*) FROM queue_entries qe2 WHERE qe2.song_id = s.id AND qe2.status = 'played')
 		FROM queue_entries qe
 		JOIN songs s ON s.id = qe.song_id
 		LEFT JOIN artist_covers ac ON ac.artist_name = s.artist
 		WHERE qe.genre = $1 AND qe.status = 'played'
-		ORDER BY qe.ended_at DESC LIMIT $2`, genre, limit, cover.DefaultCover)
+		ORDER BY qe.ended_at DESC LIMIT $2`, genre, limit)
 	if err != nil {
 		return nil, err
 	}

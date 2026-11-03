@@ -19,6 +19,11 @@ var publicAPIRetryDelays = []time.Duration{400 * time.Millisecond, 1200 * time.M
 // Body.
 func doPublicGet(ctx context.Context, url string) (*http.Response, error) {
 	for attempt := 0; ; attempt++ {
+		// Cada tentativa (inclusive as novas) passa pelo throttle global:
+		// repetir sem esperar a vez só piora o estouro de cota.
+		if err := publicAPIThrottle.Wait(ctx); err != nil {
+			return nil, err
+		}
 		req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 		if err != nil {
 			return nil, err

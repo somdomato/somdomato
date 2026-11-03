@@ -175,29 +175,40 @@ func handleAdminSkipStream(app *App) http.HandlerFunc {
 			return
 		}
 
-		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
-		defer cancel()
-		endpoint := app.Cfg.LiquidsoapSkipURL + "?genre=" + url.QueryEscape(genre)
-		req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, nil)
-		if err != nil {
-			app.Log.Error("montando requisição de skip", "error", err)
-			http.Error(w, "erro interno", http.StatusInternalServerError)
-			return
-		}
-		resp, err := http.DefaultClient.Do(req)
-		if err != nil {
+		if err := requestLiquidsoapSkip(r.Context(), app, genre, false); err != nil {
 			app.Log.Error("pulando faixa no liquidsoap", "error", err, "genre", genre)
-			http.Error(w, "não foi possível falar com o Liquidsoap", http.StatusBadGateway)
-			return
-		}
-		defer resp.Body.Close()
-		if resp.StatusCode != http.StatusOK {
-			app.Log.Error("liquidsoap recusou o skip", "status", resp.StatusCode, "genre", genre)
-			http.Error(w, "o Liquidsoap recusou o skip", http.StatusBadGateway)
+			http.Error(w, "não foi possível pular a faixa no Liquidsoap", http.StatusBadGateway)
 			return
 		}
 		w.WriteHeader(http.StatusNoContent)
 	}
+}
+
+// requestLiquidsoapSkip pede ao Liquidsoap (harbor /skip) que pule a faixa
+// atual da stream. Com flush, descarta antes as faixas já pré-carregadas
+// pelo request.dynamic e busca uma nova em /internal/music — necessário
+// quando a cabeça da fila acabou de mudar (ex.: "Tocar" do admin), senão o
+// Liquidsoap tocaria a faixa que já tinha pré-carregado.
+func requestLiquidsoapSkip(ctx context.Context, app *App, genre string, flush bool) error {
+	ctx, cancel := context.WithTimeout(ctx, 20*time.Second)
+	defer cancel()
+	q := url.Values{"genre": {genre}}
+	if flush {
+		q.Set("flush", "1")
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, app.Cfg.LiquidsoapSkipURL+"?"+q.Encode(), nil)
+	if err != nil {
+		return fmt.Errorf("montando requisição de skip: %w", err)
+	}
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("liquidsoap recusou o skip: status %d", resp.StatusCode)
+	}
+	return nil
 }
 
 // --- Músicas -------------------------------------------------------------
@@ -513,14 +524,18 @@ func handleAdminPlaySong(app *App) http.HandlerFunc {
 			http.NotFound(w, r)
 			return
 		}
-		confirmed, err := app.Queue.SetCurrent(r.Context(), queueSetCurrentParams(song.Genre, song.ID, false))
-		if err == nil && confirmed != nil {
-			broadcastHistoryUpdated(app, r.Context(), song.Genre)
-			broadcastQueueUpdated(app, r.Context(), song.Genre)
-		}
-		if err != nil {
-			app.Log.Error("tocando música manualmente", "error", err)
+		// Só agenda a música na cabeça da fila e pede ao Liquidsoap para
+		// trocar de faixa: o "tocando agora" é atualizado pelo on_track
+		// (/internal/music/started) quando ela de fato entrar no ar.
+		if err := app.Queue.PlayNext(r.Context(), song.Genre, song.ID); err != nil {
+			app.Log.Error("agendando música manualmente", "error", err)
 			http.Error(w, "erro interno", http.StatusInternalServerError)
+			return
+		}
+		broadcastQueueUpdated(app, r.Context(), song.Genre)
+		if err := requestLiquidsoapSkip(r.Context(), app, song.Genre, true); err != nil {
+			app.Log.Error("trocando faixa no liquidsoap", "error", err, "genre", song.Genre)
+			http.Error(w, "não foi possível falar com o Liquidsoap", http.StatusBadGateway)
 			return
 		}
 		w.WriteHeader(http.StatusNoContent)
