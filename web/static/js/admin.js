@@ -75,3 +75,20 @@ document.body.addEventListener("htmx:confirm", (evt) => {
 		dialog.close();
 	});
 })();
+
+// O <input type="file"> da capa fica escondido (sr-only) atrás de um botão
+// estilizado; mostra o nome do arquivo escolhido logo abaixo para dar
+// retorno antes de clicar em "Enviar capa".
+document.addEventListener("change", (evt) => {
+	const input = evt.target;
+	if (!(input instanceof HTMLInputElement) || !input.matches("[data-cover-input]")) {
+		return;
+	}
+	const name = input.closest("section")?.querySelector("[data-cover-name]");
+	if (!name) {
+		return;
+	}
+	const file = input.files && input.files[0];
+	name.textContent = file ? `Selecionado: ${file.name}` : "";
+	name.classList.toggle("hidden", !file);
+});

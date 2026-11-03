@@ -157,7 +157,7 @@ func confirmDialog() templ.Component {
 		}
 		ctx = templ.InitializeContext(ctx)
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "<dialog id=\"confirm-dialog\" class=\"w-[90vw] max-w-sm rounded-xl border border-white/10 bg-surface-raised p-0 text-neutral-100 backdrop:bg-black/60\"><div class=\"p-5\"><p id=\"confirm-dialog-text\" class=\"text-sm\"></p><div class=\"mt-5 flex justify-end gap-2\"><button type=\"button\" data-confirm-no class=\"rounded-lg px-3 py-2 text-sm text-neutral-300 hover:bg-white/5\">Cancelar</button> <button type=\"button\" data-confirm-yes class=\"rounded-lg bg-red-600 px-3 py-2 text-sm font-semibold text-white hover:bg-red-500\">Confirmar</button></div></div></dialog>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "<dialog id=\"confirm-dialog\" class=\"m-auto w-[90vw] max-w-sm rounded-xl border border-white/10 bg-surface-raised p-0 text-neutral-100 backdrop:bg-black/60\"><div class=\"p-5\"><p id=\"confirm-dialog-text\" class=\"text-sm\"></p><div class=\"mt-5 flex justify-end gap-2\"><button type=\"button\" data-confirm-no class=\"rounded-lg px-3 py-2 text-sm text-neutral-300 hover:bg-white/5\">Cancelar</button> <button type=\"button\" data-confirm-yes class=\"rounded-lg bg-red-600 px-3 py-2 text-sm font-semibold text-white hover:bg-red-500\">Confirmar</button></div></div></dialog>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -186,7 +186,7 @@ func songEditDialog() templ.Component {
 		}
 		ctx = templ.InitializeContext(ctx)
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "<dialog id=\"song-edit-dialog\" class=\"w-[92vw] max-w-lg rounded-2xl border border-white/10 bg-surface-raised p-0 text-neutral-100 backdrop:bg-black/70 backdrop:backdrop-blur-sm\"><div class=\"flex items-center justify-between border-b border-white/10 px-5 py-3\"><h2 class=\"text-sm font-semibold\">Editar música</h2><button type=\"button\" data-modal-close aria-label=\"Fechar\" class=\"text-neutral-400 hover:text-neutral-100\">✕</button></div><div id=\"song-edit-dialog-content\" class=\"modal-scroll max-h-[75vh] overflow-y-auto p-5\"><!-- preenchido via hx-get ao abrir --></div></dialog>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "<dialog id=\"song-edit-dialog\" class=\"m-auto w-[94vw] max-w-xl overflow-hidden rounded-2xl border border-white/10 bg-surface-raised p-0 text-neutral-100 shadow-2xl shadow-black/60 backdrop:bg-black/70 backdrop:backdrop-blur-sm\"><div class=\"flex items-center justify-between border-b border-white/10 px-6 py-4\"><div class=\"flex items-center gap-2.5\"><span class=\"flex h-8 w-8 items-center justify-center rounded-lg bg-brand-600/15 text-brand-300\">♪</span><h2 class=\"text-base font-bold\">Editar música</h2></div><button type=\"button\" data-modal-close aria-label=\"Fechar\" class=\"flex h-8 w-8 items-center justify-center rounded-lg text-neutral-400 transition hover:bg-white/5 hover:text-neutral-100\">✕</button></div><div id=\"song-edit-dialog-content\" class=\"modal-scroll max-h-[calc(85vh-4.25rem)] overflow-y-auto\"><!-- preenchido via hx-get ao abrir --></div></dialog>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -219,7 +219,7 @@ func navLink(href, label string, active bool) templ.Component {
 			var templ_7745c5c3_Var7 string
 			templ_7745c5c3_Var7, templ_7745c5c3_Err = templruntime.NewAttributeExpression(templ.URL(href)).ResolveURL(ctx)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/pages/admin/shell.templ`, Line: 74, Col: 27}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/pages/admin/shell.templ`, Line: 77, Col: 27}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var7)
 			if templ_7745c5c3_Err != nil {
@@ -232,7 +232,7 @@ func navLink(href, label string, active bool) templ.Component {
 			var templ_7745c5c3_Var8 string
 			templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(label)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/pages/admin/shell.templ`, Line: 74, Col: 108}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/pages/admin/shell.templ`, Line: 77, Col: 108}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 			if templ_7745c5c3_Err != nil {
@@ -250,7 +250,7 @@ func navLink(href, label string, active bool) templ.Component {
 			var templ_7745c5c3_Var9 string
 			templ_7745c5c3_Var9, templ_7745c5c3_Err = templruntime.NewAttributeExpression(templ.URL(href)).ResolveURL(ctx)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/pages/admin/shell.templ`, Line: 76, Col: 27}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/pages/admin/shell.templ`, Line: 79, Col: 27}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var9)
 			if templ_7745c5c3_Err != nil {
@@ -263,7 +263,7 @@ func navLink(href, label string, active bool) templ.Component {
 			var templ_7745c5c3_Var10 string
 			templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(label)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/pages/admin/shell.templ`, Line: 76, Col: 106}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/pages/admin/shell.templ`, Line: 79, Col: 106}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 			if templ_7745c5c3_Err != nil {
