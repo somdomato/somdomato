@@ -1,5 +1,6 @@
 // Package cover resolve a capa de uma música a partir da arte embutida no
-// ID3 do próprio arquivo MP3. Porta parcial de src/lib/cover.ts — a
+// próprio arquivo de áudio: ID3 (APIC) no MP3 ou METADATA_BLOCK_PICTURE nos
+// Vorbis comments do OGG — dhowden/tag lê os dois. Porta parcial de src/lib/cover.ts — a
 // resolução via API do Deezer fica para a fase 2 (uploads), este pacote só
 // cobre a extração local, que é o caminho principal hoje em produção.
 package cover
@@ -29,12 +30,12 @@ const DefaultCover = "/static/images/logotipo.svg"
 // ON ac.artist_name = s.artist na query.
 const FallbackSQL = `COALESCE(ac.cover_path, s.cover)`
 
-// ExtractAndSave lê a tag ID3 do arquivo em mp3Path e, se houver capa
-// embutida, salva um .jpg/.png determinístico (hash do path) em coversDir e
-// retorna a URL pública (/covers/<hash>.<ext>). Retorna "" se não houver
-// capa embutida.
-func ExtractAndSave(mp3Path, coversDir string) (string, error) {
-	f, err := os.Open(mp3Path)
+// ExtractAndSave lê as tags do arquivo em audioPath (ID3 no MP3, Vorbis
+// comments no OGG) e, se houver capa embutida, salva um .jpg/.png
+// determinístico (hash do path) em coversDir e retorna a URL pública
+// (/covers/<hash>.<ext>). Retorna "" se não houver capa embutida.
+func ExtractAndSave(audioPath, coversDir string) (string, error) {
+	f, err := os.Open(audioPath)
 	if err != nil {
 		return "", fmt.Errorf("abrindo arquivo para leitura de tags: %w", err)
 	}
@@ -51,7 +52,7 @@ func ExtractAndSave(mp3Path, coversDir string) (string, error) {
 	}
 
 	ext := extensionForMIME(pic.MIMEType, pic.Ext)
-	hash := sha1.Sum([]byte(mp3Path))
+	hash := sha1.Sum([]byte(audioPath))
 	filename := hex.EncodeToString(hash[:]) + ext
 
 	if err := os.MkdirAll(coversDir, 0o755); err != nil {

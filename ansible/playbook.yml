@@ -61,6 +61,8 @@
         deezer_arl: "{{ app_env.DEEZER_ARL | default('') }}"
         groq_api_key: "{{ app_env.GROQ_API_KEY | default('') }}"
         groq_model: "{{ app_env.GROQ_MODEL | default('openai/gpt-oss-20b') }}"
+        # Formato dos arquivos de áudio novos (downloads de /enviar): ogg | mp3.
+        audio_format: "{{ app_env.AUDIO_FORMAT | default('ogg') }}"
       no_log: true
       tags: [always]
 
@@ -78,7 +80,9 @@
       ansible.builtin.apt:
         # webp: fornece o binário cwebp, usado por api/internal/artistcover
         # pra converter capas de artista pra webp antes de salvar em disco.
-        name: [curl, ca-certificates, gnupg, git, rsync, jq, openssl, acl, ufw, webp]
+        # ffmpeg: usado por api/internal/audiofile pra converter os downloads
+        # de /enviar (MP3 do Deezer) para Ogg Vorbis (AUDIO_FORMAT=ogg).
+        name: [curl, ca-certificates, gnupg, git, rsync, jq, openssl, acl, ufw, webp, ffmpeg]
         state: present
       tags: [base]
 
@@ -160,6 +164,7 @@
           DEEZER_ARL={{ deezer_arl }}
           GROQ_API_KEY={{ groq_api_key }}
           GROQ_MODEL={{ groq_model }}
+          AUDIO_FORMAT={{ audio_format }}
       no_log: true
       notify: Restart API Go
       tags: [app]

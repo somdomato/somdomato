@@ -43,7 +43,7 @@ nativa no host, ver `go.mod`).
 ```bash
 cp .env.example .env   # ajuste MUSIC_PATH para seu catálogo local
 make setup                # instala templ/tailwind/air e sobe postgres/icecast/liquidsoap
-make seed                 # varre MUSIC_PATH e popula o catálogo
+make seed                 # varre MUSIC_PATH (.mp3 e .ogg) e popula o catálogo
 make dev                  # roda a API+HTMX localmente com hot-reload (air) + CSS em watch
 ```
 
@@ -62,6 +62,13 @@ restrita (`chmod 600 .env`).
 `DEEZER_ARL` e `GROQ_API_KEY` (também em `.env.example`) são opcionais —
 sem eles a aplicação sobe normalmente e só a rota `/enviar` fica
 desativada. Ver "Envio de músicas via Deezer" abaixo.
+
+Para que os downloads de `/enviar` sejam gravados em OGG (padrão,
+`AUDIO_FORMAT=ogg`), o host precisa ter o `ffmpeg` instalado — a API roda
+nativa, fora de container: `sudo pacman -S ffmpeg` (Arch), `apt install
+ffmpeg` (Debian/Ubuntu) ou `brew install ffmpeg` (Mac). Sem ele nada quebra:
+a API loga um aviso no boot e os downloads continuam em MP3. Ver "Formatos
+de áudio (MP3 e OGG)" abaixo.
 
 - App: http://localhost:3000
 - Rádio (Icecast): http://localhost:8000/geral
@@ -141,17 +148,140 @@ visitantes simultâneos gastando pouca RAM/CPU:
   minuto, sempre**, não importa quantos uploads estejam na fila nem quantos
   usuários peçam ao mesmo tempo — garantido pela estrutura do código (só
   existe um caminho para chamar a Groq, o tick), não por um rate limiter
-  reativo. Aprovada, a faixa entra direto em `songs` (com capa extraída do
-  próprio ID3 do MP3); rejeitada ou com falha repetida (`MaxAttempts`),
-  fica marcada como `rejected`.
+  reativo. Aprovada, a faixa entra direto em `songs` (com capa extraída das
+  tags do próprio arquivo — ID3 no MP3, Vorbis comments no OGG); rejeitada
+  ou com falha repetida (`MaxAttempts`), fica marcada como `rejected`.
+- O Deezer sempre entrega MP3; com `AUDIO_FORMAT=ogg` (padrão) o arquivo é
+  convertido para **Ogg Vorbis** antes de entrar na fila de avaliação. Ver
+  a seção seguinte.
 
 Sem `DEEZER_ARL`, a rota `/enviar/baixar` responde 503 e o resto da app
 sobe normal. Sem `GROQ_API_KEY`, os uploads baixados ficam em `pending`
 indefinidamente (nada quebra, só não são aprovados sozinhos).
 
+### Formatos de áudio (MP3 e OGG) — `api/internal/audiofile`
+
+A rádio aceita dois formatos de arquivo, misturados livremente no mesmo
+catálogo:
+
+| Extensão | Conteúdo | Tags lidas/gravadas | Content-Type |
+| :--- | :--- | :--- | :--- |
+| `.mp3` | MPEG-1 Layer III | ID3v2 (capa em `APIC`) | `audio/mpeg` |
+| `.ogg` | Ogg **Vorbis** (padrão para arquivos novos) ou Ogg Opus | Vorbis comments (capa em `METADATA_BLOCK_PICTURE`) | `audio/ogg` |
+
+A extensão é o que decide o formato (sem diferenciar maiúsculas). Outras
+extensões (`.flac`, `.m4a`, `.wav`, `.opus`...) continuam sendo ignoradas.
+Todo código que depende de formato passa por `api/internal/audiofile` — é o
+único lugar a mexer para aceitar um formato novo.
+
+**Onde cada formato é aceito:**
+
+- `make seed` (`api/cmd/seed`) e `make seed-jingles` (`api/cmd/seedjingles`)
+  importam `.mp3` e `.ogg`. Título/artista/álbum vêm das tags (ID3 ou Vorbis
+  comments, via `github.com/dhowden/tag`); sem tags, do nome do arquivo
+  (`Artista - Título.ext`).
+- Capa da música (`api/internal/cover`): extraída da tag `APIC` do MP3 ou do
+  `METADATA_BLOCK_PICTURE` do OGG, no seed, na aprovação de envios e na
+  primeira vez que a música toca.
+- `GET /music/file/{id}` responde com o `Content-Type` do formato real.
+- Editar uma música no admin regrava título/artista no próprio arquivo —
+  ID3 no MP3, Vorbis comments no OGG. Renomear o arquivo **não** pode trocar
+  a extensão (o formulário recusa: renomear não converte o áudio).
+- Liquidsoap toca os dois: o pacote do Debian 13 (Liquidsoap 2.3) depende de
+  `libvorbis`/`libogg`/`libopus` e FFmpeg, e a imagem de dev
+  (`savonet/liquidsoap:v2.3.0`) também decodifica OGG.
+
+**OGG como padrão para arquivos novos (`AUDIO_FORMAT`).** O único lugar
+que cria arquivos de áudio hoje é o download de `/enviar`. O Deezer só
+entrega MP3, então com `AUDIO_FORMAT=ogg` (padrão quando a variável não é
+definida) o fluxo de `deezerdl.Download` passa a ser:
+
+1. decripta o MP3 para `<uploads>/*.part` (como antes);
+2. converte com `ffmpeg` para `<uploads>/*.ogg.part` — `libvorbis`, VBR
+   `-q:a 6` (~192 kbps), só a primeira trilha de áudio, sem metadados nem
+   capa da origem, 1 thread;
+3. valida a saída (cabeçalhos Vorbis + ao menos uma página de áudio) e apaga
+   o MP3 temporário;
+4. renomeia para `Artista - Título.ogg` e grava título, artista, ISRC e capa
+   como Vorbis comments;
+5. ajusta a permissão para `0644` (o Liquidsoap roda com outro usuário).
+
+A conversão roda dentro do semáforo de downloads (no máximo 3 ffmpegs ao
+mesmo tempo, 1 thread cada) e dentro do timeout de 5 minutos do job.
+
+**Fallbacks (nenhum deles quebra o envio):**
+
+- `ffmpeg` ausente no `PATH` → aviso no boot, downloads ficam em MP3;
+- conversão falhou ou saída inválida → aviso no log
+  (`conversão para OGG falhou, mantendo MP3`), aquele download fica em MP3;
+- job cancelado/expirado durante a conversão → o download falha como já
+  falhava antes, e nenhum temporário fica para trás;
+- `AUDIO_FORMAT=mp3` → comportamento antigo, sem conversão.
+
+`AUDIO_FORMAT` com valor inválido (qualquer coisa diferente de `ogg`/`mp3`)
+impede a API de subir, com uma mensagem clara — melhor que gravar no formato
+errado sem ninguém perceber.
+
+**Por que Vorbis e `-q:a 6`.** É o codec OGG suportado em todo lugar
+(Liquidsoap, navegadores, ffmpeg, `dhowden/tag`). Converter MP3→Vorbis é
+lossy→lossy, então a qualidade fica bem acima do que chega ao ouvinte: o
+stream do Icecast é MP3 de 128 kbps e reencoda tudo, de qualquer jeito. Na
+prática não há perda audível na rádio; o arquivo fica um pouco menor que um
+MP3 de 320 kbps.
+
+**O que NÃO muda:**
+
+- O **stream** continua MP3 (`%mp3(bitrate=128)` no Liquidsoap, URL
+  `/<genero>.mp3`), por compatibilidade com o WebKit do iOS (ver
+  `config.StreamURL`). OGG aqui se refere só aos arquivos em disco.
+- Arquivos já existentes **não são convertidos**. MP3 e OGG convivem no
+  catálogo para sempre; para converter o acervo manualmente, use `ffmpeg`
+  e depois `make seed` (as entradas antigas apontam para o caminho `.mp3`
+  e precisariam ser atualizadas/removidas no banco — não há ferramenta
+  automática para isso).
+
+**Gravação de Vorbis comments em Go puro** (`audiofile/ogg.go`). A
+biblioteca de tags do projeto (`dhowden/tag`) só lê, e usar o `ffmpeg` para
+regravar tags arriscaria perder a capa (ao ler, o ffmpeg transforma o
+`METADATA_BLOCK_PICTURE` numa trilha de imagem, que um `-c copy` para OGG
+não necessariamente preserva). A implementação faz o mesmo que o
+`vorbiscomment -w`: remonta só as páginas de cabeçalho e copia as páginas
+de áudio com o número de sequência ajustado e o CRC recalculado — bytes de
+áudio, granule positions e flags ficam intactos. Os comentários existentes
+são preservados; só as chaves gravadas (`TITLE`, `ARTIST`, `ISRC`,
+`METADATA_BLOCK_PICTURE`) são substituídas. Por segurança, a escrita é
+feita num temporário no mesmo diretório e só substitui o original por
+rename atômico; qualquer arquivo fora do caso simples (CRC inválido, OGG
+encadeado ou com mais de um stream, lixo no fim, codec que não seja
+Vorbis/Opus) é recusado sem alterar o original. Os testes
+(`go test ./api/internal/audiofile/`) cobrem arquivos sintéticos (incluindo
+cabeçalhos e capas que ocupam várias páginas e arquivos corrompidos) e,
+quando o `ffmpeg` está instalado, arquivos reais: conversão, gravação de
+tags, releitura por `dhowden/tag` e decodificação limpa pelo ffmpeg.
+
+**Ativando em produção.** O playbook instala o pacote `ffmpeg` (tag `base`)
+e repassa `AUDIO_FORMAT` (padrão `ogg`) para o `.env` da API (tag `app`).
+Num servidor já provisionado: `make provision-tags TAGS=base,app` — atenção,
+a tag `base` também roda o `apt dist-upgrade` do sistema; se não quiser
+isso agora, instale só o pacote (`apt install ffmpeg`) e rode
+`make provision-tags TAGS=app`.
+
+> ⚠️ **A tag `app` regrava o `.env` inteiro da API** a partir do `.env`
+> local — incluindo `DATABASE_URL`, montado com `POSTGRES_USER`,
+> `POSTGRES_PASSWORD` e `POSTGRES_DB`. Antes de rodar, confirme que esses
+> três têm os valores de **produção** (banco `somdomato`), e não os de dev
+> (`sdm_dev_only` / `sdm`). Em 2026-11-03 um provisionamento com os valores
+> de dev deixou a API em crash-loop (502): `password authentication failed`
+> e, corrigida a senha, `database "sdm" does not exist`. Se só precisa do
+> ffmpeg, `apt install ffmpeg` no servidor basta: sem `AUDIO_FORMAT` no
+> `.env` da API, o padrão já é `ogg`. Depois do deploy, o log de boot da API não
+deve mostrar o aviso `ffmpeg não foi encontrado`, e os arquivos de novos
+envios em `$MUSIC_DIR/uploads/` passam a terminar em `.ogg`. Para voltar ao comportamento
+antigo basta `AUDIO_FORMAT=mp3` no `.env` + `make provision-tags TAGS=app`.
+
 ### Capas de artistas (`api/internal/artistcover`)
 
-Além da capa por música (extraída do ID3, `api/internal/cover`), cada
+Além da capa por música (extraída das tags do arquivo, `api/internal/cover`), cada
 artista tem uma capa própria — usada nos cards de `/artistas` e no topo de
 `/artistas/{artist}` — guardada na tabela `artist_covers` (chave livre
 `artist_name`, o mesmo texto usado em `songs.artist`; não existe uma tabela

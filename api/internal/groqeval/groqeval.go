@@ -127,7 +127,7 @@ func (e *Evaluator) approve(ctx context.Context, upload *models.Upload, genre, r
 		genre = string(config.DefaultGenre)
 	}
 
-	// A capa embutida no ID3 é preferida (arquivo já local, sem depender de
+	// A capa embutida no arquivo (ID3 no MP3, Vorbis comment no OGG) é preferida (arquivo já local, sem depender de
 	// rede), mas o download pode ter falhado em anexá-la (ver comentário de
 	// fetchCoverImage best-effort em deezerdl/download.go) — nesse caso cai
 	// para a miniatura já resolvida na busca do Deezer antes de desistir e

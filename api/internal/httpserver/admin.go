@@ -15,11 +15,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/bogem/id3v2/v2"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/somdomato/somdomato/api/config"
 	"github.com/somdomato/somdomato/api/internal/artistcover"
+	"github.com/somdomato/somdomato/api/internal/audiofile"
 	"github.com/somdomato/somdomato/api/internal/auth"
 	"github.com/somdomato/somdomato/api/internal/cover"
 	"github.com/somdomato/somdomato/api/internal/icecastclient"
@@ -324,8 +324,10 @@ func handleAdminSongUpdate(app *App) http.HandlerFunc {
 			http.Error(w, "não foi possível renomear o arquivo: "+err.Error(), http.StatusBadRequest)
 			return
 		}
-		if err := writeID3Tags(newPath, title, artist); err != nil {
-			app.Log.Error("gravando tags ID3", "error", err)
+		if err := audiofile.WriteTags(newPath, audiofile.Tags{Title: title, Artist: artist}); err != nil {
+			// Best-effort, como antes: o banco é a fonte de verdade do
+			// catálogo; a tag no arquivo é só conveniência.
+			app.Log.Error("gravando tags no arquivo de áudio", "error", err, "path", newPath)
 		}
 
 		in := songsUpdateInput(r, timeSlots)
@@ -383,7 +385,9 @@ func songsUpdateInput(r *http.Request, timeSlots int) songs.UpdateInput {
 // renameSongFile renomeia o arquivo em disco para o nome informado,
 // mantendo-o no mesmo diretório. filename vazio ou igual ao nome atual é
 // um no-op. Rejeita qualquer componente de caminho (barras, "..") para não
-// permitir escrever fora do diretório da música.
+// permitir escrever fora do diretório da música, e rejeita troca de
+// extensão: renomear não converte o áudio, e um .ogg chamado .mp3 (ou
+// vice-versa) quebraria a gravação de tags e o Content-Type servido.
 func renameSongFile(currentPath, filename string) (string, error) {
 	filename = strings.TrimSpace(filename)
 	if filename == "" {
@@ -391,6 +395,9 @@ func renameSongFile(currentPath, filename string) (string, error) {
 	}
 	if filename != filepath.Base(filename) || filename == "." || filename == ".." {
 		return "", fmt.Errorf("nome de arquivo inválido")
+	}
+	if !strings.EqualFold(filepath.Ext(filename), filepath.Ext(currentPath)) {
+		return "", fmt.Errorf("a extensão do arquivo não pode ser alterada (mantenha %q)", filepath.Ext(currentPath))
 	}
 	newPath := filepath.Join(filepath.Dir(currentPath), filename)
 	if newPath == currentPath {
@@ -403,25 +410,6 @@ func renameSongFile(currentPath, filename string) (string, error) {
 		return "", fmt.Errorf("renomeando arquivo: %w", err)
 	}
 	return newPath, nil
-}
-
-// writeID3Tags grava título/artista nas tags ID3 do arquivo mp3 — apenas
-// os campos exibidos no formulário de edição, sem tocar em capa/álbum.
-func writeID3Tags(path, title, artist string) error {
-	if !strings.HasSuffix(strings.ToLower(path), ".mp3") {
-		return nil
-	}
-	tag, err := id3v2.Open(path, id3v2.Options{Parse: true})
-	if err != nil {
-		return fmt.Errorf("abrindo tags ID3: %w", err)
-	}
-	defer tag.Close()
-	tag.SetTitle(title)
-	tag.SetArtist(artist)
-	if err := tag.Save(); err != nil {
-		return fmt.Errorf("salvando tags ID3: %w", err)
-	}
-	return nil
 }
 
 // handleAdminSongDelete apaga a música do banco (requests/queue_entries

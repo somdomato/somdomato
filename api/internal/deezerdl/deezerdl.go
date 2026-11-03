@@ -24,6 +24,8 @@ package deezerdl
 import (
 	"context"
 	"errors"
+
+	"github.com/somdomato/somdomato/api/internal/audiofile"
 )
 
 // ErrNotConfigured é retornado por todas as operações quando DEEZER_ARL não
@@ -59,13 +61,20 @@ func releaseSlot() {
 
 type Client struct {
 	arl string
+	// oggTranscoder, quando não-nil, faz cada download (que o Deezer sempre
+	// entrega em MP3) ser convertido para Ogg Vorbis antes de ir para o
+	// catálogo. nil = arquivos ficam em MP3, como vieram.
+	oggTranscoder *audiofile.Transcoder
 }
 
 // New cria um client vinculado ao cookie ARL. Não autentica imediatamente —
 // a sessão é resolvida (e cacheada) na primeira operação real, então criar
 // um Client é barato e pode acontecer uma vez no boot.
-func New(arl string) *Client {
-	return &Client{arl: arl}
+//
+// oggTranscoder é opcional: passe nil para manter os downloads em MP3
+// (AUDIO_FORMAT=mp3 ou ffmpeg ausente). Ver Download.
+func New(arl string, oggTranscoder *audiofile.Transcoder) *Client {
+	return &Client{arl: arl, oggTranscoder: oggTranscoder}
 }
 
 func (c *Client) configured() bool { return c.arl != "" }

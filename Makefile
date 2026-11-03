@@ -17,12 +17,13 @@ help: ## Mostra esta ajuda
 # ── Setup inicial ────────────────────────────────────────────────────────
 
 setup: tools ## Configura tudo do zero (.env + tools + up)
-	@[ -f .env ] || cp .env.example .env && echo "  → .env criado (edite MUSIC_PATH)"
+	@if [ ! -f .env ]; then cp .env.example .env && echo "  → .env criado (edite MUSIC_PATH)"; fi
 	@$(MAKE) up
 	@echo "✅ Postgres/Icecast/Liquidsoap no ar. Rode 'make dev' para subir a API+HTMX (via air)."
 
 tools: ## Instala templ e o CLI standalone do Tailwind v4 (sem Node.js)
-	go install github.com/a-h/templ/cmd/templ@latest
+	@# Mesma versão do go.mod: gerador e runtime do templ precisam bater.
+	go install github.com/a-h/templ/cmd/templ@$$(go list -m -f '{{.Version}}' github.com/a-h/templ)
 	go install github.com/air-verse/air@latest
 	@if [ ! -x ./tailwindcss ]; then \
 		OS=$$(uname -s); ARCH=$$(uname -m); \
@@ -47,7 +48,8 @@ _dev-stop-css:
 	@pkill -f 'tailwindcss --input web/css/input.css' 2>/dev/null || true
 
 air: templ ## Roda só a API+HTMX com hot-reload (requer 'make up' rodando à parte)
-	@. ./scripts/dev-env.sh && $(GOBIN)/air -c .air.toml
+	@# GOBIN no PATH: o pre_cmd do .air.toml chama `templ` pelo nome.
+	@. ./scripts/dev-env.sh && PATH="$(GOBIN):$$PATH" $(GOBIN)/air -c .air.toml
 
 up: ## Sobe postgres, icecast e liquidsoap em background
 	$(COMPOSE) up -d

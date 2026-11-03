@@ -1,4 +1,5 @@
-// cmd/seedjingles varre JINGLES_DIR por arquivos .mp3 e insere cada um na
+// cmd/seedjingles varre JINGLES_DIR por arquivos .mp3 e .ogg (ver
+// internal/audiofile) e insere cada um na
 // tabela `jingles` — idempotente por `path` (UNIQUE, ON CONFLICT DO
 // NOTHING), então pode rodar em todo boot sem duplicar. Complementa
 // cmd/seed, que varre MUSIC_PATH mas pula JINGLES_DIR de propósito
@@ -14,6 +15,7 @@ import (
 	"strings"
 
 	"github.com/somdomato/somdomato/api/config"
+	"github.com/somdomato/somdomato/api/internal/audiofile"
 	"github.com/somdomato/somdomato/api/internal/db"
 	"github.com/somdomato/somdomato/api/internal/jingles"
 )
@@ -52,7 +54,7 @@ func main() {
 		if d.IsDir() {
 			return nil
 		}
-		if !strings.EqualFold(filepath.Ext(path), ".mp3") {
+		if !audiofile.IsSupported(path) {
 			return nil
 		}
 		scanned++

@@ -14,6 +14,7 @@ import (
 	"github.com/somdomato/somdomato/api/config"
 	"github.com/somdomato/somdomato/api/internal/analytics"
 	"github.com/somdomato/somdomato/api/internal/artistcover"
+	"github.com/somdomato/somdomato/api/internal/audiofile"
 	"github.com/somdomato/somdomato/api/internal/auth"
 	"github.com/somdomato/somdomato/api/internal/db"
 	"github.com/somdomato/somdomato/api/internal/deezerdl"
@@ -64,7 +65,7 @@ func main() {
 
 	var deezerClient *deezerdl.Client
 	if cfg.DeezerARL != "" {
-		deezerClient = deezerdl.New(cfg.DeezerARL)
+		deezerClient = deezerdl.New(cfg.DeezerARL, newOggTranscoder(cfg, log))
 	} else {
 		log.Warn("DEEZER_ARL não configurado — rota /enviar/baixar fica desativada")
 	}
@@ -135,4 +136,22 @@ func main() {
 	if err := srv.Shutdown(shutdownCtx); err != nil {
 		log.Error("erro no shutdown", "error", err)
 	}
+}
+
+// newOggTranscoder devolve o conversor MP3→OGG usado pelos downloads de
+// /enviar quando AUDIO_FORMAT=ogg (padrão). Retorna nil — downloads ficam
+// em MP3 — quando AUDIO_FORMAT=mp3 ou quando o ffmpeg não está instalado;
+// nesse segundo caso só loga um aviso, sem impedir o boot (mesmo padrão do
+// cwebp em internal/artistcover).
+func newOggTranscoder(cfg *config.Config, log *slog.Logger) *audiofile.Transcoder {
+	if cfg.AudioFormat != audiofile.FormatOGG {
+		log.Info("AUDIO_FORMAT=mp3 — downloads de /enviar ficam em MP3")
+		return nil
+	}
+	t, err := audiofile.NewTranscoder()
+	if err != nil {
+		log.Warn("AUDIO_FORMAT=ogg mas ffmpeg não foi encontrado — downloads de /enviar ficam em MP3 (instale o pacote 'ffmpeg')", "error", err)
+		return nil
+	}
+	return t
 }

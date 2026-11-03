@@ -32,7 +32,7 @@ templ Enviar(data EnviarData) {
 			— pode levar alguns minutos.
 		</p>
 
-		<form class="mt-4" hx-get="/enviar/buscar" hx-target="#search-results" hx-trigger={ enviarSearchTrigger(data.Query) }>
+		<form class="mt-4" hx-get="/enviar/buscar" hx-target="#search-results" hx-trigger={ enviarSearchTrigger(data.Query) } onsubmit="event.preventDefault()">
 			<input
 				type="search"
 				name="q"

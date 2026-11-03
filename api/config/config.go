@@ -8,6 +8,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/somdomato/somdomato/api/internal/audiofile"
 )
 
 // Genre é um mountpoint/stream da rádio. Mantido como tipo fechado (não
@@ -125,7 +127,7 @@ type Config struct {
 	DatabaseURL string
 
 	// Diretórios de mídia
-	MusicPath  string // raiz do catálogo de músicas
+	MusicPath  string // raiz do catálogo de músicas (aceita .mp3 e .ogg)
 	CoversDir  string // diretório gravável para capas extraídas/resolvidas
 	JinglesDir string
 
@@ -155,6 +157,12 @@ type Config struct {
 	UploadsDir string // onde os downloads pousam antes de entrar no catálogo
 	GroqAPIKey string
 	GroqModel  string
+
+	// AudioFormat é o formato em que arquivos de áudio NOVOS são gravados
+	// (downloads de /enviar): "ogg" (padrão, Ogg Vorbis via ffmpeg) ou
+	// "mp3" (mantém o MP3 original do Deezer). Arquivos existentes nunca
+	// são convertidos; a rádio toca os dois formatos. Ver internal/audiofile.
+	AudioFormat audiofile.Format
 }
 
 func Load() (*Config, error) {
@@ -176,6 +184,12 @@ func Load() (*Config, error) {
 		GroqModel:          getEnv("GROQ_MODEL", "openai/gpt-oss-20b"),
 		NowPlayingDelay:    time.Duration(getEnvInt("RADIO_NOWPLAYING_DELAY_SECONDS", 8)) * time.Second,
 	}
+
+	audioFormat, err := audiofile.ParseFormat(getEnv("AUDIO_FORMAT", string(audiofile.DefaultFormat)))
+	if err != nil {
+		return nil, fmt.Errorf("AUDIO_FORMAT: %w", err)
+	}
+	cfg.AudioFormat = audioFormat
 
 	var missing []string
 	if cfg.DatabaseURL == "" {

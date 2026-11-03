@@ -1,5 +1,6 @@
-// cmd/seed varre MUSIC_PATH recursivamente por arquivos .mp3, lê as tags
-// ID3 (título/artista/álbum) e insere cada música no catálogo — idempotente
+// cmd/seed varre MUSIC_PATH recursivamente por arquivos de áudio aceitos
+// (.mp3 e .ogg, ver internal/audiofile), lê as tags (ID3 no MP3, Vorbis
+// comments no OGG: título/artista/álbum) e insere cada música no catálogo — idempotente
 // por `path` (ON CONFLICT DO NOTHING em songs.Create), então pode rodar em
 // todo boot sem duplicar. Não requer nem lê o SQLite antigo: catálogo novo,
 // só a partir dos arquivos em disco. JINGLES_DIR (normalmente uma subpasta
@@ -17,6 +18,7 @@ import (
 
 	"github.com/dhowden/tag"
 	"github.com/somdomato/somdomato/api/config"
+	"github.com/somdomato/somdomato/api/internal/audiofile"
 	"github.com/somdomato/somdomato/api/internal/cover"
 	"github.com/somdomato/somdomato/api/internal/db"
 	"github.com/somdomato/somdomato/api/internal/songs"
@@ -61,7 +63,7 @@ func main() {
 			}
 			return nil
 		}
-		if !strings.EqualFold(filepath.Ext(path), ".mp3") {
+		if !audiofile.IsSupported(path) {
 			return nil
 		}
 		scanned++
@@ -131,8 +133,8 @@ func readTags(path string) (title, artist string, album *string, err error) {
 	return title, artist, album, nil
 }
 
-// fallbackTitleArtist assume o padrão "Artista - Título.mp3" no nome do
-// arquivo quando as tags ID3 estão ausentes ou incompletas.
+// fallbackTitleArtist assume o padrão "Artista - Título.ext" no nome do
+// arquivo quando as tags estão ausentes ou incompletas.
 func fallbackTitleArtist(path string) (title, artist string) {
 	name := strings.TrimSuffix(filepath.Base(path), filepath.Ext(path))
 	if idx := strings.Index(name, " - "); idx >= 0 {

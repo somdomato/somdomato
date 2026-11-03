@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"github.com/somdomato/somdomato/api/config"
+	"github.com/somdomato/somdomato/api/internal/audiofile"
 	"github.com/somdomato/somdomato/api/internal/cover"
 )
 
@@ -71,7 +72,9 @@ func handleMusicFile(app *App) http.HandlerFunc {
 			return
 		}
 
-		w.Header().Set("Content-Type", "audio/mpeg")
+		// Content-Type pelo formato real (audio/mpeg ou audio/ogg) — o
+		// catálogo mistura MP3 e OGG (ver internal/audiofile).
+		w.Header().Set("Content-Type", audiofile.ContentType(song.Path))
 		// http.ServeFile já implementa suporte a Range/If-Range para seek
 		// de áudio — não há motivo para reimplementar isso à mão.
 		http.ServeFile(w, r, song.Path)

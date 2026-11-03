@@ -252,7 +252,7 @@ templ songEditFormBody(s models.Song, csrfToken string) {
 		<label class="block text-sm">
 			Nome do arquivo
 			<input type="text" name="filename" value={ filepath.Base(s.Path) } class="mt-1 w-full rounded-lg bg-surface-raised px-3 py-2 font-mono text-xs"/>
-			<span class="mt-1 block text-xs text-neutral-500">Renomeia o arquivo em disco (fica na mesma pasta). Título e artista também são gravados nas tags ID3 do arquivo.</span>
+			<span class="mt-1 block text-xs text-neutral-500">Renomeia o arquivo em disco (fica na mesma pasta; a extensão .mp3/.ogg não pode mudar). Título e artista também são gravados nas tags do arquivo (ID3 no MP3, Vorbis comments no OGG).</span>
 		</label>
 		<label class="block text-sm">
 			Gênero

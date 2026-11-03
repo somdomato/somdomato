@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -12,7 +13,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/bogem/id3v2/v2"
+	"github.com/somdomato/somdomato/api/internal/audiofile"
 )
 
 // MaxDurationSeconds rejeita faixas longas antes de gastar banda/CPU
@@ -58,6 +59,14 @@ func sanitize(s string) string {
 // Bloqueia até haver um slot livre no semáforo global de downloads
 // concorrentes (respeitando ctx), então uma rajada de pedidos faz fila em
 // vez de abrir N conexões simultâneas contra o Deezer.
+//
+// O Deezer sempre entrega MP3. Se o client tiver um transcoder OGG (padrão,
+// AUDIO_FORMAT=ogg), o MP3 decriptado é convertido para Ogg Vorbis e só o
+// .ogg vai para o catálogo. Se a conversão falhar por qualquer motivo que
+// não seja cancelamento (ffmpeg quebrado, saída inválida...), o download
+// NÃO falha: o MP3 original é mantido e um aviso é logado. A conversão
+// roda dentro do slot do semáforo, então no máximo maxConcurrentDownloads
+// ffmpegs (de 1 thread cada) rodam ao mesmo tempo.
 func (c *Client) Download(ctx context.Context, trackID, uploadsDir string, onProgress ProgressFunc) (*Result, error) {
 	if !c.configured() {
 		return nil, ErrNotConfigured
@@ -116,26 +125,34 @@ func (c *Client) Download(ctx context.Context, trackID, uploadsDir string, onPro
 		return nil, fmt.Errorf("baixando áudio: %w", err)
 	}
 
+	audioPath, format, err := c.convertIfConfigured(ctx, tmpPath, uploadsDir, trackID)
+	if err != nil {
+		return nil, err
+	}
+
 	title := track.FullTitle()
 	artist := track.Artist
-	filename := fmt.Sprintf("%s - %s.mp3", sanitize(artist), sanitize(title))
+	filename := fmt.Sprintf("%s - %s%s", sanitize(artist), sanitize(title), format.Ext())
 	outputPath := uniquePath(filepath.Join(uploadsDir, filename))
 
-	if err := os.Rename(tmpPath, outputPath); err != nil {
-		os.Remove(tmpPath)
+	if err := os.Rename(audioPath, outputPath); err != nil {
+		os.Remove(audioPath)
 		return nil, fmt.Errorf("movendo arquivo baixado: %w", err)
 	}
 
 	cover, _ := fetchCoverImage(ctx, sess, track) // capa é best-effort
-	if err := tagMP3(outputPath, title, artist, track.ISRC, cover); err != nil {
+	if err := audiofile.WriteTags(outputPath, audiofile.Tags{
+		Title: title, Artist: artist, ISRC: track.ISRC, Cover: cover, CoverMIME: "image/jpeg",
+	}); err != nil {
 		// Falha ao tagear não invalida o download — o arquivo de áudio já
 		// está correto e completo, só sem metadados embutidos.
+		slog.Warn("deezerdl: falha ao gravar tags", "path", outputPath, "error", err)
 	}
 
 	// os.CreateTemp cria o .part com modo 0600 e o Rename preserva esse
 	// modo — o Liquidsoap roda com outro usuário e precisaria de leitura,
 	// senão o request falha com "Read permission denied" e a rádio só toca
-	// vinhetas. Feito depois do tagMP3 porque ele regrava o arquivo.
+	// vinhetas. Feito depois do WriteTags porque ele regrava o arquivo.
 	if err := os.Chmod(outputPath, 0o644); err != nil {
 		return nil, fmt.Errorf("ajustando permissão do arquivo baixado: %w", err)
 	}
@@ -148,6 +165,38 @@ func (c *Client) Download(ctx context.Context, trackID, uploadsDir string, onPro
 		Artist:   artist,
 		Duration: duration,
 	}, nil
+}
+
+// convertIfConfigured converte o MP3 temporário em mp3Path para Ogg Vorbis
+// quando o client tem transcoder. Retorna o arquivo temporário que deve
+// seguir adiante e seu formato. Em sucesso, o MP3 temporário é apagado; em
+// falha de conversão, o MP3 é devolvido intacto (fallback). Só retorna erro
+// se ctx foi cancelado/expirou — nesse caso nenhum temporário sobra.
+func (c *Client) convertIfConfigured(ctx context.Context, mp3Path, dir, trackID string) (string, audiofile.Format, error) {
+	if c.oggTranscoder == nil {
+		return mp3Path, audiofile.FormatMP3, nil
+	}
+
+	oggFile, err := os.CreateTemp(dir, "*.ogg.part")
+	if err != nil {
+		slog.Warn("deezerdl: não foi possível criar temporário OGG, mantendo MP3", "track_id", trackID, "error", err)
+		return mp3Path, audiofile.FormatMP3, nil
+	}
+	oggPath := oggFile.Name()
+	oggFile.Close()
+
+	if err := c.oggTranscoder.ToOggVorbis(ctx, mp3Path, oggPath); err != nil {
+		os.Remove(oggPath)
+		if ctxErr := ctx.Err(); ctxErr != nil {
+			os.Remove(mp3Path)
+			return "", "", fmt.Errorf("convertendo para OGG: %w", ctxErr)
+		}
+		slog.Warn("deezerdl: conversão para OGG falhou, mantendo MP3", "track_id", trackID, "error", err)
+		return mp3Path, audiofile.FormatMP3, nil
+	}
+
+	os.Remove(mp3Path)
+	return oggPath, audiofile.FormatOGG, nil
 }
 
 func uniquePath(path string) string {
@@ -255,35 +304,4 @@ func streamToTempFile(ctx context.Context, stream io.ReadCloser, dir string, key
 		onProgress(100, written, total)
 	}
 	return tmpPath, nil
-}
-
-func tagMP3(path, title, artist, isrc string, cover []byte) error {
-	tag, err := id3v2.Open(path, id3v2.Options{Parse: true})
-	if err != nil {
-		return err
-	}
-	defer tag.Close()
-
-	if title != "" {
-		tag.AddTextFrame("TIT2", tag.DefaultEncoding(), title)
-	}
-	if artist != "" {
-		tag.AddTextFrame("TPE1", tag.DefaultEncoding(), artist)
-	}
-	if isrc != "" {
-		tag.AddUserDefinedTextFrame(id3v2.UserDefinedTextFrame{
-			Encoding: tag.DefaultEncoding(), Description: "ISRC", Value: isrc,
-		})
-	}
-	if len(cover) > 0 {
-		tag.AddAttachedPicture(id3v2.PictureFrame{
-			Encoding:    tag.DefaultEncoding(),
-			MimeType:    "image/jpeg",
-			PictureType: id3v2.PTFrontCover,
-			Description: "Cover",
-			Picture:     cover,
-		})
-	}
-
-	return tag.Save()
 }

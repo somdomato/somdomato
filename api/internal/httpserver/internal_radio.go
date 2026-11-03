@@ -202,9 +202,9 @@ func handleMusicStarted(app *App) http.HandlerFunc {
 	}
 }
 
-func resolveCoverAsync(app *App, songID int64, mp3Path string) {
+func resolveCoverAsync(app *App, songID int64, audioPath string) {
 	ctx := app.backgroundContext()
-	resolved, err := cover.ExtractAndSave(mp3Path, app.Cfg.CoversDir)
+	resolved, err := cover.ExtractAndSave(audioPath, app.Cfg.CoversDir)
 	if err != nil || resolved == "" {
 		return
 	}
