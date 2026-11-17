@@ -279,7 +279,7 @@ document.querySelectorAll("[data-player]").forEach((root) => {
 		if (audio.muted) return "muted";
 		const v = Number(volume.value);
 		if (v <= 0) return "muted";
-		if (v <= 1 / 3) return "low";
+		if (v <= 0.05) return "low";
 		if (v <= 2 / 3) return "medium";
 		return "high";
 	};

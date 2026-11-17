@@ -391,6 +391,19 @@ PRIVILEGES` para `postgres_user` a cada `ansible-playbook` — ver tarefas
 "Garantir privilégios..." na seção `# POSTGRESQL` de `ansible/playbook.yml`.
 Rodar o playbook novamente corrige o drift sem precisar de SQL manual.
 
+**Incidente 2026-11-17 (502 em produção):** os `GRANT`s acima não bastaram
+para a migration `0011_auto_uploads` — `ALTER TABLE`/`CREATE INDEX` exigem
+ser **dono** da tabela, e `uploads` ainda pertencia à role `somdomato`. A
+migration falhou com `must be owner of table uploads`, deixou
+`schema_migrations` como `dirty` (versão 11) e a API entrou em crash-loop. O
+playbook agora também transfere para `postgres_user` a posse de todas as
+tabelas, views e sequences do schema `public` (tarefa "Transferir para a
+role da aplicação a posse dos objetos do schema public"). Se o banco já
+estiver `dirty` por esse motivo, rode o playbook (`make provision-tags
+TAGS=postgres`) e depois, no `psql`, `UPDATE schema_migrations SET version =
+<versão anterior>, dirty = false;` antes de reiniciar `somdomato-api` —
+confirme antes que nada da migration foi aplicado.
+
 ### Deploy contínuo (GitHub Actions)
 
 `.github/workflows/deploy.yml` roda `make vet` + `make test` (com Postgres

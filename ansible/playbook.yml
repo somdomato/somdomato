@@ -207,6 +207,62 @@
     # acesso e a API entra em crash-loop no boot (nginx expõe isso como
     # 502). Ver incidente 2026-08-23 no README. Idempotente: seguro rodar
     # a cada provisionamento.
+    #
+    # GRANT ALL não basta: ALTER TABLE, CREATE INDEX e DROP exigem ser DONO
+    # do objeto. Se uma tabela pertence a outra role (ex.: a legada
+    # "somdomato"), migrations que alteram schema falham com "must be owner
+    # of table ..." e deixam schema_migrations "dirty" — a API não sobe mais
+    # até alguém corrigir à mão (incidente 2026-11-17, migration 0011). Por
+    # isso transferimos a posse de toda relação do schema public para
+    # {{ postgres_user }}. Índices acompanham a tabela; sequences de colunas
+    # serial/identity mudam junto com a tabela dona (e não podem ser
+    # alteradas diretamente), então só as sequences avulsas são tratadas à
+    # parte.
+    - name: Transferir para a role da aplicação a posse dos objetos do schema public
+      become_user: postgres
+      community.postgresql.postgresql_query:
+        db: "{{ postgres_db }}"
+        query: |
+          DO $$
+          DECLARE
+            r record;
+          BEGIN
+            FOR r IN
+              SELECT c.relname, c.relkind
+              FROM pg_class c
+              JOIN pg_namespace n ON n.oid = c.relnamespace
+              WHERE n.nspname = 'public'
+                AND c.relkind IN ('r', 'p', 'v', 'm')
+                AND pg_get_userbyid(c.relowner) <> '{{ postgres_user }}'
+            LOOP
+              EXECUTE format(
+                'ALTER %s public.%I OWNER TO %I',
+                CASE r.relkind WHEN 'v' THEN 'VIEW' WHEN 'm' THEN 'MATERIALIZED VIEW' ELSE 'TABLE' END,
+                r.relname,
+                '{{ postgres_user }}'
+              );
+            END LOOP;
+
+            FOR r IN
+              SELECT c.relname
+              FROM pg_class c
+              JOIN pg_namespace n ON n.oid = c.relnamespace
+              WHERE n.nspname = 'public'
+                AND c.relkind = 'S'
+                AND pg_get_userbyid(c.relowner) <> '{{ postgres_user }}'
+                AND NOT EXISTS (
+                  SELECT 1 FROM pg_depend d
+                  WHERE d.classid = 'pg_class'::regclass
+                    AND d.objid = c.oid
+                    AND d.deptype IN ('a', 'i')
+                )
+            LOOP
+              EXECUTE format('ALTER SEQUENCE public.%I OWNER TO %I', r.relname, '{{ postgres_user }}');
+            END LOOP;
+          END
+          $$;
+      tags: [postgres]
+
     - name: Garantir privilégios da role da aplicação em tabelas existentes
       become_user: postgres
       community.postgresql.postgresql_query:

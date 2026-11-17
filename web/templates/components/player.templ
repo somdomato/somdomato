@@ -146,13 +146,13 @@ templ PlayerBar(data PlayerData) {
 					aria-label="Reproduzir"
 					class="player-toggle relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-b from-brand-500 to-brand-600 text-white shadow-lg shadow-brand-900/40 ring-1 ring-white/15 transition hover:scale-105 hover:from-brand-400 hover:to-brand-500 hover:shadow-brand-700/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300 active:scale-90 active:shadow-sm"
 				>
-					<svg data-icon-play class="h-4 w-4 translate-x-[1px]" viewBox="0 0 24 24" fill="currentColor">
+					<svg data-icon-play class="h-6 w-6 translate-x-[1px]" viewBox="0 0 24 24" fill="currentColor">
 						<path d="M8 5v14l11-7z"></path>
 					</svg>
-					<svg data-icon-pause class="hidden h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
+					<svg data-icon-pause class="hidden h-6 w-6" viewBox="0 0 24 24" fill="currentColor">
 						<path d="M6 5h4v14H6zM14 5h4v14h-4z"></path>
 					</svg>
-					<svg data-icon-loading class="hidden h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+					<svg data-icon-loading class="hidden h-5 w-5 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
 						<path d="M21 12a9 9 0 1 1-9-9" opacity="0.9"></path>
 					</svg>
 				</button>
@@ -173,7 +173,7 @@ templ PlayerBar(data PlayerData) {
 				title="Recarregar transmissão"
 				class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-neutral-400 transition hover:bg-white/10 hover:text-neutral-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/60 active:scale-95"
 			>
-				<svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+				<svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
 					<path d="M21 12a9 9 0 1 1-2.64-6.36"></path>
 					<path d="M21 3v6h-6"></path>
 				</svg>
@@ -186,19 +186,19 @@ templ PlayerBar(data PlayerData) {
 				title="Silenciar"
 				class="hidden h-8 w-8 shrink-0 items-center justify-center rounded-full text-neutral-400 transition hover:bg-white/10 hover:text-neutral-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/60 active:scale-95 lg:flex"
 			>
-				<svg data-icon-volume-muted class="hidden h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+				<svg data-icon-volume-muted class="hidden h-5 w-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
 					<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
 					<line x1="23" y1="9" x2="17" y2="15"></line>
 					<line x1="17" y1="9" x2="23" y2="15"></line>
 				</svg>
-				<svg data-icon-volume-low class="hidden h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+				<svg data-icon-volume-low class="hidden h-5 w-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
 					<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
 				</svg>
-				<svg data-icon-volume-medium class="hidden h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+				<svg data-icon-volume-medium class="hidden h-5 w-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
 					<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
 					<path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
 				</svg>
-				<svg data-icon-volume-high class="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+				<svg data-icon-volume-high class="h-5 w-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
 					<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
 					<path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
 					<path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
@@ -244,7 +244,7 @@ templ ShareButton(genre config.Genre) {
 			title="Compartilhar música"
 			class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-neutral-400 transition hover:bg-white/10 hover:text-neutral-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/60 active:scale-95"
 		>
-			<svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+			<svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
 				<circle cx="18" cy="5" r="3"></circle>
 				<circle cx="6" cy="12" r="3"></circle>
 				<circle cx="18" cy="19" r="3"></circle>

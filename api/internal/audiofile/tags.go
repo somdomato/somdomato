@@ -45,6 +45,8 @@ func writeID3Tags(path string, t Tags) error {
 	}
 	defer tag.Close()
 
+	normalizeID3Encoding(tag)
+
 	if t.Title != "" {
 		tag.SetTitle(t.Title)
 	}
@@ -71,4 +73,61 @@ func writeID3Tags(path string, t Tags) error {
 		})
 	}
 	return tag.Save()
+}
+
+// id3v23Only mapeia frames de data que só existem na ID3v2.3 para os
+// equivalentes da v2.4, já que normalizeID3Encoding promove a tag.
+var id3v23Only = map[string]string{
+	"TYER": "TDRC",
+	"TORY": "TDOR",
+}
+
+// normalizeID3Encoding promove a tag para ID3v2.4 e regrava todos os frames
+// de texto em UTF-8. Motivo: o bogem/id3v2 (v2.1.4, encoding.go) acrescenta
+// um byte nulo extra ao gravar qualquer string UTF-16 — o padrão da v2.3 —,
+// o que desalinha APIC/TXXX/COMM e deixa a tag ilegível para o dhowden/tag:
+// a capa embutida "some" e cover.ExtractAndSave não consegue mais extraí-la.
+// UTF-8 (só válido na v2.4) não passa por esse caminho. A leitura do
+// bogem tolera o byte extra, então salvar de novo também conserta arquivos
+// já corrompidos por gravações anteriores.
+func normalizeID3Encoding(tag *id3v2.Tag) {
+	tag.SetVersion(4)
+	tag.SetDefaultEncoding(id3v2.EncodingUTF8)
+	utf8 := id3v2.EncodingUTF8
+
+	for id, frames := range tag.AllFrames() {
+		newID := id
+		if mapped, ok := id3v23Only[id]; ok {
+			newID = mapped
+		}
+		converted := make([]id3v2.Framer, 0, len(frames))
+		changed := newID != id
+		for _, f := range frames {
+			switch v := f.(type) {
+			case id3v2.TextFrame:
+				v.Encoding = utf8
+				f, changed = v, true
+			case id3v2.UserDefinedTextFrame:
+				v.Encoding = utf8
+				f, changed = v, true
+			case id3v2.PictureFrame:
+				v.Encoding = utf8
+				f, changed = v, true
+			case id3v2.CommentFrame:
+				v.Encoding = utf8
+				f, changed = v, true
+			case id3v2.UnsynchronisedLyricsFrame:
+				v.Encoding = utf8
+				f, changed = v, true
+			}
+			converted = append(converted, f)
+		}
+		if !changed {
+			continue
+		}
+		tag.DeleteFrames(id)
+		for _, f := range converted {
+			tag.AddFrame(newID, f)
+		}
+	}
 }

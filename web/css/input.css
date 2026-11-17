@@ -114,8 +114,8 @@
   }
 }
 
-/* Slider de volume: trilha fina com a parte preenchida na cor da marca
-   (--vol é atualizado por player.js) e um thumb redondo discreto. */
+/* Slider de volume: trilha com a parte preenchida na cor da marca
+   (--vol é atualizado por player.js), sem thumb visível. */
 .volume-range {
   -webkit-appearance: none;
   appearance: none;
@@ -123,44 +123,41 @@
   background: transparent;
 }
 .volume-range::-webkit-slider-runnable-track {
-  height: 4px;
+  height: 6px;
   border-radius: 9999px;
   background: linear-gradient(to right, var(--color-brand-500) var(--vol, 80%), rgb(255 255 255 / 0.12) var(--vol, 80%));
+  transition: box-shadow 120ms ease;
 }
 .volume-range::-moz-range-track {
-  height: 4px;
+  height: 6px;
   border-radius: 9999px;
   background: rgb(255 255 255 / 0.12);
+  transition: box-shadow 120ms ease;
 }
 .volume-range::-moz-range-progress {
-  height: 4px;
+  height: 6px;
   border-radius: 9999px;
   background: var(--color-brand-500);
 }
 .volume-range::-webkit-slider-thumb {
   -webkit-appearance: none;
-  height: 12px;
-  width: 12px;
-  margin-top: -4px;
-  border-radius: 9999px;
-  background: #fff;
-  box-shadow: 0 1px 3px rgb(0 0 0 / 0.4);
-  transition: transform 120ms ease;
+  appearance: none;
+  height: 6px;
+  width: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
 }
 .volume-range::-moz-range-thumb {
-  height: 12px;
-  width: 12px;
+  height: 6px;
+  width: 0;
   border: 0;
-  border-radius: 9999px;
-  background: #fff;
-  box-shadow: 0 1px 3px rgb(0 0 0 / 0.4);
-  transition: transform 120ms ease;
+  background: transparent;
+  box-shadow: none;
 }
-.volume-range:hover::-webkit-slider-thumb { transform: scale(1.2); }
-.volume-range:hover::-moz-range-thumb { transform: scale(1.2); }
 .volume-range:focus-visible { outline: none; }
-.volume-range:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 3px color-mix(in oklch, var(--color-brand-500) 50%, transparent); }
-.volume-range:focus-visible::-moz-range-thumb { box-shadow: 0 0 0 3px color-mix(in oklch, var(--color-brand-500) 50%, transparent); }
+.volume-range:focus-visible::-webkit-slider-runnable-track { box-shadow: 0 0 0 3px color-mix(in oklch, var(--color-brand-500) 50%, transparent); }
+.volume-range:focus-visible::-moz-range-track { box-shadow: 0 0 0 3px color-mix(in oklch, var(--color-brand-500) 50%, transparent); }
 
 /* Popover nativo (atributo popover) do botão de compartilhar — o reset do
    Tailwind (margin:0 em tudo) sobrescreve o margin:auto que a UA stylesheet
