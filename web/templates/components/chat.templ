@@ -5,23 +5,55 @@ package components
 // (sem troca de servidor/canal pelo usuário), então o iframe só precisa da
 // URL raiz — sem parâmetros de query.
 //
+// O chat fica num <details> fechado por padrão: o cabeçalho funciona como
+// botão de expandir/recolher (acessível por teclado nativamente) e o iframe
+// só é carregado na primeira abertura — conteúdo de <details> fechado não é
+// renderizado, então o loading="lazy" adia a conexão IRC até o usuário pedir.
+// A animação de abrir/fechar fica em .chat-collapse (web/css/input.css).
+//
 // hx-preserve (com id estável) evita que a troca de rádio pelo
 // GenreSwitcher — que substitui #main-content inteiro — recrie o iframe e
 // recarregue o chat: o htmx 2 reaproveita o nó existente via moveBefore,
-// mantendo a conexão IRC (em navegadores sem moveBefore o iframe ainda
-// recarrega, como antes).
+// mantendo a conexão IRC e o estado aberto/fechado (em navegadores sem
+// moveBefore o iframe ainda recarrega, como antes).
 templ ChatEmbed() {
 	<section id="chat-embed" hx-preserve="true" class="mb-6 min-w-0">
-		<h3 class="mb-2 text-sm font-semibold uppercase tracking-wide text-neutral-400">Chat</h3>
-		<div class="overflow-hidden rounded-lg bg-surface-raised">
-			<iframe
-				src="https://irc.somdomato.com/"
-				title="Chat da Rádio Som do Mato"
-				loading="lazy"
-				class="h-[57vh] min-h-[440px] w-full border-0 sm:h-[62vh] sm:min-h-[520px]"
-				referrerpolicy="strict-origin-when-cross-origin"
-				allow="camera; microphone"
-			></iframe>
-		</div>
+		<details class="chat-collapse group overflow-hidden rounded-xl bg-surface-raised ring-1 ring-white/5 transition-shadow duration-300 open:ring-brand-500/30 open:shadow-lg open:shadow-brand-900/20">
+			<summary class="flex cursor-pointer select-none list-none items-center gap-3 px-4 py-3 outline-none transition-colors hover:bg-white/[0.03] focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-500 sm:gap-4 sm:px-5 sm:py-4 [&::-webkit-details-marker]:hidden">
+				<span class="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-500/15 text-brand-400 ring-1 ring-inset ring-brand-500/25 transition-colors group-open:bg-brand-500 group-open:text-white sm:h-10 sm:w-10">
+					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5" aria-hidden="true">
+						<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+						<path d="M8 9h8M8 13h5"></path>
+					</svg>
+					<span class="absolute -right-0.5 -top-0.5 flex h-2.5 w-2.5" aria-hidden="true">
+						<span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand-400 opacity-60 motion-reduce:animate-none"></span>
+						<span class="relative inline-flex h-2.5 w-2.5 rounded-full bg-brand-400 ring-2 ring-surface-raised"></span>
+					</span>
+				</span>
+				<span class="min-w-0 flex-1">
+					<span class="block text-sm font-semibold uppercase tracking-wide text-neutral-200">Chat</span>
+					<span class="block truncate text-xs text-neutral-400">
+						Converse com outros ouvintes no <span class="font-semibold text-brand-400">#somdomato</span>
+					</span>
+				</span>
+				<span class="flex shrink-0 items-center gap-1.5 rounded-full bg-white/5 py-1 pl-3 pr-2 text-xs font-semibold text-neutral-300 ring-1 ring-inset ring-white/10 transition-colors group-hover:text-white group-open:bg-brand-500/15 group-open:text-brand-300 group-open:ring-brand-500/30">
+					<span class="hidden sm:inline sm:group-open:hidden">Abrir</span>
+					<span class="hidden sm:group-open:inline">Fechar</span>
+					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-4 w-4 transition-transform duration-300 ease-out group-open:rotate-180 motion-reduce:transition-none" aria-hidden="true">
+						<path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 11.06l3.71-3.83a.75.75 0 1 1 1.08 1.04l-4.25 4.39a.75.75 0 0 1-1.08 0L5.21 8.27a.75.75 0 0 1 .02-1.06z" clip-rule="evenodd"></path>
+					</svg>
+				</span>
+			</summary>
+			<div class="chat-collapse-body border-t border-white/5">
+				<iframe
+					src="https://irc.somdomato.com/"
+					title="Chat da Rádio Som do Mato"
+					loading="lazy"
+					class="block h-[57vh] min-h-[440px] w-full border-0 sm:h-[62vh] sm:min-h-[520px]"
+					referrerpolicy="strict-origin-when-cross-origin"
+					allow="camera; microphone"
+				></iframe>
+			</div>
+		</details>
 	</section>
 }

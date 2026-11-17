@@ -252,3 +252,31 @@ dialog[data-modal][open] {
   flex-direction: column;
   overflow: hidden;
 }
+
+/* Chat recolhível (<details> em components/chat.templ): abre/fecha com
+   altura animada onde há suporte a ::details-content + interpolate-size
+   (Chromium 131+); nos demais navegadores o corpo só aparece com fade. */
+.chat-collapse {
+  interpolate-size: allow-keywords;
+}
+.chat-collapse::details-content {
+  block-size: 0;
+  overflow: hidden;
+  transition:
+    block-size 350ms cubic-bezier(0.22, 1, 0.36, 1),
+    content-visibility 350ms allow-discrete;
+}
+.chat-collapse[open]::details-content {
+  block-size: auto;
+}
+.chat-collapse[open] .chat-collapse-body {
+  animation: chat-reveal 300ms ease-out;
+}
+@keyframes chat-reveal {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .chat-collapse::details-content { transition: none; }
+  .chat-collapse[open] .chat-collapse-body { animation: none; }
+}

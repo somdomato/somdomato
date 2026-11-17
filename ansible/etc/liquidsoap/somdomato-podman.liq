@@ -50,8 +50,11 @@ def notify_started(genre, m) =
     # Fora do clock: on_track roda na thread de streaming, compartilhada
     # pelas cinco rádios — um curl bloqueante aqui (API lenta ou reiniciando
     # no deploy) congelava todas as streams até a API responder.
+    # --retry: se a API estiver reiniciando (deploy) a troca não se perde;
+    # a API ignora confirmações duplicadas ou já superadas (ver
+    # queue.ErrStaleConfirmation), então repetir é seguro.
     thread.run(fun () -> ignore(process.read.lines(
-      "curl -s --max-time 10 -X POST -H 'X-Internal-Token: #{internal_token}' '#{api_url}'"
+      "curl -s --max-time 10 --retry 4 --retry-delay 2 --retry-connrefused -X POST -H 'X-Internal-Token: #{internal_token}' '#{api_url}'"
     )))
   end
 end

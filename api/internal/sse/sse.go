@@ -19,7 +19,16 @@ type Event struct {
 
 type client struct {
 	ch chan Event
+	// dropped é fechado quando o cliente não acompanha o ritmo (canal
+	// cheio): a conexão é encerrada para o EventSource reconectar e o
+	// navegador ressincronizar o estado (ver htmx:sseOpen em player.js).
+	dropped chan struct{}
+	once    sync.Once
 }
+
+// clientBuffer comporta rajadas de troca de faixa das cinco rádios
+// (song-changed + history + queue + capa por gênero) num cliente lento.
+const clientBuffer = 64
 
 type Hub struct {
 	mu      sync.Mutex
@@ -31,7 +40,9 @@ func NewHub() *Hub {
 }
 
 // Broadcast envia o evento para todos os clientes conectados. Não bloqueia:
-// clientes lentos (canal cheio) perdem o evento em vez de travar o hub.
+// um cliente lento (canal cheio) é desconectado em vez de travar o hub —
+// perder um evento em silêncio deixava o player mostrando a música errada
+// até a troca seguinte; desconectado, ele reconecta e ressincroniza.
 func (h *Hub) Broadcast(evt Event) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
@@ -39,6 +50,7 @@ func (h *Hub) Broadcast(evt Event) {
 		select {
 		case c.ch <- evt:
 		default:
+			c.once.Do(func() { close(c.dropped) })
 		}
 	}
 }
@@ -56,7 +68,7 @@ func (h *Hub) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Connection", "keep-alive")
 	w.Header().Set("X-Accel-Buffering", "no") // evita buffering no Nginx
 
-	c := &client{ch: make(chan Event, 16)}
+	c := &client{ch: make(chan Event, clientBuffer), dropped: make(chan struct{})}
 	h.mu.Lock()
 	h.clients[c] = true
 	h.mu.Unlock()
@@ -71,6 +83,8 @@ func (h *Hub) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	for {
 		select {
 		case <-ctx.Done():
+			return
+		case <-c.dropped:
 			return
 		case evt := <-c.ch:
 			var payload string

@@ -7,13 +7,16 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/a-h/templ"
 	"github.com/somdomato/somdomato/api/config"
 	"github.com/somdomato/somdomato/api/internal/cover"
+	"github.com/somdomato/somdomato/api/internal/queue"
 	"github.com/somdomato/somdomato/api/internal/sse"
 	"github.com/somdomato/somdomato/api/models"
 	"github.com/somdomato/somdomato/web/templates/components"
@@ -182,6 +185,13 @@ func handleMusicStarted(app *App) http.HandlerFunc {
 		wasRequestedParam := r.URL.Query().Get("wasRequested") == "1"
 
 		confirmed, err := app.Queue.SetCurrent(ctx, queueSetCurrentParams(genre, songID, wasRequestedParam))
+		if errors.Is(err, queue.ErrStaleConfirmation) {
+			// Duplicada (retry do curl) ou atrasada (on_track de uma faixa
+			// já substituída): não mexe na current nem republica o player.
+			app.Log.Warn("on_track ignorado: duplicado ou fora de ordem", "song_id", songID, "genre", genre)
+			writeJSON(w, http.StatusOK, map[string]bool{"success": true, "ignored": true})
+			return
+		}
 		if err != nil {
 			app.Log.Error("set current", "error", err)
 			http.Error(w, `{"error":"erro interno"}`, http.StatusInternalServerError)
@@ -262,9 +272,39 @@ func broadcastSongChanged(app *App, now components.NowPlaying) {
 	}
 	payload := buf.String()
 	eventName := "song-changed-" + now.Genre
+	seq := nowPlayingSeqs.next(now.Genre)
 	time.AfterFunc(app.Cfg.NowPlayingDelay, func() {
+		// Cada AfterFunc roda na sua própria goroutine: dois on_track
+		// próximos (skip logo após o início) podiam publicar invertidos e
+		// deixar o player na faixa anterior. Só a confirmação mais recente
+		// do gênero chega aos clientes.
+		if !nowPlayingSeqs.isLatest(now.Genre, seq) {
+			return
+		}
 		app.Hub.Broadcast(sse.Event{Name: eventName, Data: payload})
 	})
+}
+
+// genreSeq numera os song-changed agendados por gênero (ver
+// broadcastSongChanged).
+type genreSeq struct {
+	mu   sync.Mutex
+	last map[string]uint64
+}
+
+var nowPlayingSeqs = &genreSeq{last: make(map[string]uint64)}
+
+func (g *genreSeq) next(genre string) uint64 {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	g.last[genre]++
+	return g.last[genre]
+}
+
+func (g *genreSeq) isLatest(genre string, seq uint64) bool {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	return g.last[genre] == seq
 }
 
 // broadcastQueueUpdated renderiza o bloco "Próximas" (mesmo componente do

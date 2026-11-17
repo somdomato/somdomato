@@ -371,8 +371,18 @@ document.addEventListener("change", (event) => {
 	if (!nowPlaying) return;
 
 	// Passa a aceitar só o song-changed da nova rádio (ver filtro abaixo).
-	const genre = select.value;
-	nowPlaying.dataset.genre = genre;
+	nowPlaying.dataset.genre = select.value;
+	refreshNowPlaying();
+});
+
+// Ressincroniza #now-playing com /api/now-playing. O SSE só entrega trocas
+// de faixa enquanto a conexão está aberta: um song-changed emitido durante
+// uma queda (rede móvel, aba em segundo plano, deploy da API) se perdia e
+// o card ficava na música anterior até a troca seguinte.
+function refreshNowPlaying() {
+	const nowPlaying = document.getElementById("now-playing");
+	if (!nowPlaying) return;
+	const genre = nowPlaying.dataset.genre;
 
 	fetch(`/api/now-playing?genre=${encodeURIComponent(genre)}`)
 		.then((res) => (res.ok ? res.json() : null))
@@ -421,5 +431,24 @@ document.addEventListener("change", (event) => {
 				</div>`;
 		})
 		.catch(() => {});
+}
+
+// htmx:sseOpen dispara a cada (re)conexão do EventSource; a primeira vem
+// junto do render inicial, que já está atualizado. Só o sse-connect do
+// player importa aqui (a home tem a própria conexão para as listas).
+document.addEventListener("htmx:sseOpen", (event) => {
+	const nowPlaying = document.getElementById("now-playing");
+	if (!nowPlaying || !event.target.contains(nowPlaying)) return;
+	if (!event.target.sdmSseOpened) {
+		event.target.sdmSseOpened = true;
+		return;
+	}
+	refreshNowPlaying();
+});
+
+// Navegadores móveis congelam abas em segundo plano: o EventSource pode
+// parecer aberto mas ter perdido eventos. Ao voltar, confere a faixa.
+document.addEventListener("visibilitychange", () => {
+	if (document.visibilityState === "visible") refreshNowPlaying();
 });
 }

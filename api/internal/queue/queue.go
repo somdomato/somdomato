@@ -6,6 +6,7 @@ package queue
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"time"
@@ -361,6 +362,54 @@ type SetCurrentParams struct {
 	WasRequestedFallback bool
 }
 
+// ErrStaleConfirmation indica que SetCurrent recebeu uma confirmação que
+// não deve mudar a "current": duplicada (a música já é a current — ex.:
+// retry do curl cuja primeira tentativa chegou) ou atrasada (a música foi
+// servida antes da current e já descartada como "skipped"). Os on_track do
+// Liquidsoap rodam em threads separadas (thread.run), então num skip logo
+// após o início de uma faixa as duas notificações podem chegar invertidas;
+// sem esta checagem a mais antiga criava uma "current" avulsa e o player
+// ficava mostrando uma música que já não estava no ar.
+var ErrStaleConfirmation = errors.New("confirmação de início duplicada ou fora de ordem")
+
+// isStaleConfirmation decide, quando não há "pending" da música, se a
+// confirmação é duplicada/atrasada (ver ErrStaleConfirmation).
+func isStaleConfirmation(ctx context.Context, tx pgx.Tx, genre string, songID int64) (bool, error) {
+	var curSongID int64
+	var curServedAt *time.Time
+	err := tx.QueryRow(ctx, `
+		SELECT song_id, served_at FROM queue_entries
+		WHERE genre = $1 AND status = 'current' LIMIT 1`, genre).Scan(&curSongID, &curServedAt)
+	if err == pgx.ErrNoRows {
+		return false, nil
+	}
+	if err != nil {
+		return false, fmt.Errorf("consultando current: %w", err)
+	}
+	if curSongID == songID {
+		return true, nil
+	}
+	if curServedAt == nil {
+		return false, nil
+	}
+
+	// Última vez que esta música foi servida ao Liquidsoap nesse gênero: se
+	// foi descartada e servida antes da current, a notificação é antiga.
+	var status string
+	var servedAt time.Time
+	err = tx.QueryRow(ctx, `
+		SELECT status, served_at FROM queue_entries
+		WHERE genre = $1 AND song_id = $2 AND served_at IS NOT NULL
+		ORDER BY served_at DESC LIMIT 1`, genre, songID).Scan(&status, &servedAt)
+	if err == pgx.ErrNoRows {
+		return false, nil
+	}
+	if err != nil {
+		return false, fmt.Errorf("consultando última entrega da música: %w", err)
+	}
+	return status == "skipped" && servedAt.Before(*curServedAt), nil
+}
+
 func (s *Store) SetCurrent(ctx context.Context, p SetCurrentParams) (*models.ConfirmedCurrent, error) {
 	var song models.Song
 	err := s.pool.QueryRow(ctx, `
@@ -394,6 +443,16 @@ func (s *Store) SetCurrent(ctx context.Context, p SetCurrentParams) (*models.Con
 		hasPending = false
 	} else if err != nil {
 		return nil, fmt.Errorf("buscando pending correspondente: %w", err)
+	}
+
+	if !hasPending {
+		stale, err := isStaleConfirmation(ctx, tx, p.Genre, p.SongID)
+		if err != nil {
+			return nil, err
+		}
+		if stale {
+			return nil, ErrStaleConfirmation
+		}
 	}
 
 	// Rebaixa a "current" anterior ANTES de promover a nova.
