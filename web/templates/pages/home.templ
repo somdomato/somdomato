@@ -11,11 +11,17 @@ type HomeData struct {
 	Next    []components.SongListItem
 	Top10   []components.TopRequestItem
 	IsAdmin bool
+	// Banners vazio = slider desligado no painel ou sem banners ativos.
+	Banners     components.BannerSliderData
+	ChatEnabled bool
 }
 
 templ Home(data HomeData) {
 	@templates.Layout("", &data.Player, data.IsAdmin) {
-		@components.ChatEmbed()
+		@components.BannerSlider(data.Banners)
+		if data.ChatEnabled {
+			@components.ChatEmbed()
+		}
 		<div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3" sse-connect="/events">
 			<div class="order-1 min-w-0">
 				@components.LiveSongList("Últimas", "last-list", "history-updated-"+string(data.Player.Genre), data.Last, "Ainda não há histórico nesta stream.", false)

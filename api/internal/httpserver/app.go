@@ -11,6 +11,7 @@ import (
 	"github.com/somdomato/somdomato/api/internal/analytics"
 	"github.com/somdomato/somdomato/api/internal/artistcover"
 	"github.com/somdomato/somdomato/api/internal/auth"
+	"github.com/somdomato/somdomato/api/internal/banners"
 	"github.com/somdomato/somdomato/api/internal/deezerdl"
 	"github.com/somdomato/somdomato/api/internal/groqeval"
 	"github.com/somdomato/somdomato/api/internal/jingles"
@@ -57,6 +58,9 @@ type App struct {
 	// Settings guarda ajustes editáveis pelo painel (ex.: download
 	// automático, ver internal/autodownload).
 	Settings *settings.Store
+
+	// Banners são as imagens do slider da home (ver /admin/pagina-inicial).
+	Banners *banners.Store
 }
 
 func NewRouter(app *App) http.Handler {

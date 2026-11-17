@@ -137,3 +137,74 @@ func (s *Store) SetAutoDownload(ctx context.Context, a AutoDownload) error {
 	}
 	return s.set(ctx, KeyAutoDownloadCooldown, strconv.Itoa(a.CooldownHours))
 }
+
+// Chaves dos blocos opcionais da home (ver /admin/pagina-inicial).
+const (
+	KeyBannersEnabled  = "banners_enabled"
+	KeyBannersInterval = "banners_interval_seconds"
+	KeyChatEnabled     = "chat_enabled"
+)
+
+// Tempo que cada banner fica na tela, em segundos.
+const (
+	DefaultBannerIntervalSeconds = 6
+	MinBannerIntervalSeconds     = 3
+	MaxBannerIntervalSeconds     = 30
+)
+
+// HomeDisplay liga/desliga os blocos opcionais da home.
+type HomeDisplay struct {
+	BannersEnabled        bool
+	BannerIntervalSeconds int
+	ChatEnabled           bool
+}
+
+// GetHomeDisplay lê a configuração; valores ausentes ou inválidos caem no
+// padrão (tudo ligado, 6s por banner).
+func (s *Store) GetHomeDisplay(ctx context.Context) (HomeDisplay, error) {
+	out := HomeDisplay{BannersEnabled: true, BannerIntervalSeconds: DefaultBannerIntervalSeconds, ChatEnabled: true}
+	rows, err := s.pool.Query(ctx, `SELECT key, value FROM settings WHERE key = ANY($1)`,
+		[]string{KeyBannersEnabled, KeyBannersInterval, KeyChatEnabled})
+	if err != nil {
+		return out, fmt.Errorf("lendo configuração da home: %w", err)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var k, v string
+		if err := rows.Scan(&k, &v); err != nil {
+			return out, err
+		}
+		switch k {
+		case KeyBannersEnabled:
+			if b, perr := strconv.ParseBool(v); perr == nil {
+				out.BannersEnabled = b
+			}
+		case KeyChatEnabled:
+			if b, perr := strconv.ParseBool(v); perr == nil {
+				out.ChatEnabled = b
+			}
+		case KeyBannersInterval:
+			if n, perr := strconv.Atoi(v); perr == nil && validBannerInterval(n) {
+				out.BannerIntervalSeconds = n
+			}
+		}
+	}
+	return out, rows.Err()
+}
+
+func validBannerInterval(n int) bool {
+	return n >= MinBannerIntervalSeconds && n <= MaxBannerIntervalSeconds
+}
+
+func (s *Store) SetHomeDisplay(ctx context.Context, h HomeDisplay) error {
+	if !validBannerInterval(h.BannerIntervalSeconds) {
+		return fmt.Errorf("tempo por banner deve estar entre %d e %d segundos", MinBannerIntervalSeconds, MaxBannerIntervalSeconds)
+	}
+	if err := s.set(ctx, KeyBannersEnabled, strconv.FormatBool(h.BannersEnabled)); err != nil {
+		return err
+	}
+	if err := s.set(ctx, KeyChatEnabled, strconv.FormatBool(h.ChatEnabled)); err != nil {
+		return err
+	}
+	return s.set(ctx, KeyBannersInterval, strconv.Itoa(h.BannerIntervalSeconds))
+}

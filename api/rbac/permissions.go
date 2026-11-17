@@ -15,11 +15,13 @@ const (
 	PermUsersManage    Permission = "users:manage"
 	PermStatsView      Permission = "stats:view"
 	PermUploadsManage  Permission = "uploads:manage"
+	PermSiteManage     Permission = "site:manage"
 )
 
 var AllPermissions = []Permission{
 	PermSongsEditTags, PermSongsEditFile, PermSongsDelete, PermRequestsManage,
 	PermJinglesManage, PermLogsView, PermUsersManage, PermStatsView, PermUploadsManage,
+	PermSiteManage,
 }
 
 var PermissionLabels = map[Permission]string{
@@ -32,6 +34,7 @@ var PermissionLabels = map[Permission]string{
 	PermUsersManage:    "Gerenciar Usuários",
 	PermStatsView:      "Ver Estatísticas",
 	PermUploadsManage:  "Gerenciar Envios",
+	PermSiteManage:     "Gerenciar Página Inicial",
 }
 
 type Role string

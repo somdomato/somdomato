@@ -17,6 +17,7 @@ import (
 	"github.com/somdomato/somdomato/api/internal/audiofile"
 	"github.com/somdomato/somdomato/api/internal/auth"
 	"github.com/somdomato/somdomato/api/internal/autodownload"
+	"github.com/somdomato/somdomato/api/internal/banners"
 	"github.com/somdomato/somdomato/api/internal/db"
 	"github.com/somdomato/somdomato/api/internal/deezerdl"
 	"github.com/somdomato/somdomato/api/internal/groqeval"
@@ -93,6 +94,7 @@ func main() {
 		ArtistCoverResolver: artistCoverResolver,
 		Deezer:              deezerClient,
 		Settings:            settingsStore,
+		Banners:             banners.NewStore(pool),
 	}
 
 	// Avaliador Groq: no máximo 1 chamada/min, ver internal/groqeval. Sem

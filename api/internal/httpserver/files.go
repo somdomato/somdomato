@@ -13,12 +13,35 @@ import (
 
 	"github.com/somdomato/somdomato/api/config"
 	"github.com/somdomato/somdomato/api/internal/audiofile"
+	"github.com/somdomato/somdomato/api/internal/banners"
 	"github.com/somdomato/somdomato/api/internal/cover"
 )
 
 func registerFileRoutes(mux *http.ServeMux, app *App) {
 	mux.HandleFunc("GET /music/file/{id}", handleMusicFile(app))
 	mux.Handle("GET /covers/", handleCovers(app))
+	mux.HandleFunc("GET /banners/{file}", handleBannerFile(app))
+}
+
+// handleBannerFile serve as imagens do slider da home. O nome é aleatório e
+// nunca reaproveitado (ver banners.SaveUpload), então o cache pode ser
+// "imutável" — trocar uma imagem sempre gera uma URL nova.
+func handleBannerFile(app *App) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		name := r.PathValue("file")
+		if !banners.ValidFilename(name) {
+			http.NotFound(w, r)
+			return
+		}
+		path := filepath.Join(banners.Dir(app.Cfg.CoversDir), name)
+		if !fileExistsOnDisk(path) {
+			http.NotFound(w, r)
+			return
+		}
+		w.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
+		w.Header().Set("X-Content-Type-Options", "nosniff")
+		http.ServeFile(w, r, path)
+	}
 }
 
 // handleCovers serve as capas em disco, mas nunca deixa uma <img> quebrada:

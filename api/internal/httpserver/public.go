@@ -10,7 +10,9 @@ import (
 	"time"
 
 	"github.com/somdomato/somdomato/api/config"
+	"github.com/somdomato/somdomato/api/internal/banners"
 	"github.com/somdomato/somdomato/api/internal/cover"
+	"github.com/somdomato/somdomato/api/internal/settings"
 	"github.com/somdomato/somdomato/api/models"
 	"github.com/somdomato/somdomato/api/rbac"
 	"github.com/somdomato/somdomato/web/templates/components"
@@ -72,10 +74,37 @@ func handleHome(app *App) http.HandlerFunc {
 			app.Log.Error("listando top 10 pedidos", "error", err)
 		}
 
+		display, err := app.Settings.GetHomeDisplay(ctx)
+		if err != nil {
+			app.Log.Error("lendo configuração da home", "error", err)
+		}
+
 		render(w, pages.Home(pages.HomeData{
 			Player: buildPlayerData(ctx, app, genre), Last: last, Next: next, Top10: top10, IsAdmin: isAdminRequest(app, r),
+			Banners: buildBannerSlider(ctx, app, display), ChatEnabled: display.ChatEnabled,
 		}))
 	}
+}
+
+// buildBannerSlider monta o slider da home — vazio (não renderiza nada)
+// quando está desligado no painel ou não há banners ativos.
+func buildBannerSlider(ctx context.Context, app *App, display settings.HomeDisplay) components.BannerSliderData {
+	out := components.BannerSliderData{IntervalMs: display.BannerIntervalSeconds * 1000}
+	if !display.BannersEnabled {
+		return out
+	}
+	list, err := app.Banners.List(ctx, true)
+	if err != nil {
+		app.Log.Error("listando banners da home", "error", err)
+		return out
+	}
+	for _, b := range list {
+		out.Slides = append(out.Slides, components.BannerSlide{
+			URL: b.URL(), Alt: b.Title, Link: b.LinkURL, External: banners.IsExternal(b.LinkURL),
+			Width: b.Width, Height: b.Height,
+		})
+	}
+	return out
 }
 
 // buildPlayerData monta os dados do player embutido no header — usado em

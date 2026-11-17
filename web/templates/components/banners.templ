@@ -1,0 +1,156 @@
+package components
+
+import "strconv"
+
+// BannerSlide é uma imagem do slider da home. Width/Height são as
+// dimensões reais do arquivo (o slider nunca estica nem recorta a imagem).
+type BannerSlide struct {
+	URL      string
+	Alt      string
+	Link     string // vazio = sem link
+	External bool   // link para fora do site: abre em nova aba
+	Width    int
+	Height   int
+}
+
+// BannerSliderData alimenta o slider; sem Slides nada é renderizado.
+type BannerSliderData struct {
+	Slides     []BannerSlide
+	IntervalMs int
+}
+
+// frameStyle reserva o espaço exato do primeiro banner antes de a imagem
+// carregar (sem salto de layout) e passa o tempo por slide ao CSS — a
+// barra de progresso do indicador ativo é quem dita a troca (ver
+// static/js/banners.js). Só inteiros entram aqui, então é CSS seguro.
+func (d BannerSliderData) frameStyle() templ.SafeCSS {
+	w, h := 16, 5
+	if len(d.Slides) > 0 && d.Slides[0].Width > 0 && d.Slides[0].Height > 0 {
+		w, h = d.Slides[0].Width, d.Slides[0].Height
+	}
+	ms := d.IntervalMs
+	if ms <= 0 {
+		ms = 6000
+	}
+	return templ.SafeCSS("aspect-ratio:" + strconv.Itoa(w) + "/" + strconv.Itoa(h) + ";--banner-interval:" + strconv.Itoa(ms) + "ms")
+}
+
+func slideLabel(i, total int) string {
+	return strconv.Itoa(i+1) + " de " + strconv.Itoa(total)
+}
+
+func bannerLoading(i int) string {
+	if i == 0 {
+		return "eager"
+	}
+	return "lazy"
+}
+
+func bannerPriority(i int) string {
+	if i == 0 {
+		return "high"
+	}
+	return "low"
+}
+
+// BannerSlider é o carrossel de banners acima do chat. Cada slide mostra a
+// imagem inteira (object-contain) sobre uma versão desfocada dela mesma,
+// que preenche as sobras quando a proporção do banner difere da moldura —
+// nada é distorcido nem cortado, em qualquer largura de tela. Com mais de
+// uma imagem: troca em crossfade, setas, indicadores com progresso,
+// pausa (botão, mouse em cima, foco, aba oculta ou fora da tela), swipe e
+// setas do teclado. Com prefers-reduced-motion, não troca sozinho.
+templ BannerSlider(d BannerSliderData) {
+	if len(d.Slides) > 0 {
+		<section
+			id="banner-slider"
+			class="banner-slider mb-6 min-w-0"
+			data-banner-slider
+			aria-roledescription="carrossel"
+			aria-label="Destaques"
+		>
+			<div class="banner-frame" style={ d.frameStyle() }>
+				<div class="banner-track" data-banner-track aria-live="off">
+					for i, s := range d.Slides {
+						<div
+							class={ "banner-slide", templ.KV("is-active", i == 0) }
+							data-banner-slide
+							role="group"
+							aria-roledescription="slide"
+							aria-label={ slideLabel(i, len(d.Slides)) }
+							inert?={ i != 0 }
+						>
+							<img src={ s.URL } alt="" aria-hidden="true" class="banner-backdrop" loading={ bannerLoading(i) } decoding="async"/>
+							if s.Link != "" {
+								if s.External {
+									<a href={ templ.SafeURL(s.Link) } target="_blank" rel="noopener noreferrer" class="banner-media" draggable="false">
+										@bannerImage(s, i)
+									</a>
+								} else {
+									<a href={ templ.SafeURL(s.Link) } class="banner-media" draggable="false">
+										@bannerImage(s, i)
+									</a>
+								}
+							} else {
+								<div class="banner-media">
+									@bannerImage(s, i)
+								</div>
+							}
+						</div>
+					}
+				</div>
+				if len(d.Slides) > 1 {
+					<div class="banner-shade" aria-hidden="true"></div>
+					<button type="button" class="banner-arrow banner-arrow-prev" data-banner-prev aria-label="Banner anterior">
+						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-5 w-5" aria-hidden="true">
+							<path fill-rule="evenodd" d="M12.79 5.23a.75.75 0 0 1-.02 1.06L8.832 10l3.938 3.71a.75.75 0 1 1-1.04 1.08l-4.5-4.25a.75.75 0 0 1 0-1.08l4.5-4.25a.75.75 0 0 1 1.06.02z" clip-rule="evenodd"></path>
+						</svg>
+					</button>
+					<button type="button" class="banner-arrow banner-arrow-next" data-banner-next aria-label="Próximo banner">
+						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-5 w-5" aria-hidden="true">
+							<path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 0 1 .02-1.06L11.168 10 7.23 6.29a.75.75 0 1 1 1.04-1.08l4.5 4.25a.75.75 0 0 1 0 1.08l-4.5 4.25a.75.75 0 0 1-1.06-.02z" clip-rule="evenodd"></path>
+						</svg>
+					</button>
+				}
+			</div>
+			if len(d.Slides) > 1 {
+				<div class="banner-controls">
+					<button type="button" class="banner-toggle" data-banner-toggle aria-label="Pausar banners">
+						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="banner-icon-pause h-3.5 w-3.5" aria-hidden="true">
+							<path d="M5.75 3a.75.75 0 0 0-.75.75v12.5c0 .414.336.75.75.75h1.5a.75.75 0 0 0 .75-.75V3.75A.75.75 0 0 0 7.25 3h-1.5zM12.75 3a.75.75 0 0 0-.75.75v12.5c0 .414.336.75.75.75h1.5a.75.75 0 0 0 .75-.75V3.75a.75.75 0 0 0-.75-.75h-1.5z"></path>
+						</svg>
+						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="banner-icon-play h-3.5 w-3.5" aria-hidden="true">
+							<path d="M6.3 2.84A1.5 1.5 0 0 0 4 4.11v11.78a1.5 1.5 0 0 0 2.3 1.27l9.344-5.891a1.5 1.5 0 0 0 0-2.538L6.3 2.841z"></path>
+						</svg>
+					</button>
+					<div class="banner-dots">
+						for i := range d.Slides {
+							<button
+								type="button"
+								class={ "banner-dot", templ.KV("is-active", i == 0) }
+								data-banner-dot={ strconv.Itoa(i) }
+								aria-label={ "Ir para o banner " + strconv.Itoa(i+1) }
+							>
+								<span class="banner-dot-fill"></span>
+							</button>
+						}
+					</div>
+				</div>
+			}
+		</section>
+	}
+}
+
+templ bannerImage(s BannerSlide, i int) {
+	<img
+		src={ s.URL }
+		alt={ s.Alt }
+		width={ strconv.Itoa(s.Width) }
+		height={ strconv.Itoa(s.Height) }
+		loading={ bannerLoading(i) }
+		fetchpriority={ bannerPriority(i) }
+		decoding="async"
+		draggable="false"
+		class="banner-img"
+	/>
+}

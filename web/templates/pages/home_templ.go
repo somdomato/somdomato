@@ -20,6 +20,9 @@ type HomeData struct {
 	Next    []components.SongListItem
 	Top10   []components.TopRequestItem
 	IsAdmin bool
+	// Banners vazio = slider desligado no painel ou sem banners ativos.
+	Banners     components.BannerSliderData
+	ChatEnabled bool
 }
 
 func Home(data HomeData) templ.Component {
@@ -51,11 +54,17 @@ func Home(data HomeData) templ.Component {
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = components.ChatEmbed().Render(ctx, templ_7745c5c3_Buffer)
+			templ_7745c5c3_Err = components.BannerSlider(data.Banners).Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"grid gap-6 md:grid-cols-2 lg:grid-cols-3\" sse-connect=\"/events\"><div class=\"order-1 min-w-0\">")
+			if data.ChatEnabled {
+				templ_7745c5c3_Err = components.ChatEmbed().Render(ctx, templ_7745c5c3_Buffer)
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, " <div class=\"grid gap-6 md:grid-cols-2 lg:grid-cols-3\" sse-connect=\"/events\"><div class=\"order-1 min-w-0\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

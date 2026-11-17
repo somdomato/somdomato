@@ -64,6 +64,7 @@ func registerAdminRoutes(mux *http.ServeMux, app *App) {
 	mux.HandleFunc("POST /admin/envios/{id}/negar", requirePermission(app, rbac.PermUploadsManage, requireCSRF(handleAdminUploadReject(app))))
 
 	registerAdminJingleRoutes(mux, app)
+	registerAdminHomeRoutes(mux, app)
 
 	mux.HandleFunc("GET /admin/usuarios", requirePermission(app, rbac.PermUsersManage, handleAdminUsersList(app)))
 	mux.HandleFunc("POST /admin/usuarios", requirePermission(app, rbac.PermUsersManage, requireCSRF(handleAdminUserCreate(app))))
