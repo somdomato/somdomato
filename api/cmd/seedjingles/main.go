@@ -3,7 +3,8 @@
 // tabela `jingles` — idempotente por `path` (UNIQUE, ON CONFLICT DO
 // NOTHING), então pode rodar em todo boot sem duplicar. Complementa
 // cmd/seed, que varre MUSIC_PATH mas pula JINGLES_DIR de propósito
-// (vinhetas não pertencem a `songs`).
+// (vinhetas não pertencem a `songs`). Arquivos na subpasta
+// JINGLES_DIR/comerciais entram como vinhetas comerciais (kind=commercial).
 package main
 
 import (
@@ -18,6 +19,7 @@ import (
 	"github.com/somdomato/somdomato/api/internal/audiofile"
 	"github.com/somdomato/somdomato/api/internal/db"
 	"github.com/somdomato/somdomato/api/internal/jingles"
+	"github.com/somdomato/somdomato/api/models"
 )
 
 func main() {
@@ -45,6 +47,7 @@ func main() {
 	store := jingles.NewStore(pool)
 
 	var scanned, inserted, skipped, failed int
+	commercialsDir := filepath.Clean(jingles.Dir(cfg.JinglesDir, models.JingleKindCommercial))
 
 	err = filepath.WalkDir(cfg.JinglesDir, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
@@ -62,7 +65,12 @@ func main() {
 		filename := filepath.Base(path)
 		title := strings.TrimSuffix(filename, filepath.Ext(filename))
 
-		created, err := store.Create(ctx, title, filename, path)
+		kind := models.JingleKindJingle
+		if strings.HasPrefix(filepath.Clean(path), commercialsDir+string(filepath.Separator)) {
+			kind = models.JingleKindCommercial
+		}
+
+		created, err := store.Create(ctx, kind, title, filename, path)
 		if err != nil {
 			log.Error("inserindo vinheta", "path", path, "error", err)
 			failed++

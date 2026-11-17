@@ -21,6 +21,7 @@ import (
 	"github.com/somdomato/somdomato/api/internal/artistcover"
 	"github.com/somdomato/somdomato/api/internal/audiofile"
 	"github.com/somdomato/somdomato/api/internal/auth"
+	"github.com/somdomato/somdomato/api/internal/autodownload"
 	"github.com/somdomato/somdomato/api/internal/cover"
 	"github.com/somdomato/somdomato/api/internal/icecastclient"
 	"github.com/somdomato/somdomato/api/internal/requests"
@@ -62,9 +63,7 @@ func registerAdminRoutes(mux *http.ServeMux, app *App) {
 	mux.HandleFunc("POST /admin/envios/{id}/aprovar", requirePermission(app, rbac.PermUploadsManage, requireCSRF(handleAdminUploadApprove(app))))
 	mux.HandleFunc("POST /admin/envios/{id}/negar", requirePermission(app, rbac.PermUploadsManage, requireCSRF(handleAdminUploadReject(app))))
 
-	mux.HandleFunc("GET /admin/vinhetas", requirePermission(app, rbac.PermJinglesManage, handleAdminJinglesList(app)))
-	mux.HandleFunc("POST /admin/vinhetas/intervalo", requirePermission(app, rbac.PermJinglesManage, requireCSRF(handleAdminJingleInterval(app))))
-	mux.HandleFunc("POST /admin/vinhetas/{id}/alternar", requirePermission(app, rbac.PermJinglesManage, requireCSRF(handleAdminJingleToggle(app))))
+	registerAdminJingleRoutes(mux, app)
 
 	mux.HandleFunc("GET /admin/usuarios", requirePermission(app, rbac.PermUsersManage, handleAdminUsersList(app)))
 	mux.HandleFunc("POST /admin/usuarios", requirePermission(app, rbac.PermUsersManage, requireCSRF(handleAdminUserCreate(app))))
@@ -794,7 +793,7 @@ func buildAutoDownloadInfo(ctx context.Context, app *App) admintpl.AutoDownloadI
 		app.Log.Error("lendo configuração de download automático", "error", err)
 	}
 	info := admintpl.AutoDownloadInfo{
-		Enabled: cfg.Enabled, CooldownHours: cfg.CooldownHours,
+		Enabled: cfg.Enabled, CooldownHours: cfg.CooldownHours, IntervalHours: cfg.IntervalHours,
 		MinHours: settings.MinAutoDownloadCooldownHours, MaxHours: settings.MaxAutoDownloadCooldownHours,
 		Available: app.Deezer != nil,
 	}
@@ -803,10 +802,9 @@ func buildAutoDownloadInfo(ctx context.Context, app *App) admintpl.AutoDownloadI
 	} else if ok {
 		info.LastAuto = &t
 	}
-	if t, ok, err := app.Uploads.LastCreatedAt(ctx); err != nil {
-		app.Log.Error("consultando último envio", "error", err)
-	} else if ok {
-		next := t.Add(cfg.Cooldown())
+	if next, err := autodownload.NextAt(ctx, app.Uploads, cfg); err != nil {
+		app.Log.Error("consultando próximo download automático", "error", err)
+	} else if !next.IsZero() {
 		info.NextAt = &next
 	}
 	return info
@@ -817,19 +815,25 @@ func buildAutoDownloadInfo(ctx context.Context, app *App) admintpl.AutoDownloadI
 func handleAdminAutoDownloadUpdate(app *App) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		hours, convErr := strconv.Atoi(strings.TrimSpace(r.FormValue("cooldown_hours")))
-		cfg := settings.AutoDownload{Enabled: r.FormValue("enabled") != "", CooldownHours: hours}
+		interval, intErr := strconv.Atoi(strings.TrimSpace(r.FormValue("interval_hours")))
+		cfg := settings.AutoDownload{Enabled: r.FormValue("enabled") != "", CooldownHours: hours, IntervalHours: interval}
 
 		var saveErr error
-		if convErr != nil {
+		parsed := false
+		switch {
+		case convErr != nil:
 			saveErr = fmt.Errorf("cooldown inválido")
-		} else {
+		case intErr != nil:
+			saveErr = fmt.Errorf("intervalo inválido")
+		default:
+			parsed = true
 			saveErr = app.Settings.SetAutoDownload(r.Context(), cfg)
 		}
 
 		token := ensureCSRFCookie(w, r)
 		info := buildAutoDownloadInfo(r.Context(), app)
 		if saveErr != nil {
-			if convErr == nil {
+			if parsed {
 				app.Log.Warn("salvando download automático", "error", saveErr)
 			}
 			info.Error = saveErr.Error()
@@ -927,61 +931,6 @@ func respondUploadAction(app *App, w http.ResponseWriter, r *http.Request, id in
 		return
 	}
 	http.Redirect(w, r, "/admin/envios", http.StatusSeeOther)
-}
-
-// --- Vinhetas ------------------------------------------------------------
-
-func handleAdminJinglesList(app *App) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-		rows, err := app.Pool.Query(ctx, `SELECT id, title, filename, path, duration, active FROM jingles ORDER BY title`)
-		var list []models.Jingle
-		if err == nil {
-			defer rows.Close()
-			for rows.Next() {
-				var j models.Jingle
-				if err := rows.Scan(&j.ID, &j.Title, &j.Filename, &j.Path, &j.Duration, &j.Active); err == nil {
-					list = append(list, j)
-				}
-			}
-		}
-		interval, _ := app.Jingles.GetJingleInterval(ctx)
-		token := ensureCSRFCookie(w, r)
-		player := buildPlayerData(ctx, app, config.DefaultGenre)
-		render(w, admintpl.JinglesList(list, interval, token, &player))
-	}
-}
-
-func handleAdminJingleInterval(app *App) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		interval, err := strconv.Atoi(r.FormValue("interval"))
-		if err != nil || interval < 1 {
-			http.Error(w, "intervalo inválido", http.StatusBadRequest)
-			return
-		}
-		_, err = app.Pool.Exec(r.Context(), `
-			INSERT INTO settings (key, value) VALUES ('jingle_interval', $1)
-			ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`, strconv.Itoa(interval))
-		if err != nil {
-			app.Log.Error("salvando intervalo de vinheta", "error", err)
-			http.Error(w, "erro interno", http.StatusInternalServerError)
-			return
-		}
-		http.Redirect(w, r, "/admin/vinhetas", http.StatusSeeOther)
-	}
-}
-
-func handleAdminJingleToggle(app *App) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		id := pathInt64(r, "id")
-		_, err := app.Pool.Exec(r.Context(), `UPDATE jingles SET active = NOT active WHERE id = $1`, id)
-		if err != nil {
-			app.Log.Error("alternando vinheta", "error", err)
-			http.Error(w, "erro interno", http.StatusInternalServerError)
-			return
-		}
-		http.Redirect(w, r, "/admin/vinhetas", http.StatusSeeOther)
-	}
 }
 
 // --- Usuários ------------------------------------------------------------

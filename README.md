@@ -100,7 +100,10 @@ O Liquidsoap chama dois endpoints internos, protegidos por um header
 `X-Internal-Token` (segredo compartilhado, `RADIO_INTERNAL_TOKEN`) em vez de
 uma heurística de IP:
 
-- `GET /internal/music?genre=X` — próxima faixa (vinheta ou música da fila).
+- `GET /internal/music?genre=X` — próxima faixa (comercial, vinheta ou música da fila). Comerciais
+  (`jingles.kind = commercial`, arquivos em `JINGLES_DIR/comerciais`) são
+  configurados em `/admin/comerciais`: a cada N músicas ou N minutos, ordem
+  sequencial ou aleatória (sem repetir em seguida).
 - `POST /internal/music/started?songId=&genre=&wasRequested=` — callback
   `on_track`: só aqui a música vira "current" e o evento SSE `song-changed`
   é publicado, garantindo que a UI só atualiza quando o ouvinte de fato

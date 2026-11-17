@@ -58,6 +58,24 @@ func handleGetMusic(app *App) http.HandlerFunc {
 		if err != nil {
 			app.Log.Error("verificando cabeça da fila", "error", err, "genre", genre)
 		}
+		// Comercial tem prioridade sobre a vinheta da rádio; se os dois
+		// vencerem juntos, a vinheta entra logo depois do comercial. Assim
+		// como as vinhetas, comerciais nunca passam por queue_entries/songs:
+		// não aparecem em "Últimas"/"Próximas", não podem ser pedidos nem
+		// avaliados, e o Liquidsoap não notifica on_track (isJingle).
+		if !adminHead {
+			ad, err := app.Jingles.NextCommercial(ctx, genre)
+			if err != nil {
+				app.Log.Error("buscando comercial", "error", err, "genre", genre)
+			}
+			if ad != nil {
+				writeJSON(w, http.StatusOK, musicResponse{
+					ID: ad.ID, Title: ad.Title, Artist: "Comercial", Path: ad.Path,
+					Cover: cover.DefaultCover, IsJingle: true,
+				})
+				return
+			}
+		}
 		if !adminHead && app.Jingles.GetSongCounter(genre) >= interval {
 			jingle, err := app.Jingles.GetRandomJingle(ctx)
 			if err != nil {

@@ -1,6 +1,7 @@
 // Package autodownload mantém a rádio recebendo música nova mesmo sem
 // envios de usuários: quando ninguém baixou nada em /enviar durante o
-// cooldown configurado (padrão 8h, ajustável em /admin/envios), o servidor
+// cooldown configurado e já passou o intervalo desde o último download
+// automático (ambos padrão 8h, ajustáveis em /admin/envios), o servidor
 // escolhe sozinho uma faixa sertaneja que ainda não existe na rádio, baixa
 // do Deezer e a coloca na mesma fila de avaliação por IA dos envios comuns
 // — marcada com uploads.auto = true.
@@ -10,10 +11,9 @@
 //     como Sertanejo no Deezer (deezerdl.AlbumIsSertanejoStrict, sem o
 //     fail-open da busca pública);
 //  2. a faixa não pode existir na rádio (uploads.Store.ExistsInRadio);
-//  3. nenhuma música pode ter sido baixada nas últimas N horas — conta
-//     tanto envios de usuários quanto os automáticos, então o automático
-//     roda no máximo uma vez por cooldown e só quando os usuários não
-//     enviaram nada nesse período.
+//  3. nenhum usuário pode ter enviado música nas últimas N horas (cooldown);
+//  4. nenhum download automático nas últimas M horas (intervalo) — o
+//     automático roda no máximo uma vez por intervalo.
 package autodownload
 
 import (
@@ -106,12 +106,12 @@ func (w *Worker) tick(ctx context.Context) {
 		return
 	}
 
-	last, ok, err := w.uploads.LastCreatedAt(ctx)
+	next, err := NextAt(ctx, w.uploads, cfg)
 	if err != nil {
-		w.log.Error("autodownload: consultando último envio", "error", err)
+		w.log.Error("autodownload: consultando últimos envios", "error", err)
 		return
 	}
-	if ok && time.Since(last) < cfg.Cooldown() {
+	if time.Now().Before(next) {
 		return
 	}
 
@@ -122,6 +122,26 @@ func (w *Worker) tick(ctx context.Context) {
 		w.log.Warn("autodownload: rodada falhou", "error", err, "retry_in", failureBackoff.String())
 		w.backoffUntil = time.Now().Add(failureBackoff)
 	}
+}
+
+// NextAt devolve a partir de quando um download automático é permitido: o
+// maior entre (último envio de usuário + cooldown) e (último download
+// automático + intervalo). Tempo zero significa "já permitido".
+func NextAt(ctx context.Context, store *uploads.Store, cfg settings.AutoDownload) (time.Time, error) {
+	var next time.Time
+	if t, ok, err := store.LastUserCreatedAt(ctx); err != nil {
+		return time.Time{}, err
+	} else if ok {
+		next = t.Add(cfg.Cooldown())
+	}
+	if t, ok, err := store.LastAutoCreatedAt(ctx); err != nil {
+		return time.Time{}, err
+	} else if ok {
+		if n := t.Add(cfg.Interval()); n.After(next) {
+			next = n
+		}
+	}
+	return next, nil
 }
 
 func (w *Worker) downloadOne(ctx context.Context) error {

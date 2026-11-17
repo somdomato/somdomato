@@ -90,6 +90,15 @@ type ConfirmedCurrent struct {
 	RequestedAt      *time.Time
 }
 
+// JingleKind distingue vinhetas da rádio de vinhetas comerciais — ambas
+// vivem na tabela `jingles` e tocam entre músicas sem entrar na fila.
+type JingleKind string
+
+const (
+	JingleKindJingle     JingleKind = "jingle"
+	JingleKindCommercial JingleKind = "commercial"
+)
+
 type Jingle struct {
 	ID       int64
 	Title    string
@@ -97,6 +106,7 @@ type Jingle struct {
 	Path     string
 	Duration *int
 	Active   bool
+	Kind     JingleKind
 }
 
 // UploadStatus é o ciclo de vida de uma faixa baixada via /enviar aguardando

@@ -29,13 +29,14 @@ func (p UploadsPageInfo) TotalPages() int {
 type AutoDownloadInfo struct {
 	Enabled       bool
 	CooldownHours int
+	IntervalHours int
 	MinHours      int
 	MaxHours      int
 	// Available é false sem DEEZER_ARL: o worker não roda.
 	Available bool
 	LastAuto  *time.Time
-	// NextAt é quando o cooldown termina (último envio + cooldown); nil se
-	// nunca houve envio. O download de fato ocorre na próxima checagem
+	// NextAt é quando o download volta a ser permitido (ver
+	// autodownload.NextAt); nil se já é permitido. O download de fato ocorre na próxima checagem
 	// (a cada 10 min) depois disso.
 	NextAt *time.Time
 	Saved  bool
@@ -94,7 +95,7 @@ templ AutoDownloadPanel(info AutoDownloadInfo, csrfToken string) {
 			}
 		</div>
 		<p class="mt-1 text-xs text-neutral-500">
-			Quando ninguém baixa uma música durante o cooldown, a rádio baixa sozinha uma faixa sertaneja que ainda não existe no catálogo. Ela passa pela mesma avaliação da IA dos envios comuns.
+			A rádio baixa sozinha uma faixa sertaneja que ainda não existe no catálogo a cada intervalo, desde que nenhum usuário tenha enviado música durante o cooldown. Ela passa pela mesma avaliação da IA dos envios comuns.
 		</p>
 		<form hx-post="/admin/envios/automatico" hx-target="#autodownload-panel" hx-swap="outerHTML" class="mt-3 flex flex-wrap items-end gap-4">
 			<input type="hidden" name="csrf_token" value={ csrfToken }/>
@@ -102,8 +103,12 @@ templ AutoDownloadPanel(info AutoDownloadInfo, csrfToken string) {
 				<input type="checkbox" name="enabled" value="1" class="accent-brand-500" checked?={ info.Enabled }/>
 				Baixar músicas automaticamente
 			</label>
-			<label>
-				Cooldown (horas)
+			<label title="Tempo mínimo entre dois downloads automáticos">
+				Intervalo entre downloads (horas)
+				<input type="number" name="interval_hours" min={ itoaInt(info.MinHours) } max={ itoaInt(info.MaxHours) } value={ itoaInt(info.IntervalHours) } required class="mt-1 block w-24 rounded-lg bg-surface-raised/70 px-3 py-2 ring-1 ring-white/10"/>
+			</label>
+			<label title="Horas sem nenhum envio de usuário exigidas antes de baixar automaticamente">
+				Pausa após envio de usuário (horas)
 				<input type="number" name="cooldown_hours" min={ itoaInt(info.MinHours) } max={ itoaInt(info.MaxHours) } value={ itoaInt(info.CooldownHours) } required class="mt-1 block w-24 rounded-lg bg-surface-raised/70 px-3 py-2 ring-1 ring-white/10"/>
 			</label>
 			<button type="submit" class="rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white">Salvar</button>

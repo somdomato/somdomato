@@ -162,3 +162,7 @@ func slugify(name string) string {
 	}
 	return strings.Trim(b.String(), "-")
 }
+
+// Slugify expõe slugify para outros pacotes que precisam de nomes de
+// arquivo seguros (ex.: upload de vinhetas).
+func Slugify(name string) string { return slugify(name) }

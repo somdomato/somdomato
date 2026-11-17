@@ -215,12 +215,12 @@ func (s *Store) UpdateMeta(ctx context.Context, id int64, title, artist string) 
 	return nil
 }
 
-// LastCreatedAt devolve o momento do envio mais recente (de usuário ou
-// automático); ok=false se ainda não há nenhum.
-func (s *Store) LastCreatedAt(ctx context.Context) (t time.Time, ok bool, err error) {
+// LastUserCreatedAt devolve o momento do envio mais recente feito por um
+// usuário (ok=false se não houver nenhum) — base do cooldown do download automático.
+func (s *Store) LastUserCreatedAt(ctx context.Context) (t time.Time, ok bool, err error) {
 	var last *time.Time
-	if err := s.pool.QueryRow(ctx, `SELECT max(created_at) FROM uploads`).Scan(&last); err != nil {
-		return time.Time{}, false, fmt.Errorf("consultando último envio: %w", err)
+	if err := s.pool.QueryRow(ctx, `SELECT max(created_at) FROM uploads WHERE NOT auto`).Scan(&last); err != nil {
+		return time.Time{}, false, fmt.Errorf("consultando último envio de usuário: %w", err)
 	}
 	if last == nil {
 		return time.Time{}, false, nil
@@ -228,8 +228,8 @@ func (s *Store) LastCreatedAt(ctx context.Context) (t time.Time, ok bool, err er
 	return *last, true, nil
 }
 
-// LastAutoCreatedAt é como LastCreatedAt, mas só para envios automáticos —
-// exibido no painel de /admin/envios.
+// LastAutoCreatedAt é como LastUserCreatedAt, mas só para envios automáticos —
+// base do intervalo do download automático e exibido em /admin/envios.
 func (s *Store) LastAutoCreatedAt(ctx context.Context) (t time.Time, ok bool, err error) {
 	var last *time.Time
 	if err := s.pool.QueryRow(ctx, `SELECT max(created_at) FROM uploads WHERE auto`).Scan(&last); err != nil {
