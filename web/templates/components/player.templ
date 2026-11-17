@@ -126,33 +126,33 @@ type GenreOption struct {
 // player.js descarta (htmx:sseBeforeMessage) os eventos de rádios diferentes
 // de data-genre, que ele atualiza a cada troca.
 templ PlayerBar(data PlayerData) {
-	<div class="flex flex-wrap items-center gap-3 border-t border-white/5 py-2.5 sm:flex-nowrap" sse-connect="/events">
+	<div class="mb-2.5 flex flex-wrap items-center gap-x-3 gap-y-2.5 rounded-2xl bg-gradient-to-r from-brand-500/[0.07] via-white/[0.03] to-white/[0.02] p-2 ring-1 ring-white/[0.06] sm:flex-nowrap sm:pr-2.5" sse-connect="/events">
 		<div
 			id="now-playing"
 			data-genre={ string(data.Genre) }
 			sse-swap={ songChangedEvents() }
 			hx-swap="innerHTML"
 			data-htmx-fade
-			class="flex min-w-0 flex-1 items-center gap-3 sm:flex-none"
+			class="flex min-w-0 flex-1 items-center gap-3"
 		>
 			@NowPlayingCard(data.Now)
 		</div>
 
-		<div class="flex shrink-0 items-center gap-3" data-player data-stream-url={ data.StreamURL } data-radio-name={ data.Genre.RadioName() }>
-			<div class="relative">
+		<div class="flex shrink-0 items-center gap-1.5 sm:gap-2" data-player data-stream-url={ data.StreamURL } data-radio-name={ data.Genre.RadioName() }>
+			<div class="relative mr-0.5">
 				<button
 					type="button"
 					data-player-toggle
 					aria-label="Reproduzir"
-					class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-b from-brand-500 to-brand-600 text-white shadow-md shadow-brand-900/30 ring-1 ring-white/10 transition hover:from-brand-400 hover:to-brand-500 hover:shadow-lg hover:shadow-brand-900/40 active:scale-90 active:shadow-sm"
+					class="player-toggle relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-b from-brand-500 to-brand-600 text-white shadow-lg shadow-brand-900/40 ring-1 ring-white/15 transition hover:scale-105 hover:from-brand-400 hover:to-brand-500 hover:shadow-brand-700/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300 active:scale-90 active:shadow-sm"
 				>
-					<svg data-icon-play class="h-3.5 w-3.5 translate-x-[1px]" viewBox="0 0 24 24" fill="currentColor">
+					<svg data-icon-play class="h-4 w-4 translate-x-[1px]" viewBox="0 0 24 24" fill="currentColor">
 						<path d="M8 5v14l11-7z"></path>
 					</svg>
-					<svg data-icon-pause class="hidden h-3.5 w-3.5" viewBox="0 0 24 24" fill="currentColor">
+					<svg data-icon-pause class="hidden h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
 						<path d="M6 5h4v14H6zM14 5h4v14h-4z"></path>
 					</svg>
-					<svg data-icon-loading class="hidden h-3.5 w-3.5 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+					<svg data-icon-loading class="hidden h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
 						<path d="M21 12a9 9 0 1 1-9-9" opacity="0.9"></path>
 					</svg>
 				</button>
@@ -171,7 +171,7 @@ templ PlayerBar(data PlayerData) {
 				data-player-reload
 				aria-label="Recarregar transmissão"
 				title="Recarregar transmissão"
-				class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-neutral-400 transition hover:bg-white/10 hover:text-neutral-200 active:scale-95"
+				class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-neutral-400 transition hover:bg-white/10 hover:text-neutral-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/60 active:scale-95"
 			>
 				<svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
 					<path d="M21 12a9 9 0 1 1-2.64-6.36"></path>
@@ -184,7 +184,7 @@ templ PlayerBar(data PlayerData) {
 				data-player-mute-toggle
 				aria-label="Silenciar"
 				title="Silenciar"
-				class="hidden h-7 w-7 shrink-0 items-center justify-center rounded-full text-neutral-400 transition hover:bg-white/10 hover:text-neutral-200 active:scale-95 lg:flex"
+				class="hidden h-8 w-8 shrink-0 items-center justify-center rounded-full text-neutral-400 transition hover:bg-white/10 hover:text-neutral-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/60 active:scale-95 lg:flex"
 			>
 				<svg data-icon-volume-muted class="hidden h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
 					<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
@@ -212,16 +212,18 @@ templ PlayerBar(data PlayerData) {
 				step="0.01"
 				value="0.8"
 				aria-label="Volume"
-				class="hidden h-1 w-16 shrink-0 cursor-pointer accent-brand-500 lg:block"
+				class="volume-range hidden w-20 shrink-0 cursor-pointer lg:block"
 			/>
 
 			<audio data-player-audio preload="none"></audio>
-			<p data-player-message class="hidden max-w-44 text-xs text-red-400" role="status" aria-live="polite"></p>
+			<p data-player-message class="hidden max-w-44 rounded-md bg-red-500/10 px-2 py-1 text-xs leading-tight text-red-300 ring-1 ring-red-500/20" role="status" aria-live="polite"></p>
 		</div>
 
 		@ShareButton(data.Genre)
 
-		<div class="order-last w-full sm:order-none sm:ml-auto sm:w-auto">
+		<div class="hidden h-6 w-px shrink-0 bg-white/10 sm:block" aria-hidden="true"></div>
+
+		<div class="order-last w-full sm:order-none sm:w-auto">
 			@GenreSwitcher(data.Genre, data.GenreOptions)
 		</div>
 	</div>
@@ -240,7 +242,7 @@ templ ShareButton(genre config.Genre) {
 			data-share-trigger
 			aria-label="Compartilhar música"
 			title="Compartilhar música"
-			class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-neutral-400 transition hover:bg-white/10 hover:text-neutral-200 active:scale-95"
+			class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-neutral-400 transition hover:bg-white/10 hover:text-neutral-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/60 active:scale-95"
 		>
 			<svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
 				<circle cx="18" cy="5" r="3"></circle>
@@ -324,20 +326,24 @@ templ ShareButton(genre config.Genre) {
 // /api/songs/{id}/votes), porque este componente é reusado no broadcast SSE
 // compartilhado por todos os ouvintes conectados.
 templ NowPlayingCard(now NowPlaying) {
-	<div class="relative h-11 w-11 shrink-0 sm:h-9 sm:w-9" data-song-cover data-song-id={ fmt.Sprintf("%d", now.ID) }>
+	<div class="relative h-12 w-12 shrink-0 sm:h-11 sm:w-11" data-song-cover data-song-id={ fmt.Sprintf("%d", now.ID) }>
 		<img
 			src={ now.Cover }
 			alt={ now.Title }
 			data-song-cover-trigger
-			class="h-11 w-11 cursor-pointer rounded-lg object-cover shadow-sm ring-1 ring-white/10 sm:h-9 sm:w-9"
+			class="h-12 w-12 cursor-pointer rounded-xl object-cover shadow-md shadow-black/30 ring-1 ring-white/10 transition hover:ring-brand-500/60 sm:h-11 sm:w-11"
 		/>
 		if now.ID != 0 {
 			@SongVotePanel(now.ID, now.Title, now.Artist, now.Cover)
 		}
 	</div>
 	<div class="min-w-0 leading-tight">
-		<p class="max-w-[8rem] truncate text-sm font-semibold sm:max-w-[10rem]">{ now.Title }</p>
-		<p class="max-w-[8rem] truncate text-xs text-neutral-400 sm:max-w-[10rem]">{ now.Artist }</p>
+		<p class="mb-0.5 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-brand-300">
+			<span class="relative flex h-1.5 w-1.5 shrink-0"><span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-500 opacity-60"></span><span class="relative inline-flex h-1.5 w-1.5 rounded-full bg-red-500"></span></span>
+			Ao vivo
+		</p>
+		<p class="max-w-[11rem] truncate text-sm font-semibold text-neutral-50 sm:max-w-[12rem] lg:max-w-[16rem]">{ now.Title }</p>
+		<p data-now-artist class="max-w-[11rem] truncate text-xs text-neutral-400 sm:max-w-[12rem] lg:max-w-[16rem]">{ now.Artist }</p>
 	</div>
 }
 
@@ -361,7 +367,7 @@ templ GenreSwitcher(active config.Genre, options []GenreOption) {
 			hx-select="#main-content"
 			hx-swap="outerHTML"
 			hx-push-url="true"
-			class="w-full cursor-pointer appearance-none rounded-lg border border-white/10 bg-surface-raised py-1.5 pl-3 pr-9 text-xs font-medium text-neutral-200 shadow-sm transition hover:border-white/20 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+			class="w-full cursor-pointer appearance-none rounded-xl border border-white/10 bg-surface-raised py-2 pl-8 pr-9 text-xs font-semibold text-neutral-100 shadow-sm transition hover:border-brand-500/40 hover:bg-white/[0.06] focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
 		>
 			for _, opt := range options {
 				if opt.Genre == active {
@@ -371,6 +377,13 @@ templ GenreSwitcher(active config.Genre, options []GenreOption) {
 				}
 			}
 		</select>
+		<svg class="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-brand-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+			<path d="M4.9 19.1C1 15.2 1 8.8 4.9 4.9"></path>
+			<path d="M7.8 16.2c-2.3-2.3-2.3-6.1 0-8.5"></path>
+			<circle cx="12" cy="12" r="2"></circle>
+			<path d="M16.2 7.8c2.3 2.3 2.3 6.1 0 8.5"></path>
+			<path d="M19.1 4.9C23 8.8 23 15.1 19.1 19"></path>
+		</svg>
 		<svg class="pointer-events-none absolute right-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-neutral-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
 			<path d="m6 9 6 6 6-6"></path>
 		</svg>

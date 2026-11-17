@@ -57,6 +57,12 @@ document.querySelectorAll("[data-player]").forEach((root) => {
 	}
 	audio.volume = Number(volume.value);
 
+	// Preenche a trilha do slider até o valor atual (ver .volume-range em
+	// input.css) — o range nativo não tem "parte preenchida" estilizável no
+	// Chrome/Safari.
+	const paintVolume = () => volume.style.setProperty("--vol", `${Number(volume.value) * 100}%`);
+	paintVolume();
+
 	// Três estados possíveis: "idle" (parado), "loading" (conectando ou
 	// rebufferizando) e "playing". O ícone de loading evita que o usuário
 	// ache que a stream falhou enquanto a conexão inicial é estabelecida.
@@ -81,6 +87,7 @@ document.querySelectorAll("[data-player]").forEach((root) => {
 	};
 
 	const setState = (state) => {
+		root.dataset.state = state;
 		iconPlay.classList.toggle("hidden", state !== "idle");
 		iconLoading.classList.toggle("hidden", state !== "loading");
 		iconPause.classList.toggle("hidden", state !== "playing");
@@ -131,7 +138,7 @@ document.querySelectorAll("[data-player]").forEach((root) => {
 		if (!("mediaSession" in navigator) || !nowPlaying) return;
 		const img = nowPlaying.querySelector("img");
 		const title = img?.alt || radioName || "Som do Mato";
-		const artist = nowPlaying.querySelector("p.text-neutral-400")?.textContent || radioName;
+		const artist = nowPlaying.querySelector("[data-now-artist]")?.textContent || radioName;
 
 		if (img && img.src && !(img.complete && img.naturalWidth)) {
 			img.addEventListener("load", () => applyMediaSessionMetadata(img, title, artist), { once: true });
@@ -298,6 +305,7 @@ document.querySelectorAll("[data-player]").forEach((root) => {
 	volume.addEventListener("input", () => {
 		audio.volume = Number(volume.value);
 		localStorage.setItem(volumeStorageKey, volume.value);
+		paintVolume();
 		if (audio.muted && Number(volume.value) > 0) audio.muted = false;
 		updateVolumeIcon();
 	});
@@ -377,8 +385,8 @@ document.addEventListener("change", (event) => {
 			// gatilho/painel de curtir-descurtir (song-vote.js) para que ele
 			// continue funcionando depois de trocar de rádio pelo <select>.
 			nowPlaying.innerHTML = `
-				<div class="relative h-11 w-11 shrink-0 sm:h-9 sm:w-9" data-song-cover data-song-id="${escape(data.now.id)}">
-					<img src="${escape(data.now.cover)}" alt="${escape(data.now.title)}" data-song-cover-trigger class="h-11 w-11 cursor-pointer rounded-lg object-cover shadow-sm ring-1 ring-white/10 sm:h-9 sm:w-9"/>
+				<div class="relative h-12 w-12 shrink-0 sm:h-11 sm:w-11" data-song-cover data-song-id="${escape(data.now.id)}">
+					<img src="${escape(data.now.cover)}" alt="${escape(data.now.title)}" data-song-cover-trigger class="h-12 w-12 cursor-pointer rounded-xl object-cover shadow-md shadow-black/30 ring-1 ring-white/10 transition hover:ring-brand-500/60 sm:h-11 sm:w-11"/>
 					${
 						data.now.id
 							? `<div data-song-panel class="pointer-events-none absolute left-0 top-full z-50 mt-2 w-64 max-w-[calc(100vw-2rem)] origin-top-left scale-95 rounded-2xl border border-white/10 bg-surface-raised p-4 text-neutral-100 opacity-0 shadow-2xl shadow-black/40 transition duration-150 [&.is-open]:pointer-events-auto [&.is-open]:scale-100 [&.is-open]:opacity-100">
@@ -391,7 +399,7 @@ document.addEventListener("change", (event) => {
 								</div>
 								<div class="mt-3 flex items-center gap-2">
 									<button type="button" data-song-vote-like data-song-id="${escape(data.now.id)}" aria-pressed="false" aria-label="Curtir música" class="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-white/5 px-3 py-1.5 text-xs font-medium text-neutral-300 transition hover:bg-white/10 active:scale-95 aria-pressed:bg-brand-500/20 aria-pressed:text-brand-400 aria-pressed:ring-1 aria-pressed:ring-brand-500/40">
-										<svg class="h-3.5 w-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"></path></svg>
+										<svg class="h-3.5 w-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 10v12"></path><path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2a3.13 3.13 0 0 1 3 3.88Z"></path></svg>
 										<span data-song-like-count>—</span>
 									</button>
 									<button type="button" data-song-vote-dislike data-song-id="${escape(data.now.id)}" aria-pressed="false" aria-label="Descurtir música" class="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-white/5 px-3 py-1.5 text-xs font-medium text-neutral-300 transition hover:bg-white/10 active:scale-95 aria-pressed:bg-red-500/15 aria-pressed:text-red-400 aria-pressed:ring-1 aria-pressed:ring-red-500/40">
@@ -404,8 +412,12 @@ document.addEventListener("change", (event) => {
 					}
 				</div>
 				<div class="min-w-0 leading-tight">
-					<p class="max-w-[8rem] truncate text-sm font-semibold sm:max-w-[10rem]">${escape(data.now.title)}</p>
-					<p class="max-w-[8rem] truncate text-xs text-neutral-400 sm:max-w-[10rem]">${escape(data.now.artist)}</p>
+					<p class="mb-0.5 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-brand-300">
+						<span class="relative flex h-1.5 w-1.5 shrink-0"><span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-500 opacity-60"></span><span class="relative inline-flex h-1.5 w-1.5 rounded-full bg-red-500"></span></span>
+						Ao vivo
+					</p>
+					<p class="max-w-[11rem] truncate text-sm font-semibold text-neutral-50 sm:max-w-[12rem] lg:max-w-[16rem]">${escape(data.now.title)}</p>
+					<p data-now-artist class="max-w-[11rem] truncate text-xs text-neutral-400 sm:max-w-[12rem] lg:max-w-[16rem]">${escape(data.now.artist)}</p>
 				</div>`;
 		})
 		.catch(() => {});

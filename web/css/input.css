@@ -26,6 +26,7 @@
   --color-brand-50: oklch(0.98 0.02 150);
   --color-brand-100: oklch(0.94 0.05 150);
   --color-brand-300: oklch(0.8 0.12 150);
+  --color-brand-400: oklch(0.7 0.15 150);
   --color-brand-500: oklch(0.6 0.16 150);
   --color-brand-600: oklch(0.52 0.16 150);
   --color-brand-700: oklch(0.44 0.15 150);
@@ -86,6 +87,80 @@
   0%, 100% { height: 20%; }
   50% { height: 100%; }
 }
+
+/* Botão play/pause: halo pulsante enquanto a rádio toca (player.js grava
+   data-state="idle|loading|playing" no [data-player]). */
+.player-toggle::after {
+  content: "";
+  position: absolute;
+  inset: -4px;
+  border-radius: 9999px;
+  border: 2px solid var(--color-brand-500);
+  opacity: 0;
+  pointer-events: none;
+}
+[data-player][data-state="playing"] .player-toggle::after {
+  animation: player-halo 2s ease-out infinite;
+}
+@keyframes player-halo {
+  0% { opacity: 0.55; transform: scale(0.92); }
+  100% { opacity: 0; transform: scale(1.35); }
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-player][data-state="playing"] .player-toggle::after {
+    animation: none;
+    opacity: 0.4;
+    transform: none;
+  }
+}
+
+/* Slider de volume: trilha fina com a parte preenchida na cor da marca
+   (--vol é atualizado por player.js) e um thumb redondo discreto. */
+.volume-range {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 16px;
+  background: transparent;
+}
+.volume-range::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 9999px;
+  background: linear-gradient(to right, var(--color-brand-500) var(--vol, 80%), rgb(255 255 255 / 0.12) var(--vol, 80%));
+}
+.volume-range::-moz-range-track {
+  height: 4px;
+  border-radius: 9999px;
+  background: rgb(255 255 255 / 0.12);
+}
+.volume-range::-moz-range-progress {
+  height: 4px;
+  border-radius: 9999px;
+  background: var(--color-brand-500);
+}
+.volume-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  height: 12px;
+  width: 12px;
+  margin-top: -4px;
+  border-radius: 9999px;
+  background: #fff;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.4);
+  transition: transform 120ms ease;
+}
+.volume-range::-moz-range-thumb {
+  height: 12px;
+  width: 12px;
+  border: 0;
+  border-radius: 9999px;
+  background: #fff;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.4);
+  transition: transform 120ms ease;
+}
+.volume-range:hover::-webkit-slider-thumb { transform: scale(1.2); }
+.volume-range:hover::-moz-range-thumb { transform: scale(1.2); }
+.volume-range:focus-visible { outline: none; }
+.volume-range:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 3px color-mix(in oklch, var(--color-brand-500) 50%, transparent); }
+.volume-range:focus-visible::-moz-range-thumb { box-shadow: 0 0 0 3px color-mix(in oklch, var(--color-brand-500) 50%, transparent); }
 
 /* Popover nativo (atributo popover) do botão de compartilhar — o reset do
    Tailwind (margin:0 em tudo) sobrescreve o margin:auto que a UA stylesheet
