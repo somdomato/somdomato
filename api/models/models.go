@@ -125,7 +125,9 @@ type Upload struct {
 	Attempts    int
 	SongID      *int64
 	RequestedIP string
-	CreatedAt   time.Time
+	// Auto: baixado pelo download automático, não por um usuário.
+	Auto      bool
+	CreatedAt time.Time
 }
 
 type User struct {

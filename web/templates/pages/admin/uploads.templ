@@ -1,6 +1,8 @@
 package admin
 
 import (
+	"time"
+
 	"github.com/somdomato/somdomato/api/config"
 	"github.com/somdomato/somdomato/api/models"
 	"github.com/somdomato/somdomato/web/templates/components"
@@ -20,6 +22,32 @@ func (p UploadsPageInfo) TotalPages() int {
 		return 1
 	}
 	return pages
+}
+
+// AutoDownloadInfo alimenta o painel de download automático no topo de
+// /admin/envios (ver api/internal/autodownload).
+type AutoDownloadInfo struct {
+	Enabled       bool
+	CooldownHours int
+	MinHours      int
+	MaxHours      int
+	// Available é false sem DEEZER_ARL: o worker não roda.
+	Available bool
+	LastAuto  *time.Time
+	// NextAt é quando o cooldown termina (último envio + cooldown); nil se
+	// nunca houve envio. O download de fato ocorre na próxima checagem
+	// (a cada 10 min) depois disso.
+	NextAt *time.Time
+	Saved  bool
+	Error  string
+}
+
+// brt: horário de Brasília (sem horário de verão desde 2019) — evita
+// depender de tzdata na imagem.
+var brt = time.FixedZone("BRT", -3*60*60)
+
+func fmtDateTime(t time.Time) string {
+	return t.In(brt).Format("02/01/2006 15:04")
 }
 
 var uploadStatusLabels = map[string]string{
@@ -53,12 +81,73 @@ func uploadStatusBadgeClass(status string) string {
 	}
 }
 
-templ UploadsList(list []models.Upload, csrfToken string, page UploadsPageInfo, player *components.PlayerData) {
+templ AutoDownloadPanel(info AutoDownloadInfo, csrfToken string) {
+	<section id="autodownload-panel" class="mt-4 rounded-lg bg-surface-raised p-4 text-sm">
+		<div class="flex flex-wrap items-center gap-2">
+			<h2 class="font-semibold">Download automático</h2>
+			if !info.Available {
+				<span class="rounded-full bg-neutral-500/20 px-2 py-0.5 text-xs text-neutral-300">indisponível (DEEZER_ARL ausente)</span>
+			} else if info.Enabled {
+				<span class="rounded-full bg-emerald-500/20 px-2 py-0.5 text-xs text-emerald-300">ligado</span>
+			} else {
+				<span class="rounded-full bg-neutral-500/20 px-2 py-0.5 text-xs text-neutral-300">desligado</span>
+			}
+		</div>
+		<p class="mt-1 text-xs text-neutral-500">
+			Quando ninguém baixa uma música durante o cooldown, a rádio baixa sozinha uma faixa sertaneja que ainda não existe no catálogo. Ela passa pela mesma avaliação da IA dos envios comuns.
+		</p>
+		<form hx-post="/admin/envios/automatico" hx-target="#autodownload-panel" hx-swap="outerHTML" class="mt-3 flex flex-wrap items-end gap-4">
+			<input type="hidden" name="csrf_token" value={ csrfToken }/>
+			<label class="flex items-center gap-2">
+				<input type="checkbox" name="enabled" value="1" class="accent-brand-500" checked?={ info.Enabled }/>
+				Baixar músicas automaticamente
+			</label>
+			<label>
+				Cooldown (horas)
+				<input type="number" name="cooldown_hours" min={ itoaInt(info.MinHours) } max={ itoaInt(info.MaxHours) } value={ itoaInt(info.CooldownHours) } required class="mt-1 block w-24 rounded-lg bg-surface-raised/70 px-3 py-2 ring-1 ring-white/10"/>
+			</label>
+			<button type="submit" class="rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white">Salvar</button>
+			if info.Saved {
+				<span class="text-xs text-emerald-300">Salvo.</span>
+			}
+			if info.Error != "" {
+				<span class="text-xs text-red-400">{ info.Error }</span>
+			}
+		</form>
+		<dl class="mt-3 grid gap-1 text-xs text-neutral-400 sm:grid-cols-2">
+			<div>
+				<dt class="inline text-neutral-500">Último download automático:</dt>
+				<dd class="inline">
+					if info.LastAuto != nil {
+						{ fmtDateTime(*info.LastAuto) }
+					} else {
+						nunca
+					}
+				</dd>
+			</div>
+			if info.Available && info.Enabled {
+				<div>
+					<dt class="inline text-neutral-500">Próximo, se ninguém enviar nada:</dt>
+					<dd class="inline">
+						if info.NextAt != nil && info.NextAt.After(time.Now()) {
+							a partir de { fmtDateTime(*info.NextAt) }
+						} else {
+							nos próximos minutos
+						}
+					</dd>
+				</div>
+			}
+		</dl>
+	</section>
+}
+
+templ UploadsList(list []models.Upload, csrfToken string, page UploadsPageInfo, auto AutoDownloadInfo, player *components.PlayerData) {
 	@Shell("Envios", "uploads", player) {
 		<h1 class="text-xl font-bold">Envios</h1>
 		<p class="mt-1 text-sm text-neutral-500">
-			Faixas baixadas via /enviar, aguardando ou já avaliadas pela IA (Groq) antes de entrar no catálogo.
+			Faixas baixadas via /enviar ou pelo download automático, aguardando ou já avaliadas pela IA (Groq) antes de entrar no catálogo.
 		</p>
+		@AutoDownloadPanel(auto, csrfToken)
 		<form class="mt-4 flex items-center gap-2 text-sm" hx-get="/admin/envios" hx-target="#uploads-table">
 			<label class="flex items-center gap-2">
 				Status
@@ -86,7 +175,11 @@ templ UploadRow(u models.Upload, csrfToken string) {
 				<span class={ "shrink-0 rounded-full px-2 py-0.5 text-xs " + uploadStatusBadgeClass(string(u.Status)) }>
 					{ uploadStatusLabels[string(u.Status)] }
 				</span>
+				if u.Auto {
+					<span class="shrink-0 rounded-full bg-sky-500/20 px-2 py-0.5 text-xs text-sky-300" title="Baixada automaticamente pela rádio, não por um usuário">Automático</span>
+				}
 			</div>
+			<p class="mt-0.5 text-xs text-neutral-500">{ fmtDateTime(u.CreatedAt) }</p>
 			if u.AIReason != nil && *u.AIReason != "" {
 				<p class="mt-0.5 truncate text-xs text-neutral-500">{ *u.AIReason }</p>
 			}
@@ -153,6 +246,9 @@ templ UploadEdit(u models.Upload, csrfToken string, player *components.PlayerDat
 			<span class={ "rounded-full px-2 py-0.5 text-xs " + uploadStatusBadgeClass(string(u.Status)) }>
 				{ uploadStatusLabels[string(u.Status)] }
 			</span>
+			if u.Auto {
+				<span class="ml-1 rounded-full bg-sky-500/20 px-2 py-0.5 text-xs text-sky-300">Baixada automaticamente</span>
+			}
 		</p>
 		if u.AIReason != nil && *u.AIReason != "" {
 			<p class="mt-2 text-sm text-neutral-400">Parecer da IA: { *u.AIReason }</p>

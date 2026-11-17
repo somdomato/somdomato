@@ -24,6 +24,7 @@ import (
 	"github.com/somdomato/somdomato/api/internal/cover"
 	"github.com/somdomato/somdomato/api/internal/icecastclient"
 	"github.com/somdomato/somdomato/api/internal/requests"
+	"github.com/somdomato/somdomato/api/internal/settings"
 	"github.com/somdomato/somdomato/api/internal/songs"
 	"github.com/somdomato/somdomato/api/models"
 	"github.com/somdomato/somdomato/api/rbac"
@@ -55,6 +56,7 @@ func registerAdminRoutes(mux *http.ServeMux, app *App) {
 	mux.HandleFunc("POST /admin/pedidos/{id}/remover", requirePermission(app, rbac.PermRequestsManage, requireCSRF(handleAdminRequestRemove(app))))
 
 	mux.HandleFunc("GET /admin/envios", requirePermission(app, rbac.PermUploadsManage, handleAdminUploadsList(app)))
+	mux.HandleFunc("POST /admin/envios/automatico", requirePermission(app, rbac.PermUploadsManage, requireCSRF(handleAdminAutoDownloadUpdate(app))))
 	mux.HandleFunc("GET /admin/envios/{id}", requirePermission(app, rbac.PermUploadsManage, handleAdminUploadEditForm(app)))
 	mux.HandleFunc("POST /admin/envios/{id}", requirePermission(app, rbac.PermUploadsManage, requireCSRF(handleAdminUploadUpdate(app))))
 	mux.HandleFunc("POST /admin/envios/{id}/aprovar", requirePermission(app, rbac.PermUploadsManage, requireCSRF(handleAdminUploadApprove(app))))
@@ -780,7 +782,66 @@ func handleAdminUploadsList(app *App) http.HandlerFunc {
 			return
 		}
 		player := buildPlayerData(r.Context(), app, config.DefaultGenre)
-		render(w, admintpl.UploadsList(list, token, pageInfo, &player))
+		render(w, admintpl.UploadsList(list, token, pageInfo, buildAutoDownloadInfo(r.Context(), app), &player))
+	}
+}
+
+// buildAutoDownloadInfo monta o painel de download automático de
+// /admin/envios; erros de leitura só são logados (o painel cai nos padrões).
+func buildAutoDownloadInfo(ctx context.Context, app *App) admintpl.AutoDownloadInfo {
+	cfg, err := app.Settings.GetAutoDownload(ctx)
+	if err != nil {
+		app.Log.Error("lendo configuração de download automático", "error", err)
+	}
+	info := admintpl.AutoDownloadInfo{
+		Enabled: cfg.Enabled, CooldownHours: cfg.CooldownHours,
+		MinHours: settings.MinAutoDownloadCooldownHours, MaxHours: settings.MaxAutoDownloadCooldownHours,
+		Available: app.Deezer != nil,
+	}
+	if t, ok, err := app.Uploads.LastAutoCreatedAt(ctx); err != nil {
+		app.Log.Error("consultando último envio automático", "error", err)
+	} else if ok {
+		info.LastAuto = &t
+	}
+	if t, ok, err := app.Uploads.LastCreatedAt(ctx); err != nil {
+		app.Log.Error("consultando último envio", "error", err)
+	} else if ok {
+		next := t.Add(cfg.Cooldown())
+		info.NextAt = &next
+	}
+	return info
+}
+
+// handleAdminAutoDownloadUpdate liga/desliga o download automático e ajusta
+// o cooldown; responde com o painel atualizado (htmx).
+func handleAdminAutoDownloadUpdate(app *App) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		hours, convErr := strconv.Atoi(strings.TrimSpace(r.FormValue("cooldown_hours")))
+		cfg := settings.AutoDownload{Enabled: r.FormValue("enabled") != "", CooldownHours: hours}
+
+		var saveErr error
+		if convErr != nil {
+			saveErr = fmt.Errorf("cooldown inválido")
+		} else {
+			saveErr = app.Settings.SetAutoDownload(r.Context(), cfg)
+		}
+
+		token := ensureCSRFCookie(w, r)
+		info := buildAutoDownloadInfo(r.Context(), app)
+		if saveErr != nil {
+			if convErr == nil {
+				app.Log.Warn("salvando download automático", "error", saveErr)
+			}
+			info.Error = saveErr.Error()
+		} else {
+			info.Saved = true
+		}
+
+		if !isHXRequest(r) {
+			http.Redirect(w, r, "/admin/envios", http.StatusSeeOther)
+			return
+		}
+		render(w, admintpl.AutoDownloadPanel(info, token))
 	}
 }
 

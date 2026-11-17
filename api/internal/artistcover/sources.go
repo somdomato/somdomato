@@ -174,8 +174,13 @@ func deezerArtistByTracks(ctx context.Context, client *http.Client, artistName s
 		}
 		u := url.URL{Scheme: "https", Host: "api.deezer.com", Path: "/search"}
 		q := u.Query()
-		q.Set("q", "artist:"+searchQuote(artistName)+" track:"+searchQuote(title))
-		q.Set("limit", "5")
+		// Busca simples ("artista título"), não a avançada
+		// (artist:"x" track:"y"): o Deezer passou a devolver 0 resultados
+		// quando os dois campos são combinados, pra qualquer artista. O
+		// filtro por nome exato abaixo já descarta os resultados de outros
+		// artistas que a busca simples traz.
+		q.Set("q", artistName+" "+title)
+		q.Set("limit", "10")
 		u.RawQuery = q.Encode()
 
 		var data struct {

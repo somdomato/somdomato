@@ -16,6 +16,7 @@ import (
 	"github.com/somdomato/somdomato/api/internal/artistcover"
 	"github.com/somdomato/somdomato/api/internal/audiofile"
 	"github.com/somdomato/somdomato/api/internal/auth"
+	"github.com/somdomato/somdomato/api/internal/autodownload"
 	"github.com/somdomato/somdomato/api/internal/db"
 	"github.com/somdomato/somdomato/api/internal/deezerdl"
 	"github.com/somdomato/somdomato/api/internal/groqeval"
@@ -25,6 +26,7 @@ import (
 	"github.com/somdomato/somdomato/api/internal/protections"
 	"github.com/somdomato/somdomato/api/internal/queue"
 	"github.com/somdomato/somdomato/api/internal/requests"
+	"github.com/somdomato/somdomato/api/internal/settings"
 	"github.com/somdomato/somdomato/api/internal/songs"
 	"github.com/somdomato/somdomato/api/internal/sse"
 	"github.com/somdomato/somdomato/api/internal/uploads"
@@ -60,6 +62,7 @@ func main() {
 	songsStore := songs.NewStore(pool)
 	uploadsStore := uploads.NewStore(pool)
 	analyticsStore := analytics.NewStore(pool)
+	settingsStore := settings.NewStore(pool)
 	artistCoverStore := artistcover.NewStore(pool)
 	artistCoverResolver := artistcover.NewResolver(cfg, artistCoverStore, songsStore.ListTitlesByArtist, log)
 
@@ -89,12 +92,18 @@ func main() {
 		ArtistCovers:        artistCoverStore,
 		ArtistCoverResolver: artistCoverResolver,
 		Deezer:              deezerClient,
+		Settings:            settingsStore,
 	}
 
 	// Avaliador Groq: no máximo 1 chamada/min, ver internal/groqeval. Sem
 	// GROQ_API_KEY o worker simplesmente não processa nada (uploads ficam
 	// pendentes) — não impede o boot.
 	go groqEvaluator.Run(ctx)
+
+	// Download automático: baixa uma faixa sertaneja inédita quando ninguém
+	// enviou nada durante o cooldown (ajustável em /admin/envios). Sem
+	// DEEZER_ARL não faz nada.
+	go autodownload.New(deezerClient, uploadsStore, settingsStore, cfg.UploadsDir, log).Run(ctx)
 
 	// Alimenta o hub SSE com a contagem de ouvintes a cada 10s — mesma
 	// cadência do polling que o front atual fazia em /api/listeners.

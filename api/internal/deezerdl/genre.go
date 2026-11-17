@@ -154,7 +154,29 @@ func albumIsSertanejo(ctx context.Context, albumID int64) (bool, error) {
 	if albumID <= 0 {
 		return true, nil
 	}
+	sertanejo, known, err := albumGenre(ctx, albumID)
+	if err != nil {
+		return false, err
+	}
+	return sertanejo || !known, nil
+}
 
+// AlbumIsSertanejoStrict exige evidência positiva: só devolve true se o
+// Deezer classifica o álbum como Sertanejo. Ao contrário de FilterSertanejo
+// (fail-open, pensado para não esconder resultados de busca), aqui gênero
+// desconhecido ou erro de consulta reprovam — usado pelo download
+// automático, que não tem um humano escolhendo a faixa.
+func AlbumIsSertanejoStrict(ctx context.Context, albumID int64) (bool, error) {
+	if albumID <= 0 {
+		return false, nil
+	}
+	sertanejo, _, err := albumGenre(ctx, albumID)
+	return sertanejo, err
+}
+
+// albumGenre consulta o álbum e diz se ele é Sertanejo e se algum gênero
+// (qualquer um) é conhecido.
+func albumGenre(ctx context.Context, albumID int64) (sertanejo, known bool, err error) {
 	var data struct {
 		GenreID int `json:"genre_id"`
 		Genres  struct {
@@ -164,25 +186,24 @@ func albumIsSertanejo(ctx context.Context, albumID int64) (bool, error) {
 		} `json:"genres"`
 	}
 	if err := deezerGet(ctx, fmt.Sprintf("https://api.deezer.com/album/%d", albumID), &data); err != nil {
-		return false, err
+		return false, false, err
 	}
 
-	known := false
 	if data.GenreID == sertanejoGenreID {
-		return true, nil
+		return true, true, nil
 	}
 	if data.GenreID > 0 {
 		known = true
 	}
 	for _, g := range data.Genres.Data {
 		if g.ID == sertanejoGenreID {
-			return true, nil
+			return true, true, nil
 		}
 		if g.ID > 0 {
 			known = true
 		}
 	}
-	return !known, nil
+	return false, known, nil
 }
 
 // artistHasSertanejo devolve true se algum álbum do artista é Sertanejo, ou

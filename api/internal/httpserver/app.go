@@ -17,6 +17,7 @@ import (
 	"github.com/somdomato/somdomato/api/internal/protections"
 	"github.com/somdomato/somdomato/api/internal/queue"
 	"github.com/somdomato/somdomato/api/internal/requests"
+	"github.com/somdomato/somdomato/api/internal/settings"
 	"github.com/somdomato/somdomato/api/internal/songs"
 	"github.com/somdomato/somdomato/api/internal/sse"
 	"github.com/somdomato/somdomato/api/internal/uploads"
@@ -52,6 +53,10 @@ type App struct {
 	// Deezer é nil quando DEEZER_ARL não está configurado — /enviar/baixar
 	// responde 503 nesse caso em vez de o processo inteiro falhar ao subir.
 	Deezer *deezerdl.Client
+
+	// Settings guarda ajustes editáveis pelo painel (ex.: download
+	// automático, ver internal/autodownload).
+	Settings *settings.Store
 }
 
 func NewRouter(app *App) http.Handler {
